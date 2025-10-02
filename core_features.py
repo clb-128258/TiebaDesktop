@@ -1,0 +1,4178 @@
+"""核心模块，实现了程序内大部分功能，本程序的主要函数和类均封装在此处"""
+from PyQt5.QtWidgets import QWidget, QDialog, QMessageBox, QListWidgetItem, \
+    QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, QEvent, QMimeData, QUrl, QSize, \
+    QByteArray
+from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie
+from ui import follow_ba, ba_item, tie_preview, ba_head, sign, tie_detail_view, comment_view, reply_comments, \
+    thread_video_item, forum_detail, user_home_page, image_viewer, reply_at_me_page, star_list, settings, user_item, \
+    login_by_bduss, forum_search
+import asyncio
+import sys
+import platform
+import os
+import json
+import aes
+import threading
+import requests
+import webview2
+import request_mgr
+import aiotieba
+import asyncio
+import gc
+from bs4 import BeautifulSoup
+import time
+import subprocess
+import pyperclip
+import profile_mgr
+
+if os.name == 'nt':
+    import win32api
+    import win32con
+import consts
+import pathlib
+
+datapath = consts.datapath
+requests.session().trust_env = True
+requests.session().verify = False
+
+
+def init_log():
+    """初始化日志系统"""
+    if consts.enable_log_file:
+        aiotieba.logging.enable_filelog(aiotieba.logging.logging.INFO, pathlib.Path(f'{datapath}/logs'))
+    aiotieba.logging.get_logger().info(
+        f'TiebaDesktop started, App version {consts.APP_VERSION_STR} ({consts.APP_VERSION_NUM}), System {platform.system()} {platform.version()}')
+
+
+def cut_string(text: str, length: int, moretext: str = '...'):
+    """裁剪字符串，当长度超过 length 时自动裁断并加上后缀 moretext"""
+    if len(text) <= length:
+        return text
+    else:
+        return text[0:length] + moretext
+
+
+def load_json(filename):
+    """加载json文件"""
+    with open(filename, 'rt') as file:
+        items = json.loads(file.read())
+    return items
+
+
+def save_json(jsondata, filename):
+    """保存json文件"""
+    with open(filename, 'wt') as file:
+        file.write(json.dumps(jsondata))
+
+
+def save_json_secret(jsondata, filename):
+    """加密保存本地的json文件"""
+    with open(filename, 'wt') as file:
+        file.write(aes.encode(json.dumps(jsondata), consts.encrypt_key))
+
+
+def load_json_secret(filename):
+    """加载本地加密存储的json文件"""
+    with open(filename, 'rt') as file:
+        items = file.read()
+    return json.loads(aes.decode(items, consts.encrypt_key))
+
+
+def create_data():
+    """识别用户的电脑上是否存在用户数据，如不存在则创建"""
+    aiotieba.logging.get_logger().info('Creating user data')
+    global datapath
+    expect_folder = [datapath, f'{datapath}/webview_data', f'{datapath}/logs']
+    expect_secret_json = {f'{datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}
+    expect_json = {f'{datapath}/config.json': {
+        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1}}}
+
+    for i in expect_folder:
+        if not os.path.isdir(i):
+            os.mkdir(i)
+    for k, v in expect_secret_json.items():
+        if not os.path.isfile(k):
+            save_json_secret(v, k)
+    for k, v in expect_json.items():
+        if not os.path.isfile(k):
+            save_json(v, k)
+
+
+def start_background_thread(func, args=()):
+    """异步执行函数（新开一个线程，在子线程内执行函数），并返回线程对象"""
+    thread = threading.Thread(target=func, daemon=True, args=args)
+    thread.start()
+    return thread
+
+
+def format_second(seconds):
+    """把整形秒数转换成易读的字符串"""
+    if int(seconds / 60) < 10:
+        minute = '0' + str(int(seconds / 60))
+    else:
+        minute = str(int(seconds / 60))
+    if int(seconds % 60) < 10:
+        second = '0' + str(int(seconds % 60))
+    else:
+        second = str(int(seconds % 60))
+    return minute + ':' + second
+
+
+def make_thread_content(threadContents, previewPlainText=False):
+    """把帖子正文内容碎片转换成 Qt 可以解析的 HTML 代码，或者是纯文本"""
+    if previewPlainText:
+        _text = ''
+    else:
+        _text = '<p>'
+
+    for i in threadContents:
+        if type(i) == aiotieba.get_posts._classdef.FragText:
+            will_add_text = i.text
+            if not previewPlainText:
+                will_add_text = will_add_text.replace('\n', '<br>')  # 在html格式下，把原本的换行符号转换为br标签
+            _text += will_add_text
+
+        elif type(i) == aiotieba.get_posts._classdef.FragEmoji and previewPlainText:
+            _text += f'[{i.desc}]'
+        elif type(i) == aiotieba.get_posts._classdef.FragEmoji and not previewPlainText:
+            path = f'{os.getcwd()}/ui/emoticons/{i.id}.png'
+            iconsize = 17 if profile_mgr.local_config['thread_view_settings']['tb_emoticon_size'] == 0 else 30
+            if os.path.isfile(path):
+                _text += f'<img src=\"file:///{path}\" width="{iconsize}" height="{iconsize}">'
+            else:
+                _text += f'[{i.desc}]'
+
+        elif type(i) == aiotieba.get_posts._classdef.FragVoice and previewPlainText:
+            _text += f'[语音，时长 {format_second(i.duration)}]'
+        elif type(i) == aiotieba.get_posts._classdef.FragVideo and previewPlainText:
+            _text += f'[这是一条视频帖，时长 {format_second(i.duration)}，{i.view_num} 次浏览，进贴即可查看]'
+
+        elif type(i) == aiotieba.get_posts._classdef.FragAt and not previewPlainText:
+            _text += f' <a href=\"user://{i.user_id}\">{i.text}</a> '
+        elif type(i) == aiotieba.get_posts._classdef.FragAt and previewPlainText:
+            _text += f' {i.text} '
+
+        elif type(i) == aiotieba.get_posts._classdef.FragLink and not previewPlainText:
+            if str(i.url).startswith(('https://tieba.baidu.com/p/', 'http://tieba.baidu.com/p/')):
+                t = ' <a href=\"tieba_thread://{0}\">{1}</a> '.format(str(i.url).split('?')[0].split('/')[-1], i.title)
+            else:
+                t = ' <a href=\"{0}\">{1}</a> '.format(i.url, i.title)
+            _text += t
+        elif type(i) == aiotieba.get_posts._classdef.FragLink and previewPlainText:
+            t = ' [链接]{0} '.format(i.title)
+            _text += t
+
+    if not previewPlainText:
+        _text += '</p>'
+    if _text == '<p></p>':
+        _text = ''
+    return _text
+
+
+def http_downloader(path, src):
+    """
+    http 协议文件下载器，支持简单的单线程下载并保存数据
+
+    Args:
+        path (str): 文件在本地的保存路径
+        src (str): 源文件url
+    """
+    aiotieba.logging.get_logger().info(f'start download {src} to local file {path}.')
+    resp = requests.get(src, headers=request_mgr.header, stream=True)
+    if resp.status_code == 200:
+        aiotieba.logging.get_logger().info(f'server returned status code 200, start to write data.')
+        f = open(path + '.crdownload', 'wb')
+        for i in resp.iter_content(chunk_size=128 * 1024):
+            f.write(i)
+        f.close()
+        os.rename(path + '.crdownload', path)  # 改回最终文件格式
+        aiotieba.logging.get_logger().info(f'file write finish, download OK.')
+    else:
+        aiotieba.logging.get_logger().info(f'can not download file because http {resp.status_code} error.')
+
+
+def filesize_tostr(size: int):
+    """将文件字节大小转换为易读的字符串"""
+    if size < 0:
+        return '未知大小'
+    elif size < 1024:
+        return f'{size} 字节'
+    elif 1024 ** 2 > size >= 1024:
+        return f'{round(size / 1024, 2)} KB'
+    elif 1024 ** 3 > size >= 1024 ** 2:
+        return f'{round(size / 1024 ** 2, 2)} MB'
+    elif 1024 ** 4 > size >= 1024 ** 3:
+        return f'{round(size / 1024 ** 3, 2)} GB'
+    else:
+        return f'{round(size / 1024 ** 4, 2)} TB'
+
+
+def open_url_in_browser(url):
+    """在系统默认浏览器内打开网页"""
+    shell = ''
+    # 针对不同系统进行识别
+    if os.name == 'nt':
+        shell = f'start \"\" \"{url}\"'
+    elif os.name == 'posix':
+        shell = f'xdg-open {url}'
+    start_background_thread(lambda sh: subprocess.call(sh, shell=True), (shell,))
+
+
+class ExtListWidgetItem(QListWidgetItem):
+    """可以标识用户id的QListWidgetItem，用于在列表内添加用户并找出item对应的用户id"""
+    user_portrait_id = ''
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.bduss = bduss
+        self.stoken = stoken
+
+    def set_show_datas(self, uicon, name):
+        self.setIcon(QIcon(uicon))
+        self.setText(name)
+
+
+class ExtTreeWidgetItem(QTreeWidgetItem):
+    """可以标识用户id的QTreeWidgetItem，用于在列表内添加用户并找出item对应的用户id"""
+    user_portrait_id = ''
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.bduss = bduss
+        self.stoken = stoken
+
+
+class UserItem(QWidget, user_item.Ui_Form):
+    """嵌入在列表内的用户组件"""
+    user_portrait_id = ''
+    show_homepage_by_click = False
+    switchRequested = pyqtSignal(tuple)
+    deleteRequested = pyqtSignal(tuple)
+    doubleClicked = pyqtSignal()
+    setPortrait = pyqtSignal(QPixmap)
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.setPortrait.connect(self.label.setPixmap)
+
+    def mouseDoubleClickEvent(self, a0):
+        a0.accept()
+        self.doubleClicked.emit()
+        if self.show_homepage_by_click:
+            self.open_user_homepage(self.user_portrait_id)
+
+    def open_user_homepage(self, uid):
+        self.user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
+        self.user_home_page.show()
+
+    def get_portrait(self, p):
+        head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{p}'
+        pixmap = QPixmap()
+        response = requests.get(head_url, headers=request_mgr.header)
+        if response.content:
+            pixmap.loadFromData(response.content)
+            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.setPortrait.emit(pixmap)
+
+    def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False):
+        if uicon:
+            if isinstance(uicon, QPixmap):
+                self.label.setPixmap(uicon)
+            elif isinstance(uicon, str):
+                if uicon.startswith('tb.'):
+                    start_background_thread(self.get_portrait, (uicon,))
+        else:
+            self.label.hide()
+        self.label_2.setText(uname)
+        if uid != -1:
+            self.label_3.setText(f'用户 ID: {uid}')
+            self.toolButton.clicked.connect(lambda: pyperclip.copy(uid))
+        else:
+            self.label_3.hide()
+        if not show_switch:
+            self.pushButton.hide()
+            self.pushButton_2.hide()
+        else:
+            if is_current_user:
+                self.pushButton.setEnabled(False)
+                self.pushButton.setText('当前账号')
+            self.pushButton.clicked.connect(lambda: self.switchRequested.emit((self.bduss, uname)))
+            self.pushButton_2.clicked.connect(lambda: self.deleteRequested.emit((self.bduss, uname)))
+
+
+class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
+    """图片查看器窗口，支持旋转缩放图片，以及保存"""
+    updateImage = pyqtSignal(QPixmap)
+    finishDownload = pyqtSignal()
+    closed = pyqtSignal()
+    start_pos = None
+    round_angle = 0
+    isDraging = False
+    originalImage = None
+    downloadOk = False
+    isResizing = False
+
+    def __init__(self, src):
+        super().__init__()
+        self.setupUi(self)
+        self.src = src
+
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.label.setText('图片加载中...')
+        self.init_menu()
+        self.scrollArea.viewport().installEventFilter(self)  # 重写事件过滤器
+
+        self.updateImage.connect(self._resizeslot)
+        self.spinBox.valueChanged.connect(self.resize_image)
+        self.finishDownload.connect(self.update_download_state)
+
+        self.load_image()
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.Type.Wheel and source is self.scrollArea.viewport():
+            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+                self.wheelEvent(event)  # 手动执行缩放事件
+                return True  # 让qt忽略事件
+        return super(NetworkImageViewer, self).eventFilter(source, event)  # 否则照常处理事件
+
+    def closeEvent(self, e):
+        self.closed.emit()
+        e.accept()
+
+    def mousePressEvent(self, a0):
+        self.start_pos = a0.pos()
+
+    def mouseMoveEvent(self, a0):
+        if a0.buttons() and Qt.MouseButton.LeftButton and self.downloadOk:
+            distance = (a0.pos() - self.start_pos).manhattanLength()
+            temp_name = '{0}/{1}'.format(os.getenv('temp'), 'view_pic.jpg')
+            if distance >= QApplication.startDragDistance():
+                self.isDraging = True
+                self.reset_title()
+                if not self.originalImage.isNull():
+                    self.originalImage.save(temp_name)
+                mime_data = QMimeData()
+                url = QUrl()
+                url.setUrl("file:///" + temp_name)
+                mime_data.setUrls((url,))
+
+                drag = QDrag(self)
+                drag.setMimeData(mime_data)
+                drag.setHotSpot(a0.pos())
+                drag.exec(Qt.DropAction.MoveAction | Qt.DropAction.CopyAction | Qt.DropAction.LinkAction,
+                          Qt.DropAction.CopyAction)
+                self.isDraging = False
+                self.reset_title()
+
+    def destroyEvent(self):
+        try:
+            self.show_movie.stop()
+            del self.originalImage
+            self.destroy()
+            self.deleteLater()
+            gc.collect()
+        except:
+            pass
+
+    def init_menu(self):
+        menu = QMenu(self)
+
+        transform_left = QAction('顺时针旋转 90 度', self)
+        transform_left.triggered.connect(self.transform_image_left)
+        menu.addAction(transform_left)
+        transform_right = QAction('逆时针旋转 90 度', self)
+        transform_right.triggered.connect(self.transform_image_right)
+        menu.addAction(transform_right)
+        reset_pixmap = QAction('复原图片', self)
+        reset_pixmap.triggered.connect(self.reset_image)
+        menu.addAction(reset_pixmap)
+
+        self.pushButton_2.setMenu(menu)
+
+        share_menu = QMenu(self)
+
+        copyto = QAction('复制', self)
+        copyto.triggered.connect(lambda: QApplication.clipboard().setPixmap(QPixmap.fromImage(self.originalImage)))
+        share_menu.addAction(copyto)
+
+        save = QAction('保存', self)
+        save.triggered.connect(self.save_file)
+        share_menu.addAction(save)
+
+        self.pushButton_4.setMenu(share_menu)
+
+    def transform_image_left(self):
+        self.round_angle += 90
+        self.resize_image()
+
+    def transform_image_right(self):
+        self.round_angle += -90
+        self.resize_image()
+
+    def reset_image(self):
+        self.round_angle = 0
+        self.spinBox.setValue(100)
+        self.resize_image()
+
+    def reset_title(self):
+        append_text = ''
+        if self.isDraging:
+            append_text += '[拖拽图片到外部] '
+        if self.spinBox.value() != 100:
+            append_text += f'[缩放 {self.spinBox.value()} %] '
+        if self.round_angle != 0:
+            if self.round_angle < 0:
+                append_text += f'[逆时针旋转 {abs(self.round_angle)}°] '
+            elif self.round_angle > 0:
+                append_text += f'[顺时针旋转 {self.round_angle}°] '
+        if append_text:
+            self.setWindowTitle(f'{append_text} - 图片查看器')
+        else:
+            self.setWindowTitle('图片查看器')
+
+    def _resizeslot(self, pixmap):
+        self.label.setPixmap(pixmap)
+        self.scrollAreaWidgetContents.setMinimumSize(pixmap.width(), pixmap.height())
+        self.reset_title()
+
+    def _resizedo(self, ruler):
+        self.isResizing = True
+        if self.originalImage is None:
+            image = QImage()
+            self.originalImage = image
+
+            response = requests.get(self.src, headers=request_mgr.header)
+            if response.content:
+                if self.originalImage.loadFromData(response.content):
+                    self.finishDownload.emit()
+
+        result_image = self.originalImage
+        if self.round_angle != 0:
+            result_image = result_image.transformed(QTransform().rotate(self.round_angle))
+        if ruler != 1:
+            nw = int(self.originalImage.width() * ruler)
+            nh = int(self.originalImage.height() * ruler)
+            if int(self.round_angle / 90) % 2 != 0:
+                # 交换图片长宽值以实现正确缩放
+                _ = nh
+                nh = nw
+                nw = _
+            result_image = result_image.scaled(nw, nh, Qt.AspectRatioMode.KeepAspectRatio,
+                                               Qt.TransformationMode.SmoothTransformation)
+        self.updateImage.emit(QPixmap.fromImage(result_image))
+        self.isResizing = False
+
+    def resize_image(self):
+        if not self.isResizing:
+            if abs(self.round_angle) == 360:
+                self.round_angle = 0
+            thread = threading.Thread(target=self._resizedo, args=(self.spinBox.value() / 100,), daemon=True)
+            thread.start()
+
+    def wheelEvent(self, event):
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier and self.downloadOk:
+            if event.angleDelta().y() > 0:
+                value = 10
+            else:
+                value = -10
+            self.spinBox.setValue(self.spinBox.value() + value)
+
+    def save_file(self):
+        path, tpe = QFileDialog.getSaveFileName(self, '保存图片', '',
+                                                'JPG 图片文件 (*.jpg;*.jpeg)')
+        if path:
+            try:
+                if not self.originalImage.isNull():
+                    self.originalImage.save(path)
+            except Exception as e:
+                QMessageBox.critical(self, '文件保存失败', str(e), QMessageBox.StandardButton.Ok)
+            else:
+                QMessageBox.information(self, '提示', '文件保存成功。', QMessageBox.StandardButton.Ok)
+
+    def update_download_state(self):
+        self.pushButton_4.setEnabled(True)
+        self.pushButton_2.setEnabled(True)
+        self.spinBox.setEnabled(True)
+        self.show_movie.stop()
+        self.downloadOk = True
+
+    def load_image(self):
+        self.setWindowTitle(f'[加载中...] - 图片查看器')
+
+        self.show_movie = QMovie('ui/loading.gif', QByteArray(b'gif'))
+        self.show_movie.setScaledSize(QSize(80, 80))
+        self.show_movie.frameChanged.connect(lambda: self.label.setPixmap(self.show_movie.currentPixmap()))
+
+        self.resize_image()
+        self.show_movie.start()
+
+
+class ThreadPictureLabel(QLabel):
+    """嵌入在列表的帖子图片"""
+    set_picture_signal = pyqtSignal(QPixmap)
+    opic_view = None
+
+    def __init__(self, width, height, src, view_src):
+        super().__init__()
+        self.src_addr = src
+        self.width_n = width
+        self.height_n = height
+        self.preview_src = view_src
+
+        self.setToolTip('图片正在加载...')
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.set_picture_signal.connect(self.set_picture)
+        self.customContextMenuRequested.connect(self.init_picture_contextmenu)
+        self.setFixedSize(self.width_n + 20, self.height_n + 35)
+
+        self.load_picture_async()
+
+    def mouseDoubleClickEvent(self, a0):
+        a0.accept()
+        self.show_big_picture()
+
+    def set_picture(self, pixmap):
+        self.setPixmap(pixmap)
+        self.setToolTip('帖子图片')
+
+    def load_picture_async(self):
+        start_background_thread(self.load_picture)
+
+    def load_picture(self):
+        pixmap = QPixmap()
+        response = requests.get(self.preview_src, headers=request_mgr.header)
+        if response.content:
+            pixmap.loadFromData(response.content)
+        self.set_picture_signal.emit(pixmap)
+
+    def init_picture_contextmenu(self):
+        menu = QMenu()
+
+        show_o = QAction('显示大图', self)
+        show_o.triggered.connect(self.show_big_picture)
+        menu.addAction(show_o)
+
+        save = QAction('保存图片', self)
+        save.triggered.connect(self.save_picture)
+        menu.addAction(save)
+
+        copy_src = QAction('复制图片链接', self)
+        copy_src.triggered.connect(lambda: pyperclip.copy(self.src_addr))
+        menu.addAction(copy_src)
+
+        menu.exec(QCursor.pos())
+
+    def show_big_picture(self):
+        def close_memory_clear():
+            self.opic_view.destroyEvent()
+            del self.opic_view
+            gc.collect()
+            self.opic_view = None
+
+        if self.opic_view:
+            self.opic_view.raise_()
+            if self.opic_view.isMinimized():
+                self.opic_view.showNormal()
+            if not self.opic_view.isActiveWindow():
+                self.opic_view.activateWindow()
+        else:
+            self.opic_view = NetworkImageViewer(self.src_addr)
+            self.opic_view.closed.connect(close_memory_clear)
+            self.opic_view.show()
+
+    def save_picture(self):
+        path, type_ = QFileDialog.getSaveFileName(self, '选择图片保存位置', '', 'JPEG 图片 (*.jpg;*.jpeg)')
+        if path:
+            start_background_thread(http_downloader, (path, self.src_addr))
+
+
+class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
+    """点赞的帖子列表，和最新版贴吧一样，可查看点赞过的帖子\n
+    由于和收藏列表一样都是帖子列表，所以直接继承star_list.Ui_Dialog来写"""
+    add_thread = pyqtSignal(dict)
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.setupUi(self)
+
+        self.bduss = bduss
+        self.stoken = stoken
+        self.page = 1
+        self.isloading = False
+
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.setWindowTitle('点赞列表')
+        self.label.setText('这里可以查看你点过赞的帖子。')
+        self.resize(720, 520)
+
+        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
+                                      'QListWidget::item:hover {color:white; background-color:white;}'
+                                      'QListWidget::item:selected {color:white; background-color:white;}')
+        self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_list_info)
+        self.listWidget.verticalScrollBar().setSingleStep(25)
+
+        self.add_thread.connect(self.add_agreed_threads_ui)
+        self.pushButton.clicked.connect(self.refresh_agreed_threads)
+
+        self.get_agreed_threads_async()
+
+    def scroll_load_list_info(self):
+        if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
+            self.get_agreed_threads_async()
+
+    def add_agreed_threads_ui(self, infos):
+        item = QListWidgetItem()
+
+        if infos['type'] == 0:
+            widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+
+            widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['text'],
+                             infos['forum_head_pixmap'],
+                             infos['forum_name'])
+            widget.set_thread_values(infos['thread_data']['vn'], infos['thread_data']['ag'],
+                                     infos['thread_data']['rpy'], infos['thread_data']['rpt'], infos['timestamp'])
+            widget.set_picture(infos['picture'])
+            widget.adjustSize()
+        else:
+            widget = ReplyItem(self.bduss, self.stoken)
+
+            timeStamp = infos['timestamp']
+            timeArray = time.localtime(timeStamp)
+            timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+
+            widget.portrait = infos['portrait']
+            widget.thread_id = infos['thread_id']
+            widget.post_id = infos['post_id']
+            widget.allow_home_page = True
+            widget.subcomment_show_thread_button = True
+            widget.set_reply_text(
+                '<a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题帖 <a href=\"tieba_thread://{tid}\">{tname}</a> 下的回复：'.format(
+                    fname=infos['forum_name'], tname=infos['title'], tid=infos['thread_id'],
+                    fid=infos['forum_id']))
+            widget.setdatas(infos['user_portrait_pixmap'], infos['user_name'], False, infos['text'],
+                            infos['picture'], -1, timestr, '', -2, infos['thread_data']['ag'], -1, False)
+
+        item.setSizeHint(widget.size())
+        self.listWidget.addItem(item)
+        self.listWidget.setItemWidget(item, widget)
+
+    def refresh_agreed_threads(self):
+        if not self.isloading:
+            self.listWidget.clear()
+            QPixmapCache.clear()
+            gc.collect()
+            self.page = 1
+
+        self.get_agreed_threads_async()
+
+    def get_agreed_threads_async(self):
+        if not self.isloading and self.page != -1:
+            start_background_thread(self.get_agreed_threads)
+
+    def get_agreed_threads(self):
+        async def run_func():
+            try:
+                self.isloading = True
+                aiotieba.logging.get_logger().info(f'loading userAgreedThreadsList page {self.page}')
+                payload = {
+                    'BDUSS': self.bduss,
+                    'stoken': self.stoken,
+                    'tab_id': "0",
+                    'pn': str(self.page),
+                    'rn': "20",
+                }
+                resp = request_mgr.run_post_api(f'/c/u/feed/userAgree', payloads=payload, bduss=self.bduss,
+                                                stoken=self.stoken, use_mobile_header=True)
+
+                for thread in resp['data']["thread_list"]:
+                    # 帖子类型0为主题，1为回复
+                    data = {'type': 1 if thread.get('top_agree_post') else 0,
+                            'user_name': thread['author']['name_show'],
+                            'user_portrait_pixmap': None,
+                            'forum_head_pixmap': None,
+                            'thread_id': thread['tid'],
+                            'post_id': 0,
+                            'forum_id': thread['forum_info']['id'],
+                            'forum_name': thread['forum_info']['name'],
+                            'title': thread["title"],
+                            'text': cut_string(thread['abstract'][0]['text'], 50),
+                            'picture': [],
+                            'timestamp': thread['create_time'],
+                            'thread_data': {'vn': thread["view_num"], 'ag': thread["agree_num"],
+                                            'rpy': thread["reply_num"], 'rpt': thread["share_num"]},
+                            'portrait': thread["author"]["portrait"].split('?')[0]}
+
+                    # 获取回复贴数据
+                    if postinfo := thread.get('top_agree_post'):
+                        data['post_id'] = postinfo['id']
+                        data['timestamp'] = postinfo["time"]
+                        data['thread_data']['ag'] = postinfo["agree"]['agree_num']
+                        data['user_name'] = postinfo['author']['name_show']
+                        data['portrait'] = postinfo["author"]["portrait"].split('?')[0]
+                        text = ''
+                        for i in postinfo['content']:
+                            if i['type'] == 0:  # 是文本
+                                text += i['text']
+                            elif i['type'] == 3:  # 是图片
+                                data['picture'].append(
+                                    {'width': int(i['bsize'].split(',')[0]), 'height': int(i['bsize'].split(',')[1]),
+                                     'src': i['origin_src'], 'view_src': i['src']})
+                        data['text'] = cut_string(text, 50)
+
+                    # 获取吧头像
+                    forum_head_pixmap = QPixmap()
+                    url = thread["forum_info"]["avatar"]
+                    response = requests.get(
+                        url,
+                        headers=request_mgr.header)
+                    if response.content:
+                        forum_head_pixmap.loadFromData(response.content)
+                        forum_head_pixmap = forum_head_pixmap.scaled(15, 15, Qt.KeepAspectRatio,
+                                                                     Qt.SmoothTransformation)
+                        data['forum_head_pixmap'] = forum_head_pixmap
+
+                    # 获取用户头像
+                    user_head_pixmap = QPixmap()
+                    portrait = data['portrait']
+                    response = requests.get(
+                        f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                        headers=request_mgr.header)
+                    if response.content:
+                        user_head_pixmap.loadFromData(response.content)
+                        user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                   Qt.SmoothTransformation)
+                        data['user_portrait_pixmap'] = user_head_pixmap
+
+                    # 获取主题帖图片
+                    if thread.get("media") and data['type'] == 0:
+                        for m in thread['media']:
+                            if m["type"] == 3:  # 是图片
+                                pixmap = QPixmap()
+                                url = m["small_pic"]
+                                response = requests.get(url, headers=request_mgr.header)
+                                if response.content:
+                                    pixmap.loadFromData(response.content)
+                                    pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
+                                                           Qt.SmoothTransformation)
+                                    data['picture'].append(pixmap)
+
+                    self.add_thread.emit(data)
+            except Exception as e:
+                print(type(e))
+                print(e)
+            else:
+                aiotieba.logging.get_logger().info(
+                    f'load userAgreedThreadsList page {self.page} successful')
+                if not resp['data']['has_more']:
+                    self.page = -1
+                else:
+                    self.page += 1
+            finally:
+                self.isloading = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(run_func())
+
+        start_async()
+
+
+class StaredThreadsList(QDialog, star_list.Ui_Dialog):
+    """收藏的帖子列表，可查看已收藏的帖子"""
+    add_thread = pyqtSignal(dict)
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.setupUi(self)
+
+        self.bduss = bduss
+        self.stoken = stoken
+        self.page = 1
+        self.isloading = False
+
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+
+        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
+                                      'QListWidget::item:hover {color:white; background-color:white;}'
+                                      'QListWidget::item:selected {color:white; background-color:white;}')
+        self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_list_info)
+        self.listWidget.verticalScrollBar().setSingleStep(25)
+
+        self.add_thread.connect(self.add_star_threads_ui)
+        self.pushButton.clicked.connect(self.refresh_star_threads)
+
+        self.get_star_threads_async()
+
+    def scroll_load_list_info(self):
+        if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
+            self.get_star_threads_async()
+
+    def add_star_threads_ui(self, infos):
+        item = QListWidgetItem()
+        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+
+        widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], '', None,
+                         infos['forum_name'])
+        if infos['picture']:
+            widget.set_picture([infos['picture']])
+        else:
+            widget.set_picture([])
+        widget.label.hide()
+        widget.adjustSize()
+        item.setSizeHint(widget.size())
+
+        self.listWidget.addItem(item)
+        self.listWidget.setItemWidget(item, widget)
+
+    def refresh_star_threads(self):
+        if not self.isloading:
+            self.listWidget.clear()
+            QPixmapCache.clear()
+            gc.collect()
+            self.page = 1
+
+        self.get_star_threads_async()
+
+    def get_star_threads_async(self):
+        if not self.isloading and self.page != -1:
+            start_background_thread(self.get_star_threads)
+
+    def get_star_threads(self):
+        async def run_func():
+            try:
+                self.isloading = True
+                aiotieba.logging.get_logger().info(
+                    f'loading userThreadStoreList page {self.page}')
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    resp = request_mgr.run_get_api(f'/mg/o/threadstore?pn={self.page}&rn=10&eqid=&refer=',
+                                                   bduss=self.bduss, stoken=self.stoken)
+                    for thread in resp['data']['store_thread']:
+                        data = {'user_name': thread['author']['show_nickname'], 'user_portrait_pixmap': None,
+                                'thread_id': thread['tid'], 'forum_id': await client.get_fid(thread['forum_name']),
+                                'forum_name': thread['forum_name'], 'title': thread["title"], 'picture': None}
+
+                        user_head_pixmap = QPixmap()
+                        portrait = thread["author"]["portrait"]
+                        response = requests.get(
+                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                            headers=request_mgr.header)
+                        if response.content:
+                            user_head_pixmap.loadFromData(response.content)
+                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+                            data['user_portrait_pixmap'] = user_head_pixmap
+
+                        if thread.get("media"):
+                            pixmap = QPixmap()
+                            url = thread['media'][0]["cover_img"]
+                            response = requests.get(url, headers=request_mgr.header)
+                            if response.content:
+                                pixmap.loadFromData(response.content)
+                                data['picture'] = pixmap
+
+                        self.add_thread.emit(data)
+            except Exception as e:
+                print(type(e))
+                print(e)
+            else:
+                aiotieba.logging.get_logger().info(
+                    f'load userThreadStoreList page {self.page} successful')
+                if not resp['data']['has_more']:
+                    self.page = -1
+                else:
+                    self.page += 1
+            finally:
+                self.isloading = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(run_func())
+
+        start_async()
+
+
+class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
+    """回复和@当前用户的列表"""
+    add_post_data = pyqtSignal(dict)
+    reply_page = 1
+    at_page = 1
+    is_reply_loading = False
+    is_at_loading = False
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.setupUi(self)
+
+        self.bduss = bduss
+        self.stoken = stoken
+
+        self.label.hide()
+        self.listWidget_2.verticalScrollBar().setSingleStep(25)
+        self.listWidget_2.setStyleSheet('QListWidget{outline:0px;}'
+                                        'QListWidget::item:hover {color:white; background-color:white;}'
+                                        'QListWidget::item:selected {color:white; background-color:white;}')
+        self.listWidget.verticalScrollBar().setSingleStep(25)
+        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
+                                      'QListWidget::item:hover {color:white; background-color:white;}'
+                                      'QListWidget::item:selected {color:white; background-color:white;}')
+        self.listWidget.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('reply'))
+        self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('at'))
+        self.pushButton.clicked.connect(self.refresh_list)
+
+        self.add_post_data.connect(self.set_inter_data_ui)
+
+    def refresh_list(self):
+        if not self.is_at_loading and not self.is_reply_loading:
+            self.listWidget.clear()
+            self.listWidget_2.clear()
+            QPixmapCache.clear()
+            gc.collect()
+            self.reply_page = 1
+            self.at_page = 1
+
+        self.load_inter_data_async('all')
+
+    def scroll_load_list_info(self, type_):
+        flag_reply = (
+                type_ == "reply" and not self.is_reply_loading and self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value() and not self.reply_page == -1)
+        flag_at = (
+                type_ == "at" and not self.is_at_loading and self.listWidget_2.verticalScrollBar().maximum() == self.listWidget_2.verticalScrollBar().value() and not self.at_page == -1)
+        if flag_reply or flag_at:
+            start_background_thread(self.load_inter_data, (type_,))
+
+    def set_inter_data_ui(self, data):
+        item = QListWidgetItem()
+        widget = ReplyItem(self.bduss, self.stoken)
+
+        widget.portrait = data['portrait']
+        widget.thread_id = data['thread_id']
+        widget.post_id = data['post_id']
+        widget.subcomment_show_thread_button = True
+        widget.set_reply_text(
+            '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题帖 <a href=\"tieba_thread://{tid}\">{tname}</a> 下{ptype}了你：'.format(
+                fname=data['forum_name'], tname=data['thread_title'], tid=data['thread_id'],
+                fid=data['forum_id'], sub_floor='[楼中楼] ' if data['is_subfloor'] else '[回复贴] ',
+                ptype='回复' if data['type'] == 'reply' else '@'))
+        widget.setdatas(data['user_portrait_pixmap'], data['user_name'], False, data['content'],
+                        [], -1, data['post_time_str'], '', -2, -1, -1, False)
+        item.setSizeHint(widget.size())
+
+        if data['type'] == 'reply':
+            self.listWidget.addItem(item)
+            self.listWidget.setItemWidget(item, widget)
+        elif data['type'] == 'at':
+            self.listWidget_2.addItem(item)
+            self.listWidget_2.setItemWidget(item, widget)
+
+    def load_inter_data_async(self, type_):
+        if self.bduss:
+            self.label.hide()
+            self.tabWidget.show()
+            if ((type_ == "reply" and not self.is_reply_loading) or
+                    (type_ == "at" and not self.is_at_loading)):
+                start_background_thread(self.load_inter_data, (type_,))
+            elif type_ == "all" and not self.is_reply_loading and not self.is_at_loading:
+                start_background_thread(self.load_inter_data, ('reply',))
+                start_background_thread(self.load_inter_data, ('at',))
+        else:
+            self.label.show()
+            self.tabWidget.hide()
+
+    def load_inter_data(self, type_):
+        async def run_func():
+            try:
+                aiotieba.logging.get_logger().info(
+                    f'loading userInteractionsList {type_}, page (reply {self.reply_page} at {self.at_page})')
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    if type_ == "reply":
+                        self.is_reply_loading = True
+                        datas = await client.get_replys(self.reply_page)
+                    elif type_ == "at":
+                        self.is_at_loading = True
+                        datas = await client.get_ats(self.at_page)
+
+                    for thread in datas.objs:
+                        # 用户头像
+                        user_head_pixmap = QPixmap()
+                        response = requests.get(
+                            f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
+                            headers=request_mgr.header)
+                        if response.content:
+                            user_head_pixmap.loadFromData(response.content)
+                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+
+                        # 用户昵称
+                        nick_name = thread.user.nick_name_new
+
+                        # 获取吧id
+                        if isinstance(thread, aiotieba.get_ats.At):
+                            forum_id = thread.fid
+                        else:
+                            forum_id = await client.get_fid(thread.fname)
+
+                        # 获取帖子标题
+                        if isinstance(thread, aiotieba.get_ats.At):
+                            thread_title = thread.thread_title if thread.thread_title else "无法获取帖子标题，可能已被删除"
+                        else:
+                            thread_info = await client.get_posts(thread.tid, pn=1, rn=0, comment_rn=0)
+                            thread_title = thread_info.thread.title if thread_info.thread.title else "无法获取帖子标题，可能已被删除"
+
+                        # 发布时间字符串
+                        timeStamp = thread.create_time
+                        timeArray = time.localtime(timeStamp)
+                        timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+
+                        # 是楼中楼获取对应的pid
+                        if thread.is_comment:
+                            if isinstance(thread, aiotieba.get_replys.Reply):
+                                pid = thread.ppid
+                            else:
+                                thread_info = await client.get_comments(thread.tid, thread.pid, pn=1, is_comment=True)
+                                pid = thread_info.post.pid
+                        else:
+                            pid = thread.pid
+
+                        # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
+                        # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
+                        # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
+                        data = {'type': type_,
+                                'thread_id': thread.tid,
+                                'real_post_id': thread.pid,
+                                'post_id': pid,
+                                'is_subfloor': thread.is_comment,
+                                'forum_id': forum_id,
+                                'forum_name': thread.fname,
+                                'thread_title': thread_title,
+                                'content': thread.text,
+                                'user_portrait_pixmap': user_head_pixmap,
+                                'portrait': thread.user.portrait,
+                                'user_name': nick_name,
+                                'post_time_str': timestr}
+                        self.add_post_data.emit(data)
+            except Exception as e:
+                print(type(e))
+                print(e)
+            else:
+                if type_ == "reply":
+                    if datas.has_more:
+                        self.reply_page += 1
+                    else:
+                        self.reply_page = -1
+                    self.is_reply_loading = False
+                elif type_ == "at":
+                    if datas.has_more:
+                        self.at_page += 1
+                    else:
+                        self.at_page = -1
+                    self.is_at_loading = False
+                aiotieba.logging.get_logger().info(
+                    f'load userInteractionsList {type_}, page (reply {self.reply_page} at {self.at_page}) successful')
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(run_func())
+
+        start_async()
+
+
+class UserHomeWindow(QWidget, user_home_page.Ui_Form):
+    """用户个人主页窗口"""
+    set_head_info_signal = pyqtSignal(dict)
+    set_list_info_signal = pyqtSignal(tuple)
+
+    def __init__(self, bduss, stoken, user_id_portrait):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.user_id_portrait = user_id_portrait
+
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.label_11.setPixmap(QPixmap('ui/user_ban.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
+        self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
+        self.frame_2.hide()
+        self.frame_3.hide()
+        self.frame_4.hide()
+        self.frame_5.hide()
+
+        self.page = {'thread': {'loading': False, 'page': 1},
+                     'reply': {'loading': False, 'page': 1},
+                     'follow_forum': {'loading': False, 'page': 1},
+                     'follow': {'loading': False, 'page': 1},
+                     'fans': {'loading': False, 'page': 1}}
+        self.listwidgets = {'follow_forum': self.listWidget, 'reply': self.listWidget_2, 'follow': self.listWidget_3,
+                            'thread': self.listWidget_4, 'fans': self.listWidget_5}
+        for v in self.listwidgets.values():
+            v.verticalScrollBar().setSingleStep(20)
+
+        # 必须手动链接所有信号，在上面的循环里进行会有奇怪的bug
+        self.listWidget.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('follow_forum'))
+        self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('reply'))
+        self.listWidget_3.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('follow'))
+        self.listWidget_4.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('thread'))
+        self.listWidget_5.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('fans'))
+
+        self.listWidget_4.setStyleSheet('QListWidget{outline:0px;}'
+                                        'QListWidget::item:hover {color:white; background-color:white;}'
+                                        'QListWidget::item:selected {color:white; background-color:white;}')
+        self.listWidget_2.setStyleSheet('QListWidget{outline:0px;}'
+                                        'QListWidget::item:hover {color:white; background-color:white;}'
+                                        'QListWidget::item:selected {color:white; background-color:white;}')
+
+        # 隐藏ip属地
+        if profile_mgr.local_config['thread_view_settings']['hide_ip']:
+            self.label_5.hide()
+
+        self.set_head_info_signal.connect(self.set_head_info_ui)
+        self.set_list_info_signal.connect(self.set_list_info_ui)
+        self.listWidget_3.itemDoubleClicked.connect(self.open_user_homepage)
+        self.listWidget_5.itemDoubleClicked.connect(self.open_user_homepage)
+
+        self.get_head_info_async()
+        for i in self.page.keys():
+            self.get_list_info_async(i)
+
+    def open_user_homepage(self, item):
+        if isinstance(item, ExtListWidgetItem):
+            self.user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
+            self.user_home_page.show()
+
+    def set_head_info_ui(self, data):
+        if data['error']:
+            QMessageBox.critical(self, '用户信息加载失败', data['error'], QMessageBox.Ok)
+        else:
+            self.setWindowTitle(data['name'] + ' - 个人主页')
+            self.setWindowIcon(QIcon(data['portrait_pixmap']))
+
+            self.label.setPixmap(data['portrait_pixmap'])
+            self.label_2.setText(data['name'])
+            self.label_2.setToolTip('用户名：' + data['bd_user_name'])
+            self.label_9.setText('Lv.' + str(data['level']))
+            self.label_8.setText('获赞数 ' + str(data['agree_c']))
+            self.label_3.setText('贴吧 ID：' + str(data['tieba_id']))
+            self.label_4.setText('吧龄 {age} 年'.format(age=data['account_age']))
+            self.label_5.setText('IP 属地：' + data['ip'])
+            self.label_14.setText('发帖数 ' + str(data['post_c']))
+            self.tabWidget.setTabText(2, '关注的吧 ({c})'.format(c=data['follow_forum_count']))
+            self.tabWidget.setTabText(3, '关注的人 ({c})'.format(c=data['follow']))
+            self.tabWidget.setTabText(4, '粉丝列表 ({c})'.format(c=data['fans']))
+
+            if not data['desp']:
+                self.frame_6.hide()
+            else:
+                self.label_6.setText(cut_string(data['desp'], 50))
+
+            sex_icon_path = ''
+            sex_icon_desp = ''
+            if data['sex'] == 1:
+                sex_icon_path = 'ui/sex_male.png'
+                sex_icon_desp = '男性'
+            elif data['sex'] == 2:
+                sex_icon_path = 'ui/sex_female.png'
+                sex_icon_desp = '女性'
+            if sex_icon_path:
+                self.label_13.setToolTip(sex_icon_desp)
+                self.label_13.setPixmap(QPixmap(sex_icon_path).scaled(20, 20, transformMode=Qt.SmoothTransformation))
+            else:
+                self.label_13.hide()
+
+            if data['is_banned']:
+                self.frame_3.show()
+            if data['is_dashen']:
+                self.frame_2.show()
+            if data['thread_reply_permission'] != 1:
+                self.frame_5.show()
+                if data['thread_reply_permission'] == 5:
+                    self.label_16.setText('由于隐私设置，只有粉丝可以评论该用户的贴子。')
+                elif data['thread_reply_permission'] == 6:
+                    self.label_16.setText('由于隐私设置，只有该用户关注的人可以评论该用户的贴子。')
+            if data['follow_forums_show_permission'] != 1:
+                self.frame_4.show()
+                if data['follow_forums_show_permission'] == 2:
+                    self.label_15.setText('该用户设置关注吧列表仅好友可见。')
+                elif data['follow_forums_show_permission'] == 3:
+                    self.label_15.setText('该用户隐藏了关注吧列表。')
+
+    def get_head_info_async(self):
+        start_background_thread(self.get_head_info)
+
+    def get_head_info(self):
+        async def run_func():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    # 初始化数据
+                    data = {'error': '',
+                            'name': '',
+                            'sex': 0,
+                            'level': 0,
+                            'portrait_pixmap': None,
+                            'agree_c': 0,
+                            'tieba_id': 0,
+                            'post_c': 0,
+                            'account_age': 0.0,
+                            'ip': '',
+                            'follow_forum_count': 0,
+                            'follow': 0,
+                            'fans': 0,
+                            'is_dashen': False,
+                            'is_banned': False,
+                            'thread_reply_permission': 0,
+                            'follow_forums_show_permission': 0,
+                            'desp': '',
+                            'bd_user_name': ''}
+
+                    # 获取用户信息
+                    user_info = await client.get_user_info(self.user_id_portrait, aiotieba.ReqUInfo.ALL)
+
+                    # 判断是否出错
+                    if user_info.err:
+                        data['error'] = str(user_info.err)
+                    else:
+                        data['name'] = user_info.nick_name_new
+                        data['sex'] = user_info.gender
+                        data['level'] = user_info.glevel
+                        data['agree_c'] = user_info.agree_num
+                        data['tieba_id'] = user_info.tieba_uid
+                        data['account_age'] = user_info.age
+                        data['ip'] = user_info.ip
+                        data['follow_forum_count'] = user_info.forum_num
+                        data['follow'] = user_info.follow_num
+                        data['fans'] = user_info.fan_num
+                        data['is_dashen'] = bool(user_info.is_god)
+                        data['is_banned'] = bool(user_info.is_blocked)
+                        data['thread_reply_permission'] = user_info.priv_reply
+                        data['follow_forums_show_permission'] = user_info.priv_like
+                        data['desp'] = user_info.sign
+                        data['post_c'] = user_info.post_num
+                        data['bd_user_name'] = user_info.user_name
+
+                        head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{user_info.portrait}'
+                        pixmap = QPixmap()
+                        response = requests.get(head_url, headers=request_mgr.header)
+                        if response.content:
+                            pixmap.loadFromData(response.content)
+                            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        data['portrait_pixmap'] = pixmap
+
+                    self.set_head_info_signal.emit(data)
+
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(run_func())
+
+        start_async()
+
+    def scroll_load_list_info(self, tpe):
+        if (tpe in self.listwidgets.keys() and
+                self.listwidgets[tpe].verticalScrollBar().value() == self.listwidgets[
+                    tpe].verticalScrollBar().maximum() and
+                not self.page.get(tpe).get('loading')):
+            self.get_list_info_async(tpe)
+
+    def set_list_info_ui(self, data):
+        datas = data[1]
+        if data[0] == 'thread':
+            item = QListWidgetItem()
+            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken)
+            widget.set_thread_values(datas['view_count'], datas['agree_count'], datas['reply_count'],
+                                     datas['repost_count'], datas['post_time'])
+            widget.set_infos(datas['user_portrait_pixmap'], datas['user_name'], datas['title'], datas['content'],
+                             datas['forum_pixmap'], datas['forum_name'])
+            widget.set_picture(datas['view_pixmap'])
+            widget.adjustSize()
+            item.setSizeHint(widget.size())
+            self.listWidget_4.addItem(item)
+            self.listWidget_4.setItemWidget(item, widget)
+        elif data[0] == 'reply':
+            item = QListWidgetItem()
+            widget = ReplyItem(self.bduss, self.stoken)
+
+            widget.portrait = datas['portrait']
+            widget.thread_id = datas['thread_id']
+            widget.post_id = datas['post_id']
+            widget.allow_home_page = False
+            widget.subcomment_show_thread_button = True
+            widget.set_reply_text(
+                '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题帖 <a href=\"tieba_thread://{tid}\">{tname}</a> 下回复：'.format(
+                    fname=datas['forum_name'], tname=datas['thread_title'], tid=datas['thread_id'],
+                    fid=datas['forum_id'], sub_floor='[楼中楼] ' if datas['is_subfloor'] else '[回复贴] '))
+            widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['content'],
+                            [], -1, datas['post_time_str'], datas['ip'], -2, -1, -1, False)
+
+            item.setSizeHint(widget.size())
+            self.listWidget_2.addItem(item)
+            self.listWidget_2.setItemWidget(item, widget)
+        elif data[0] == 'follow_forum':
+            item = QListWidgetItem()
+            widget = ForumItem(datas['forum_id'], True, self.bduss, self.stoken, datas['forum_name'])
+            widget.pushButton_2.hide()
+            widget.set_info(datas['forum_pixmap'], datas['forum_name'] + '吧',
+                            '{cfollow_info}[等级 {level}，经验值 {exp}] {desp}'.format(
+                                cfollow_info='[共同关注] ' if datas['is_common_follow'] else '',
+                                level=datas['level'], exp=datas['exp'],
+                                desp=datas['forum_desp']))
+            item.setSizeHint(widget.size())
+            self.listWidget.addItem(item)
+            self.listWidget.setItemWidget(item, widget)
+        elif data[0] in ('follow', 'fans'):
+            item = ExtListWidgetItem(self.bduss, self.stoken)
+            item.user_portrait_id = datas['user_id']
+            item.set_show_datas(datas['user_pixmap'], datas['user_name'])
+            if data[0] == 'follow':
+                self.listWidget_3.addItem(item)
+            else:
+                self.listWidget_5.addItem(item)
+
+    def get_list_info_async(self, type_):
+        if not self.page[type_]['loading'] and self.page[type_]['page'] != -1:
+            start_background_thread(self.get_list_info, (type_,))
+
+    def get_list_info(self, type_):
+        async def run_func():
+            self.page[type_]['loading'] = True
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    if type_ == 'thread':
+                        # 获取用户头像
+                        user_head_pixmap = QPixmap()
+                        thread_datas = await client.get_user_threads(self.user_id_portrait, self.page[type_]['page'])
+                        for thread in thread_datas.objs:
+                            # 初始化数据
+                            if user_head_pixmap.isNull():  # 头像为空
+                                response = requests.get(
+                                    f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
+                                    headers=request_mgr.header)
+                                if response.content:
+                                    user_head_pixmap.loadFromData(response.content)
+                                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                               Qt.SmoothTransformation)
+                            data = {'thread_id': thread.tid, 'forum_id': thread.fid, 'title': thread.title,
+                                    'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
+                                    'author_portrait': thread.user.portrait, 'user_name': thread.user.nick_name_new,
+                                    'user_portrait_pixmap': user_head_pixmap, 'forum_name': thread.fname,
+                                    'forum_pixmap': None,
+                                    'view_pixmap': [], 'view_count': thread.view_num, 'agree_count': thread.agree,
+                                    'reply_count': thread.reply_num, 'repost_count': thread.share_num,
+                                    'post_time': thread.create_time}
+
+                            # 找出所有预览图
+                            preview_pixmap = []
+                            for pic in thread.contents.imgs:
+                                pic_addr = pic.src
+                                response = requests.get(pic_addr, headers=request_mgr.header)
+                                if response.content:
+                                    pixmap = QPixmap()
+                                    pixmap.loadFromData(response.content)
+                                    pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
+                                                           Qt.SmoothTransformation)
+                                    preview_pixmap.append(pixmap)
+                            data['view_pixmap'] = preview_pixmap
+
+                            # 获取吧头像
+                            forum = await client.get_forum(thread.fid)
+                            forum_pixmap = QPixmap()
+                            response = requests.get(forum.small_avatar, headers=request_mgr.header)
+                            if response.content:
+                                forum_pixmap.loadFromData(response.content)
+                                forum_pixmap = forum_pixmap.scaled(15, 15, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                            data['forum_pixmap'] = forum_pixmap
+
+                            self.set_list_info_signal.emit((type_, data))
+                    elif type_ == 'reply':
+                        # 获取新版昵称
+                        name_info = await client.get_user_info(self.user_id_portrait, aiotieba.ReqUInfo.NICK_NAME)
+                        nick_name = name_info.nick_name_new
+                        user_ip = name_info.ip
+
+                        # 初始化数据
+                        user_head_pixmap = QPixmap()
+                        post_list = []
+
+                        post_datas = await client.get_user_posts(self.user_id_portrait, self.page[type_]['page'])
+                        for t in post_datas.objs:
+                            for st in t:
+                                post_list.append(st)
+                        post_list.sort(key=lambda k: k.create_time, reverse=True)  # 按发帖时间排序
+
+                        for thread in post_list:
+                            # 初始化数据
+                            if user_head_pixmap.isNull():  # 头像为空
+                                response = requests.get(
+                                    f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
+                                    headers=request_mgr.header)
+                                if response.content:
+                                    user_head_pixmap.loadFromData(response.content)
+                                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                               Qt.SmoothTransformation)
+
+                            # 获取吧名称
+                            forum_name = await client.get_fname(thread.fid)
+
+                            # 获取帖子标题
+                            thread_info = await client.get_posts(thread.tid, pn=1, rn=0, comment_rn=0)
+                            thread_title = thread_info.thread.title if thread_info.thread.title else "无法获取帖子标题，可能已被删除"
+
+                            # 发布时间字符串
+                            timeStamp = thread.create_time
+                            timeArray = time.localtime(timeStamp)
+                            timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+
+                            # 是楼中楼获取对应的pid
+                            if thread.is_comment:
+                                thread_info = await client.get_comments(thread.tid, thread.pid, pn=1, is_comment=True)
+                                pid = thread_info.post.pid
+                            else:
+                                pid = thread.pid
+
+                            # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
+                            # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
+                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
+                            data = {'thread_id': thread.tid,
+                                    'real_post_id': thread.pid,
+                                    'post_id': pid,
+                                    'is_subfloor': thread.is_comment,
+                                    'forum_id': thread.fid,
+                                    'forum_name': forum_name,
+                                    'thread_title': thread_title,
+                                    'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
+                                    'ip': user_ip,
+                                    'user_portrait_pixmap': user_head_pixmap,
+                                    'portrait': thread.user.portrait,
+                                    'user_name': nick_name,
+                                    'post_time_str': timestr}
+                            self.set_list_info_signal.emit((type_, data))
+                    elif type_ == 'follow_forum':
+                        forum_list = await client.get_follow_forums(self.user_id_portrait, self.page[type_]['page'])
+                        for f in forum_list.objs:
+                            pixmap = QPixmap()
+                            if f.avatar:
+                                response = requests.get(f.avatar, headers=request_mgr.header)
+                                if response.content:
+                                    pixmap.loadFromData(response.content)
+                                    pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                            data = {'forum_name': f.fname,
+                                    'forum_id': f.fid,
+                                    'forum_pixmap': pixmap,
+                                    'forum_desp': f.slogan,
+                                    'level': f.level,
+                                    'exp': f.exp,
+                                    'is_common_follow': f.is_common_follow}
+
+                            self.set_list_info_signal.emit((type_, data))
+                    elif type_ == 'follow':
+                        follow_list = await client.get_follows(self.user_id_portrait, pn=self.page[type_]['page'])
+                        for user in follow_list:
+                            name = user.nick_name_new
+                            if user.forum_admin_info:
+                                name += f' ({user.forum_admin_info})'
+
+                            data = {'user_name': name,
+                                    'user_pixmap': None,
+                                    'user_id': user.user_id}
+
+                            user_head_pixmap = QPixmap()
+                            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{user.portrait}',
+                                                    headers=request_mgr.header)
+                            if response.content:
+                                user_head_pixmap.loadFromData(response.content)
+                                user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
+                            data['user_pixmap'] = user_head_pixmap
+
+                            self.set_list_info_signal.emit((type_, data))
+                    elif type_ == 'fans':
+                        fan_list = await client.get_fans(self.user_id_portrait, pn=self.page[type_]['page'])
+                        for user in fan_list:
+                            data = {'user_name': user.nick_name_new,
+                                    'user_pixmap': None,
+                                    'user_id': user.user_id}
+
+                            user_head_pixmap = QPixmap()
+                            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{user.portrait}',
+                                                    headers=request_mgr.header)
+                            if response.content:
+                                user_head_pixmap.loadFromData(response.content)
+                                user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
+                            data['user_pixmap'] = user_head_pixmap
+
+                            self.set_list_info_signal.emit((type_, data))
+            except Exception as e:
+                print(type(e))
+                print(e)
+            else:
+                self.page[type_]['page'] += 1
+            finally:
+                self.page[type_]['loading'] = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(run_func())
+
+        start_async()
+
+
+class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
+    """吧详细信息窗口，可显示吧详细信息、吧务信息、等级排行榜"""
+    set_main_info_signal = pyqtSignal(dict)
+    add_level_list_item_signal = pyqtSignal(dict)
+
+    page_level_list = 1
+    is_level_list_loading = False
+    forum_bg_link = ''
+
+    def __init__(self, bduss, stoken, forum_id):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.forum_id = forum_id
+
+        self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+
+        self.set_main_info_signal.connect(self.ui_set_main_info)
+        self.add_level_list_item_signal.connect(self.ui_add_level_list_item)
+        self.pushButton_5.clicked.connect(self.close)
+        self.treeWidget_3.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
+        self.treeWidget_3.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
+        self.treeWidget.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
+        self.pushButton_4.clicked.connect(self.save_bg_image)
+        self.pushButton_6.clicked.connect(lambda: pyperclip.copy(self.forum_bg_link))
+
+        self.get_main_info_async()
+        self.get_level_list_info_async()
+
+    def save_bg_image(self):
+        if self.forum_bg_link:
+            path, tpe = QFileDialog.getSaveFileName(self, '保存图片', '',
+                                                    'JPG 图片文件 (*.jpg;*.jpeg)')
+            if path:
+                start_background_thread(http_downloader, (path, self.forum_bg_link))
+
+    def open_user_homepage(self, item, column):
+        if isinstance(item, ExtTreeWidgetItem):
+            self.user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
+            self.user_home_page.show()
+
+    def scroll_load_more(self):
+        if self.treeWidget_3.verticalScrollBar().value() == self.treeWidget_3.verticalScrollBar().maximum():
+            self.get_level_list_info_async()
+
+    def ui_add_level_list_item(self, datas):
+        item = ExtTreeWidgetItem(self.bduss, self.stoken)
+        item.user_portrait_id = datas['portrait']
+        item.setIcon(0, QIcon(datas['portrait_pixmap']))
+        item.setText(0, datas['tieba_name'])
+        item.setText(1, datas['bd_name'])
+        item.setText(2, str(datas['level']))
+        item.setText(3, str(datas['exp']))
+        item.setText(4, str(datas['uid']))
+        item.setText(5, '全吧封禁' if datas['isban'] else '正常')
+        self.treeWidget_3.addTopLevelItem(item)
+
+    def get_level_list_info_async(self):
+        if not self.is_level_list_loading and self.page_level_list != -1:
+            start_background_thread(self.get_level_list_info)
+
+    def get_level_list_info(self):
+        async def dosign():
+            try:
+                self.is_level_list_loading = True
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    forum_name = await client.get_fname(self.forum_id)  # 先获取吧名字
+                    ulist_html = request_mgr.run_get_api(
+                        f'/f/like/furank?kw={forum_name}&ie=utf-8&pn={self.page_level_list}',
+                        return_json=False)  # 手动实现请求部分，aiotieba中调用有301错误
+                    soup = BeautifulSoup(ulist_html, "lxml")
+                    ulist = aiotieba.get_rank_users.RankUsers.from_tbdata(soup)
+
+                    for i in ulist.objs:
+                        bd_user_name = i.user_name
+                        level = i.level
+                        exp = i.exp
+
+                        user_info = await client.get_user_info(bd_user_name)
+                        portrait = user_info.portrait
+                        tb_user_name = user_info.nick_name_new
+                        user_id = user_info.user_id
+                        is_banned = bool(user_info.is_blocked)
+                        if not tb_user_name:
+                            tb_user_name = '未知昵称'
+
+                        # 获取头像
+                        pixmap = QPixmap()
+                        if portrait:
+                            head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}'
+                            response = requests.get(head_url, headers=request_mgr.header)
+                            if response.content:
+                                pixmap.loadFromData(response.content)
+                                pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        else:
+                            pixmap.load('ui/default_user_image.png')
+
+                        self.add_level_list_item_signal.emit(
+                            {'bd_name': bd_user_name, 'tieba_name': tb_user_name, 'level': level, 'portrait': portrait,
+                             'portrait_pixmap': pixmap, 'exp': exp, 'uid': user_id, 'isban': is_banned})
+
+            except Exception as e:
+                print(type(e))
+                print(e)
+            else:
+                if ulist.has_more:
+                    self.page_level_list += 1
+                else:
+                    self.page_level_list = -1
+            finally:
+                self.is_level_list_loading = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+    def ui_set_main_info(self, datas):
+        if not datas['err_info']:
+            self.label_2.setText(datas['forum_name'] + '吧')
+            self.label.setPixmap(datas['forum_pixmap'])
+            self.label_5.setText('简介：' + datas['forum_desp'])
+            self.label_11.setText(f'吧 ID：{self.forum_id}')
+            self.label_3.setText('关注数：' + str(datas['follow_c']))
+            self.label_4.setText('帖子数：' + str(datas['thread_c']))
+            self.label_12.setText('吧分类：' + datas['forum_volume'])
+            self.label_13.setText('主题帖数：{0}'.format(str(datas['main_thread_c'])))
+            if self.bduss:
+                self.label_6.setText('是否关注：' + ('是' if datas['follow_info']['isfollow'] else '否'))
+                self.label_10.setText('今天是否签到：' + ('是' if datas['follow_info']['isSign'] else '否'))
+                self.label_7.setText('等级：' + str(datas['follow_info']['level']))
+                self.label_8.setText('等级头衔：' + datas['follow_info']['level_flag'])
+                self.label_9.setText('经验值：' + str(datas['follow_info']['exp']))
+            else:
+                self.groupBox.hide()
+
+            if datas['bg_pic_info']['pixmap']:
+                self.label_14.setPixmap(datas['bg_pic_info']['pixmap'])
+            else:
+                self.label_14.setText('本吧没有背景图片。')
+
+            for i in datas['friend_forum_list']:
+                item = QListWidgetItem()
+                widget = ForumItem(i['forum_id'], True, self.bduss, self.stoken, i['forum_name'])
+                widget.set_info(i['headpix'], i['forum_name'], '')
+                widget.pushButton_2.hide()
+                widget.adjustSize()
+                item.setSizeHint(widget.size())
+
+                self.listWidget.addItem(item)
+                self.listWidget.setItemWidget(item, widget)
+
+            bawu_types = {}
+            for i in datas['bawu_info']:
+                if not bawu_types.get(i['type']):
+                    item = QTreeWidgetItem()
+                    item.setText(0, i['type'])
+                    self.treeWidget.addTopLevelItem(item)
+                    bawu_types[i['type']] = item
+
+                item = ExtTreeWidgetItem(self.bduss, self.stoken)
+                item.user_portrait_id = i['portrait']
+                item.setIcon(0, QIcon(i['portrait_pixmap']))
+                item.setText(0, i['name'])
+                item.setText(1, str(i['level']))
+                item.setText(2, i['type'])
+                bawu_types[i['type']].addChild(item)
+        else:
+            QMessageBox.critical(self, '吧信息加载异常', datas['err_info'], QMessageBox.Ok)
+
+    def get_main_info_async(self):
+        start_background_thread(self.get_main_info)
+
+    def get_main_info(self):
+        async def dosign():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    # 初始化数据
+                    data = {'forum_name': '', 'has_bawu': False, 'bawu_info': [], 'forum_pixmap': None,
+                            'forum_desp': '', 'thread_c': 0, 'follow_c': 0, 'main_thread_c': 0,
+                            'follow_info': {'isfollow': False, 'level': 0, 'exp': 0, 'level_flag': '', 'isSign': False},
+                            'forum_volume': '', 'err_info': '', 'friend_forum_list': [],
+                            'bg_pic_info': {'url': '', 'pixmap': None}}
+
+                    # 获取吧信息
+                    forum_info = await client.get_forum(self.forum_id)
+                    if forum_info.err:
+                        if isinstance(forum_info.err, aiotieba.exception.TiebaServerError):
+                            data['err_info'] = f'{forum_info.err.msg} (错误代码 {forum_info.err.code})'
+                        else:
+                            data['err_info'] = str(forum_info.err)
+                    else:
+                        if self.bduss:
+                            # 在登录情况下，获取等级信息
+                            bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
+                            forum_follow_info = await client.get_forum_level(self.forum_id)
+
+                            # 整理等级信息
+                            data['follow_info']['isfollow'] = bool(forum_follow_info.is_like)
+                            if forum_follow_info.is_like:
+                                data['follow_info']['level'] = forum_follow_info.user_level
+                                data['follow_info']['level_flag'] = forum_follow_info.level_name
+                                for i in bars:
+                                    if i['forum_id'] == self.forum_id:
+                                        data['follow_info']['isSign'] = i['is_sign'] == 1
+                                        data['follow_info']['exp'] = int(i['user_exp'])
+                                        break
+
+                        # 整理吧信息
+                        data['forum_name'] = forum_info.fname
+                        data['has_bawu'] = forum_info.has_bawu
+                        data['forum_desp'] = forum_info.slogan
+                        data['thread_c'] = forum_info.post_num
+                        data['follow_c'] = forum_info.member_num
+                        data['main_thread_c'] = forum_info.thread_num
+                        data['forum_volume'] = f'{forum_info.category} - {forum_info.subcategory}'
+
+                        # 获取吧背景图片
+                        self.forum_bg_link = url = forum_info.background_image_url
+                        data['bg_pic_info']['url'] = url
+                        if url:
+                            forum_bg_pixmap = QPixmap()
+                            response = requests.get(url, headers=request_mgr.header)
+                            if response.content:
+                                forum_bg_pixmap.loadFromData(response.content)
+                                data['bg_pic_info']['pixmap'] = forum_bg_pixmap
+
+                        # 获取友情吧信息
+                        if forum_info.friend_forums:
+                            for i in forum_info.friend_forums:
+                                single_ff_info = {'forum_name': i.fname, 'forum_id': i.fid, 'headpix': None}
+                                pixmap = QPixmap()
+                                response = requests.get(i.small_avatar, headers=request_mgr.header)
+                                if response.content:
+                                    pixmap.loadFromData(response.content)
+                                    pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
+                                                           Qt.SmoothTransformation)
+                                    single_ff_info['headpix'] = pixmap
+                                data['friend_forum_list'].append(single_ff_info)
+
+                        # 获取吧头像
+                        forum_pixmap = QPixmap()
+                        response = requests.get(forum_info.small_avatar, headers=request_mgr.header)
+                        if response.content:
+                            forum_pixmap.loadFromData(response.content)
+                            forum_pixmap = forum_pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                            data['forum_pixmap'] = forum_pixmap
+
+                        # 有吧务获取吧务信息
+                        if forum_info.has_bawu:
+                            bawu_info = await client.get_bawu_info(self.forum_id)
+                            bawu_iter_index = {'大吧主': bawu_info.admin,
+                                               '小吧主': bawu_info.manager,
+                                               '语音小编': bawu_info.voice_editor,
+                                               '图片小编': bawu_info.image_editor,
+                                               '视频小编': bawu_info.video_editor,
+                                               '广播小编': bawu_info.broadcast_editor,
+                                               '吧刊主编': bawu_info.journal_chief_editor,
+                                               '吧刊小编': bawu_info.journal_editor,
+                                               '职业吧主': bawu_info.profess_admin,
+                                               '第四吧主': bawu_info.fourth_admin}
+
+                            for k, v in bawu_iter_index.items():
+                                for bawu in v:
+                                    head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{bawu.portrait}'
+                                    pixmap = QPixmap()
+                                    response = requests.get(head_url, headers=request_mgr.header)
+                                    if response.content:
+                                        pixmap.loadFromData(response.content)
+                                        pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                                    data['bawu_info'].append(
+                                        {'name': bawu.nick_name_new, 'level': bawu.level, 'type': k,
+                                         'portrait': bawu.portrait, 'portrait_pixmap': pixmap})
+
+                    self.set_main_info_signal.emit(data)
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+
+class ThreadVideoItem(QWidget, thread_video_item.Ui_Form):
+    """嵌入在列表的视频帖入口组件"""
+    source_link = ''
+    length = 0
+    view_num = 0
+    webview = None
+
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.webview_show_html = profile_mgr.video_webview_show_html
+        self.pushButton_3.hide()
+
+        self.pushButton.clicked.connect(self.save_video)
+        self.pushButton_2.clicked.connect(self.play_video)
+        self.pushButton_3.clicked.connect(self.destroy_webview)
+
+    def handle_webview_fullscreen(self):
+        if self.webview.isHtmlInFullScreenState():
+            self.webview.showFullScreen()
+        else:
+            self.webview.showNormal()
+
+    def destroy_webview(self):
+        self.webview.close()
+        self.pushButton_3.hide()
+        self.webview.destroyWebview()
+        self.webview = None
+
+    def play_video(self):
+        if self.webview:
+            self.webview.show()
+            self.webview.raise_()
+            if self.webview.isMinimized():
+                self.webview.showNormal()
+            if not self.webview.isActiveWindow():
+                self.webview.activateWindow()
+        else:
+            webview2.loadLibs()
+            self.webview = webview2.QWebView2View()
+
+            self.webview.resize(920, 530)
+            self.webview.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+            self.webview.setWindowTitle('WebView 视频播放器')
+
+            self.webview.titleChanged.connect(self.webview.setWindowTitle)
+            self.webview.fullScreenRequested.connect(self.handle_webview_fullscreen)
+            self.webview.windowCloseRequested.connect(self.destroy_webview)
+            self.webview.renderInitializationCompleted.connect(self.pushButton_3.show)
+            self.webview.renderInitializationCompleted.connect(lambda: self.webview.setHtml(self.webview_show_html))
+
+            profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data',
+                                              enable_link_hover_text=False,
+                                              enable_zoom_factor=False, enable_error_page=True,
+                                              enable_context_menu=True, enable_keyboard_keys=True,
+                                              handle_newtab_byuser=False, disable_web_safe=True)
+            self.webview.setProfile(profile)
+
+            self.webview.initRender()
+            self.webview.show()
+
+    def save_video(self):
+        path, type_ = QFileDialog.getSaveFileName(self, '选择视频保存位置', '', '视频文件 (*.mp4)')
+        if path:
+            right_link = self.source_link.replace('tb-video.bdstatic.com', 'bos.nj.bpc.baidu.com')
+            start_background_thread(http_downloader, (path, right_link))
+
+    def setdatas(self, src, len_, views):
+        self.source_link = src
+        self.length = len_
+        self.view_num = views
+        right_link = self.source_link.replace('tb-video.bdstatic.com', 'bos.nj.bpc.baidu.com')
+        self.webview_show_html = self.webview_show_html.replace('[vurl]', right_link)
+
+        self.label_3.setText(f'时长 {format_second(len_)}，浏览量 {views}')
+
+
+class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
+    """楼中楼窗口，可查看楼中楼内的回复"""
+    isLoading = False
+    page = 1
+    add_comment = pyqtSignal(dict)
+    set_floor_info = pyqtSignal(tuple)
+
+    def __init__(self, bduss, stoken, thread_id, post_id, floor, comment_count, show_thread_button=False):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.thread_id = thread_id
+        self.post_id = post_id
+        self.floor_num = floor
+        self.comment_count = comment_count
+
+        self.listWidget.verticalScrollBar().setSingleStep(25)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
+                                      'QListWidget::item:hover {color:white; background-color:white;}'
+                                      'QListWidget::item:selected {color:white; background-color:white;}')
+
+        self.add_comment.connect(self.ui_add_comment)
+        self.set_floor_info.connect(self.ui_set_floor_info)
+        self.pushButton_2.clicked.connect(self.refresh_comments)
+        self.pushButton.clicked.connect(self.open_thread_detail)
+        self.listWidget.verticalScrollBar().valueChanged.connect(self.load_from_scroll)
+        if not show_thread_button:
+            self.pushButton.hide()
+        if self.floor_num == -1 and self.comment_count == -2:
+            self.label.setText('楼中楼回复')
+        else:
+            self.label.setText(f'第 {self.floor_num} 楼的回复，共 {self.comment_count} 条')
+
+        self.load_comments_async()
+
+    def open_thread_detail(self):
+        self.thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id))
+        self.thread_window.show()
+
+    def refresh_comments(self):
+        if not self.isLoading:
+            # 清理内存
+            self.listWidget.clear()
+            QPixmapCache.clear()
+            gc.collect()
+
+            self.page = 1
+            self.load_comments_async()
+
+    def load_from_scroll(self):
+        if self.listWidget.verticalScrollBar().value() == self.listWidget.verticalScrollBar().maximum():
+            self.load_comments_async()
+
+    def ui_set_floor_info(self, datas):
+        if datas[0] == -1:
+            QMessageBox.critical(self, '楼中楼加载失败', datas[1], QMessageBox.Ok)
+        else:
+            self.label.setText(f'第 {datas[0]} 楼的回复，共 {datas[1]} 条')
+
+    def ui_add_comment(self, datas):
+        item = QListWidgetItem()
+        widget = ReplyItem(self.bduss, self.stoken)
+        widget.portrait = datas['portrait']
+        if datas['replyobj']:
+            widget.set_reply_text(
+                '回复用户 <a href=\"user://{uid}\">{u}</a>: '.format(uid=datas['reply_uid'], u=datas['replyobj']))
+        widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'], [], '',
+                        datas['create_time_str'], '', -1,
+                        datas['agree_count'], datas['ulevel'], datas['is_bawu'])
+        item.setSizeHint(widget.size())
+        self.listWidget.addItem(item)
+        self.listWidget.setItemWidget(item, widget)
+
+    def load_comments_async(self):
+        if not self.isLoading and self.page != -1:
+            start_background_thread(self.load_comments)
+
+    def load_comments(self):
+        async def dosign():
+            self.isLoading = True
+            try:
+                aiotieba.logging.get_logger().info(
+                    f'loading sub-replies (thread_id {self.thread_id} post_id {self.post_id} page {self.page})')
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    comments = await client.get_comments(self.thread_id, self.post_id, self.page)
+                    if comments.err:
+                        raise Exception(comments.err)
+                    if self.floor_num == -1 and self.comment_count == -2:
+                        self.set_floor_info.emit((comments.post.floor, comments.page.total_count))
+                    aiotieba.logging.get_logger().info(
+                        f'itering sub-replies (thread_id {self.thread_id} post_id {self.post_id} floor {comments.post.floor} page {self.page})')
+                    for t in comments.objs:
+                        content = make_thread_content(t.contents.objs)
+                        portrait = t.user.portrait
+                        user_name = t.user.nick_name_new
+                        agree_num = t.agree
+                        timeStamp = t.create_time
+                        timeArray = time.localtime(timeStamp)
+                        time_str = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                        user_level = t.user.level
+                        is_author = t.is_thread_author
+                        is_bawu = t.user.is_bawu
+                        be_replied_user = ''
+                        replyer_uid = 0
+                        if t.reply_to_id != 0:
+                            uinfo = await client.get_user_info(t.reply_to_id, aiotieba.ReqUInfo.NICK_NAME)
+                            be_replied_user = uinfo.nick_name_new
+                            replyer_uid = t.reply_to_id
+
+                        user_head_pixmap = QPixmap()
+                        response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                                                headers=request_mgr.header)
+                        if response.content:
+                            user_head_pixmap.loadFromData(response.content)
+                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+
+                        tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
+                                 'user_portrait_pixmap': user_head_pixmap,
+                                 'agree_count': agree_num,
+                                 'create_time_str': time_str, 'is_author': is_author, 'ulevel': user_level,
+                                 'replyobj': be_replied_user, 'reply_uid': replyer_uid, 'is_bawu': is_bawu}
+
+                        self.add_comment.emit(tdata)
+            except Exception as e:
+                print(type(e))
+                print(e)
+                self.set_floor_info.emit((-1, str(e)))
+            else:
+                if comments.has_more:
+                    self.page += 1
+                else:
+                    self.page = -1
+                aiotieba.logging.get_logger().info(
+                    f'load sub-replies (thread_id {self.thread_id} post_id {self.post_id}) finished and page changed to {self.page}')
+            finally:
+                self.isLoading = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+
+class ReplyItem(QWidget, comment_view.Ui_Form):
+    """嵌入在列表里的回复帖内容"""
+    width_count = 0
+    height_count = 0
+    portrait = ''
+    c_count = -1
+    floor = -1
+    thread_id = -1
+    post_id = -1
+    replyWindow = None
+    allow_home_page = True
+    subcomment_show_thread_button = False
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.setupUi(self)
+
+        self.bduss = bduss
+        self.stoken = stoken
+
+        self.label_13.hide()
+        self.label_10.hide()
+        self.label_10.setContextMenuPolicy(Qt.NoContextMenu)
+        self.label_6.linkActivated.connect(self.handle_link_event)
+        self.label_10.linkActivated.connect(self.handle_link_event)
+        self.pushButton.clicked.connect(self.show_subcomment_window)
+        self.label_3.installEventFilter(self)  # 重写事件过滤器
+        self.label_4.installEventFilter(self)  # 重写事件过滤器
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.Type.MouseButtonRelease and source in (
+                self.label_3, self.label_4) and self.allow_home_page:
+            self.open_user_homepage(self.portrait)
+        return super(ReplyItem, self).eventFilter(source, event)  # 照常处理事件
+
+    def show_subcomment_window(self):
+        if self.c_count != 0:
+            if not self.replyWindow:
+                self.replyWindow = ReplySubComments(self.bduss, self.stoken, self.thread_id, self.post_id, self.floor,
+                                                    self.c_count, show_thread_button=self.subcomment_show_thread_button)
+            self.replyWindow.show()
+            self.replyWindow.raise_()
+            if not self.replyWindow.isActiveWindow():
+                self.replyWindow.activateWindow()
+        else:
+            QMessageBox.information(self, '暂无回复', f'第 {self.floor} 楼还没有任何回复。', QMessageBox.Ok)
+
+    def update_listwidget_size(self, h, w):
+        # 动态更新内容列表大小
+        self.height_count += h
+        if w > self.width_count:
+            self.width_count = w
+        self.listWidget.setFixedHeight(self.height_count)
+        self.listWidget.setFixedWidth(self.width_count)
+
+    def open_ba_detail(self, fid):
+        self.forum_window = ForumShowWindow(self.bduss, self.stoken, int(fid))
+        self.forum_window.show()
+        self.forum_window.load_info_async()
+        self.forum_window.get_threads_async()
+
+    def open_thread(self, tid):
+        self.third_party_thread = ThreadDetailView(self.bduss, self.stoken, int(tid))
+        self.third_party_thread.show()
+
+    def open_user_homepage(self, uid):
+        self.user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
+        self.user_home_page.show()
+
+    def handle_link_event(self, url):
+        if url.startswith('user://'):
+            user_sign = url.replace('user://', '')
+            # 判断是不是portrait
+            if not user_sign.startswith('tb.'):
+                self.open_user_homepage(int(user_sign))
+            else:
+                self.open_user_homepage(user_sign)
+        elif url.startswith('tieba_thread://'):
+            self.open_thread(url.replace('tieba_thread://', ''))
+        elif url.startswith('tieba_forum://'):
+            self.open_ba_detail(url.replace('tieba_forum://', ''))
+        else:
+            open_url_in_browser(url)
+
+    def set_grow_level(self, level):
+        self.label_13.show()
+        self.label_13.setText('Lv.' + str(level))
+
+    def set_reply_text(self, t):
+        self.label_10.show()
+        self.label_10.setText(t)
+
+    def setdatas(self, uicon, uname, islz, text, pixmaps, floor, timestr, ip, reply_count, agree_count, level, isbawu):
+        self.label_4.setPixmap(uicon)
+        self.label_3.setText(uname)
+
+        text_ = ''
+        if floor != -1 and floor:
+            self.floor = floor
+            text_ += f'第 {floor} 楼，'
+        if timestr:
+            text_ += f'{timestr}，'
+        if ip and not profile_mgr.local_config['thread_view_settings']['hide_ip']:
+            text_ += f'IP 属地 {ip}，'
+        self.label.setText(text_[:-1])
+
+        if reply_count == -1:
+            self.pushButton.hide()
+        else:
+            self.c_count = reply_count
+            if reply_count == -2:
+                self.pushButton.setText('查看楼中楼')
+            else:
+                self.pushButton.setText(f'查看楼中楼 ({reply_count})')
+        if agree_count != -1:
+            self.pushButton_3.setText(f'{agree_count} 个赞')
+        else:
+            self.pushButton_3.hide()
+        if not text:
+            self.label_6.hide()
+        else:
+            self.label_6.setText(text)
+        if islz:
+            self.label_8.show()
+        else:
+            self.label_8.hide()
+        if isbawu:
+            self.label_11.show()
+        else:
+            self.label_11.hide()
+
+        if level == -1:
+            self.label_9.hide()
+        else:
+            self.label_9.setText(f'Lv.{level}')
+            qss = ''
+            if 0 <= level <= 3:  # 绿牌
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 211, 171);}'
+            elif 4 <= level <= 9:  # 蓝牌
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255);}'
+            elif 10 <= level <= 15:  # 黄牌
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(253, 194, 53);}'
+            elif level >= 16:  # 橙牌老东西
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48);}'
+
+            self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
+
+        if not pixmaps:
+            self.listWidget.hide()
+        else:
+            for i in pixmaps:
+                label = ThreadPictureLabel(i['width'], i['height'], i['src'], i['view_src'])
+
+                item = QListWidgetItem()
+                item.setSizeHint(label.size())
+                self.listWidget.addItem(item)
+                self.listWidget.setItemWidget(item, label)
+
+                self.update_listwidget_size(i['height'] + 35, i['width'] + 20)
+
+        self.adjustSize()
+
+
+class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
+    """主题帖详情窗口，可以浏览主题帖详细内容和回复"""
+    forum_id = -1
+    user_id = -1
+    height_count = 0
+    height_count_replies = 0
+    width_count_replies = 0
+    reply_page = 1
+    is_getting_replys = False
+    head_data_signal = pyqtSignal(dict)
+    add_reply = pyqtSignal(dict)
+    show_reply_end_text = pyqtSignal(int)
+
+    def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.thread_id = tid
+        self.is_treasure = is_treasure
+        self.is_top = is_top
+
+        self.label_2.hide()
+        self.label_8.hide()
+        self.label_11.hide()
+        self.label_12.hide()
+        self.label_13.hide()
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
+                                      'QListWidget::item:hover {color:white; background-color:white;}'
+                                      'QListWidget::item:selected {color:white; background-color:white;}')
+        self.listWidget_4.setStyleSheet('QListWidget{outline:0px;}'
+                                        'QListWidget::item:hover {color:white; background-color:white;}'
+                                        'QListWidget::item:selected {color:white; background-color:white;}')
+        self.listWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.listWidget_4.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.listWidget_4.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
+
+        self.pushButton.clicked.connect(self.init_more_menu)
+        self.label_6.linkActivated.connect(self.handle_link_event)
+        self.head_data_signal.connect(self.update_ui_head_info)
+        self.pushButton_2.clicked.connect(self.open_ba_detail)
+        self.add_reply.connect(self.add_reply_ui)
+        self.show_reply_end_text.connect(self.show_end_reply_ui)
+        self.scrollArea.verticalScrollBar().valueChanged.connect(self.load_sub_threads_from_scroll)
+        self.comboBox.currentIndexChanged.connect(self.load_sub_threads_refreshly)
+        self.checkBox.stateChanged.connect(self.load_sub_threads_refreshly)
+        self.label_2.linkActivated.connect(self.end_label_link_event)
+        self.label_3.installEventFilter(self)  # 重写事件过滤器
+        self.label_4.installEventFilter(self)  # 重写事件过滤器
+
+        self.get_thread_head_info_async()
+        self.get_sub_thread_async()
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.Type.MouseButtonRelease and source in (
+                self.label_3, self.label_4):
+            self.open_user_homepage(self.user_id)
+        return super(ThreadDetailView, self).eventFilter(source, event)  # 照常处理事件
+
+    def closeEvent(self, a0):
+        a0.accept()
+        if self.listWidget.count() == 1:
+            widget = self.listWidget.itemWidget(self.listWidget.item(0))
+            if isinstance(widget, ThreadVideoItem):
+                if widget.webview:
+                    widget.destroy_webview()
+
+    def end_label_link_event(self, url):
+        if url == 'reload_replies':
+            self.load_sub_threads_refreshly()
+
+    def init_more_menu(self):
+        url = f'https://tieba.baidu.com/p/{self.thread_id}'
+
+        menu = QMenu()
+
+        copy_id = QAction('复制帖子 ID', self)
+        copy_id.triggered.connect(lambda: pyperclip.copy(str(self.thread_id)))
+        menu.addAction(copy_id)
+
+        copy_link = QAction('复制帖子链接', self)
+        copy_link.triggered.connect(lambda: pyperclip.copy(url))
+        menu.addAction(copy_link)
+
+        open_link = QAction('在浏览器中打开帖子', self)
+        open_link.triggered.connect(lambda: open_url_in_browser(url))
+        menu.addAction(open_link)
+
+        bt_pos = self.pushButton.mapToGlobal(QPoint(0, 0))
+        menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.pushButton.height()))
+
+    def open_thread(self, tid):
+        self.third_party_thread = ThreadDetailView(self.bduss, self.stoken, int(tid))
+        self.third_party_thread.show()
+
+    def open_user_homepage(self, uid):
+        self.user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
+        self.user_home_page.show()
+
+    def handle_link_event(self, url):
+        if url.startswith('user://'):
+            user_sign = url.replace('user://', '')
+            # 判断是不是portrait
+            if not user_sign.startswith('tb.'):
+                self.open_user_homepage(int(user_sign))
+            else:
+                self.open_user_homepage(user_sign)
+        elif url.startswith('tieba_thread://'):
+            self.open_thread(url.replace('tieba_thread://', ''))
+        else:
+            open_url_in_browser(url)
+
+    def load_sub_threads_refreshly(self):
+        if not self.is_getting_replys:
+            # 清理内存
+            self.listWidget_4.clear()
+            QPixmapCache.clear()
+            gc.collect()
+
+            # 初始化值
+            if self.comboBox.currentIndex() == 1:
+                self.reply_page = -2
+            else:
+                self.reply_page = 1
+            self.height_count_replies = 0
+            self.width_count_replies = 0
+
+            # 启动刷新
+            self.get_sub_thread_async()
+
+    def load_sub_threads_from_scroll(self):
+        if self.scrollArea.verticalScrollBar().value() == self.scrollArea.verticalScrollBar().maximum():
+            self.get_sub_thread_async()
+
+    def open_ba_detail(self):
+        self.forum_window = ForumShowWindow(self.bduss, self.stoken, int(self.forum_id))
+        self.forum_window.show()
+        self.forum_window.load_info_async()
+        self.forum_window.get_threads_async()
+
+    def update_listwidget_size(self, h):
+        self.height_count += h
+        self.listWidget.setFixedHeight(self.height_count)
+
+    def show_end_reply_ui(self, v):
+        self.label_2.show()
+        if self.listWidget_4.count() == 0:
+            self.listWidget_4.setMinimumHeight(0)
+        if v == 0:
+            self.label_2.setText('你已经到达了帖子的尽头')
+        elif v == 1:
+            self.label_2.setText('还没有人回帖，别让楼主寂寞太久')
+        elif v == 2:
+            self.label_2.setText('服务器开小差了，请试试 <a href="reload_replies">重新加载</a>')
+
+    def add_reply_ui(self, datas):
+        # tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
+        #          'user_portrait_pixmap': user_head_pixmap, 'view_pixmap': preview_pixmap,
+        #          'agree_count': agree_num,
+        #          'create_time_str': time_str, 'user_ip': user_ip, 'is_author': is_author,
+        #          'floor': floor, 'reply_num': reply_num}
+        item = QListWidgetItem()
+        widget = ReplyItem(self.bduss, self.stoken)
+        widget.portrait = datas['portrait']
+        widget.thread_id = self.thread_id
+        widget.post_id = datas['post_id']
+        widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'],
+                        datas['view_pixmap'],
+                        datas['floor'], datas['create_time_str'], datas['user_ip'], datas['reply_num'],
+                        datas['agree_count'], datas['ulevel'], datas['is_bawu'])
+        widget.set_grow_level(datas['grow_level'])
+        item.setSizeHint(widget.size())
+        self.listWidget_4.addItem(item)
+        self.listWidget_4.setItemWidget(item, widget)
+
+        self.height_count_replies += widget.height()
+        self.listWidget_4.setMinimumHeight(self.height_count_replies)
+
+        if widget.width() > self.width_count_replies:
+            self.width_count_replies = widget.width()
+            self.listWidget_4.setMinimumWidth(self.width_count_replies)
+
+    def get_sub_thread_async(self):
+        if not self.is_getting_replys and self.reply_page != -1:
+            self.label_2.hide()
+            self.listWidget_4.show()
+            start_background_thread(self.get_sub_thread)
+
+    def get_sub_thread(self):
+        async def dosign():
+            aiotieba.logging.get_logger().info(f'loading thread {self.thread_id} replies list page {self.reply_page}')
+            self.is_getting_replys = True
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    sort_type = aiotieba.PostSortType.ASC if self.comboBox.currentIndex() == 0 else (
+                        aiotieba.PostSortType.DESC if self.comboBox.currentIndex() == 1 else aiotieba.PostSortType.HOT)
+                    if self.reply_page == -2:
+                        # 倒序查看时要从总页数开始
+                        page_thread_info = await client.get_posts(self.thread_id, pn=1, sort=sort_type,
+                                                                  only_thread_author=self.checkBox.isChecked(),
+                                                                  comment_rn=0)
+                        if page_thread_info.err:
+                            raise Exception(page_thread_info.err)
+                        self.reply_page = page_thread_info.page.total_page
+
+                    thread_info = await client.get_posts(self.thread_id, pn=self.reply_page, sort=sort_type,
+                                                         only_thread_author=self.checkBox.isChecked(), comment_rn=0)
+                    if thread_info.err:
+                        raise Exception(thread_info.err)
+                    if thread_info.thread.reply_num == 1:
+                        self.reply_page = -1
+                        self.show_reply_end_text.emit(1)
+                    else:
+                        aiotieba.logging.get_logger().info(
+                            f'itering thread {self.thread_id} replies list page {self.reply_page}')
+                        for t in thread_info.objs:
+                            if t.floor == 1 or t.floor == 0:  # 跳过第一楼和求助置顶楼
+                                continue
+
+                            content = make_thread_content(t.contents.objs)
+                            floor = t.floor
+                            reply_num = t.reply_num
+                            portrait = t.user.portrait
+                            user_name = t.user.nick_name_new
+                            agree_num = t.agree
+                            timeStamp = t.create_time
+                            timeArray = time.localtime(timeStamp)
+                            time_str = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                            user_ip = t.user.ip
+                            user_level = t.user.level
+                            user_ip = user_ip if user_ip else '未知'
+                            is_author = t.is_thread_author
+                            post_id = t.pid
+                            is_bawu = t.user.is_bawu
+                            grow_level = t.user.glevel
+
+                            user_head_pixmap = QPixmap()
+                            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                                                    headers=request_mgr.header)
+                            if response.content:
+                                user_head_pixmap.loadFromData(response.content)
+                                user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
+
+                            preview_pixmap = []
+                            for j in t.contents.imgs:
+                                # width, height, src, view_src
+                                src = j.origin_src
+                                view_src = j.src
+                                height = j.show_height
+                                width = j.show_width
+                                preview_pixmap.append(
+                                    {'width': width, 'height': height, 'src': src, 'view_src': view_src})
+
+                            tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
+                                     'user_portrait_pixmap': user_head_pixmap, 'view_pixmap': preview_pixmap,
+                                     'agree_count': agree_num,
+                                     'create_time_str': time_str, 'user_ip': user_ip, 'is_author': is_author,
+                                     'floor': floor, 'reply_num': reply_num, 'ulevel': user_level, 'post_id': post_id,
+                                     'is_bawu': is_bawu, 'grow_level': grow_level}
+
+                            self.add_reply.emit(tdata)
+
+                        aiotieba.logging.get_logger().info(
+                            f'load thread {self.thread_id} replies list page {self.reply_page} ok')
+
+                        if sort_type == aiotieba.PostSortType.DESC:  # 在倒序查看时要递减页数
+                            self.reply_page -= 1
+                        else:
+                            self.reply_page += 1
+                        if not thread_info.page.has_more:
+                            self.reply_page = -1
+                            self.show_reply_end_text.emit(0)
+
+            except Exception as e:
+                print(type(e))
+                print(e)
+                if not isinstance(e, RuntimeError):
+                    self.show_reply_end_text.emit(2)
+            finally:
+                self.is_getting_replys = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+    def update_ui_head_info(self, datas):
+        if datas['err_info']:
+            QMessageBox.critical(self, '帖子加载失败', datas['err_info'], QMessageBox.Ok)
+            self.close()
+        else:
+            self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
+            self.pushButton_2.setText(datas['forum_name'] + '吧')
+            self.pushButton_2.setIcon(QIcon(datas['forum_pixmap']))
+            self.pushButton_4.setText(str(datas['agree_count']) + ' 个赞')
+            self.label_4.setPixmap(datas['user_portrait_pixmap'])
+            self.label_3.setText(datas['user_name'])
+            if profile_mgr.local_config['thread_view_settings']['hide_ip']:
+                self.label.setText(datas['create_time_str'])
+            else:
+                self.label.setText('{time}  IP 属地: {ip}'.format(time=datas['create_time_str'], ip=datas['user_ip']))
+            self.label_5.setText(datas['title'])
+            self.label_6.setText(datas['content'])
+            self.label_10.setText('Lv.' + str(datas['user_grow_level']))
+            self.label_7.setText('共 {n} 条回复'.format(n=str(datas['post_num'])))
+            if datas['is_forum_manager']:
+                self.label_11.show()
+            if not datas['title']:
+                self.label_5.hide()
+            if not datas['content']:
+                self.label_6.hide()
+
+            if datas['is_help']:
+                self.label_8.show()
+            else:
+                self.horizontalLayout_2.removeWidget(self.label_8)
+            if self.is_treasure:
+                self.label_13.show()
+            else:
+                self.horizontalLayout_2.removeWidget(self.label_13)
+            if self.is_top:
+                self.label_12.show()
+            else:
+                self.horizontalLayout_2.removeWidget(self.label_12)
+            if not self.label_8.isVisible() and not self.label_12.isVisible() and not self.label_13.isVisible():
+                self.gridLayout.setHorizontalSpacing(0)
+
+            self.label_9.setText('Lv.{0}'.format(datas['uf_level']))
+            qss = ''
+            if 0 <= datas['uf_level'] <= 3:  # 绿牌
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 211, 171);}'
+            elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255);}'
+            elif 10 <= datas['uf_level'] <= 15:  # 黄牌
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(253, 194, 53);}'
+            elif datas['uf_level'] >= 16:  # 橙牌老东西
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48);}'
+
+            self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
+
+            if not datas['view_pixmap'] and not datas['video_info']['have_video']:
+                self.listWidget.hide()
+            else:
+                if datas['video_info']['have_video']:
+                    video_widget = ThreadVideoItem()
+                    video_widget.setdatas(datas['video_info']['src'], datas['video_info']['length'],
+                                          datas['video_info']['view'])
+                    item = QListWidgetItem()
+                    item.setSizeHint(video_widget.size())
+                    self.listWidget.addItem(item)
+                    self.listWidget.setItemWidget(item, video_widget)
+                    self.update_listwidget_size(video_widget.height() + 5)
+
+                for i in datas['view_pixmap']:
+                    label = ThreadPictureLabel(i['width'], i['height'], i['src'], i['view_src'])
+
+                    item = QListWidgetItem()
+                    item.setSizeHint(label.size())
+                    self.listWidget.addItem(item)
+                    self.listWidget.setItemWidget(item, label)
+
+                    self.update_listwidget_size(i['height'] + 35)
+
+    def get_thread_head_info_async(self):
+        start_background_thread(self.get_thread_head_info)
+
+    def get_thread_head_info(self):
+        async def dosign():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    aiotieba.logging.get_logger().info(f'loading thread {self.thread_id} main info')
+                    thread_info = await client.get_posts(self.thread_id)
+                    if thread_info.err:
+                        self.head_data_signal.emit(
+                            {'err_info': f'{thread_info.err.msg} (错误代码 {thread_info.err.code})'})
+                    else:
+                        forum_info = await client.get_forum_detail(thread_info.forum.fid)
+
+                        preview_pixmap = []
+                        self.forum_id = forum_id = forum_info.fid
+                        self.user_id = thread_info.thread.user.user_id
+                        forum_name = forum_info.fname
+                        forum_pic_url = forum_info.small_avatar
+                        title = thread_info.thread.title
+                        content = make_thread_content(thread_info.thread.contents.objs)
+                        portrait = thread_info.thread.user.portrait
+                        user_name = thread_info.thread.user.nick_name_new
+                        agree_num = thread_info.thread.agree
+                        timeStamp = thread_info.thread.create_time
+                        timeArray = time.localtime(timeStamp)
+                        time_str = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                        _user_ip = thread_info.thread.user.ip
+                        user_ip = _user_ip if _user_ip else '未知'
+                        is_help = thread_info.thread.is_help
+                        user_forum_level = thread_info.thread.user.level
+                        user_grow_level = thread_info.thread.user.glevel
+                        is_forum_manager = bool(thread_info.thread.user.is_bawu)
+                        post_num = thread_info.thread.reply_num - 1
+
+                        video_info = {'have_video': False, 'src': '', 'length': 0, 'view': 0}
+                        if thread_info.thread.contents.video:
+                            video_info['have_video'] = True
+                            video_info['src'] = thread_info.thread.contents.video.src
+                            video_info['length'] = thread_info.thread.contents.video.duration
+                            video_info['view'] = thread_info.thread.contents.video.view_num
+
+                        user_head_pixmap = QPixmap()
+                        response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                                                headers=request_mgr.header)
+                        if response.content:
+                            user_head_pixmap.loadFromData(response.content)
+                            user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+
+                        forum_pixmap = QPixmap()
+                        response = requests.get(forum_pic_url, headers=request_mgr.header)
+                        if response.content:
+                            forum_pixmap.loadFromData(response.content)
+                            forum_pixmap = forum_pixmap.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                        for j in thread_info.thread.contents.imgs:
+                            # width, height, src, view_src
+                            src = j.origin_src
+                            view_src = j.src
+                            height = j.show_height
+                            width = j.show_width
+                            preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
+
+                        tdata = {'forum_id': forum_id, 'title': title,
+                                 'content': content, 'author_portrait': portrait, 'user_name': user_name,
+                                 'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
+                                 'forum_pixmap': forum_pixmap, 'view_pixmap': preview_pixmap, 'agree_count': agree_num,
+                                 'create_time_str': time_str, 'user_ip': user_ip, 'is_help': is_help,
+                                 'uf_level': user_forum_level, 'err_info': '', 'video_info': video_info,
+                                 'user_grow_level': user_grow_level, 'is_forum_manager': is_forum_manager,
+                                 'post_num': post_num}
+
+                        aiotieba.logging.get_logger().info(
+                            f'load thread {self.thread_id} main info ok, send to qt side')
+                        self.head_data_signal.emit(tdata)
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+
+class ForumItem(QWidget, ba_item.Ui_Form):
+    """列表内嵌入的吧组件"""
+    signok = pyqtSignal(str)
+
+    def __init__(self, fid, issign, bduss, stoken, fname):
+        super().__init__()
+        self.setupUi(self)
+        self.forum_id = fid
+        self.is_sign = issign
+        self.bduss = bduss
+        self.stoken = stoken
+        self.forum_name = fname
+
+        self.signok.connect(self.update_sign_ui)
+        self.pushButton.clicked.connect(self.open_ba_detail)
+        self.pushButton_2.clicked.connect(self.sign_async)
+
+        if issign:
+            self.pushButton_2.setEnabled(False)
+            self.pushButton_2.setText('已签到')
+
+    def mouseDoubleClickEvent(self, a0):
+        a0.accept()
+        self.open_ba_detail()
+
+    def update_sign_ui(self, isok):
+        if not isok:
+            QMessageBox.information(self, '签到成功', f'{self.forum_name}吧签到成功，经验 +8。')
+            self.pushButton_2.setEnabled(False)
+            self.pushButton_2.setText('已签到')
+        else:
+            QMessageBox.critical(self, '签到失败', isok)
+            self.pushButton_2.setEnabled(True)
+
+    def sign_async(self):
+        if not self.is_sign:
+            self.pushButton_2.setEnabled(False)
+            start_background_thread(self.sign)
+
+    def sign(self):
+        async def dosign():
+            async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                r = await client.sign_forum(self.forum_id)
+                if r:
+                    result_str = ''
+                else:
+                    result_str = str(r.err)
+                self.signok.emit(result_str)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+    def open_ba_detail(self):
+        self.forum_window = ForumShowWindow(self.bduss, self.stoken, self.forum_id)
+        self.forum_window.show()
+        self.forum_window.load_info_async()
+        self.forum_window.get_threads_async()
+
+    def set_info(self, headpixmap, name, desp):
+        self.label.setPixmap(headpixmap)
+        self.label_2.setText(name)
+        self.label_3.setText(desp)
+
+
+class SignAllDialog(QDialog, sign.Ui_Dialog):
+    """一键签到窗口，可以实现全吧和成长等级签到"""
+    update_label_count = pyqtSignal(str)
+    sign_grow_ok = pyqtSignal(str)
+    is_signing_forums = False
+    is_signing_grows = False
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.lineEdit.setText(f'\"{sys.executable}\" --sign-all-forums --sign-grows')
+
+        self.update_label_count.connect(lambda text: self.label_3.setText(text))
+        self.sign_grow_ok.connect(self.show_grow_sign_msg)
+        self.pushButton_2.clicked.connect(self.sign_grow_async)
+        self.pushButton_3.clicked.connect(self.sign_all_forum_async)
+        self.pushButton.clicked.connect(self.sign_all)
+
+        self.bduss = bduss
+        self.stoken = stoken
+
+    def sign_all(self):
+        self.sign_grow_async()
+        self.sign_all_forum_async()
+
+    def show_grow_sign_msg(self, result):
+        if not result:
+            QMessageBox.information(self, '签到成功', '成长等级签到成功。')
+        else:
+            QMessageBox.critical(self, '签到失败', result)
+
+        self.pushButton_2.setEnabled(True)
+
+    def sign_grow_async(self):
+        if not self.is_signing_grows:
+            self.pushButton_2.setEnabled(False)
+            start_background_thread(self.sign_grow)
+
+    def sign_grow(self):
+        async def dosign():
+            self.is_signing_grows = True
+            async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                r1 = await client.sign_growth()
+                r2 = await client.sign_growth_share()
+
+                if r1 and r2:
+                    self.sign_grow_ok.emit('')
+                else:
+                    err_msg = ''
+                    if not r1:
+                        head = ''
+                        if err_msg:
+                            head = '\n'
+                        err_msg += f'{head}成长等级签到：{r1.err.msg}'
+                    if not r2:
+                        head = ''
+                        if err_msg:
+                            head = '\n'
+                        err_msg += f'{head}成长等级分享任务：{r2.err.msg}'
+
+                    self.sign_grow_ok.emit(err_msg)
+
+            self.is_signing_grows = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+    def sign_all_forum_async(self):
+        if not self.is_signing_forums:
+            self.update_label_count.emit('正在开始签到...')
+            start_background_thread(self.sign_all_forum)
+
+    def sign_all_forum(self):
+        async def dosign():
+            self.is_signing_forums = True
+            signed_count = 0
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
+
+                    for forum in bars:
+                        if forum["is_sign"] != 1:
+                            forum_name = forum['forum_name']
+                            self.update_label_count.emit(
+                                f'正在签到 {forum_name}吧\n已签到 {signed_count + 1} / 总吧数 {len(bars)}')
+
+                            fid = forum['forum_id']
+                            r = await client.sign_forum(fid)
+                            if r:
+                                signed_count += 1  # 签到成功了加一
+                            elif r.err.code == 160002:
+                                signed_count += 1  # 之前签到过了也加一
+                            await asyncio.sleep(0.3)  # 休眠0.3秒，防止贴吧服务器抽风
+                        else:
+                            # 已签到的直接跳过
+                            signed_count += 1
+
+                self.update_label_count.emit(
+                    f'签到完成，已签到 {signed_count} 个吧，{len(bars) - signed_count} 个吧签到失败。')
+
+            except Exception as e:
+                self.update_label_count.emit('签到时发生异常错误，请再试一次。')
+                print(type(e))
+                print(e)
+            finally:
+                if os.name == 'nt':
+                    win32api.MessageBeep(win32con.MB_ICONASTERISK)
+                self.is_signing_forums = False
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
+
+
+class FollowForumList(QWidget, follow_ba.Ui_Form):
+    """关注吧列表组件"""
+    add_ba = pyqtSignal(list)
+    ba_add_ok = pyqtSignal()
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.add_ba.connect(self.add_bar)
+        self.ba_add_ok.connect(lambda: self.pushButton_2.setEnabled(True))
+        self.pushButton_2.clicked.connect(self.get_bars_async)
+        self.pushButton.clicked.connect(self.show_onekey_sign)
+        self.listWidget.verticalScrollBar().setSingleStep(25)
+
+    def keyPressEvent(self, a0):
+        a0.accept()
+        if a0.key() == Qt.Key.Key_F5:
+            self.get_bars_async()
+
+    def show_onekey_sign(self):
+        if self.bduss and self.stoken:
+            d = SignAllDialog(self.bduss, self.stoken)
+            d.exec()
+        else:
+            QMessageBox.information(self, '提示', '请先登录账号后再进行签到。', QMessageBox.Ok)
+
+    def add_bar(self, data):
+        item = QListWidgetItem()
+        widget = ForumItem(data[3], data[4], self.bduss, self.stoken, data[1])
+        widget.set_info(data[0], data[1], data[2])
+        item.setSizeHint(widget.size())
+        self.listWidget.addItem(item)
+        self.listWidget.setItemWidget(item, widget)
+
+    def get_bars_async(self):
+        if self.bduss:
+            self.label_2.hide()
+            self.listWidget.show()
+            self.pushButton_2.setEnabled(False)
+
+            self.listWidget.clear()
+            QPixmapCache.clear()
+            gc.collect()
+
+            start_background_thread(self.get_bars)
+        else:
+            self.listWidget.hide()
+            self.label_2.show()
+
+    def get_bars(self):
+        async def func():
+            try:
+                async with aiotieba.Client(self.bduss, proxy=True) as client:
+                    aiotieba.logging.get_logger().info('loading userself follow forum list')
+                    bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
+                    bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
+                    for forum in bars:
+                        bar_info = await client.get_forum_detail(forum['forum_id'])
+                        name = forum['forum_name']
+                        pixmap = QPixmap()
+                        response = requests.get(bar_info.small_avatar, headers=request_mgr.header)
+                        if response.content:
+                            pixmap.loadFromData(response.content)
+                            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                        level_str = forum['user_level']
+                        level_value = forum['user_exp']
+                        ba_info_str = f'[等级 {level_str}，经验值 {level_value}] {bar_info.slogan}'
+                        self.add_ba.emit([pixmap, name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1])
+            finally:
+                self.ba_add_ok.emit()
+                aiotieba.logging.get_logger().info('load userself follow forum list complete')
+
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        asyncio.run(func())
+
+
+class ThreadView(QWidget, tie_preview.Ui_Form):
+    """帖子在列表内的预览小组件"""
+    is_treasure = False
+    is_top = False
+
+    def __init__(self, bduss, tid, fid, stoken):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.thread_id = tid
+        self.forum_id = fid
+
+        self.label_11.hide()
+        self.pushButton_3.clicked.connect(self.open_ba_detail)
+        self.pushButton_2.clicked.connect(self.open_thread_detail)
+
+    def open_thread_detail(self):
+        self.thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id), self.is_treasure,
+                                              self.is_top)
+        self.thread_window.show()
+
+    def open_ba_detail(self):
+        self.forum_window = ForumShowWindow(self.bduss, self.stoken, int(self.forum_id))
+        self.forum_window.show()
+        self.forum_window.load_info_async()
+        self.forum_window.get_threads_async()
+
+    def set_thread_values(self, view, agree, reply, repost, send_time=0):
+        text = f'{view} 次浏览，{agree} 人点赞，{reply} 条回复，{repost} 次转发'
+        if send_time > 0:
+            timeStamp = send_time
+            timeArray = time.localtime(timeStamp)
+            timestr = time.strftime("发布于 %Y-%m-%d %H:%M:%S", timeArray)
+            text += '\n' + timestr
+        self.label_11.show()
+        self.label_11.setText(text)
+
+    def set_infos(self, uicon, uname, title, text, baicon, baname):
+        self.label_4.setPixmap(uicon)
+        self.label_3.setText(uname)
+        self.label_5.setText(title)
+        self.label_6.setText(text)
+        self.label_2.setText(baname + '吧')
+
+        if baicon:
+            self.label.setPixmap(baicon)
+
+        if not text:
+            self.label_6.hide()
+        if not title:
+            self.label_5.hide()
+
+    def set_picture(self, piclist):
+        labels = [self.label_7, self.label_8, self.label_9]
+        self.label_7.clear()
+        self.label_8.clear()
+        self.label_9.clear()
+        if len(piclist) == 0:
+            self.gridLayout.removeWidget(self.frame_2)
+        else:
+            try:
+                for i in range(len(piclist)):
+                    labels[i].setPixmap(piclist[i])
+            except IndexError:
+                return
+
+
+class RecommandWindow(QListWidget):
+    """首页推荐列表组件"""
+    isloading = False
+    offset = 0
+    add_tie = pyqtSignal(dict)
+
+    def __init__(self, bduss, stoken):
+        super().__init__()
+        self.bduss = bduss
+        self.stoken = stoken
+        self.setStyleSheet('QListWidget{outline:0px;}'
+                           'QListWidget::item:hover {color:white; background-color:white;}'
+                           'QListWidget::item:selected {color:white; background-color:white;}')
+        self.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
+        self.setHorizontalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
+        self.setSizeAdjustPolicy(QListWidget.SizeAdjustPolicy.AdjustToContents)
+        self.setFrameShape(QListWidget.Shape.NoFrame)
+        self.verticalScrollBar().setSingleStep(20)
+        self.add_tie.connect(self.add_thread)
+        self.verticalScrollBar().valueChanged.connect(self.load_more)
+
+    def load_more(self):
+        if not self.isloading and self.verticalScrollBar().value() >= self.verticalScrollBar().maximum() - self.verticalScrollBar().maximum() / 5:
+            self.get_recommand_async()
+
+    def add_thread(self, infos):
+        # {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
+        # 'content': content, 'author_portrait': portrait, 'user_name': user_name,
+        # 'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
+        # 'forum_pixmap': forum_pixmap, 'view_pixmap': []}
+        item = QListWidgetItem()
+        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+        widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['content'],
+                         infos['forum_pixmap'], infos['forum_name'])
+        widget.set_picture(infos['view_pixmap'])
+        widget.adjustSize()
+        item.setSizeHint(widget.size())
+        self.addItem(item)
+        self.setItemWidget(item, widget)
+
+    def get_recommand_async(self):
+        if self.bduss:  # 登录了使用新接口
+            start_background_thread(self.get_recommand_v2)
+        else:
+            start_background_thread(self.get_recommand_v1)
+
+    def get_recommand_v1(self):
+        """贴吧电脑网页版的推荐接口，不登录也能获取"""
+
+        async def get_detail(element):
+            async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                title = element.find_all(class_='title feed-item-link')[0].text  # 找出标题
+                content = element.find_all(class_='n_txt')[0].text[0:-1]  # 找出正文
+                portrait = \
+                    element.find_all(class_='post_author')[0]['href'].split('/home/main?id=')[1].split(
+                        '&fr=index')[
+                        0]  # 找出portrait，方便获取用户数据
+                thread_id = element['data-thread-id']  # 帖子id
+                forum_id = element['fid']  # 吧id
+
+                # 找出所有预览图
+                preview_pixmap = []
+                picture_elements = element.find_all(class_="m_pic")  # 找出所有图片
+                for i in picture_elements:
+                    pic_addr = i['original']
+                    response = requests.get(pic_addr, headers=request_mgr.header)
+                    if response.content:
+                        pixmap = QPixmap()
+                        pixmap.loadFromData(response.content)
+                        pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
+                                               Qt.SmoothTransformation)
+                        preview_pixmap.append(pixmap)
+
+                # 进一步获取用户信息
+                userinfo = await client.get_user_info(portrait)
+                user_name = userinfo.nick_name_new
+                user_head_pixmap = QPixmap()
+                response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                                        headers=request_mgr.header)
+                if response.content:
+                    user_head_pixmap.loadFromData(response.content)
+                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                               Qt.SmoothTransformation)
+
+                # 进一步获取吧信息
+                forum = await client.get_forum_detail(int(forum_id))
+                forum_name = forum.fname
+                forum_pixmap = QPixmap()
+                response = requests.get(forum.origin_avatar, headers=request_mgr.header)
+                if response.content:
+                    forum_pixmap.loadFromData(response.content)
+                    forum_pixmap = forum_pixmap.scaled(15, 15, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                tdata = {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
+                         'content': content, 'author_portrait': portrait, 'user_name': user_name,
+                         'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
+                         'forum_pixmap': forum_pixmap, 'view_pixmap': preview_pixmap}
+                self.add_tie.emit(tdata)
+
+        def start_async(element):
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(get_detail(element))
+
+        def func():
+            global datapath
+            self.isloading = True
+            try:
+                # 贴吧电脑网页版的推荐接口，不登录也能获取
+                # 在登录情况下，需要传一组特定的cookie才能使推荐个性化（不只是bduss和stoken），否则是默认推荐
+                aiotieba.logging.get_logger().info('loading recommands from api /f/index/feedlist')
+                response = request_mgr.run_get_api(f'/f/index/feedlist?tag_id=like&offset={self.offset}')
+                html = response['data']['html']
+
+                # 统一帖子列表内的class类型
+                for i in range(1, 11):
+                    html = html.replace(f'clearfix j_feed_li  {i}', 'clearfix j_feed_li')
+
+                # 解析网页
+                soup = BeautifulSoup(html, "html.parser")
+                elements = soup.find_all(class_="clearfix j_feed_li")  # 找出所有帖子
+
+                for element in elements:
+                    start_background_thread(start_async, (element,))
+            except Exception as e:
+                print(type(e))
+                print(e)
+            else:
+                self.offset += 20
+            finally:
+                self.isloading = False
+                aiotieba.logging.get_logger().info('loading recommands from api /f/index/feedlist finished')
+
+        func()
+
+    def get_recommand_v2(self):
+        """手机网页版贴吧的首页推荐接口"""
+
+        async def get_detail(element):
+            # 视频贴过滤检测
+            if profile_mgr.local_config['thread_view_settings']['hide_video'] and element.get('video_info'):
+                return
+
+            title = element['title']  # 找出标题
+            content = ''  # 帖子正文
+            if element['abstract']:
+                for i in element['abstract']:
+                    if i['type'] == 0:
+                        content += i['text']
+            if element.get('video_info'):
+                content = '[这是一条视频帖，时长 {vlen}，{view_num} 次浏览，进贴即可查看]'.format(
+                    vlen=format_second(element['video_info']['video_duration']),
+                    view_num=element['video_info']['play_count'])
+            portrait = element['author']['portrait'].split('?')[0]
+            thread_id = element['tid']  # 帖子id
+            forum_id = element['forum']['forum_id']  # 吧id
+
+            # 找出所有预览图
+            preview_pixmap = []
+            picture_elements = element['media']  # 找出所有媒体
+            if picture_elements:
+                for i in picture_elements:
+                    if i['type'] == 3:  # 类型是图片
+                        pic_addr = i['big_pic']
+                        response = requests.get(pic_addr, headers=request_mgr.header)
+                        if response.content:
+                            pixmap = QPixmap()
+                            pixmap.loadFromData(response.content)
+                            pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
+                                                   Qt.SmoothTransformation)
+                            preview_pixmap.append(pixmap)
+
+            # 进一步获取用户信息
+            user_name = element['author'].get('user_nickname_v2',
+                                              element['author']['display_name'])  # 优先获取新版昵称，如果没有则使用旧版昵称或者用户名
+            user_head_pixmap = QPixmap()
+            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                                    headers=request_mgr.header)
+            if response.content:
+                user_head_pixmap.loadFromData(response.content)
+                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                           Qt.SmoothTransformation)
+
+            # 进一步获取吧信息
+            forum_name = element['forum']['forum_name']
+            forum_pixmap = QPixmap()
+            response = requests.get(element['forum']['forum_avatar'], headers=request_mgr.header)
+            if response.content:
+                forum_pixmap.loadFromData(response.content)
+                forum_pixmap = forum_pixmap.scaled(15, 15, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+            tdata = {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
+                     'content': content, 'author_portrait': portrait, 'user_name': user_name,
+                     'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
+                     'forum_pixmap': forum_pixmap, 'view_pixmap': preview_pixmap}
+            self.add_tie.emit(tdata)
+
+        def start_async(element):
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(get_detail(element))
+
+        def func():
+            global datapath
+            self.isloading = True
+            try:
+                # 手机网页版贴吧的首页推荐接口
+                # 该接口在未登录的情况下会获取不到数据，并报未知错误 (110003)
+                # 在登录情况下，有bduss和stoken就可以实现个性化推荐
+                # 该接口包含的信息较为全面，很多信息无需再另起请求，因此该方法获取帖子数据会比旧版的快
+                # 该接口返回的视频帖较多，疑似是贴吧后端刻意为之
+                aiotieba.logging.get_logger().info('loading recommands from api /mg/o/getRecommPage')
+                response = request_mgr.run_get_api('/mg/o/getRecommPage?load_type=1&eqid=&refer=tieba.baidu.com'
+                                                   '&page_thread_count=10',
+                                                   bduss=self.bduss, stoken=self.stoken)
+                if response['errno'] == 110003:
+                    start_background_thread(self.get_recommand_v1)
+                else:
+                    tlist = response['data']['thread_list']
+                    for element in tlist:
+                        start_background_thread(start_async, (element,))
+                    aiotieba.logging.get_logger().info('loading recommands from api /mg/o/getRecommPage finished')
+            except Exception as e:
+                print(type(e))
+                print(e)
+            finally:
+                self.isloading = False
+
+        func()
+
+
+class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
+    """贴吧搜索窗口"""
+    add_result = pyqtSignal(dict)
+
+    def __init__(self, bduss, stoken, forum_name=''):
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+
+        self.bduss = bduss
+        self.stoken = stoken
+        self.page = {'thread': {'loading': False, 'page': 1},
+                     'forum': {'loading': False, 'page': 1},
+                     'user': {'loading': False, 'page': 1},
+                     'thread_single_forum': {'loading': False, 'page': 1},
+                     'reply_single_forum': {'loading': False, 'page': 1}}
+        self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
+
+        for i in self.listwidgets:
+            i.setStyleSheet('QListWidget{outline:0px;}'
+                            'QListWidget::item:hover {color:white; background-color:white;}'
+                            'QListWidget::item:selected {color:white; background-color:white;}')
+            i.verticalScrollBar().setSingleStep(20)
+        self.listWidget_2.verticalScrollBar().valueChanged.connect(
+            lambda: self.scroll_load_more('thread', self.listWidget_2))
+        self.listWidget_4.verticalScrollBar().valueChanged.connect(
+            lambda: self.scroll_load_more('thread_single_forum', self.listWidget_4))
+        self.listWidget_5.verticalScrollBar().valueChanged.connect(
+            lambda: self.scroll_load_more('reply_single_forum', self.listWidget_5))
+
+        if forum_name:
+            self.lineEdit_2.setText(forum_name)
+            self.comboBox.setCurrentIndex(1)
+        self.handle_search_type_switch(self.comboBox.currentIndex())
+
+        self.add_result.connect(self._ui_add_search_result)
+        self.comboBox.currentIndexChanged.connect(self.handle_search_type_switch)
+        self.pushButton.clicked.connect(self.start_search)
+
+    def scroll_load_more(self, type, listw: QListWidget):
+        if listw.verticalScrollBar().value() == listw.verticalScrollBar().maximum():
+            if type in ('thread', 'forum', 'user'):
+                self.search_global_async(type)
+            elif type in ('thread_single_forum', 'reply_single_forum'):
+                self.search_forum_async(type)
+
+    def handle_search_type_switch(self, index):
+        if not self.clear_list_all():
+            QMessageBox.information(self, '提示', '列表还在加载中，请稍后再尝试切换搜索范围。', QMessageBox.Ok)
+            self.comboBox.blockSignals(True)  # 暂时阻塞信号
+            self.comboBox.setCurrentIndex(0 if index == 1 else 1)
+            self.comboBox.blockSignals(False)  # 解除阻塞信号
+        else:
+            if index == 0:
+                self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_4))
+                self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_5))
+                self.tabWidget.addTab(self.tab, '贴吧')
+                self.tabWidget.addTab(self.tab_2, '帖子')
+                self.tabWidget.addTab(self.tab_3, '用户')
+
+                self.lineEdit_2.hide()
+            else:
+                self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab))
+                self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_2))
+                self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_3))
+                self.tabWidget.addTab(self.tab_4, '主题帖')
+                self.tabWidget.addTab(self.tab_5, '回复帖')
+
+                self.lineEdit_2.show()
+
+    def clear_list_all(self):
+        flag = True
+        for v in self.page.values():
+            if v['loading']:
+                flag = False
+                break
+        if flag:
+            for i in self.listwidgets:
+                i.clear()
+            QPixmapCache.clear()
+            gc.collect()
+            self.page = {'thread': {'loading': False, 'page': 1},
+                         'forum': {'loading': False, 'page': 1},
+                         'user': {'loading': False, 'page': 1},
+                         'thread_single_forum': {'loading': False, 'page': 1},
+                         'reply_single_forum': {'loading': False, 'page': 1}}
+        return flag
+
+    def _ui_add_search_result(self, datas):
+        if datas['type'] == 'thread':
+            item = QListWidgetItem()
+            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken)
+
+            widget.set_infos(datas['user_portrait_pixmap'], datas['user_name'], datas['title'], datas['text'],
+                             datas['forum_head_pixmap'],
+                             datas['forum_name'])
+            widget.set_picture(datas['picture'])
+            widget.adjustSize()
+
+            item.setSizeHint(widget.size())
+            self.listWidget_2.addItem(item)
+            self.listWidget_2.setItemWidget(item, widget)
+        elif datas['type'] == 'forum':
+            item = QListWidgetItem()
+            widget = ForumItem(datas['forum_id'], True, self.bduss, self.stoken, datas['forum_name'])
+            widget.set_info(datas['forum_head_pixmap'], datas['forum_name'] + '吧', datas['desp'])
+            widget.pushButton_2.hide()
+            item.setSizeHint(widget.size())
+            self.listWidget.addItem(item)
+            self.listWidget.setItemWidget(item, widget)
+        elif datas['type'] == 'user':
+            item = QListWidgetItem()
+            widget = UserItem(self.bduss, self.stoken)
+            widget.user_portrait_id = datas['portrait']
+            widget.show_homepage_by_click = True
+            widget.setdatas(datas['portrait'], datas['name'], datas['user_id'])
+            item.setSizeHint(widget.size())
+            self.listWidget_3.addItem(item)
+            self.listWidget_3.setItemWidget(item, widget)
+        elif datas['type'] == 'thread_single_forum':
+            item = QListWidgetItem()
+            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken)
+
+            widget.set_infos(datas['user_portrait_pixmap'], datas['user_name'], datas['title'], datas['text'],
+                             datas['forum_head_pixmap'],
+                             datas['forum_name'])
+            widget.set_picture(datas['picture'])
+            widget.adjustSize()
+
+            item.setSizeHint(widget.size())
+            self.listWidget_4.addItem(item)
+            self.listWidget_4.setItemWidget(item, widget)
+        elif datas['type'] == 'reply_single_forum':
+            item = QListWidgetItem()
+            widget = ReplyItem(self.bduss, self.stoken)
+
+            widget.portrait = datas['portrait']
+            widget.thread_id = datas['thread_id']
+            widget.post_id = datas['post_id']
+            widget.allow_home_page = True
+            widget.subcomment_show_thread_button = True
+            widget.set_reply_text(
+                '<a href=\"tieba_thread://{tid}\">{title}</a>'.format(tid=datas['thread_id'], title=datas['title']))
+            widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['text'],
+                            datas['picture'], -1, datas['time_str'], '', -2, -1, -1, False)
+
+            item.setSizeHint(widget.size())
+            self.listWidget_5.addItem(item)
+            self.listWidget_5.setItemWidget(item, widget)
+
+    def start_search(self):
+        index = self.comboBox.currentIndex()
+        if not self.lineEdit.text():
+            QMessageBox.critical(self, '填写错误', '请先输入搜索关键字再搜索。', QMessageBox.Ok)
+        elif index == 1 and not self.lineEdit_2.text():
+            QMessageBox.critical(self, '填写错误', '请先输入你要搜索的吧名再搜索。', QMessageBox.Ok)
+        elif self.clear_list_all():
+            if index == 0:
+                self.search_global_async('thread')
+                self.search_global_async('forum')
+                self.search_global_async('user')
+            elif index == 1:
+                self.search_forum_async('thread_single_forum')
+                self.search_forum_async('reply_single_forum')
+
+    def search_forum_async(self, search_area):
+        if not self.page[search_area]['loading'] and not self.page[search_area]['page'] == -1:
+            start_background_thread(self.search_forum, (self.lineEdit.text(), search_area, self.lineEdit_2.text()))
+
+    def search_forum(self, query, search_area, forum_name):
+        try:
+            self.page[search_area]['loading'] = True
+
+            if search_area == 'thread_single_forum':
+                params = {
+                    'st': "5",
+                    'tt': "1",
+                    'ct': "2",
+                    'cv': "12.87.1.1",
+                    'fname': forum_name,
+                    'word': query,
+                    'pn': str(self.page[search_area]['page']),
+                    'rn': "20"
+                }
+                response = request_mgr.run_get_api('/mo/q/search/thread', bduss=self.bduss, stoken=self.stoken,
+                                                   params=params, use_mobile_header=True)
+                if response['no'] == 0:
+                    for thread in response['data']['post_list']:
+                        data = {'type': search_area,
+                                'user_name': thread['user']['show_nickname'],
+                                'user_portrait_pixmap': None,
+                                'forum_head_pixmap': None,
+                                'thread_id': int(thread['tid']),
+                                'forum_id': thread['forum_id'],
+                                'forum_name': thread['forum_info']['forum_name'],
+                                'title': thread["title"],
+                                'text': cut_string(thread['content'], 50),
+                                'picture': [],
+                                'timestamp': thread['time'],
+                                'portrait': thread["user"]["portrait"].split(
+                                    'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split(
+                                    '?')[
+                                    0]}
+
+                        # 获取吧头像
+                        forum_head_pixmap = QPixmap()
+                        url = thread["forum_info"]["avatar"]
+                        response_ = requests.get(
+                            url,
+                            headers=request_mgr.header)
+                        if response_.content:
+                            forum_head_pixmap.loadFromData(response_.content)
+                            forum_head_pixmap = forum_head_pixmap.scaled(15, 15, Qt.KeepAspectRatio,
+                                                                         Qt.SmoothTransformation)
+                            data['forum_head_pixmap'] = forum_head_pixmap
+
+                        # 获取用户头像
+                        user_head_pixmap = QPixmap()
+                        portrait = data['portrait']
+                        response_ = requests.get(
+                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                            headers=request_mgr.header)
+                        if response_.content:
+                            user_head_pixmap.loadFromData(response_.content)
+                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+                            data['user_portrait_pixmap'] = user_head_pixmap
+
+                        # 获取主图片
+                        if thread.get("media"):
+                            for m in thread['media']:
+                                if m["type"] == "pic":  # 是图片
+                                    pixmap = QPixmap()
+                                    url = m["small_pic"]
+                                    response_ = requests.get(url, headers=request_mgr.header)
+                                    if response_.content:
+                                        pixmap.loadFromData(response_.content)
+                                        pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
+                                                               Qt.SmoothTransformation)
+                                        data['picture'].append(pixmap)
+
+                        self.add_result.emit(data)
+            elif search_area == 'reply_single_forum':
+                params = {
+                    'st': "5",
+                    'tt': "3",
+                    'ct': "2",
+                    'cv': "12.87.1.1",
+                    'fname': forum_name,
+                    'word': query,
+                    'pn': str(self.page[search_area]['page']),
+                    'rn': "20"
+                }
+                response = request_mgr.run_get_api('/mo/q/search/thread', bduss=self.bduss, stoken=self.stoken,
+                                                   params=params, use_mobile_header=True)
+                if response['no'] == 0:
+                    for thread in response['data']['post_list']:
+                        data = {'type': search_area,
+                                'user_name': thread['user']['show_nickname'],
+                                'user_portrait_pixmap': None,
+                                'forum_head_pixmap': None,
+                                'thread_id': int(thread['tid']),
+                                'post_id': int(thread['pid']),
+                                'forum_id': thread['forum_id'],
+                                'forum_name': thread['forum_info']['forum_name'],
+                                'title': thread["title"],
+                                'text': cut_string(thread['content'], 50),
+                                'picture': [],
+                                'timestamp': thread['time'],
+                                'portrait': thread["user"]["portrait"].split(
+                                    'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split(
+                                    '?')[
+                                    0],
+                                'timestr': ''}
+
+                        # 获取吧头像
+                        forum_head_pixmap = QPixmap()
+                        url = thread["forum_info"]["avatar"]
+                        response_ = requests.get(
+                            url,
+                            headers=request_mgr.header)
+                        if response_.content:
+                            forum_head_pixmap.loadFromData(response_.content)
+                            forum_head_pixmap = forum_head_pixmap.scaled(15, 15, Qt.KeepAspectRatio,
+                                                                         Qt.SmoothTransformation)
+                            data['forum_head_pixmap'] = forum_head_pixmap
+
+                        # 转换时间为字符串
+                        timeStamp = data['timestamp']
+                        timeArray = time.localtime(timeStamp)
+                        timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                        data['time_str'] = timestr
+
+                        # 获取用户头像
+                        user_head_pixmap = QPixmap()
+                        portrait = data['portrait']
+                        response_ = requests.get(
+                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                            headers=request_mgr.header)
+                        if response_.content:
+                            user_head_pixmap.loadFromData(response_.content)
+                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+                            data['user_portrait_pixmap'] = user_head_pixmap
+
+                        self.add_result.emit(data)
+        except Exception as e:
+            print(f'{type(e)}\n{e}')
+        else:
+            if response['data']['has_more']:
+                self.page[search_area]['page'] += 1
+            else:
+                self.page[search_area]['page'] = -1
+        finally:
+            self.page[search_area]['loading'] = False
+
+    def search_global_async(self, search_area):
+        if not self.page[search_area]['loading'] and not self.page[search_area]['page'] == -1:
+            start_background_thread(self.search_global, (self.lineEdit.text(), search_area))
+
+    def search_global(self, query, search_area):
+        try:
+            self.page[search_area]['loading'] = True
+            if search_area == 'thread':
+                params = {
+                    'word': query,
+                    'pn': str(self.page[search_area]['page']),
+                    'st': "5",
+                    'ct': "1",
+                    'cv': "99.9.101",
+                    'tt': "1",
+                    'is_use_zonghe': "1"
+                }
+                response = request_mgr.run_get_api('/mo/q/search/thread', bduss=self.bduss, stoken=self.stoken,
+                                                   params=params, use_mobile_header=True)
+                if response['no'] == 0:
+                    for thread in response['data']['post_list']:
+                        data = {'type': search_area,
+                                'user_name': thread['user']['show_nickname'],
+                                'user_portrait_pixmap': None,
+                                'forum_head_pixmap': None,
+                                'thread_id': int(thread['tid']),
+                                'forum_id': thread['forum_id'],
+                                'forum_name': thread['forum_info']['forum_name'],
+                                'title': thread["title"],
+                                'text': cut_string(thread['content'], 50),
+                                'picture': [],
+                                'timestamp': thread['create_time'],
+                                'portrait': thread["user"]["portrait"].split(
+                                    'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split(
+                                    '?')[
+                                    0]}
+
+                        # 获取吧头像
+                        forum_head_pixmap = QPixmap()
+                        url = thread["forum_info"]["avatar"]
+                        response_ = requests.get(
+                            url,
+                            headers=request_mgr.header)
+                        if response_.content:
+                            forum_head_pixmap.loadFromData(response_.content)
+                            forum_head_pixmap = forum_head_pixmap.scaled(15, 15, Qt.KeepAspectRatio,
+                                                                         Qt.SmoothTransformation)
+                            data['forum_head_pixmap'] = forum_head_pixmap
+
+                        # 获取用户头像
+                        user_head_pixmap = QPixmap()
+                        portrait = data['portrait']
+                        response_ = requests.get(
+                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                            headers=request_mgr.header)
+                        if response_.content:
+                            user_head_pixmap.loadFromData(response_.content)
+                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+                            data['user_portrait_pixmap'] = user_head_pixmap
+
+                        # 获取主图片
+                        if thread.get("media"):
+                            for m in thread['media']:
+                                if m["type"] == "pic":  # 是图片
+                                    pixmap = QPixmap()
+                                    url = m["small_pic"]
+                                    response_ = requests.get(url, headers=request_mgr.header)
+                                    if response_.content:
+                                        pixmap.loadFromData(response_.content)
+                                        pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
+                                                               Qt.SmoothTransformation)
+                                        data['picture'].append(pixmap)
+
+                        self.add_result.emit(data)
+            elif search_area == 'forum':
+                params = {
+                    'word': query,
+                    'needbrand': "1",
+                    'godrn': "3"
+                }
+                response = request_mgr.run_get_api('/mo/q/search/forum', bduss=self.bduss, stoken=self.stoken,
+                                                   params=params, use_mobile_header=True)
+                if response['no'] == 0:
+                    if response['data']['exactMatch']:
+                        # 准确吧结果
+                        data = {'type': search_area,
+                                'forum_head_pixmap': None,
+                                'forum_id': response['data']['exactMatch']['forum_id'],
+                                'forum_name': response['data']['exactMatch']['forum_name'],
+                                'desp': '[准确结果] ' + response['data']['exactMatch']['slogan'],
+                                'member_num': response['data']['exactMatch']['concern_num_ori'],
+                                'post_num': response['data']['exactMatch']['post_num_ori']}
+
+                        # 获取吧头像
+                        forum_head_pixmap = QPixmap()
+                        url = response['data']['exactMatch']['avatar']
+                        response_ = requests.get(
+                            url,
+                            headers=request_mgr.header)
+                        if response_.content:
+                            forum_head_pixmap.loadFromData(response_.content)
+                            forum_head_pixmap = forum_head_pixmap.scaled(50, 50, Qt.KeepAspectRatio,
+                                                                         Qt.SmoothTransformation)
+                            data['forum_head_pixmap'] = forum_head_pixmap
+
+                        self.add_result.emit(data)
+                    for forum in response['data']['fuzzyMatch']:  # 相似结果
+                        data = {'type': search_area,
+                                'forum_head_pixmap': None,
+                                'forum_id': forum['forum_id'],
+                                'forum_name': forum['forum_name'],
+                                'desp': '与你搜索的内容相关',
+                                'member_num': forum['concern_num_ori'],
+                                'post_num': forum['post_num_ori']}
+
+                        # 获取吧头像
+                        forum_head_pixmap = QPixmap()
+                        url = forum['avatar']
+                        response_ = requests.get(
+                            url,
+                            headers=request_mgr.header)
+                        if response_.content:
+                            forum_head_pixmap.loadFromData(response_.content)
+                            forum_head_pixmap = forum_head_pixmap.scaled(50, 50, Qt.KeepAspectRatio,
+                                                                         Qt.SmoothTransformation)
+                            data['forum_head_pixmap'] = forum_head_pixmap
+
+                        self.add_result.emit(data)
+            elif search_area == 'user':
+                params = {
+                    'word': query
+                }
+                response = request_mgr.run_get_api('/mo/q/search/user', bduss=self.bduss, stoken=self.stoken,
+                                                   params=params, use_mobile_header=True)
+                if response['no'] == 0:
+                    if response['data']['exactMatch']:
+                        # 准确用户结果
+                        data = {'type': search_area,
+                                'user_id': response['data']['exactMatch']['id'],
+                                'name': response['data']['exactMatch']['show_nickname'],
+                                'portrait': response['data']['exactMatch']['encry_uid'],
+                                'tieba_id': response['data']['exactMatch']['tieba_uid']}
+
+                        self.add_result.emit(data)
+                    for user in response['data']['fuzzyMatch']:  # 相似结果
+                        data = {'type': search_area,
+                                'user_id': user['id'],
+                                'name': user['show_nickname'],
+                                'portrait': user['encry_uid'],
+                                'tieba_id': user['tieba_uid']}
+
+                        if self.checkBox.isChecked():
+                            if user['tieba_uid'] and user['fans_num'] > 0:
+                                self.add_result.emit(data)
+                        else:
+                            self.add_result.emit(data)
+        except Exception as e:
+            print(f'{type(e)}\n{e}')
+        else:
+            if response['data']['has_more']:
+                self.page[search_area]['page'] += 1
+            else:
+                self.page[search_area]['page'] = -1
+        finally:
+            self.page[search_area]['loading'] = False
+
+
+class ForumShowWindow(QWidget, ba_head.Ui_Form):
+    """吧入口窗口，显示基础吧信息和吧内帖子等"""
+    forum_name = ''
+    forum_detail_window = None
+    search_window = None
+    page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
+    added_thread_count = 0
+    isloading = False
+    update_signal = pyqtSignal(dict)
+    add_thread = pyqtSignal(dict)
+    thread_refresh_ok = pyqtSignal()
+    follow_forum_ok = pyqtSignal(bool)
+
+    def __init__(self, bduss, stoken, fid):
+        super().__init__()
+        self.setupUi(self)
+        self.bduss = bduss
+        self.stoken = stoken
+        self.forum_id = fid
+
+        self.page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
+        self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
+        for i in self.listwidgets:
+            i.setStyleSheet('QListWidget{outline:0px;}'
+                            'QListWidget::item:hover {color:white; background-color:white;}'
+                            'QListWidget::item:selected {color:white; background-color:white;}')
+            i.verticalScrollBar().setSingleStep(20)
+            i.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
+
+        self.label_9.hide()
+        self.pushButton.hide()
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.update_signal.connect(self.update_info_ui)
+        self.add_thread.connect(self.add_thread_)
+        self.thread_refresh_ok.connect(self.show_load_ok_msg)
+        self.pushButton_2.clicked.connect(self.refresh_all)
+        self.follow_forum_ok.connect(self.show_follow_result)
+        self.pushButton.clicked.connect(self.do_follow_forum)
+        self.pushButton_3.clicked.connect(self.open_detail_window)
+        self.pushButton_5.clicked.connect(self.open_search_window)
+        self.pushButton_4.clicked.connect(
+            lambda: open_url_in_browser(f'https://tieba.baidu.com/f?kw={self.forum_name}'))
+
+    def keyPressEvent(self, a0):
+        if a0.key() == Qt.Key.Key_F5:
+            self.refresh_all()
+
+    def open_search_window(self):
+        if not self.search_window:
+            self.search_window = TiebaSearchWindow(self.bduss, self.stoken, self.forum_name)
+
+        self.search_window.show()
+        self.search_window.raise_()
+        if self.search_window.isMinimized():
+            self.search_window.showNormal()
+        if not self.search_window.isActiveWindow():
+            self.search_window.activateWindow()
+
+    def open_detail_window(self):
+        if not self.forum_detail_window:
+            self.forum_detail_window = ForumDetailWindow(self.bduss, self.stoken, self.forum_id)
+
+        self.forum_detail_window.show()
+        self.forum_detail_window.raise_()
+        if self.forum_detail_window.isMinimized():
+            self.forum_detail_window.showNormal()
+        if not self.forum_detail_window.isActiveWindow():
+            self.forum_detail_window.activateWindow()
+
+    def show_follow_result(self, r):
+        if r:
+            self.pushButton.setText('已关注')
+            self.pushButton.setEnabled(False)
+            self.pushButton.setToolTip('已关注本吧')
+            QMessageBox.information(self, '提示', f'关注成功，现在你是本吧的吧成员了。祝你在{self.forum_name}吧玩得愉快！',
+                                    QMessageBox.Ok)
+        else:
+            QMessageBox.critical(self, '提示', '关注失败，请再试一次。', QMessageBox.Ok)
+
+    def do_follow_forum(self):
+        async def get_detail():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    r = await client.follow_forum(self.forum_id)
+                    self.follow_forum_ok.emit(bool(r))
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        asyncio.run(get_detail())
+
+    def add_thread_(self, infos):
+        # 这些数据是为了对照用的
+        # 'type': tpe,
+        # 'thread_id': thread_id,
+        # 'forum_id': forum_id,
+        # 'title': title,
+        # 'content': content,
+        # 'user_name': user_name,
+        # 'user_portrait_pixmap': user_head_pixmap,
+        # 'forum_name': '',
+        # 'forum_pixmap': QPixmap(),
+        # 'view_pixmap': preview_pixmap,
+        # 'time_stamp': timestr,
+        # 'view_count': view_count,
+        # 'agree_count': agree_count,
+        # 'reply_count': reply_count,
+        # 'repost_count': repost_count
+        item = QListWidgetItem()
+        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+
+        widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['content'],
+                         infos['forum_pixmap'], infos['forum_name'])
+        widget.set_picture(infos['view_pixmap'])
+        widget.set_thread_values(infos['view_count'], infos['agree_count'], infos['reply_count'], infos['repost_count'])
+        widget.is_treasure = infos['is_treasure']
+        widget.is_top = infos['is_top']
+        widget.label.hide()
+        widget.label_10.hide()
+        widget.pushButton_3.hide()
+        widget.label_2.setText(infos['time_stamp'])
+        widget.adjustSize()
+        item.setSizeHint(widget.size())
+
+        if infos['type'] == 'latest_reply':
+            self.listWidget.addItem(item)
+            self.listWidget.setItemWidget(item, widget)
+        elif infos['type'] == 'latest_send':
+            self.listWidget_5.addItem(item)
+            self.listWidget_5.setItemWidget(item, widget)
+        elif infos['type'] == 'hot':
+            self.listWidget_3.addItem(item)
+            self.listWidget_3.setItemWidget(item, widget)
+        elif infos['type'] == 'top':
+            self.listWidget_4.addItem(item)
+            self.listWidget_4.setItemWidget(item, widget)
+        elif infos['type'] == 'treasure':
+            self.listWidget_2.addItem(item)
+            self.listWidget_2.setItemWidget(item, widget)
+
+        self.added_thread_count += 1
+
+    def show_load_ok_msg(self):
+        # 初始化计时器
+        self.text_timer = QTimer(self)
+        self.text_timer.setSingleShot(True)
+        self.text_timer.setInterval(5000)
+        self.text_timer.timeout.connect(self.label_5.clear)
+
+        self.label_5.setText(f'帖子刷新成功，已为你推荐 {self.added_thread_count} 条内容')
+        self.text_timer.start()
+        self.added_thread_count = 0
+
+    def refresh_all(self):
+        if not self.isloading:
+            # 清理内存
+            for i in self.listwidgets:
+                i.clear()
+            QPixmapCache.clear()
+            gc.collect()
+
+            # 启动刷新
+            self.page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
+            self.get_threads_async()
+
+    def scroll_load_more(self):
+        if not self.isloading:
+            flag_latest_reply = self.listWidget.verticalScrollBar().value() == self.listWidget.verticalScrollBar().maximum()
+            flag_latest_send = self.listWidget_5.verticalScrollBar().value() == self.listWidget_5.verticalScrollBar().maximum()
+            flag_hot = self.listWidget_3.verticalScrollBar().value() == self.listWidget_3.verticalScrollBar().maximum()
+            flag_top = self.listWidget_4.verticalScrollBar().value() == self.listWidget_4.verticalScrollBar().maximum()
+            flag_treasure = self.listWidget_2.verticalScrollBar().value() == self.listWidget_2.verticalScrollBar().maximum()
+
+            if flag_latest_send and self.tabWidget.currentIndex() == 3:
+                self.get_threads_async(thread_type="latest_send")
+            if flag_latest_reply and self.tabWidget.currentIndex() == 2:
+                self.get_threads_async(thread_type="latest_reply")
+            if flag_hot and self.tabWidget.currentIndex() == 4:
+                self.get_threads_async(thread_type="hot")
+            if flag_top and self.tabWidget.currentIndex() == 0:
+                self.get_threads_async(thread_type="top")
+            if flag_treasure and self.tabWidget.currentIndex() == 1:
+                self.get_threads_async(thread_type="treasure")
+
+    def get_threads_async(self, thread_type="all"):
+        if not self.isloading:
+            if thread_type == 'all':
+                self.label_5.setText('帖子刷新中...')
+            start_background_thread(self.get_threads, (thread_type,))
+
+    def get_threads(self, thread_type="all"):
+        def emit_data(tpe, thread):
+            if tpe == 'latest_reply':
+                timeStamp = thread.last_time
+                timeArray = time.localtime(timeStamp)
+                timestr = time.strftime("最近回复于 %Y-%m-%d %H:%M:%S", timeArray)
+            else:
+                timeStamp = thread.create_time
+                timeArray = time.localtime(timeStamp)
+                timestr = time.strftime("发布于 %Y-%m-%d %H:%M:%S", timeArray)
+            thread_id = thread.tid
+            forum_id = self.forum_id
+            title = thread.title
+            _text = make_thread_content(thread.contents.objs, previewPlainText=True)
+            content = cut_string(_text, 50)
+            user_name = thread.user.nick_name_new
+            portrait = thread.user.portrait
+            preview_pixmap = []
+            view_count = thread.view_num
+            agree_count = thread.agree
+            reply_count = thread.reply_num
+            repost_count = thread.share_num
+            is_treasure = thread.is_good
+            is_top = thread.is_top
+
+            user_head_pixmap = QPixmap()
+            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                                    headers=request_mgr.header)
+            if response.content:
+                user_head_pixmap.loadFromData(response.content)
+                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                           Qt.SmoothTransformation)
+
+            for j in thread.contents.imgs:
+                url = j.src
+                pixmap = QPixmap()
+                response = requests.get(url, headers=request_mgr.header)
+                if response.content:
+                    pixmap.loadFromData(response.content)
+                    pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio,
+                                           Qt.TransformationMode.SmoothTransformation)
+                preview_pixmap.append(pixmap)
+
+            tdata = {'type': tpe,
+                     'thread_id': thread_id,
+                     'forum_id': forum_id,
+                     'title': title,
+                     'content': content,
+                     'user_name': user_name,
+                     'user_portrait_pixmap': user_head_pixmap,
+                     'forum_name': '',
+                     'forum_pixmap': QPixmap(),
+                     'view_pixmap': preview_pixmap,
+                     'time_stamp': timestr,
+                     'view_count': view_count,
+                     'agree_count': agree_count,
+                     'reply_count': reply_count,
+                     'repost_count': repost_count,
+                     'is_treasure': is_treasure,
+                     'is_top': is_top}
+            self.add_thread.emit(tdata)
+
+        async def get_latest_reply_detail():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    threads = await client.get_threads(self.forum_id, pn=self.page['latest_reply'])
+                    for i in threads.objs:
+                        if not i.is_top:
+                            emit_data('latest_reply', i)
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        async def get_latest_send_detail():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    threads = await client.get_threads(self.forum_id, pn=self.page['latest_send'],
+                                                       sort=aiotieba.ThreadSortType.CREATE)
+                    for i in threads.objs:
+                        if not i.is_top:
+                            emit_data('latest_send', i)
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        async def get_hot_detail():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    threads = await client.get_threads(self.forum_id, pn=self.page['hot'],
+                                                       sort=aiotieba.ThreadSortType.HOT)
+                    for i in threads.objs:
+                        if not i.is_top:
+                            emit_data('hot', i)
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        async def get_top_detail():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    threads = await client.get_threads(self.forum_id, pn=self.page['top'],
+                                                       sort=aiotieba.ThreadSortType.REPLY)
+                    for i in threads.objs:
+                        if i.is_top:
+                            emit_data('top', i)
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        async def get_treasure_detail():
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    threads = await client.get_threads(self.forum_id, pn=self.page['treasure'],
+                                                       sort=aiotieba.ThreadSortType.REPLY, is_good=True)
+                    for i in threads.objs:
+                        if not i.is_top:
+                            emit_data('treasure', i)
+            except Exception as e:
+                print(type(e))
+                print(e)
+
+        def run_a_async(func):
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(func())
+
+        def start_all_process():
+            thread_list = []
+            self.isloading = True
+
+            if thread_type == 'latest_reply' or thread_type == 'all':
+                thread_list.append(start_background_thread(run_a_async, (get_latest_reply_detail,)))
+            if thread_type == 'latest_send' or thread_type == 'all':
+                thread_list.append(start_background_thread(run_a_async, (get_latest_send_detail,)))
+            if thread_type == 'hot' or thread_type == 'all':
+                thread_list.append(start_background_thread(run_a_async, (get_hot_detail,)))
+            if thread_type == 'top' or thread_type == 'all':
+                thread_list.append(start_background_thread(run_a_async, (get_top_detail,)))
+            if thread_type == 'treasure' or thread_type == 'all':
+                thread_list.append(start_background_thread(run_a_async, (get_treasure_detail,)))
+
+            for i in thread_list:
+                i.join()
+
+            if thread_type == 'all':
+                for k in tuple(self.page.keys()):
+                    self.page[k] += 1
+            else:
+                self.page[thread_type] += 1
+            if thread_type == "all":
+                self.thread_refresh_ok.emit()
+            else:
+                self.added_thread_count = 0
+            self.isloading = False
+
+        start_all_process()
+
+    def load_info_async(self):
+        start_background_thread(self.load_info)
+
+    def update_info_ui(self, datas):
+        # tdata = {'name': forum_name, 'pixmap': forum_pixmap, 'slogan': forum_slogan, 'follownum': follow_count,
+        #          'postnum': post_count, 'admin_name': forum_admin_name, 'admin_pixmap': forum_admin_pixmap}
+        self.setWindowTitle(datas['name'] + '吧')
+        self.setWindowIcon(QIcon(datas['pixmap']))
+
+        self.label_3.setText('{0} 人关注，{1} 条帖子'.format(datas['follownum'], datas['postnum']))
+        self.label.setPixmap(datas['pixmap'])
+        self.label_2.setText(datas['name'] + '吧')
+
+        if datas['is_followed'] == 1:
+            qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
+                   'solid;border-color: [color]}')
+            if 1 <= datas['uf_level'] <= 3:  # 绿牌
+                qss = qss.replace('[color]', 'rgb(101, 211, 171)')
+            elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
+                qss = qss.replace('[color]', 'rgb(101, 161, 255)')
+            elif 10 <= datas['uf_level'] <= 15:  # 黄牌
+                qss = qss.replace('[color]', 'rgb(253, 194, 53)')
+            elif datas['uf_level'] >= 16:  # 橙牌老东西
+                qss = qss.replace('[color]', 'rgb(247, 126, 48)')
+
+            self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
+            self.label_9.setText(datas['level_info'])
+            self.label_9.show()
+
+        if datas['admin_name']:
+            self.label_6.setPixmap(datas['admin_pixmap'])
+            self.label_7.setText(datas['admin_name'])
+        else:
+            self.label_6.hide()
+            self.gridLayout_5.removeWidget(self.label_6)
+            self.label_7.setText('本吧暂时没有吧主。')
+
+        if datas['is_followed'] == 1:
+            self.pushButton.setText('已关注')
+            self.pushButton.setEnabled(False)
+            self.pushButton.setToolTip('已关注此吧')
+        elif datas['is_followed'] == 2:
+            self.pushButton.setText('登录后即可关注')
+            self.pushButton.setEnabled(False)
+        self.pushButton.show()
+
+    def load_info(self):
+        async def get_detail():
+            async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                # 获取吧信息
+                aiotieba.logging.get_logger().info(f'forum (id {self.forum_id}) loading head_info')
+                forum = await client.get_forum(self.forum_id)
+
+                level_info = ''
+                level_value = 1
+                if self.bduss:
+                    aiotieba.logging.get_logger().info(
+                        f'forum (id {self.forum_id}, name {forum.fname}) loading level_info')
+                    forum_level_info = await client.get_forum_level(self.forum_id)
+                    isFollowed = 1 if forum_level_info.is_like else 0
+                    if forum_level_info.is_like:
+                        level_info = f'Lv.{forum_level_info.user_level} {forum_level_info.level_name}'
+                        level_value = forum_level_info.user_level
+                else:
+                    isFollowed = 2
+                self.forum_name = forum_name = forum.fname
+                forum_slogan = forum.slogan
+                follow_count = forum.member_num
+                post_count = forum.post_num
+                if forum.has_bawu:
+                    aiotieba.logging.get_logger().info(
+                        f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_info')
+                    bawuinfo = await client.get_bawu_info(self.forum_id)
+                    forum_admin_name = bawuinfo.admin[0].nick_name_new
+                    forum_admin_portrait_url = f'http://tb.himg.baidu.com/sys/portraith/item/{bawuinfo.admin[0].portrait}'
+                    aiotieba.logging.get_logger().info(
+                        f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_portrait_bin_info')
+                    forum_admin_pixmap = QPixmap()
+                    response = requests.get(forum_admin_portrait_url, headers=request_mgr.header)
+                    if response.content:
+                        forum_admin_pixmap.loadFromData(response.content)
+                        forum_admin_pixmap = forum_admin_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+                else:
+                    forum_admin_name = ''
+                    forum_admin_pixmap = None
+                aiotieba.logging.get_logger().info(
+                    f'forum (id {self.forum_id}, name {forum_name}) loading headimg_bin_info')
+                forum_pixmap = QPixmap()
+                response = requests.get(forum.small_avatar, headers=request_mgr.header)
+                if response.content:
+                    forum_pixmap.loadFromData(response.content)
+                    forum_pixmap = forum_pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                aiotieba.logging.get_logger().info(
+                    f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
+                tdata = {'name': forum_name, 'pixmap': forum_pixmap, 'slogan': forum_slogan, 'follownum': follow_count,
+                         'postnum': post_count, 'admin_name': forum_admin_name, 'admin_pixmap': forum_admin_pixmap,
+                         'is_followed': isFollowed, 'level_info': level_info, 'uf_level': level_value}
+                self.update_signal.emit(tdata)
+
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        asyncio.run(get_detail())
