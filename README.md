@@ -24,7 +24,7 @@
 
 ## 对于想要从源代码运行的用户
 
-请参阅这篇教程：[如何配置贴吧桌面的发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/how-to-set-up-env.md)
+请参阅这篇教程：[如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/how-to-set-up-env.md)
 
 # 致谢
 
