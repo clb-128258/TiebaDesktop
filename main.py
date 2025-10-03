@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 
+import cache_mgr
 import proxytool
 from core_features import *
 from ui import mainwindow
@@ -540,6 +541,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         gc.collect()
 
         self.init_user_data()
+        self.set_profile_menu()
         self.recommend.bduss = self.user_data['bduss']
         self.recommend.stoken = self.user_data['stoken']
         self.flist.bduss = self.user_data['bduss']
@@ -650,12 +652,19 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         if not datas:
             QMessageBox.critical(self, '错误', '用户信息加载失败！', QMessageBox.Ok)
         else:
-            self.label_9.setPixmap(datas[0])
-            self.label_10.setText(datas[1])
-            self.set_profile_menu()
+            if datas[0]:
+                self.label_9.setPixmap(datas[0])
+            if datas[1]:
+                self.label_10.setText(datas[1])
 
     def init_user_data_async(self):
         start_background_thread(self.init_user_data)
+
+    def load_user_portrait(self):
+        pixmap = QPixmap()
+        pixmap.loadFromData(cache_mgr.get_portrait(self.self_user_portrait))
+        pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.add_info.emit([pixmap, ''])
 
     def init_user_data(self):
         try:
@@ -682,19 +691,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 # 获取用户信息
                 profile_mgr.current_uid = self.user_data['uid']
                 name = self.user_data['name']
-                portrait = self.user_data['portrait']
                 self.self_user_portrait = self.user_data['portrait']
-                head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}'
 
-                pixmap = QPixmap()
-                response = requests.get(head_url, headers=request_mgr.header)
-                if response.content:
-                    pixmap.loadFromData(response.content)
-                    pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                self.add_info.emit([pixmap, name])
+                start_background_thread(self.load_user_portrait)
+                self.add_info.emit([None, name])
         except Exception as e:
             self.add_info.emit([])
-            raise e
 
 
 if __name__ == "__main__":
@@ -704,6 +706,7 @@ if __name__ == "__main__":
     init_log()
     proxytool.set_proxy()
     profile_mgr.init_all_datas()
+    cache_mgr.init_all_datas()
     handle_command_events()
 
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)

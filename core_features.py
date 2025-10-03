@@ -355,12 +355,9 @@ class UserItem(QWidget, user_item.Ui_Form):
         qt_window_mgr.add_window(user_home_page)
 
     def get_portrait(self, p):
-        head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{p}'
         pixmap = QPixmap()
-        response = requests.get(head_url, headers=request_mgr.header)
-        if response.content:
-            pixmap.loadFromData(response.content)
-            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap.loadFromData(cache_mgr.get_portrait(p))
+        pixmap = pixmap.scaled(50,50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPortrait.emit(pixmap)
 
     def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False):
@@ -825,16 +822,11 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                         data['forum_head_pixmap'] = forum_head_pixmap
 
                     # 获取用户头像
-                    user_head_pixmap = QPixmap()
                     portrait = data['portrait']
-                    response = requests.get(
-                        f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                        headers=request_mgr.header)
-                    if response.content:
-                        user_head_pixmap.loadFromData(response.content)
-                        user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                   Qt.SmoothTransformation)
-                        data['user_portrait_pixmap'] = user_head_pixmap
+                    user_head_pixmap = QPixmap()
+                    user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    data['user_portrait_pixmap'] = user_head_pixmap
 
                     # 获取主题帖图片
                     if thread.get("media") and data['type'] == 0:
