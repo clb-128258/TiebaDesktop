@@ -15,7 +15,7 @@
 ## 签到所有关注的吧
 
 用法：`--sign-all-forums`  
-该参数还可以与 `--sign-grows` 叠加使用。
+该参数还可以与 `--sign-grows` 叠加使用。  
 不能与参数 `--set-current-account` 叠加使用，否则程序只会执行 `--set-current-account` 所对应的操作，而忽略本参数。
 
 ## 成长等级签到
