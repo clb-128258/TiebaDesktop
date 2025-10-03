@@ -357,7 +357,7 @@ class UserItem(QWidget, user_item.Ui_Form):
     def get_portrait(self, p):
         pixmap = QPixmap()
         pixmap.loadFromData(cache_mgr.get_portrait(p))
-        pixmap = pixmap.scaled(50,50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPortrait.emit(pixmap)
 
     def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False):
@@ -950,14 +950,10 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
 
                         user_head_pixmap = QPixmap()
                         portrait = thread["author"]["portrait"]
-                        response = requests.get(
-                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                            headers=request_mgr.header)
-                        if response.content:
-                            user_head_pixmap.loadFromData(response.content)
-                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-                            data['user_portrait_pixmap'] = user_head_pixmap
+                        user_head_pixmap = QPixmap()
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        data['user_portrait_pixmap'] = user_head_pixmap
 
                         if thread.get("media"):
                             pixmap = QPixmap()
@@ -1099,13 +1095,9 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                             # 用户头像
                             portrait = thread["replyer"]["portrait"].split("?")[0]
                             user_head_pixmap = QPixmap()
-                            response = requests.get(
-                                f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                                headers=request_mgr.header)
-                            if response.content:
-                                user_head_pixmap.loadFromData(response.content)
-                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
+                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
 
                             # 用户昵称
                             nick_name = thread["replyer"]["name_show"]
@@ -1149,13 +1141,9 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                         for thread in datas.objs:
                             # 用户头像
                             user_head_pixmap = QPixmap()
-                            response = requests.get(
-                                f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
-                                headers=request_mgr.header)
-                            if response.content:
-                                user_head_pixmap.loadFromData(response.content)
-                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
+                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(thread.user.portrait))
+                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
 
                             # 用户昵称
                             nick_name = thread.user.nick_name_new
@@ -1442,12 +1430,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         data['post_c'] = user_info.post_num
                         data['bd_user_name'] = user_info.user_name
 
-                        head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{user_info.portrait}'
                         pixmap = QPixmap()
-                        response = requests.get(head_url, headers=request_mgr.header)
-                        if response.content:
-                            pixmap.loadFromData(response.content)
-                            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
+                        pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
+                                               Qt.SmoothTransformation)
                         data['portrait_pixmap'] = pixmap
 
                     self.set_head_info_signal.emit(data)
@@ -1541,13 +1527,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         for thread in thread_datas.objs:
                             # 初始化数据
                             if user_head_pixmap.isNull():  # 头像为空
-                                response = requests.get(
-                                    f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
-                                    headers=request_mgr.header)
-                                if response.content:
-                                    user_head_pixmap.loadFromData(response.content)
-                                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                               Qt.SmoothTransformation)
+                                user_head_pixmap.loadFromData(cache_mgr.get_portrait(thread.user.portrait))
+                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
                             data = {'thread_id': thread.tid, 'forum_id': thread.fid, 'title': thread.title,
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
                                     'author_portrait': thread.user.portrait, 'user_name': thread.user.nick_name_new,
@@ -1599,13 +1581,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         for thread in post_list:
                             # 初始化数据
                             if user_head_pixmap.isNull():  # 头像为空
-                                response = requests.get(
-                                    f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
-                                    headers=request_mgr.header)
-                                if response.content:
-                                    user_head_pixmap.loadFromData(response.content)
-                                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                               Qt.SmoothTransformation)
+                                user_head_pixmap.loadFromData(cache_mgr.get_portrait(thread.user.portrait))
+                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
 
                             # 获取吧名称
                             forum_name = await client.get_fname(thread.fid)
@@ -1672,12 +1650,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                     'user_id': user.user_id}
 
                             user_head_pixmap = QPixmap()
-                            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{user.portrait}',
-                                                    headers=request_mgr.header)
-                            if response.content:
-                                user_head_pixmap.loadFromData(response.content)
-                                user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
+                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(user.portrait))
+                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
+
                             data['user_pixmap'] = user_head_pixmap
 
                             self.set_list_info_signal.emit((type_, data))
@@ -1689,12 +1665,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                     'user_id': user.user_id}
 
                             user_head_pixmap = QPixmap()
-                            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{user.portrait}',
-                                                    headers=request_mgr.header)
-                            if response.content:
-                                user_head_pixmap.loadFromData(response.content)
-                                user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
+                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(user.portrait))
+                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
                             data['user_pixmap'] = user_head_pixmap
 
                             self.set_list_info_signal.emit((type_, data))
@@ -2084,12 +2057,9 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
                             for k, v in bawu_iter_index.items():
                                 for bawu in v:
-                                    head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{bawu.portrait}'
                                     pixmap = QPixmap()
-                                    response = requests.get(head_url, headers=request_mgr.header)
-                                    if response.content:
-                                        pixmap.loadFromData(response.content)
-                                        pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                                    pixmap.loadFromData(cache_mgr.get_portrait(bawu.portrait))
+                                    pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
                                     data['bawu_info'].append(
                                         {'name': bawu.nick_name_new, 'level': bawu.level, 'type': k,
@@ -2325,12 +2295,8 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                             replyer_uid = t.reply_to_id
 
                         user_head_pixmap = QPixmap()
-                        response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                                                headers=request_mgr.header)
-                        if response.content:
-                            user_head_pixmap.loadFromData(response.content)
-                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
                         tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
                                  'user_portrait_pixmap': user_head_pixmap,
@@ -3042,12 +3008,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             grow_level = t.user.glevel
 
                             user_head_pixmap = QPixmap()
-                            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                                                    headers=request_mgr.header)
-                            if response.content:
-                                user_head_pixmap.loadFromData(response.content)
-                                user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
+                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
+                                                                       Qt.SmoothTransformation)
 
                             preview_pixmap = []
                             for j in t.contents.imgs:
@@ -3220,12 +3183,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             video_info['view'] = thread_info.thread.contents.video.view_num
 
                         user_head_pixmap = QPixmap()
-                        response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                                                headers=request_mgr.header)
-                        if response.content:
-                            user_head_pixmap.loadFromData(response.content)
-                            user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
                         forum_pixmap = QPixmap()
                         response = requests.get(forum_pic_url, headers=request_mgr.header)
@@ -3713,12 +3672,8 @@ class RecommandWindow(QListWidget):
                 userinfo = await client.get_user_info(portrait)
                 user_name = userinfo.nick_name_new
                 user_head_pixmap = QPixmap()
-                response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                                        headers=request_mgr.header)
-                if response.content:
-                    user_head_pixmap.loadFromData(response.content)
-                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                               Qt.SmoothTransformation)
+                user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
                 # 进一步获取吧信息
                 forum = await client.get_forum_detail(int(forum_id))
@@ -3812,12 +3767,8 @@ class RecommandWindow(QListWidget):
             user_name = element['author'].get('user_nickname_v2',
                                               element['author']['display_name'])  # 优先获取新版昵称，如果没有则使用旧版昵称或者用户名
             user_head_pixmap = QPixmap()
-            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                                    headers=request_mgr.header)
-            if response.content:
-                user_head_pixmap.loadFromData(response.content)
-                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                           Qt.SmoothTransformation)
+            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             # 进一步获取吧信息
             forum_name = element['forum']['forum_name']
@@ -4097,16 +4048,11 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                             data['forum_head_pixmap'] = forum_head_pixmap
 
                         # 获取用户头像
-                        user_head_pixmap = QPixmap()
                         portrait = data['portrait']
-                        response_ = requests.get(
-                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                            headers=request_mgr.header)
-                        if response_.content:
-                            user_head_pixmap.loadFromData(response_.content)
-                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-                            data['user_portrait_pixmap'] = user_head_pixmap
+                        user_head_pixmap = QPixmap()
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        data['user_portrait_pixmap'] = user_head_pixmap
 
                         # 获取主图片
                         if thread.get("media"):
@@ -4180,16 +4126,11 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                         data['time_str'] = timestr
 
                         # 获取用户头像
-                        user_head_pixmap = QPixmap()
                         portrait = data['portrait']
-                        response_ = requests.get(
-                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                            headers=request_mgr.header)
-                        if response_.content:
-                            user_head_pixmap.loadFromData(response_.content)
-                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-                            data['user_portrait_pixmap'] = user_head_pixmap
+                        user_head_pixmap = QPixmap()
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        data['user_portrait_pixmap'] = user_head_pixmap
 
                         self.add_result.emit(data)
         except Exception as e:
@@ -4260,16 +4201,11 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                             data['forum_head_pixmap'] = forum_head_pixmap
 
                         # 获取用户头像
-                        user_head_pixmap = QPixmap()
                         portrait = data['portrait']
-                        response_ = requests.get(
-                            f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                            headers=request_mgr.header)
-                        if response_.content:
-                            user_head_pixmap.loadFromData(response_.content)
-                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-                            data['user_portrait_pixmap'] = user_head_pixmap
+                        user_head_pixmap = QPixmap()
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        data['user_portrait_pixmap'] = user_head_pixmap
 
                         # 获取主图片
                         if thread.get("media"):
@@ -4586,12 +4522,8 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             is_top = thread.is_top
 
             user_head_pixmap = QPixmap()
-            response = requests.get(f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
-                                    headers=request_mgr.header)
-            if response.content:
-                user_head_pixmap.loadFromData(response.content)
-                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                           Qt.SmoothTransformation)
+            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             for j in thread.contents.imgs:
                 url = j.src
@@ -4793,15 +4725,11 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                         f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_info')
                     bawuinfo = await client.get_bawu_info(self.forum_id)
                     forum_admin_name = bawuinfo.admin[0].nick_name_new
-                    forum_admin_portrait_url = f'http://tb.himg.baidu.com/sys/portraith/item/{bawuinfo.admin[0].portrait}'
                     aiotieba.logging.get_logger().info(
                         f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_portrait_bin_info')
                     forum_admin_pixmap = QPixmap()
-                    response = requests.get(forum_admin_portrait_url, headers=request_mgr.header)
-                    if response.content:
-                        forum_admin_pixmap.loadFromData(response.content)
-                        forum_admin_pixmap = forum_admin_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
+                    forum_admin_pixmap.loadFromData(cache_mgr.get_portrait(bawuinfo.admin[0].portrait))
+                    forum_admin_pixmap = forum_admin_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 else:
                     forum_admin_name = ''
                     forum_admin_pixmap = None
