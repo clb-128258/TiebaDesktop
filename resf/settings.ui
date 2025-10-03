@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>677</width>
-    <height>394</height>
+    <width>701</width>
+    <height>431</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -117,13 +117,6 @@ QDialog{background-color: rgb(255, 255, 255);}
       <layout class="QGridLayout" name="gridLayout_7">
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout_6">
-         <item row="4" column="1">
-          <widget class="QPushButton" name="pushButton_5">
-           <property name="text">
-            <string>保存设置</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0" colspan="2">
           <widget class="QLabel" name="label_9">
            <property name="styleSheet">
@@ -134,6 +127,23 @@ QDialog{background-color: rgb(255, 255, 255);}
            </property>
            <property name="wordWrap">
             <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="2">
+          <widget class="QCheckBox" name="checkBox_2">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在帖子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>不显示用户的 IP 属地</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="QPushButton" name="pushButton_5">
+           <property name="text">
+            <string>保存设置</string>
            </property>
           </widget>
          </item>
@@ -165,17 +175,7 @@ QDialog{background-color: rgb(255, 255, 255);}
            </item>
           </layout>
          </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QCheckBox" name="checkBox">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频帖子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>首页不推荐视频帖</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
+         <item row="6" column="0">
           <spacer name="horizontalSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -188,15 +188,117 @@ QDialog{background-color: rgb(255, 255, 255);}
            </property>
           </spacer>
          </item>
-         <item row="2" column="0" colspan="2">
-          <widget class="QCheckBox" name="checkBox_2">
+         <item row="4" column="0" colspan="2">
+          <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0">
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看帖时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>看帖回复默认排序：</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox">
+             <item>
+              <property name="text">
+               <string>正序</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>倒序</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>热门排序</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QCheckBox" name="checkBox">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在帖子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频帖子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
-            <string>不显示用户的 IP 属地</string>
+            <string>首页不推荐视频帖</string>
            </property>
           </widget>
+         </item>
+         <item row="5" column="0" colspan="2">
+          <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0,0">
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看帖时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>进吧看帖默认板块：</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox_2">
+             <item>
+              <property name="text">
+               <string>置顶</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>精华</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>最新回复</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>最新发布</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>热门</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -216,19 +318,18 @@ QDialog{background-color: rgb(255, 255, 255);}
       </layout>
      </widget>
      <widget class="QWidget" name="page_2">
-      <layout class="QGridLayout" name="gridLayout_3">
+      <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,0,0,1">
        <item row="3" column="1" colspan="3">
-        <widget class="Line" name="line_2">
+        <widget class="Line" name="line_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="5" column="1" colspan="3">
+       <item row="9" column="1" colspan="3">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>这些文件包括了贴吧桌面运行所需的必要配置文件，例如 WebView 数据，用户登录信息等。
-这些信息被加密存储，无法直接查看。
 删除这些信息会导致你在这台电脑上的登录信息、用户设置等数据丢失。</string>
          </property>
          <property name="wordWrap">
@@ -236,7 +337,7 @@ QDialog{background-color: rgb(255, 255, 255);}
          </property>
         </widget>
        </item>
-       <item row="4" column="1" colspan="3">
+       <item row="8" column="1" colspan="3">
         <widget class="QLabel" name="label_5">
          <property name="font">
           <font>
@@ -249,16 +350,7 @@ QDialog{background-color: rgb(255, 255, 255);}
          </property>
         </widget>
        </item>
-       <item row="1" column="1" colspan="3">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>日志文件可用于诊断程序问题。
-你的电脑上共有 份日志文件，总计大小 x。
-你可以查看它们，或是全部删除。</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1" colspan="3">
+       <item row="10" column="1" colspan="3">
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -270,6 +362,22 @@ QDialog{background-color: rgb(255, 255, 255);}
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="7" column="1" colspan="3">
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" colspan="3">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>日志文件可用于诊断程序问题。
+你的电脑上共有 份日志文件，总计大小 x。
+你可以查看它们，或是全部删除。</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="1" colspan="3">
         <widget class="QLabel" name="label_2">
@@ -284,7 +392,28 @@ QDialog{background-color: rgb(255, 255, 255);}
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="4" column="1" colspan="3">
+        <widget class="QLabel" name="label_11">
+         <property name="font">
+          <font>
+           <family>微软雅黑</family>
+           <pointsize>15</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>图片缓存文件</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1" colspan="3">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>包括缓存到本地的帖子图片、用户头像图片等。
+总计已占用大小 x。</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" colspan="3">
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QPushButton" name="pushButton_3">
@@ -299,6 +428,43 @@ QDialog{background-color: rgb(255, 255, 255);}
             <string>删除所有日志</string>
            </property>
           </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="6" column="1" colspan="3">
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QPushButton" name="pushButton_8">
+           <property name="text">
+            <string>清理缓存</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>

@@ -296,6 +296,13 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.label_3.setText(
             f'日志文件可用于诊断程序问题。\n你的电脑上共有 {lc} 份日志文件，总计大小 {filesize_tostr(lsc)}。\n你可以查看它们，或是全部删除。')
 
+    def get_pic_size(self):
+        lsc = 0  # 文件总大小
+        for i in os.listdir(f'{datapath}/image_caches'):
+            lsc += os.stat(f'{datapath}/image_caches/{i}').st_size
+        self.label_12.setText(
+            f'包括缓存到本地的帖子图片、用户头像图片等。\n总计已占用大小 {filesize_tostr(lsc)}。')
+
     def clear_logs(self):
         if QMessageBox.warning(self, '警告', '确认要清理日志文件吗？',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:

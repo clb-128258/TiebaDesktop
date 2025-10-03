@@ -16,12 +16,12 @@ def get_portrait(portrait: str) -> bytes:
 
 
 def is_portrait_changed(portrait: str) -> bool:
-    """判断一个portrait是否被修改"""
+    """判断一个portrait是否需要修改"""
     global portrait_cache_dict
 
-    head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}'
-    response = requests.head(head_url, headers=request_mgr.header)
     if portrait_cache_dict.get(portrait):
+        head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}'
+        response = requests.head(head_url, headers=request_mgr.header)
         if response.headers.get('Portrait_tag') == portrait_cache_dict[portrait]['tag']:  # 还没被修改
             return False
     return True
