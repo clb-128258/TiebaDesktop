@@ -164,6 +164,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.label_6.setPixmap(QPixmap('ui/tieba_logo_small.png'))
         self.label_8.setText(f'版本 {consts.APP_VERSION_STR}')
         self.get_log_size()
+        self.get_pic_size()
         self.get_logon_accounts()
         self.load_local_config()
 
@@ -173,6 +174,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton_4.clicked.connect(self.clear_logs)
         self.pushButton.clicked.connect(self.clear_account_list)
         self.pushButton_5.clicked.connect(self.save_local_config)
+        self.pushButton_8.clicked.connect(self.clear_pics)
 
     def init_login_button_menu(self):
         menu = QMenu()
@@ -313,6 +315,19 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                     continue
             QMessageBox.information(self, '提示', '文件清理成功。', QMessageBox.Ok)
             self.get_log_size()
+
+    def clear_pics(self):
+        if QMessageBox.warning(self, '警告', '确认要清理图片缓存吗？',
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            for i in os.listdir(f'{datapath}/image_caches'):
+                try:
+                    os.remove(f'{datapath}/image_caches/{i}')
+                except PermissionError:
+                    continue
+            cache_mgr.portrait_cache_dict = {}
+            cache_mgr.save_portrait_pf()
+            QMessageBox.information(self, '提示', '图片缓存清理成功。', QMessageBox.Ok)
+            self.get_pic_size()
 
 
 class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
