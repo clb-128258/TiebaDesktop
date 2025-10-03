@@ -90,7 +90,8 @@ def create_data():
                      f'{datapath}/cache_index', f'{datapath}/webview_data/default']  # 欲创建的文件夹
     expect_secret_json = {f'{datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件
     expect_json = {f'{datapath}/config.json': {
-        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1}},
+        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1, 'default_sort': 0},
+        'forum_view_settings': {'default_sort': 0}},
         f'{datapath}/cache_index/fidfname_index.json': {},
         f'{datapath}/cache_index/user_portraits.json': {},
         f'{datapath}/cache_index/bd_image_hashes.json': {}}  # 欲创建的json文件
@@ -2638,6 +2639,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.listWidget_4.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.listWidget_4.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
+        self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
         self.init_load_flash()
 
         self.pushButton.clicked.connect(self.init_more_menu)
@@ -4345,6 +4347,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.label_9.hide()
         self.pushButton.hide()
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.tabWidget.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
         self.update_signal.connect(self.update_info_ui)
         self.add_thread.connect(self.add_thread_)
         self.thread_refresh_ok.connect(self.show_load_ok_msg)

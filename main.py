@@ -193,6 +193,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         profile_mgr.local_config['thread_view_settings']['hide_video'] = self.checkBox.isChecked()
         profile_mgr.local_config['thread_view_settings']['hide_ip'] = self.checkBox_2.isChecked()
         profile_mgr.local_config['thread_view_settings']['tb_emoticon_size'] = 0 if self.radioButton.isChecked() else 1
+        profile_mgr.local_config['thread_view_settings']['default_sort'] = self.comboBox.currentIndex()
+        profile_mgr.local_config['forum_view_settings']['default_sort'] = self.comboBox_2.currentIndex()
         profile_mgr.save_local_config()
         QMessageBox.information(self, '提示', '设置保存成功。', QMessageBox.Ok)
 
@@ -265,6 +267,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
         (self.radioButton if profile_mgr.local_config['thread_view_settings'][
                                  'tb_emoticon_size'] == 0 else self.radioButton_2).setChecked(True)
+        self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
+        self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
 
     def get_logon_accounts(self):
         # 清空数据
