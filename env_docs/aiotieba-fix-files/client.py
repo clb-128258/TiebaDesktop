@@ -144,6 +144,7 @@ def _force_websocket(func):
 
 
 class Client:
+    fid2fname_cache = ForumInfoCache()
     """
     贴吧客户端
 
@@ -155,7 +156,6 @@ class Client:
         proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动配置代理. Defaults to False.
         timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
     """
-
     __slots__ = [
         "_account",
         "_timeout",
@@ -195,8 +195,6 @@ class Client:
         self._try_ws = try_ws
 
         self._user = UserInfo()
-
-        self.fid2fname_cache = ForumInfoCache()
 
     async def __aenter__(self) -> Client:
         connector = aiohttp.TCPConnector(
