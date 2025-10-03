@@ -1,12 +1,11 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-import gc
 import os
+import shutil
+import time
 
-import aiotieba
-
+import proxytool
 from core_features import *
 from ui import mainwindow
-import proxytool
 
 requests.session().trust_env = True
 requests.session().verify = False
@@ -100,6 +99,7 @@ def handle_command_events():
 
         async with aiotieba.Client(bduss, stoken, proxy=True) as client:
             bars = request_mgr.run_get_api('/mo/q/newmoindex', bduss)['data']['like_forum']
+            bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
 
             for forum in bars:
                 if forum["is_sign"] != 1:
@@ -212,6 +212,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             account_list['current_bduss'] = ''
             account_list['login_list'] = []
             save_json_secret(account_list, f'{datapath}/user_bduss')
+            shutil.rmtree(f'{datapath}/webview_data')
+            os.mkdir(f'{datapath}/webview_data')
             mainw.refresh_all_datas()  # 更新主页面信息
             self.get_logon_accounts()
             QMessageBox.information(self, '提示', '登录信息清空成功。', QMessageBox.Ok)
@@ -244,6 +246,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             account_list = load_json_secret(f'{datapath}/user_bduss')
             for i in tuple(account_list['login_list']):
                 if i['bduss'] == bduss:
+                    shutil.rmtree(f'{datapath}/webview_data/{i["uid"]}')
                     account_list['login_list'].remove(i)  # 删掉登录信息
                     break
             if account_list['current_bduss'] == bduss:
@@ -360,6 +363,9 @@ class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
 
                 save_json_secret(pf, f'{datapath}/user_bduss')
                 mainw.refresh_all_datas()  # 更新主页面信息
+                if os.path.isdir(f'{datapath}/webview_data/{self.uid}'):  # 把旧的数据删掉
+                    shutil.rmtree(f'{datapath}/webview_data/{self.uid}')
+                os.mkdir(f'{datapath}/webview_data/{profile_mgr.current_uid}')
 
                 QMessageBox.information(self, '登录成功', f'账号 {name} 已经登录成功，登录信息已保存至本地。',
                                         QMessageBox.Ok)
@@ -373,6 +379,7 @@ class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
 class LoginWebView(QDialog):
     """登录百度账号的webview，用户在网页执行登陆操作，webview后台抓取bduss等登录信息"""
     islogin = False
+    closeSignal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -380,12 +387,15 @@ class LoginWebView(QDialog):
         self.setWindowTitle('登录贴吧账号')
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.closeSignal.connect(self.close)
+        self.init_flash_widget()
 
         webview2.loadLibs()
         self.webview = webview2.QWebView2View()
         self.webview.setParent(self)
-        self.webview.tokenGot.connect(self.do_login)
-        self.profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data', enable_link_hover_text=False,
+        self.webview.tokenGot.connect(self.start_login)
+        self.profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/default',
+                                               enable_link_hover_text=False,
                                                enable_zoom_factor=False, enable_error_page=False,
                                                enable_context_menu=False, enable_keyboard_keys=False,
                                                handle_newtab_byuser=False)
@@ -402,11 +412,23 @@ class LoginWebView(QDialog):
             else:
                 a0.ignore()
         else:
-            self.webview.destroyWebview()
+            mainw.refresh_all_datas()  # 更新主页面信息
+            self.flash_widget.hide()
             a0.accept()
 
     def resizeEvent(self, a0):
         self.webview.setGeometry(0, 0, self.width(), self.height())
+        self.flash_widget.sync_parent_widget_size()
+
+    def init_flash_widget(self):
+        self.flash_widget = LoadingFlashWidget(caption='登录成功，即将跳转...')
+        self.flash_widget.cover_widget(self, enable_filler=False)
+        self.flash_widget.hide()
+
+    def start_login(self, infos):
+        self.webview.hide()
+        self.flash_widget.show()
+        start_background_thread(self.do_login, (infos,))
 
     def do_login(self, infos):
         async def get_self_info(bduss, stoken):
@@ -417,15 +439,15 @@ class LoginWebView(QDialog):
             except:
                 return '', '', 0
 
-        self.islogin = True
-        QMessageBox.information(self, '操作成功', '已获取到登录信息，账号登录成功！', QMessageBox.Ok)
+        self.webview.destroyWebviewUntilComplete()  # 先销毁webview
+        time.sleep(3)
 
         # 获取用户信息
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
         portrait, name, uid = asyncio.run(get_self_info(infos['BDUSS'], infos['STOKEN']))
 
-        pf = load_json_secret(f'{datapath}/user_bduss')
+        pf = load_json_secret(f'{datapath}/user_bduss')  # 加载配置文件
 
         if not pf['login_list']:  # 在没有账号登上去的情况下，把这个账号设置为当前账号
             pf['current_bduss'] = infos['BDUSS']
@@ -437,19 +459,20 @@ class LoginWebView(QDialog):
                     if pf['current_bduss'] == i['bduss']:
                         pf['current_bduss'] = infos['BDUSS']
                     pf['login_list'].remove(i)
-                    QMessageBox.information(self, '提示',
-                                            '检测到本地已有该账号的登录信息，已使用本次的登录信息替换了旧的登录信息。',
-                                            QMessageBox.Ok)
                     break
         # 添加新的登录信息
         pf['login_list'].append(
             {'bduss': infos['BDUSS'], 'stoken': infos['STOKEN'], 'portrait': portrait, 'name': name, 'uid': uid})
 
-        save_json_secret(pf, f'{datapath}/user_bduss')
-        mainw.refresh_all_datas()  # 更新主页面信息
+        save_json_secret(pf, f'{datapath}/user_bduss')  # 保存配置文件
 
-        self.webview.clearCookies()  # 防止旧的bduss下次又被获取
-        self.close()
+        if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
+            shutil.rmtree(f'{datapath}/webview_data/{uid}')
+        os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
+        os.mkdir(f'{datapath}/webview_data/default')
+
+        self.islogin = True
+        self.closeSignal.emit()
 
 
 class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
@@ -511,6 +534,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
     def refresh_all_datas(self):
         # 清理内存
+        qt_window_mgr.clear_windows()
         self.recommend.clear()
         QPixmapCache.clear()
         gc.collect()
@@ -527,20 +551,20 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.interactionlist.refresh_list()
 
     def open_user_homepage(self, uid):
-        self.user_home_page = UserHomeWindow(self.user_data['bduss'], self.user_data['stoken'], uid)
-        self.user_home_page.show()
+        user_home_page = UserHomeWindow(self.user_data['bduss'], self.user_data['stoken'], uid)
+        qt_window_mgr.add_window(user_home_page)
 
     def open_star_window(self):
-        self.user_stared_list = StaredThreadsList(self.user_data['bduss'], self.user_data['stoken'])
-        self.user_stared_list.show()
+        user_stared_list = StaredThreadsList(self.user_data['bduss'], self.user_data['stoken'])
+        qt_window_mgr.add_window(user_stared_list)
 
     def open_agreed_window(self):
-        self.user_stared_list = AgreedThreadsList(self.user_data['bduss'], self.user_data['stoken'])
-        self.user_stared_list.show()
+        user_stared_list = AgreedThreadsList(self.user_data['bduss'], self.user_data['stoken'])
+        qt_window_mgr.add_window(user_stared_list)
 
     def open_search_window(self):
-        self.tb_search_window = TiebaSearchWindow(self.user_data['bduss'], self.user_data['stoken'])
-        self.tb_search_window.show()
+        tb_search_window = TiebaSearchWindow(self.user_data['bduss'], self.user_data['stoken'])
+        qt_window_mgr.add_window(tb_search_window)
 
     def init_pages(self):
         self.recommend = RecommandWindow(self.user_data['bduss'], self.user_data['stoken'])
@@ -614,6 +638,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             pf['current_bduss'] = ''
 
             save_json_secret(pf, f'{datapath}/user_bduss')
+            shutil.rmtree(f'{datapath}/webview_data/{profile_mgr.current_uid}')
             self.refresh_all_datas()
 
     def login_exec(self):
@@ -655,6 +680,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 self.add_info.emit([pixmap, '未登录'])
             else:
                 # 获取用户信息
+                profile_mgr.current_uid = self.user_data['uid']
                 name = self.user_data['name']
                 portrait = self.user_data['portrait']
                 self.self_user_portrait = self.user_data['portrait']

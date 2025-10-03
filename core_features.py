@@ -3,10 +3,10 @@ from PyQt5.QtWidgets import QWidget, QDialog, QMessageBox, QListWidgetItem, \
     QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, QEvent, QMimeData, QUrl, QSize, \
     QByteArray
-from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie
+from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie, QPalette
 from ui import follow_ba, ba_item, tie_preview, ba_head, sign, tie_detail_view, comment_view, reply_comments, \
     thread_video_item, forum_detail, user_home_page, image_viewer, reply_at_me_page, star_list, settings, user_item, \
-    login_by_bduss, forum_search
+    login_by_bduss, forum_search, loading_amt
 import asyncio
 import sys
 import platform
@@ -25,12 +25,15 @@ import time
 import subprocess
 import pyperclip
 import profile_mgr
+import cache_mgr
+import shutil
 
 if os.name == 'nt':
     import win32api
     import win32con
 import consts
 import pathlib
+import qt_window_mgr
 
 datapath = consts.datapath
 requests.session().trust_env = True
@@ -83,10 +86,14 @@ def create_data():
     """识别用户的电脑上是否存在用户数据，如不存在则创建"""
     aiotieba.logging.get_logger().info('Creating user data')
     global datapath
-    expect_folder = [datapath, f'{datapath}/webview_data', f'{datapath}/logs']
-    expect_secret_json = {f'{datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}
+    expect_folder = [datapath, f'{datapath}/webview_data', f'{datapath}/logs', f'{datapath}/image_caches',
+                     f'{datapath}/cache_index', f'{datapath}/webview_data/default']  # 欲创建的文件夹
+    expect_secret_json = {f'{datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件
     expect_json = {f'{datapath}/config.json': {
-        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1}}}
+        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1}},
+        f'{datapath}/cache_index/fidfname_index.json': {},
+        f'{datapath}/cache_index/user_portraits.json': {},
+        f'{datapath}/cache_index/bd_image_hashes.json': {}}  # 欲创建的json文件
 
     for i in expect_folder:
         if not os.path.isdir(i):
@@ -219,6 +226,84 @@ def open_url_in_browser(url):
     start_background_thread(lambda sh: subprocess.call(sh, shell=True), (shell,))
 
 
+def timestamp_to_string(ts: int):
+    """把时间戳转换为字符串"""
+    # 判断时间是否是最近的
+    current_time = time.time()
+    time_separation = abs(current_time - ts)
+    if time_separation < 60:  # 一分钟以内
+        timestr = f'{round(time_separation)} 秒前'
+    elif time_separation < 3600:  # 一小时以内
+        timestr = f'{round(time_separation / 60)} 分钟前'
+    elif time_separation < 86400:  # 一天以内
+        timestr = f'{round(time_separation / 3600)} 小时前'
+    elif time_separation < 604800:  # 一星期以内
+        timeArray = time.localtime(ts)
+        nodate_timestr = time.strftime("%H:%M:%S", timeArray)
+        timestr = f'{round(time_separation / 86400)} 天前的 {nodate_timestr}'
+    elif ts >= current_time - (current_time % 31536000):  # 今年以内
+        timeArray = time.localtime(ts)
+        timestr = time.strftime("%m-%d %H:%M:%S", timeArray)
+    else:  # 更早的
+        timeArray = time.localtime(ts)
+        timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+
+    return timestr
+
+
+class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
+    """覆盖在其它widget上层的加载动画组件"""
+
+    def __init__(self, show_caption=True, caption=''):
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)  # 始终置顶
+        self.setAttribute(Qt.WA_TranslucentBackground, False)  # 背景不透明
+        self.setStyleSheet('QFrame#frame{background-color: rgb(255, 255, 255); color: rgb(255, 255, 255);}')  # 白色背景
+        if show_caption:
+            self.label_17.show()
+            if caption:
+                self.label_17.setText(caption)
+        else:
+            self.label_17.hide()
+
+        self.init_load_flash()
+
+    def init_load_flash(self):
+        self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
+        self.show_movie.setScaledSize(QSize(120, 120))
+        self.show_movie.frameChanged.connect(lambda: self.label_18.setPixmap(self.show_movie.currentPixmap()))
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.Resize and source is self.parent():  # 父组件调整大小
+            self.sync_parent_widget_size()
+            return True  # 让qt忽略事件
+        return super(LoadingFlashWidget, self).eventFilter(source, event)  # 照常处理事件
+
+    def closeEvent(self, a0):
+        self.show_movie.stop()
+        a0.accept()
+
+    def hideEvent(self, a0):
+        self.show_movie.stop()
+        a0.accept()
+
+    def showEvent(self, a0):
+        self.show_movie.start()
+        a0.accept()
+
+    def sync_parent_widget_size(self):
+        self.resize(self.parent().size())
+
+    def cover_widget(self, widget, enable_filler=True):
+        self.setParent(widget)
+        if enable_filler:
+            widget.installEventFilter(self)
+
+        self.raise_()
+        self.sync_parent_widget_size()
+
+
 class ExtListWidgetItem(QListWidgetItem):
     """可以标识用户id的QListWidgetItem，用于在列表内添加用户并找出item对应的用户id"""
     user_portrait_id = ''
@@ -266,8 +351,8 @@ class UserItem(QWidget, user_item.Ui_Form):
             self.open_user_homepage(self.user_portrait_id)
 
     def open_user_homepage(self, uid):
-        self.user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
-        self.user_home_page.show()
+        user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
+        qt_window_mgr.add_window(user_home_page)
 
     def get_portrait(self, p):
         head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{p}'
@@ -503,7 +588,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
     def load_image(self):
         self.setWindowTitle(f'[加载中...] - 图片查看器')
 
-        self.show_movie = QMovie('ui/loading.gif', QByteArray(b'gif'))
+        self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
         self.show_movie.setScaledSize(QSize(80, 80))
         self.show_movie.frameChanged.connect(lambda: self.label.setPixmap(self.show_movie.currentPixmap()))
 
@@ -547,6 +632,9 @@ class ThreadPictureLabel(QLabel):
         response = requests.get(self.preview_src, headers=request_mgr.header)
         if response.content:
             pixmap.loadFromData(response.content)
+            if pixmap.width() != self.width_n + 20 or pixmap.height() != self.height_n + 35:
+                pixmap = pixmap.scaled(self.width_n + 20, self.height_n + 35, Qt.KeepAspectRatio,
+                                       Qt.SmoothTransformation)
         self.set_picture_signal.emit(pixmap)
 
     def init_picture_contextmenu(self):
@@ -621,6 +709,10 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
 
         self.get_agreed_threads_async()
 
+    def closeEvent(self, a0):
+        a0.accept()
+        qt_window_mgr.del_window(self)
+
     def scroll_load_list_info(self):
         if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
             self.get_agreed_threads_async()
@@ -640,11 +732,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
             widget.adjustSize()
         else:
             widget = ReplyItem(self.bduss, self.stoken)
-
-            timeStamp = infos['timestamp']
-            timeArray = time.localtime(timeStamp)
-            timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
-
+            timestr = timestamp_to_string(infos['timestamp'])
             widget.portrait = infos['portrait']
             widget.thread_id = infos['thread_id']
             widget.post_id = infos['post_id']
@@ -655,7 +743,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                     fname=infos['forum_name'], tname=infos['title'], tid=infos['thread_id'],
                     fid=infos['forum_id']))
             widget.setdatas(infos['user_portrait_pixmap'], infos['user_name'], False, infos['text'],
-                            infos['picture'], -1, timestr, '', -2, infos['thread_data']['ag'], -1, False)
+                            infos['picture'], -1, timestr, '', -2, -1, -1, False)
 
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
@@ -810,6 +898,10 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
 
         self.get_star_threads_async()
 
+    def closeEvent(self, a0):
+        a0.accept()
+        qt_window_mgr.del_window(self)
+
     def scroll_load_list_info(self):
         if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
             self.get_star_threads_async()
@@ -824,6 +916,11 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
             widget.set_picture([infos['picture']])
         else:
             widget.set_picture([])
+        if infos['is_del']:
+            widget.label_11.show()
+            widget.label_11.setStyleSheet('QLabel{color: red;}')
+            widget.label_11.setText('该贴已被作者删除')
+
         widget.label.hide()
         widget.adjustSize()
         item.setSizeHint(widget.size())
@@ -856,7 +953,8 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
                     for thread in resp['data']['store_thread']:
                         data = {'user_name': thread['author']['show_nickname'], 'user_portrait_pixmap': None,
                                 'thread_id': thread['tid'], 'forum_id': await client.get_fid(thread['forum_name']),
-                                'forum_name': thread['forum_name'], 'title': thread["title"], 'picture': None}
+                                'forum_name': thread['forum_name'], 'title': thread["title"], 'picture': None,
+                                'is_del': bool(thread['is_deleted'])}
 
                         user_head_pixmap = QPixmap()
                         portrait = thread["author"]["portrait"]
@@ -952,6 +1050,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         item = QListWidgetItem()
         widget = ReplyItem(self.bduss, self.stoken)
 
+        widget.is_comment = data['is_subfloor']
         widget.portrait = data['portrait']
         widget.thread_id = data['thread_id']
         widget.post_id = data['post_id']
@@ -994,76 +1093,120 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     if type_ == "reply":
                         self.is_reply_loading = True
-                        datas = await client.get_replys(self.reply_page)
+                        payload = {
+                            'BDUSS': self.bduss,
+                            '_client_type': '2',
+                            '_client_version': '12.87.1.0',
+                            'pn': str(self.reply_page),
+                            'stoken': self.stoken,
+                        }
+                        datas = request_mgr.run_post_api('/c/u/feed/replyme', payloads=request_mgr.calc_sign(payload),
+                                                         use_mobile_header=True, host_type=2)
+
+                        for thread in datas['reply_list']:
+                            # 用户头像
+                            portrait = thread["replyer"]["portrait"].split("?")[0]
+                            user_head_pixmap = QPixmap()
+                            response = requests.get(
+                                f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}',
+                                headers=request_mgr.header)
+                            if response.content:
+                                user_head_pixmap.loadFromData(response.content)
+                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
+
+                            # 用户昵称
+                            nick_name = thread["replyer"]["name_show"]
+
+                            # 获取吧id
+                            forum_id = await client.get_fid(thread["fname"])
+
+                            # 获取帖子标题
+                            thread_title = thread['title']
+
+                            # 发布时间字符串
+                            timestr = timestamp_to_string(int(thread['time']))
+
+                            # 是楼中楼获取对应的pid
+                            if bool(int(thread['is_floor'])):
+                                pid = int(thread['quote_pid'])
+                            else:
+                                pid = int(thread["post_id"])
+
+                            # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
+                            # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
+                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
+                            data = {'type': type_,
+                                    'thread_id': int(thread["thread_id"]),
+                                    'real_post_id': int(thread["post_id"]),
+                                    'post_id': pid,
+                                    'is_subfloor': bool(int(thread['is_floor'])),
+                                    'forum_id': forum_id,
+                                    'forum_name': thread["fname"],
+                                    'thread_title': thread_title,
+                                    'content': thread["content"],
+                                    'user_portrait_pixmap': user_head_pixmap,
+                                    'portrait': portrait,
+                                    'user_name': nick_name,
+                                    'post_time_str': timestr}
+                            self.add_post_data.emit(data)
                     elif type_ == "at":
                         self.is_at_loading = True
                         datas = await client.get_ats(self.at_page)
 
-                    for thread in datas.objs:
-                        # 用户头像
-                        user_head_pixmap = QPixmap()
-                        response = requests.get(
-                            f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
-                            headers=request_mgr.header)
-                        if response.content:
-                            user_head_pixmap.loadFromData(response.content)
-                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
+                        for thread in datas.objs:
+                            # 用户头像
+                            user_head_pixmap = QPixmap()
+                            response = requests.get(
+                                f'http://tb.himg.baidu.com/sys/portraith/item/{thread.user.portrait}',
+                                headers=request_mgr.header)
+                            if response.content:
+                                user_head_pixmap.loadFromData(response.content)
+                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
 
-                        # 用户昵称
-                        nick_name = thread.user.nick_name_new
+                            # 用户昵称
+                            nick_name = thread.user.nick_name_new
 
-                        # 获取吧id
-                        if isinstance(thread, aiotieba.get_ats.At):
+                            # 获取吧id
                             forum_id = thread.fid
-                        else:
-                            forum_id = await client.get_fid(thread.fname)
 
-                        # 获取帖子标题
-                        if isinstance(thread, aiotieba.get_ats.At):
+                            # 获取帖子标题
                             thread_title = thread.thread_title if thread.thread_title else "无法获取帖子标题，可能已被删除"
-                        else:
-                            thread_info = await client.get_posts(thread.tid, pn=1, rn=0, comment_rn=0)
-                            thread_title = thread_info.thread.title if thread_info.thread.title else "无法获取帖子标题，可能已被删除"
 
-                        # 发布时间字符串
-                        timeStamp = thread.create_time
-                        timeArray = time.localtime(timeStamp)
-                        timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                            # 发布时间字符串
+                            timestr = timestamp_to_string(thread.create_time)
 
-                        # 是楼中楼获取对应的pid
-                        if thread.is_comment:
-                            if isinstance(thread, aiotieba.get_replys.Reply):
-                                pid = thread.ppid
-                            else:
+                            # 是楼中楼获取对应的pid
+                            if thread.is_comment:
                                 thread_info = await client.get_comments(thread.tid, thread.pid, pn=1, is_comment=True)
                                 pid = thread_info.post.pid
-                        else:
-                            pid = thread.pid
+                            else:
+                                pid = thread.pid
 
-                        # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
-                        # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                        # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
-                        data = {'type': type_,
-                                'thread_id': thread.tid,
-                                'real_post_id': thread.pid,
-                                'post_id': pid,
-                                'is_subfloor': thread.is_comment,
-                                'forum_id': forum_id,
-                                'forum_name': thread.fname,
-                                'thread_title': thread_title,
-                                'content': thread.text,
-                                'user_portrait_pixmap': user_head_pixmap,
-                                'portrait': thread.user.portrait,
-                                'user_name': nick_name,
-                                'post_time_str': timestr}
-                        self.add_post_data.emit(data)
+                            # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
+                            # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
+                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
+                            data = {'type': type_,
+                                    'thread_id': thread.tid,
+                                    'real_post_id': thread.pid,
+                                    'post_id': pid,
+                                    'is_subfloor': thread.is_comment,
+                                    'forum_id': forum_id,
+                                    'forum_name': thread.fname,
+                                    'thread_title': thread_title,
+                                    'content': thread.text,
+                                    'user_portrait_pixmap': user_head_pixmap,
+                                    'portrait': thread.user.portrait,
+                                    'user_name': nick_name,
+                                    'post_time_str': timestr}
+                            self.add_post_data.emit(data)
             except Exception as e:
                 print(type(e))
                 print(e)
             else:
                 if type_ == "reply":
-                    if datas.has_more:
+                    if bool(int(datas["page"]["has_more"])):
                         self.reply_page += 1
                     else:
                         self.reply_page = -1
@@ -1100,10 +1243,14 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_11.setPixmap(QPixmap('ui/user_ban.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
         self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
+        self.init_user_action_menu()
+
+        # 隐藏组件
+        self.frame_8.hide()
         self.frame_2.hide()
         self.frame_3.hide()
-        self.frame_4.hide()
         self.frame_5.hide()
+        self.frame_4.hide()
 
         self.page = {'thread': {'loading': False, 'page': 1},
                      'reply': {'loading': False, 'page': 1},
@@ -1138,19 +1285,59 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.listWidget_3.itemDoubleClicked.connect(self.open_user_homepage)
         self.listWidget_5.itemDoubleClicked.connect(self.open_user_homepage)
 
+        self.init_load_flash()
         self.get_head_info_async()
         for i in self.page.keys():
             self.get_list_info_async(i)
 
+    def closeEvent(self, a0):
+        self.flash_shower.hide()
+        a0.accept()
+        qt_window_mgr.del_window(self)
+
+    def init_load_flash(self):
+        self.flash_shower = LoadingFlashWidget()
+        self.flash_shower.cover_widget(self)
+        self.flash_shower.show()
+
+    def init_user_action_menu(self):
+        menu = QMenu(self)
+        menu.setToolTipsVisible(True)
+
+        follow = QAction('关注', self)
+        menu.addAction(follow)
+
+        unfollow = QAction('取消关注', self)
+        menu.addAction(unfollow)
+
+        menu.addSeparator()
+
+        blacklist = QAction('拉黑', self)
+        blacklist.setToolTip('禁止该用户与你互动（转评赞等），以及禁止该用户关注你和给你发私信。')
+        menu.addAction(blacklist)
+
+        old_mute = QAction('禁言', self)
+        old_mute.setToolTip('禁止该用户回复你的帖子。\nPS：该功能存在于旧版本贴吧中，已被新版本的拉黑功能取代，不推荐使用。')
+        menu.addAction(old_mute)
+
+        self.pushButton.setMenu(menu)
+
     def open_user_homepage(self, item):
         if isinstance(item, ExtListWidgetItem):
-            self.user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
-            self.user_home_page.show()
+            user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
+            qt_window_mgr.add_window(user_home_page)
 
     def set_head_info_ui(self, data):
         if data['error']:
             QMessageBox.critical(self, '用户信息加载失败', data['error'], QMessageBox.Ok)
+            self.close()
         else:
+            # 隐藏动画，显示内容
+            self.frame.show()
+            self.tabWidget.show()
+            self.frame_8.show()
+            self.flash_shower.hide()
+
             self.setWindowTitle(data['name'] + ' - 个人主页')
             self.setWindowIcon(QIcon(data['portrait_pixmap']))
 
@@ -1186,22 +1373,29 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             else:
                 self.label_13.hide()
 
+            have_flag_showed = False
             if data['is_banned']:
                 self.frame_3.show()
+                have_flag_showed = True
             if data['is_dashen']:
                 self.frame_2.show()
+                have_flag_showed = True
             if data['thread_reply_permission'] != 1:
                 self.frame_5.show()
+                have_flag_showed = True
                 if data['thread_reply_permission'] == 5:
                     self.label_16.setText('由于隐私设置，只有粉丝可以评论该用户的贴子。')
                 elif data['thread_reply_permission'] == 6:
                     self.label_16.setText('由于隐私设置，只有该用户关注的人可以评论该用户的贴子。')
             if data['follow_forums_show_permission'] != 1:
                 self.frame_4.show()
+                have_flag_showed = True
                 if data['follow_forums_show_permission'] == 2:
                     self.label_15.setText('该用户设置关注吧列表仅好友可见。')
                 elif data['follow_forums_show_permission'] == 3:
                     self.label_15.setText('该用户隐藏了关注吧列表。')
+            if have_flag_showed:
+                self.frame_8.hide()
 
     def get_head_info_async(self):
         start_background_thread(self.get_head_info)
@@ -1326,6 +1520,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                 cfollow_info='[共同关注] ' if datas['is_common_follow'] else '',
                                 level=datas['level'], exp=datas['exp'],
                                 desp=datas['forum_desp']))
+            widget.set_level_color(datas['level'])
             item.setSizeHint(widget.size())
             self.listWidget.addItem(item)
             self.listWidget.setItemWidget(item, widget)
@@ -1384,7 +1579,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             data['view_pixmap'] = preview_pixmap
 
                             # 获取吧头像
-                            forum = await client.get_forum(thread.fid)
+                            forum = await client.get_forum_detail(thread.fid)
                             forum_pixmap = QPixmap()
                             response = requests.get(forum.small_avatar, headers=request_mgr.header)
                             if response.content:
@@ -1428,9 +1623,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             thread_title = thread_info.thread.title if thread_info.thread.title else "无法获取帖子标题，可能已被删除"
 
                             # 发布时间字符串
-                            timeStamp = thread.create_time
-                            timeArray = time.localtime(timeStamp)
-                            timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                            timestr = timestamp_to_string(thread.create_time)
 
                             # 是楼中楼获取对应的pid
                             if thread.is_comment:
@@ -1532,11 +1725,13 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     """吧详细信息窗口，可显示吧详细信息、吧务信息、等级排行榜"""
     set_main_info_signal = pyqtSignal(dict)
-    add_level_list_item_signal = pyqtSignal(dict)
 
     page_level_list = 1
     is_level_list_loading = False
     forum_bg_link = ''
+    forum_name = ''
+    forum_atavar_link = ''
+    webview = None
 
     def __init__(self, bduss, stoken, forum_id):
         super().__init__()
@@ -1547,18 +1742,28 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
         self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.init_load_flash()
 
         self.set_main_info_signal.connect(self.ui_set_main_info)
-        self.add_level_list_item_signal.connect(self.ui_add_level_list_item)
         self.pushButton_5.clicked.connect(self.close)
-        self.treeWidget_3.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
-        self.treeWidget_3.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
         self.treeWidget.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
         self.pushButton_4.clicked.connect(self.save_bg_image)
         self.pushButton_6.clicked.connect(lambda: pyperclip.copy(self.forum_bg_link))
+        self.pushButton_3.clicked.connect(self.show_sign_webview)
+        self.pushButton_7.clicked.connect(lambda: self.show_big_picture(self.forum_atavar_link))
 
+        self.loading_widget.show()
         self.get_main_info_async()
-        self.get_level_list_info_async()
+
+    def closeEvent(self, a0):
+        self.loading_widget.hide()
+        self.destroy_webview()
+        a0.accept()
+        qt_window_mgr.del_window(self)
+
+    def init_load_flash(self):
+        self.loading_widget = LoadingFlashWidget()
+        self.loading_widget.cover_widget(self)
 
     def save_bg_image(self):
         if self.forum_bg_link:
@@ -1569,104 +1774,93 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
     def open_user_homepage(self, item, column):
         if isinstance(item, ExtTreeWidgetItem):
-            self.user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
-            self.user_home_page.show()
+            user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
+            qt_window_mgr.add_window(user_home_page)
 
-    def scroll_load_more(self):
-        if self.treeWidget_3.verticalScrollBar().value() == self.treeWidget_3.verticalScrollBar().maximum():
-            self.get_level_list_info_async()
+    def destroy_webview(self):
+        if self.webview:
+            self.webview.close()
+            self.webview.destroyWebview()
+            self.webview = None
 
-    def ui_add_level_list_item(self, datas):
-        item = ExtTreeWidgetItem(self.bduss, self.stoken)
-        item.user_portrait_id = datas['portrait']
-        item.setIcon(0, QIcon(datas['portrait_pixmap']))
-        item.setText(0, datas['tieba_name'])
-        item.setText(1, datas['bd_name'])
-        item.setText(2, str(datas['level']))
-        item.setText(3, str(datas['exp']))
-        item.setText(4, str(datas['uid']))
-        item.setText(5, '全吧封禁' if datas['isban'] else '正常')
-        self.treeWidget_3.addTopLevelItem(item)
+    def show_sign_webview(self):
+        if self.webview:
+            self.webview.show()
+            self.webview.raise_()
+            if self.webview.isMinimized():
+                self.webview.showNormal()
+            if not self.webview.isActiveWindow():
+                self.webview.activateWindow()
+        else:
+            webview2.loadLibs()
+            self.webview = webview2.QWebView2View()
 
-    def get_level_list_info_async(self):
-        if not self.is_level_list_loading and self.page_level_list != -1:
-            start_background_thread(self.get_level_list_info)
+            self.webview.resize(630, 590)
+            self.webview.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+            self.webview.setWindowTitle('补签（存在功能性问题，慎用）')
 
-    def get_level_list_info(self):
-        async def dosign():
-            try:
-                self.is_level_list_loading = True
-                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    forum_name = await client.get_fname(self.forum_id)  # 先获取吧名字
-                    ulist_html = request_mgr.run_get_api(
-                        f'/f/like/furank?kw={forum_name}&ie=utf-8&pn={self.page_level_list}',
-                        return_json=False)  # 手动实现请求部分，aiotieba中调用有301错误
-                    soup = BeautifulSoup(ulist_html, "lxml")
-                    ulist = aiotieba.get_rank_users.RankUsers.from_tbdata(soup)
+            self.webview.windowCloseRequested.connect(self.destroy_webview)
+            self.webview.loadAfterRender(
+                f'https://tieba.baidu.com/mo/q/resign/index?forum_id={self.forum_id}')
 
-                    for i in ulist.objs:
-                        bd_user_name = i.user_name
-                        level = i.level
-                        exp = i.exp
+            profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
+                                              enable_link_hover_text=False,
+                                              enable_zoom_factor=False, enable_error_page=True,
+                                              enable_context_menu=True, enable_keyboard_keys=True,
+                                              handle_newtab_byuser=False,
+                                              user_agent=request_mgr.header_android['User-Agent'])
+            self.webview.setProfile(profile)
 
-                        user_info = await client.get_user_info(bd_user_name)
-                        portrait = user_info.portrait
-                        tb_user_name = user_info.nick_name_new
-                        user_id = user_info.user_id
-                        is_banned = bool(user_info.is_blocked)
-                        if not tb_user_name:
-                            tb_user_name = '未知昵称'
+            self.webview.initRender()
+            self.webview.show()
 
-                        # 获取头像
-                        pixmap = QPixmap()
-                        if portrait:
-                            head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}'
-                            response = requests.get(head_url, headers=request_mgr.header)
-                            if response.content:
-                                pixmap.loadFromData(response.content)
-                                pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                        else:
-                            pixmap.load('ui/default_user_image.png')
-
-                        self.add_level_list_item_signal.emit(
-                            {'bd_name': bd_user_name, 'tieba_name': tb_user_name, 'level': level, 'portrait': portrait,
-                             'portrait_pixmap': pixmap, 'exp': exp, 'uid': user_id, 'isban': is_banned})
-
-            except Exception as e:
-                print(type(e))
-                print(e)
-            else:
-                if ulist.has_more:
-                    self.page_level_list += 1
-                else:
-                    self.page_level_list = -1
-            finally:
-                self.is_level_list_loading = False
-
-        def start_async():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            asyncio.run(dosign())
-
-        start_async()
+    def show_big_picture(self, link):
+        opic_view = NetworkImageViewer(link)
+        opic_view.closed.connect(lambda: qt_window_mgr.del_window(opic_view))
+        qt_window_mgr.add_window(opic_view)
 
     def ui_set_main_info(self, datas):
         if not datas['err_info']:
+            self.loading_widget.hide()
+            self.forum_name = datas['forum_name']
             self.label_2.setText(datas['forum_name'] + '吧')
             self.label.setPixmap(datas['forum_pixmap'])
-            self.label_5.setText('简介：' + datas['forum_desp'])
+            self.label_5.setText(datas['forum_desp'] + '\n' + datas['forum_desp_ex'])
             self.label_11.setText(f'吧 ID：{self.forum_id}')
             self.label_3.setText('关注数：' + str(datas['follow_c']))
             self.label_4.setText('帖子数：' + str(datas['thread_c']))
             self.label_12.setText('吧分类：' + datas['forum_volume'])
             self.label_13.setText('主题帖数：{0}'.format(str(datas['main_thread_c'])))
+            self.textBrowser.setHtml(datas['forum_rule_html'])
+            self.label_15.setText(f'<html><body>'
+                                  f'<p>很抱歉，出于加载时的性能问题，该功能已被停用。<br/>该页面将在将来的版本中删除。<br>'
+                                  f'你可以到 <a href="https://tieba.baidu.com/f/like/furank?kw={self.forum_name}&ie=utf-8">牛人排行榜</a> '
+                                  f'中查看{self.forum_name}吧的等级排行榜。</p>'
+                                  f'</body></html>')
+
             if self.bduss:
-                self.label_6.setText('是否关注：' + ('是' if datas['follow_info']['isfollow'] else '否'))
-                self.label_10.setText('今天是否签到：' + ('是' if datas['follow_info']['isSign'] else '否'))
+                if datas['follow_info']['isfollow']:
+                    self.pushButton.setText('取消关注')
+                else:
+                    self.pushButton.setText('关注')
+                self.label_6.setText(f'你已经关注了本吧。' if datas['follow_info'][
+                    'isfollow'] else f'你还没有关注{self.forum_name}吧，不妨考虑一下？')
+                if datas['follow_info']['isSign']:
+                    self.pushButton_2.setEnabled(False)
+                    self.pushButton_2.setText('已签到')
                 self.label_7.setText('等级：' + str(datas['follow_info']['level']))
                 self.label_8.setText('等级头衔：' + datas['follow_info']['level_flag'])
-                self.label_9.setText('经验值：' + str(datas['follow_info']['exp']))
+                self.label_9.setText(
+                    f'{datas["follow_info"]["exp"]} / {datas["follow_info"]["next_exp"]}，距离下一等级还差 {datas["follow_info"]["next_exp"] - datas["follow_info"]["exp"]} 经验值')
+                self.progressBar.setRange(0, datas["follow_info"]["next_exp"])
+                self.progressBar.setValue(datas["follow_info"]["exp"])
+
+                self.label_10.setText(f'共计签到天数：{datas["follow_info"]["total_sign_count"]}')
+                self.label_17.setText(f'连签天数：{datas["follow_info"]["continuous_sign_count"]}')
+                self.label_18.setText(f'漏签天数：{datas["follow_info"]["forget_sign_count"]}')
             else:
+                self.pushButton.hide()
+                self.label_6.setText('你还没有登录，登录后即可查看自己的信息。')
                 self.groupBox.hide()
 
             if datas['bg_pic_info']['pixmap']:
@@ -1702,8 +1896,11 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                 bawu_types[i['type']].addChild(item)
         else:
             QMessageBox.critical(self, '吧信息加载异常', datas['err_info'], QMessageBox.Ok)
+            self.close()
 
     def get_main_info_async(self):
+        self.treeWidget.clear()
+        self.listWidget.clear()
         start_background_thread(self.get_main_info)
 
     def get_main_info(self):
@@ -1713,43 +1910,138 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                     # 初始化数据
                     data = {'forum_name': '', 'has_bawu': False, 'bawu_info': [], 'forum_pixmap': None,
                             'forum_desp': '', 'thread_c': 0, 'follow_c': 0, 'main_thread_c': 0,
-                            'follow_info': {'isfollow': False, 'level': 0, 'exp': 0, 'level_flag': '', 'isSign': False},
+                            'follow_info': {'isfollow': False, 'level': 0, 'exp': 0, 'level_flag': '', 'isSign': False,
+                                            'next_exp': 0, 'total_sign_count': 0, 'continuous_sign_count': 0,
+                                            'forget_sign_count': 0},
                             'forum_volume': '', 'err_info': '', 'friend_forum_list': [],
-                            'bg_pic_info': {'url': '', 'pixmap': None}}
+                            'bg_pic_info': {'url': '', 'pixmap': None}, 'forum_desp_ex': '', 'forum_rule_html': ''}
 
-                    # 获取吧信息
-                    forum_info = await client.get_forum(self.forum_id)
-                    if forum_info.err:
-                        if isinstance(forum_info.err, aiotieba.exception.TiebaServerError):
-                            data['err_info'] = f'{forum_info.err.msg} (错误代码 {forum_info.err.code})'
+                    async def get_forum_desp_ex():
+                        payload = {
+                            'BDUSS': self.bduss,
+                            '_client_type': "2",
+                            '_client_version': "12.87.1.1",
+                            'forum_id': str(self.forum_id),
+                            'is_newfrs': '1',
+                            'stoken': self.stoken,
+                        }
+                        ex_forum_info = request_mgr.run_post_api('/c/f/forum/getforumdetail',
+                                                                 request_mgr.calc_sign(payload), bduss=self.bduss,
+                                                                 stoken=self.stoken, use_mobile_header=True,
+                                                                 host_type=2)
+                        if forum_content := ex_forum_info["forum_info"].get("content"):
+                            data['forum_desp_ex'] = forum_content[0]['text']
+
+                        data['follow_info']['isfollow'] = bool(int(ex_forum_info['forum_info']['is_like']))
+                        data['follow_info']['exp'] = int(ex_forum_info['forum_info']["cur_score"])
+                        data['follow_info']['level'] = int(ex_forum_info['forum_info']["level_id"])
+                        data['follow_info']['level_flag'] = ex_forum_info['forum_info']["level_name"]
+                        data['follow_info']['next_exp'] = int(ex_forum_info['forum_info']["levelup_score"])
+                        self.forum_atavar_link = ex_forum_info['forum_info']["avatar_origin"]
+
+                    async def get_forum_rule():
+                        payload = {
+                            'BDUSS': self.bduss,
+                            '_client_type': "2",
+                            '_client_version': "12.87.1.1",
+                            'forum_id': str(self.forum_id),
+                            'stoken': self.stoken,
+                        }
+                        ex_rule = request_mgr.run_post_api('/c/f/forum/forumRuleDetail',
+                                                           request_mgr.calc_sign(payload), bduss=self.bduss,
+                                                           stoken=self.stoken, use_mobile_header=True,
+                                                           host_type=2)
+                        html_code = '<html>'
+                        if ex_rule['forum_rule_id']:
+                            html_code += f'<h2>{ex_rule["title"]}</h2>'
+                            html_code += f'<h3>{ex_rule["forum"]["forum_name"]}吧吧务于 {ex_rule["publish_time"]} 修订</h3>'
+                            html_code += f'<h4>前言</h4><p>{ex_rule["preface"]}</p>'
+                            r_count = 0  # 前缀下标
+
+                            for rule in ex_rule.get('rules', []):  # 纯自定义吧规
+                                title = rule['title']  # 标题
+                                sub_html_code = f'<h4>{title}</h4>'
+
+                                for single_sub_rule_item in rule['content']:
+                                    if single_sub_rule_item['type'] == '0':  # 是文本就添加
+                                        content = single_sub_rule_item['text']
+                                        if content != '\n':
+                                            sub_html_code += f'<p>{content}</p>'
+                                    elif single_sub_rule_item['type'] == '1':  # 是链接添加html代码
+                                        sub_html_code += f'<a href=\"{single_sub_rule_item["link"]}\">{single_sub_rule_item["text"]}</a>'
+
+                                html_code += sub_html_code
+
+                            for rule in ex_rule.get('default_rules', []):  # 默认吧规内容
+                                title = ex_rule['forum_rule_conf']['first_level_index_list'][r_count] + rule[
+                                    'title']  # 标题
+                                sub_html_code = f'<h4>{title}</h4>'
+                                sub_prefix_count = 0  # 前缀下标
+                                for sub_rule in rule['content_list']:  # 子条目
+                                    pfix = ex_rule['forum_rule_conf']['second_level_index_list'][
+                                        sub_prefix_count]  # 数字前缀
+                                    content = ''  # 正文内容
+                                    for single_sub_rule_item in sub_rule['content']:
+                                        if single_sub_rule_item['type'] == '0':  # 是文本就添加
+                                            content += single_sub_rule_item['text']
+                                        elif single_sub_rule_item['type'] == '1':  # 是链接添加html代码
+                                            content += f'<a href=\"{single_sub_rule_item["link"]}\">{single_sub_rule_item["text"]}</a>'
+                                    sub_html_code += f'<p>{pfix}{content}</p>'
+                                    sub_prefix_count += 1
+                                html_code += sub_html_code
+                                r_count += 1
+
+                            for rule in ex_rule.get('new_rules', []):  # 混合的自定义吧规
+                                title = ex_rule['forum_rule_conf']['first_level_index_list'][r_count] + rule[
+                                    'title']  # 标题
+                                sub_html_code = f'<h4>{title}</h4>'
+                                sub_prefix_count = 0  # 前缀下标
+                                for sub_rule in rule['content_list']:  # 子条目
+                                    pfix = ex_rule['forum_rule_conf']['second_level_index_list'][
+                                        sub_prefix_count]  # 数字前缀
+                                    content = ''  # 正文内容
+                                    for single_sub_rule_item in sub_rule['content']:
+                                        if single_sub_rule_item['type'] == '0':  # 是文本就添加
+                                            content += single_sub_rule_item['text']
+                                        elif single_sub_rule_item['type'] == '1':  # 是链接添加html代码
+                                            content += f'<a href=\"{single_sub_rule_item["link"]}\">{single_sub_rule_item["text"]}</a>'
+                                    sub_html_code += f'<p>{pfix}{content}</p>'
+                                    sub_prefix_count += 1
+                                html_code += sub_html_code
+                                r_count += 1
+
+                            html_code += '</html>'
+                            data['forum_rule_html'] = html_code
                         else:
-                            data['err_info'] = str(forum_info.err)
-                    else:
+                            data['forum_rule_html'] = '<html><h2>很抱歉，本吧吧主并没有在此设置吧规。</h2></html>'
+
+                    async def get_level_info():
                         if self.bduss:
-                            # 在登录情况下，获取等级信息
-                            bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
-                            forum_follow_info = await client.get_forum_level(self.forum_id)
+                            # 在登录情况下，获取签到信息
+                            payload = {
+                                'BDUSS': self.bduss,
+                                '_client_type': "2",
+                                '_client_version': "12.88.1.2",
+                                'forum_ids': str(self.forum_id),
+                                'from': "frs",
+                                'stoken': self.stoken,
+                            }
+                            resp_sign_info = request_mgr.run_post_api('/c/f/forum/getUserSign',
+                                                                      request_mgr.calc_sign(payload), bduss=self.bduss,
+                                                                      stoken=self.stoken, use_mobile_header=True,
+                                                                      host_type=2)
 
-                            # 整理等级信息
-                            data['follow_info']['isfollow'] = bool(forum_follow_info.is_like)
-                            if forum_follow_info.is_like:
-                                data['follow_info']['level'] = forum_follow_info.user_level
-                                data['follow_info']['level_flag'] = forum_follow_info.level_name
-                                for i in bars:
-                                    if i['forum_id'] == self.forum_id:
-                                        data['follow_info']['isSign'] = i['is_sign'] == 1
-                                        data['follow_info']['exp'] = int(i['user_exp'])
-                                        break
+                            # 整理签到信息
+                            data['follow_info']['isSign'] = bool(
+                                resp_sign_info["data"]['forum'][0]["sign_in_info"]["user_info"]["is_sign_in"])
+                            data['follow_info']['total_sign_count'] = int(
+                                resp_sign_info["data"]['forum'][0]["sign_in_info"]["user_info"]["cout_total_sign_num"])
+                            data['follow_info']['continuous_sign_count'] = int(
+                                resp_sign_info["data"]['forum'][0]["sign_in_info"]["user_info"]["cont_sign_num"])
+                            data['follow_info']['forget_sign_count'] = int(
+                                resp_sign_info["data"]['forum'][0]["sign_in_info"]["user_info"]["miss_sign_num"])
 
-                        # 整理吧信息
-                        data['forum_name'] = forum_info.fname
-                        data['has_bawu'] = forum_info.has_bawu
-                        data['forum_desp'] = forum_info.slogan
-                        data['thread_c'] = forum_info.post_num
-                        data['follow_c'] = forum_info.member_num
-                        data['main_thread_c'] = forum_info.thread_num
-                        data['forum_volume'] = f'{forum_info.category} - {forum_info.subcategory}'
-
+                    async def get_forum_bg():
                         # 获取吧背景图片
                         self.forum_bg_link = url = forum_info.background_image_url
                         data['bg_pic_info']['url'] = url
@@ -1760,6 +2052,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                 forum_bg_pixmap.loadFromData(response.content)
                                 data['bg_pic_info']['pixmap'] = forum_bg_pixmap
 
+                    async def get_forums_heads():
                         # 获取友情吧信息
                         if forum_info.friend_forums:
                             for i in forum_info.friend_forums:
@@ -1773,6 +2066,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                     single_ff_info['headpix'] = pixmap
                                 data['friend_forum_list'].append(single_ff_info)
 
+                    async def get_self_forum_head():
                         # 获取吧头像
                         forum_pixmap = QPixmap()
                         response = requests.get(forum_info.small_avatar, headers=request_mgr.header)
@@ -1781,6 +2075,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                             forum_pixmap = forum_pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                             data['forum_pixmap'] = forum_pixmap
 
+                    async def get_bawu_infos():
                         # 有吧务获取吧务信息
                         if forum_info.has_bawu:
                             bawu_info = await client.get_bawu_info(self.forum_id)
@@ -1807,6 +2102,30 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                     data['bawu_info'].append(
                                         {'name': bawu.nick_name_new, 'level': bawu.level, 'type': k,
                                          'portrait': bawu.portrait, 'portrait_pixmap': pixmap})
+
+                    # 获取吧信息
+                    forum_info = await client.get_forum(self.forum_id)
+
+                    if forum_info.err:
+                        if isinstance(forum_info.err, aiotieba.exception.TiebaServerError):
+                            data['err_info'] = f'{forum_info.err.msg} (错误代码 {forum_info.err.code})'
+                        else:
+                            data['err_info'] = str(forum_info.err)
+                    else:
+                        # 整理吧信息
+                        data['forum_name'] = forum_info.fname
+                        data['has_bawu'] = forum_info.has_bawu
+                        data['forum_desp'] = forum_info.slogan
+                        data['thread_c'] = forum_info.post_num
+                        data['follow_c'] = forum_info.member_num
+                        data['main_thread_c'] = forum_info.thread_num
+                        data['forum_volume'] = f'{forum_info.category} - {forum_info.subcategory}'
+
+                        await asyncio.gather(get_forum_rule(), get_forum_desp_ex(), get_level_info(), get_forum_bg(),
+                                             get_forums_heads(),
+                                             get_bawu_infos(),
+                                             get_self_forum_head(),
+                                             return_exceptions=True)
 
                     self.set_main_info_signal.emit(data)
             except Exception as e:
@@ -1872,7 +2191,7 @@ class ThreadVideoItem(QWidget, thread_video_item.Ui_Form):
             self.webview.renderInitializationCompleted.connect(self.pushButton_3.show)
             self.webview.renderInitializationCompleted.connect(lambda: self.webview.setHtml(self.webview_show_html))
 
-            profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data',
+            profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
                                               enable_link_hover_text=False,
                                               enable_zoom_factor=False, enable_error_page=True,
                                               enable_context_menu=True, enable_keyboard_keys=True,
@@ -1937,8 +2256,8 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         self.load_comments_async()
 
     def open_thread_detail(self):
-        self.thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id))
-        self.thread_window.show()
+        thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id))
+        qt_window_mgr.add_window(thread_window)
 
     def refresh_comments(self):
         if not self.isLoading:
@@ -1964,6 +2283,9 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         item = QListWidgetItem()
         widget = ReplyItem(self.bduss, self.stoken)
         widget.portrait = datas['portrait']
+        widget.thread_id = datas['thread_id']
+        widget.post_id = datas['post_id']
+        widget.is_comment = True
         if datas['replyobj']:
             widget.set_reply_text(
                 '回复用户 <a href=\"user://{uid}\">{u}</a>: '.format(uid=datas['reply_uid'], u=datas['replyobj']))
@@ -1997,12 +2319,12 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                         portrait = t.user.portrait
                         user_name = t.user.nick_name_new
                         agree_num = t.agree
-                        timeStamp = t.create_time
-                        timeArray = time.localtime(timeStamp)
-                        time_str = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                        time_str = timestamp_to_string(t.create_time)
                         user_level = t.user.level
                         is_author = t.is_thread_author
                         is_bawu = t.user.is_bawu
+                        thread_id = t.tid
+                        post_id = t.pid
                         be_replied_user = ''
                         replyer_uid = 0
                         if t.reply_to_id != 0:
@@ -2022,7 +2344,8 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                                  'user_portrait_pixmap': user_head_pixmap,
                                  'agree_count': agree_num,
                                  'create_time_str': time_str, 'is_author': is_author, 'ulevel': user_level,
-                                 'replyobj': be_replied_user, 'reply_uid': replyer_uid, 'is_bawu': is_bawu}
+                                 'replyobj': be_replied_user, 'reply_uid': replyer_uid, 'is_bawu': is_bawu,
+                                 'thread_id': thread_id, 'post_id': post_id}
 
                         self.add_comment.emit(tdata)
             except Exception as e:
@@ -2056,9 +2379,13 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
     floor = -1
     thread_id = -1
     post_id = -1
+    flash_timer_count = 0
     replyWindow = None
     allow_home_page = True
     subcomment_show_thread_button = False
+    agree_num = 0
+    is_comment = False
+    agree_thread_signal = pyqtSignal(str)
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -2075,12 +2402,110 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.pushButton.clicked.connect(self.show_subcomment_window)
         self.label_3.installEventFilter(self)  # 重写事件过滤器
         self.label_4.installEventFilter(self)  # 重写事件过滤器
+        self.pushButton_3.clicked.connect(self.agree_thread_async)
+        self.agree_thread_signal.connect(self.agree_thread_ok_action)
+
+        self.flash_timer = QTimer(self)
+        self.flash_timer.setInterval(200)
+        self.flash_timer.timeout.connect(self.handle_flash_timer_event)
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease and source in (
                 self.label_3, self.label_4) and self.allow_home_page:
             self.open_user_homepage(self.portrait)
         return super(ReplyItem, self).eventFilter(source, event)  # 照常处理事件
+
+    def mouseDoubleClickEvent(self, a0):
+        if not self.flash_timer_count:
+            self.flash_timer_count = 1
+            self.flash_timer.start()
+            self.label_6.setStyleSheet('QWidget{background-color: rgb(71, 71, 255);}')
+
+    def agree_thread_ok_action(self, isok):
+        self.pushButton_3.setText(str(self.agree_num) + ' 个赞')
+        if isok == '[ALREADY_AGREE]':
+            if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
+                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                self.agree_thread_async(True)
+        else:
+            QMessageBox.information(self, '点赞操作完成', isok)
+
+    def agree_thread_async(self, is_cancel=False):
+        start_background_thread(self.agree_thread, (is_cancel,))
+
+    def agree_thread(self, iscancel=False):
+        aiotieba.logging.get_logger().info(f'agree reply/comment {self.post_id} in thread {self.thread_id}')
+        try:
+            account = aiotieba.Account()  # 实例化account以便计算一些数据
+            # 拿tbs
+            tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
+                {'_client_version': '12.87.1.1', 'bdusstoken': self.bduss}), use_mobile_header=True, host_type=2)
+            tbs = tsb_resp["anti"]["tbs"]
+
+            if iscancel:
+                payload = {
+                    'BDUSS': self.bduss,
+                    '_client_type': "2",
+                    '_client_version': "12.88.1.2",
+                    'agree_type': "5",  # 2点赞 5取消点赞
+                    'cuid': account.cuid_galaxy2,
+                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题帖
+                    'op_type': "1",  # 0点赞 1取消点赞
+                    'post_id': str(self.post_id),
+                    'stoken': self.stoken,
+                    'tbs': tbs,
+                    'thread_id': str(self.thread_id),
+                }
+
+                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                    host_type=2)
+                if int(response['error_code']) == 0:
+                    self.agree_num -= 1
+                    self.agree_thread_signal.emit('取消点赞成功。')
+                else:
+                    self.agree_thread_signal.emit(response['error_msg'])
+            else:
+                payload = {
+                    'BDUSS': self.bduss,
+                    '_client_type': "2",
+                    '_client_version': "12.88.1.2",
+                    'agree_type': "2",  # 2点赞 5取消点赞
+                    'cuid': account.cuid_galaxy2,
+                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题帖
+                    'op_type': "0",  # 0点赞 1取消点赞
+                    'post_id': str(self.post_id),
+                    'stoken': self.stoken,
+                    'tbs': tbs,
+                    'thread_id': str(self.thread_id),
+                }
+
+                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                    host_type=2)
+                if int(response['error_code']) == 0:
+                    self.agree_num += 1
+                    is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
+                    self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
+                elif int(response['error_code']) == 3280001:
+                    self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                else:
+                    self.agree_thread_signal.emit(response['error_msg'])
+
+        except Exception as e:
+            print(type(e))
+            print(e)
+            self.agree_thread_signal.emit('程序内部出错，请重试')
+
+    def handle_flash_timer_event(self):
+        if self.flash_timer_count == 6:
+            self.flash_timer.stop()
+            self.flash_timer_count = -1
+        elif self.flash_timer_count % 2 == 1:
+            self.label_6.setStyleSheet('')
+        else:
+            self.label_6.setStyleSheet('QWidget{background-color: rgb(71, 71, 255);}')
+        self.flash_timer_count += 1
 
     def show_subcomment_window(self):
         if self.c_count != 0:
@@ -2103,18 +2528,18 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.listWidget.setFixedWidth(self.width_count)
 
     def open_ba_detail(self, fid):
-        self.forum_window = ForumShowWindow(self.bduss, self.stoken, int(fid))
-        self.forum_window.show()
-        self.forum_window.load_info_async()
-        self.forum_window.get_threads_async()
+        forum_window = ForumShowWindow(self.bduss, self.stoken, int(fid))
+        qt_window_mgr.add_window(forum_window)
+        forum_window.load_info_async()
+        forum_window.get_threads_async()
 
     def open_thread(self, tid):
-        self.third_party_thread = ThreadDetailView(self.bduss, self.stoken, int(tid))
-        self.third_party_thread.show()
+        third_party_thread = ThreadDetailView(self.bduss, self.stoken, int(tid))
+        qt_window_mgr.add_window(third_party_thread)
 
     def open_user_homepage(self, uid):
-        self.user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
-        self.user_home_page.show()
+        user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
+        qt_window_mgr.add_window(user_home_page)
 
     def handle_link_event(self, url):
         if url.startswith('user://'):
@@ -2144,14 +2569,15 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.label_3.setText(uname)
 
         text_ = ''
+        is_high_agree = floor == 0
         if floor != -1 and floor:
             self.floor = floor
-            text_ += f'第 {floor} 楼，'
+            text_ += f'第 {"高赞回答楼" if is_high_agree else floor} 楼 | '
         if timestr:
-            text_ += f'{timestr}，'
+            text_ += f'{timestr} | '
         if ip and not profile_mgr.local_config['thread_view_settings']['hide_ip']:
-            text_ += f'IP 属地 {ip}，'
-        self.label.setText(text_[:-1])
+            text_ += f'IP 属地 {ip} | '
+        self.label.setText(text_[:-3])
 
         if reply_count == -1:
             self.pushButton.hide()
@@ -2162,6 +2588,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             else:
                 self.pushButton.setText(f'查看楼中楼 ({reply_count})')
         if agree_count != -1:
+            self.agree_num = agree_count
             self.pushButton_3.setText(f'{agree_count} 个赞')
         else:
             self.pushButton_3.hide()
@@ -2212,16 +2639,20 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
 
 class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     """主题帖详情窗口，可以浏览主题帖详细内容和回复"""
+    first_floor_pid = -1
     forum_id = -1
     user_id = -1
     height_count = 0
     height_count_replies = 0
     width_count_replies = 0
     reply_page = 1
+    agree_num = 0
     is_getting_replys = False
     head_data_signal = pyqtSignal(dict)
     add_reply = pyqtSignal(dict)
     show_reply_end_text = pyqtSignal(int)
+    store_thread_signal = pyqtSignal(str)
+    agree_thread_signal = pyqtSignal(str)
 
     def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False):
         super().__init__()
@@ -2249,6 +2680,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.listWidget_4.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.listWidget_4.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
+        self.init_load_flash()
 
         self.pushButton.clicked.connect(self.init_more_menu)
         self.label_6.linkActivated.connect(self.handle_link_event)
@@ -2256,13 +2688,17 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.pushButton_2.clicked.connect(self.open_ba_detail)
         self.add_reply.connect(self.add_reply_ui)
         self.show_reply_end_text.connect(self.show_end_reply_ui)
+        self.store_thread_signal.connect(self.store_thread_ok_action)
+        self.agree_thread_signal.connect(self.agree_thread_ok_action)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self.load_sub_threads_from_scroll)
         self.comboBox.currentIndexChanged.connect(self.load_sub_threads_refreshly)
         self.checkBox.stateChanged.connect(self.load_sub_threads_refreshly)
         self.label_2.linkActivated.connect(self.end_label_link_event)
+        self.pushButton_4.clicked.connect(self.agree_thread_async)
         self.label_3.installEventFilter(self)  # 重写事件过滤器
         self.label_4.installEventFilter(self)  # 重写事件过滤器
 
+        self.flash_shower.show()
         self.get_thread_head_info_async()
         self.get_sub_thread_async()
 
@@ -2273,12 +2709,19 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         return super(ThreadDetailView, self).eventFilter(source, event)  # 照常处理事件
 
     def closeEvent(self, a0):
+        self.flash_shower.hide()
         a0.accept()
         if self.listWidget.count() == 1:
             widget = self.listWidget.itemWidget(self.listWidget.item(0))
             if isinstance(widget, ThreadVideoItem):
                 if widget.webview:
                     widget.destroy_webview()
+
+        qt_window_mgr.del_window(self)
+
+    def init_load_flash(self):
+        self.flash_shower = LoadingFlashWidget()
+        self.flash_shower.cover_widget(self)
 
     def end_label_link_event(self, url):
         if url == 'reload_replies':
@@ -2301,16 +2744,30 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         open_link.triggered.connect(lambda: open_url_in_browser(url))
         menu.addAction(open_link)
 
+        menu.addSeparator()
+
+        store_thread = QAction('收藏', self)
+        store_thread.triggered.connect(self.store_thread_async)
+        menu.addAction(store_thread)
+
+        cancel_store_thread = QAction('取消收藏', self)
+        cancel_store_thread.triggered.connect(lambda: self.store_thread_async(True))
+        menu.addAction(cancel_store_thread)
+
+        if not self.bduss:  # 在未登录时不显示收藏按钮
+            store_thread.setVisible(False)
+            cancel_store_thread.setVisible(False)
+
         bt_pos = self.pushButton.mapToGlobal(QPoint(0, 0))
         menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.pushButton.height()))
 
     def open_thread(self, tid):
-        self.third_party_thread = ThreadDetailView(self.bduss, self.stoken, int(tid))
-        self.third_party_thread.show()
+        third_party_thread = ThreadDetailView(self.bduss, self.stoken, int(tid))
+        qt_window_mgr.add_window(third_party_thread)
 
     def open_user_homepage(self, uid):
-        self.user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
-        self.user_home_page.show()
+        user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
+        qt_window_mgr.add_window(user_home_page)
 
     def handle_link_event(self, url):
         if url.startswith('user://'):
@@ -2324,6 +2781,150 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.open_thread(url.replace('tieba_thread://', ''))
         else:
             open_url_in_browser(url)
+
+    def agree_thread_ok_action(self, isok):
+        self.pushButton_4.setText(str(self.agree_num) + ' 个赞')
+        if isok == '[ALREADY_AGREE]':
+            if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
+                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                self.agree_thread_async(True)
+        else:
+            QMessageBox.information(self, '点赞操作完成', isok)
+
+    def agree_thread_async(self, is_cancel=False):
+        start_background_thread(self.agree_thread, (is_cancel,))
+
+    def agree_thread(self, iscancel=False):
+        aiotieba.logging.get_logger().info(f'agree thread {self.thread_id}')
+        try:
+            account = aiotieba.Account()  # 实例化account以便计算一些数据
+            # 拿tbs
+            tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
+                {'_client_version': '12.87.1.1', 'bdusstoken': self.bduss}), use_mobile_header=True, host_type=2)
+            tbs = tsb_resp["anti"]["tbs"]
+
+            if iscancel:
+                payload = {
+                    'BDUSS': self.bduss,
+                    '_client_type': "2",
+                    '_client_version': "12.88.1.2",
+                    'agree_type': "5",  # 2点赞 5取消点赞
+                    'cuid': account.cuid_galaxy2,
+                    'forum_id': str(self.forum_id),
+                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题帖
+                    'op_type': "1",  # 0点赞 1取消点赞
+                    'post_id': str(self.first_floor_pid),
+                    'stoken': self.stoken,
+                    'tbs': tbs,
+                    'thread_id': str(self.thread_id),
+                }
+
+                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                    host_type=2)
+                if int(response['error_code']) == 0:
+                    self.agree_num -= 1
+                    self.agree_thread_signal.emit('取消点赞成功。')
+                else:
+                    self.agree_thread_signal.emit(response['error_msg'])
+            else:
+                payload = {
+                    'BDUSS': self.bduss,
+                    '_client_type': "2",
+                    '_client_version': "12.88.1.2",
+                    'agree_type': "2",  # 2点赞 5取消点赞
+                    'cuid': account.cuid_galaxy2,
+                    'forum_id': str(self.forum_id),
+                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题帖
+                    'op_type': "0",  # 0点赞 1取消点赞
+                    'post_id': str(self.first_floor_pid),
+                    'stoken': self.stoken,
+                    'tbs': tbs,
+                    'thread_id': str(self.thread_id),
+                }
+
+                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                    host_type=2)
+                if int(response['error_code']) == 0:
+                    self.agree_num += 1
+                    is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
+                    self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
+                elif int(response['error_code']) == 3280001:
+                    self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                else:
+                    self.agree_thread_signal.emit(response['error_msg'])
+
+        except Exception as e:
+            print(type(e))
+            print(e)
+            self.agree_thread_signal.emit('程序内部出错，请重试')
+
+    def store_thread_ok_action(self, isok):
+        QMessageBox.information(self, '操作完成', isok)
+
+    def store_thread_async(self, is_cancel=False):
+        item = self.listWidget_4.currentItem()
+        if not item:
+            # 没有回帖就使用第一楼的pid
+            pid = self.first_floor_pid
+            floor = 1
+        else:
+            reply_widget = self.listWidget_4.itemWidget(item)
+            pid = reply_widget.post_id
+            floor = reply_widget.floor
+        start_background_thread(self.store_thread, (pid, is_cancel, floor))
+
+    def store_thread(self, current_post_id: int, is_cancel=False, floor=-1):
+        async def dosign():
+            aiotieba.logging.get_logger().info(f'store thread {self.thread_id}')
+            try:
+                if not is_cancel:
+                    # 客户端收藏接口
+                    data = "[{\"tid\":\"[tid]\",\"pid\":\"[pid]\",\"status\":1}]"
+                    data = data.replace('[tid]', str(self.thread_id))
+                    data = data.replace('[pid]', str(current_post_id))
+                    payload = {
+                        'BDUSS': self.bduss,
+                        '_client_type': "2",
+                        '_client_version': "12.88.1.2",
+                        'data': data,
+                        'stoken': self.stoken,
+                    }
+                    result = request_mgr.run_post_api('/c/c/post/addstore', request_mgr.calc_sign(payload),
+                                                      bduss=self.bduss,
+                                                      stoken=self.stoken, use_mobile_header=True, host_type=2)
+                    if result['error_code'] == '0':
+                        self.store_thread_signal.emit(f'帖子已成功收藏到第 {floor} 楼，你可以在 ⌈我的收藏⌋ 中查看帖子。')
+                    else:
+                        self.store_thread_signal.emit(result['error_msg'])
+                else:
+                    # wap版取消收藏接口
+                    payload = {
+                        '_client_type': "2",
+                        '_client_version': "12.64.0",
+                        'subapp_type': "newwise",
+                        'tid': str(self.thread_id),
+                        'pid': str(current_post_id)
+                    }
+                    result = request_mgr.run_post_api('/mo/q/post_rmstore', request_mgr.calc_sign(payload),
+                                                      bduss=self.bduss,
+                                                      stoken=self.stoken, use_mobile_header=True)
+                    if result['no'] == 0:
+                        self.store_thread_signal.emit('帖子已成功取消收藏。')
+                    else:
+                        self.store_thread_signal.emit(result['error'])
+            except Exception as e:
+                print(type(e))
+                print(e)
+                self.store_thread_signal.emit('程序内部出错，请重试')
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dosign())
+
+        start_async()
 
     def load_sub_threads_refreshly(self):
         if not self.is_getting_replys:
@@ -2348,10 +2949,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.get_sub_thread_async()
 
     def open_ba_detail(self):
-        self.forum_window = ForumShowWindow(self.bduss, self.stoken, int(self.forum_id))
-        self.forum_window.show()
-        self.forum_window.load_info_async()
-        self.forum_window.get_threads_async()
+        forum_window = ForumShowWindow(self.bduss, self.stoken, int(self.forum_id))
+        qt_window_mgr.add_window(forum_window)
+        forum_window.load_info_async()
+        forum_window.get_threads_async()
 
     def update_listwidget_size(self, h):
         self.height_count += h
@@ -2377,6 +2978,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         item = QListWidgetItem()
         widget = ReplyItem(self.bduss, self.stoken)
         widget.portrait = datas['portrait']
+        widget.is_comment = False
         widget.thread_id = self.thread_id
         widget.post_id = datas['post_id']
         widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'],
@@ -2429,7 +3031,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         aiotieba.logging.get_logger().info(
                             f'itering thread {self.thread_id} replies list page {self.reply_page}')
                         for t in thread_info.objs:
-                            if t.floor == 1 or t.floor == 0:  # 跳过第一楼和求助置顶楼
+                            if t.floor == 1:  # 跳过第一楼
                                 continue
 
                             content = make_thread_content(t.contents.objs)
@@ -2438,9 +3040,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             portrait = t.user.portrait
                             user_name = t.user.nick_name_new
                             agree_num = t.agree
-                            timeStamp = t.create_time
-                            timeArray = time.localtime(timeStamp)
-                            time_str = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                            time_str = timestamp_to_string(t.create_time)
                             user_ip = t.user.ip
                             user_level = t.user.level
                             user_ip = user_ip if user_ip else '未知'
@@ -2507,6 +3107,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             QMessageBox.critical(self, '帖子加载失败', datas['err_info'], QMessageBox.Ok)
             self.close()
         else:
+            self.flash_shower.hide()
             self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
             self.pushButton_2.setText(datas['forum_name'] + '吧')
             self.pushButton_2.setIcon(QIcon(datas['forum_pixmap']))
@@ -2516,7 +3117,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             if profile_mgr.local_config['thread_view_settings']['hide_ip']:
                 self.label.setText(datas['create_time_str'])
             else:
-                self.label.setText('{time}  IP 属地: {ip}'.format(time=datas['create_time_str'], ip=datas['user_ip']))
+                self.label.setText('{time} | IP 属地 {ip}'.format(time=datas['create_time_str'], ip=datas['user_ip']))
             self.label_5.setText(datas['title'])
             self.label_6.setText(datas['content'])
             self.label_10.setText('Lv.' + str(datas['user_grow_level']))
@@ -2589,24 +3190,28 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     aiotieba.logging.get_logger().info(f'loading thread {self.thread_id} main info')
                     thread_info = await client.get_posts(self.thread_id)
                     if thread_info.err:
-                        self.head_data_signal.emit(
-                            {'err_info': f'{thread_info.err.msg} (错误代码 {thread_info.err.code})'})
+                        if isinstance(thread_info.err,
+                                      (aiotieba.exception.TiebaServerError, aiotieba.exception.HTTPStatusError)):
+                            self.head_data_signal.emit(
+                                {'err_info': f'{thread_info.err.msg} (错误代码 {thread_info.err.code})'})
+                        else:
+                            self.head_data_signal.emit(
+                                {'err_info': str(thread_info.err)})
                     else:
                         forum_info = await client.get_forum_detail(thread_info.forum.fid)
 
                         preview_pixmap = []
                         self.forum_id = forum_id = forum_info.fid
                         self.user_id = thread_info.thread.user.user_id
+                        self.first_floor_pid = thread_info.thread.pid
                         forum_name = forum_info.fname
                         forum_pic_url = forum_info.small_avatar
                         title = thread_info.thread.title
                         content = make_thread_content(thread_info.thread.contents.objs)
                         portrait = thread_info.thread.user.portrait
                         user_name = thread_info.thread.user.nick_name_new
-                        agree_num = thread_info.thread.agree
-                        timeStamp = thread_info.thread.create_time
-                        timeArray = time.localtime(timeStamp)
-                        time_str = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                        self.agree_num = agree_num = thread_info.thread.agree
+                        time_str = timestamp_to_string(thread_info.thread.create_time)
                         _user_ip = thread_info.thread.user.ip
                         user_ip = _user_ip if _user_ip else '未知'
                         is_help = thread_info.thread.is_help
@@ -2698,6 +3303,10 @@ class ForumItem(QWidget, ba_item.Ui_Form):
             QMessageBox.information(self, '签到成功', f'{self.forum_name}吧签到成功，经验 +8。')
             self.pushButton_2.setEnabled(False)
             self.pushButton_2.setText('已签到')
+        elif isok == '[ALREADY_SIGN]':
+            QMessageBox.information(self, '已经签到过了', f'你已签到过 {self.forum_name}吧，无需再签到。')
+            self.pushButton_2.setEnabled(False)
+            self.pushButton_2.setText('已签到')
         else:
             QMessageBox.critical(self, '签到失败', isok)
             self.pushButton_2.setEnabled(True)
@@ -2714,7 +3323,13 @@ class ForumItem(QWidget, ba_item.Ui_Form):
                 if r:
                     result_str = ''
                 else:
-                    result_str = str(r.err)
+                    if isinstance(r.err, aiotieba.exception.TiebaServerError):
+                        if r.err.code == 160002:
+                            result_str = '[ALREADY_SIGN]'
+                        else:
+                            result_str = f'{r.err.msg} ({r.err.code})'
+                    else:
+                        result_str = str(r.err)
                 self.signok.emit(result_str)
 
         def start_async():
@@ -2725,15 +3340,32 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         start_async()
 
     def open_ba_detail(self):
-        self.forum_window = ForumShowWindow(self.bduss, self.stoken, self.forum_id)
-        self.forum_window.show()
-        self.forum_window.load_info_async()
-        self.forum_window.get_threads_async()
+        forum_window = ForumShowWindow(self.bduss, self.stoken, self.forum_id)
+        qt_window_mgr.add_window(forum_window)
+        forum_window.load_info_async()
+        forum_window.get_threads_async()
 
     def set_info(self, headpixmap, name, desp):
         self.label.setPixmap(headpixmap)
         self.label_2.setText(name)
         self.label_3.setText(desp)
+
+    def set_level_color(self, level):
+        qss = 'QLabel{color: [color];font-weight: [is_high_level];}'
+        if level >= 10:  # 10级以上粗体显示
+            qss = qss.replace('[is_high_level]', 'bold')
+        else:
+            qss = qss.replace('[is_high_level]', 'normal')
+        if 1 <= level <= 3:  # 绿牌
+            qss = qss.replace('[color]', 'rgb(101, 211, 171)')
+        elif 4 <= level <= 9:  # 蓝牌
+            qss = qss.replace('[color]', 'rgb(101, 161, 255)')
+        elif 10 <= level <= 15:  # 黄牌
+            qss = qss.replace('[color]', 'rgb(253, 194, 53)')
+        elif level >= 16:  # 橙牌老东西
+            qss = qss.replace('[color]', 'rgb(247, 126, 48)')
+
+        self.label_3.setStyleSheet(qss)  # 为不同等级设置qss
 
 
 class SignAllDialog(QDialog, sign.Ui_Dialog):
@@ -2821,6 +3453,7 @@ class SignAllDialog(QDialog, sign.Ui_Dialog):
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
+                    bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
 
                     for forum in bars:
                         if forum["is_sign"] != 1:
@@ -2890,7 +3523,8 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
     def add_bar(self, data):
         item = QListWidgetItem()
         widget = ForumItem(data[3], data[4], self.bduss, self.stoken, data[1])
-        widget.set_info(data[0], data[1], data[2])
+        widget.set_info(data[0], data[1] + '吧', data[2])
+        widget.set_level_color(data[5])
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
@@ -2913,23 +3547,28 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
     def get_bars(self):
         async def func():
             try:
-                async with aiotieba.Client(self.bduss, proxy=True) as client:
-                    aiotieba.logging.get_logger().info('loading userself follow forum list')
-                    bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
-                    bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
-                    for forum in bars:
-                        bar_info = await client.get_forum_detail(forum['forum_id'])
-                        name = forum['forum_name']
-                        pixmap = QPixmap()
-                        response = requests.get(bar_info.small_avatar, headers=request_mgr.header)
-                        if response.content:
-                            pixmap.loadFromData(response.content)
-                            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                aiotieba.logging.get_logger().info('loading userself follow forum list')
 
-                        level_str = forum['user_level']
-                        level_value = forum['user_exp']
-                        ba_info_str = f'[等级 {level_str}，经验值 {level_value}] {bar_info.slogan}'
-                        self.add_ba.emit([pixmap, name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1])
+                payload = {
+                    'BDUSS': self.bduss,
+                    'stoken': self.stoken,
+                    'sort_type': "3",
+                    'call_from': "1",
+                }
+                bars = request_mgr.run_post_api('/c/f/forum/forumGuide', payloads=payload, bduss=self.bduss,
+                                                stoken=self.stoken, use_mobile_header=True)['like_forum']
+                for forum in bars:
+                    name = forum['forum_name']
+                    pixmap = QPixmap()
+                    response = requests.get(forum['avatar'], headers=request_mgr.header)
+                    if response.content:
+                        pixmap.loadFromData(response.content)
+                        pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                    level_str = forum['level_name']
+                    level_value = forum['level_id']
+                    ba_info_str = f'[Lv.{level_value}] {level_str}'
+                    self.add_ba.emit([pixmap, name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1, level_value])
             finally:
                 self.ba_add_ok.emit()
                 aiotieba.logging.get_logger().info('load userself follow forum list complete')
@@ -2957,22 +3596,20 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.pushButton_2.clicked.connect(self.open_thread_detail)
 
     def open_thread_detail(self):
-        self.thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id), self.is_treasure,
-                                              self.is_top)
-        self.thread_window.show()
+        thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id), self.is_treasure,
+                                         self.is_top)
+        qt_window_mgr.add_window(thread_window)
 
     def open_ba_detail(self):
-        self.forum_window = ForumShowWindow(self.bduss, self.stoken, int(self.forum_id))
-        self.forum_window.show()
-        self.forum_window.load_info_async()
-        self.forum_window.get_threads_async()
+        forum_window = ForumShowWindow(self.bduss, self.stoken, int(self.forum_id))
+        qt_window_mgr.add_window(forum_window)
+        forum_window.load_info_async()
+        forum_window.get_threads_async()
 
     def set_thread_values(self, view, agree, reply, repost, send_time=0):
         text = f'{view} 次浏览，{agree} 人点赞，{reply} 条回复，{repost} 次转发'
         if send_time > 0:
-            timeStamp = send_time
-            timeArray = time.localtime(timeStamp)
-            timestr = time.strftime("发布于 %Y-%m-%d %H:%M:%S", timeArray)
+            timestr = '发布于 ' + timestamp_to_string(send_time)
             text += '\n' + timestr
         self.label_11.show()
         self.label_11.setText(text)
@@ -3278,6 +3915,10 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
         self.comboBox.currentIndexChanged.connect(self.handle_search_type_switch)
         self.pushButton.clicked.connect(self.start_search)
 
+    def closeEvent(self, a0):
+        a0.accept()
+        qt_window_mgr.del_window(self)
+
     def scroll_load_more(self, type, listw: QListWidget):
         if listw.verticalScrollBar().value() == listw.verticalScrollBar().maximum():
             if type in ('thread', 'forum', 'user'):
@@ -3438,10 +4079,18 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                                 'text': cut_string(thread['content'], 50),
                                 'picture': [],
                                 'timestamp': thread['time'],
-                                'portrait': thread["user"]["portrait"].split(
-                                    'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split(
-                                    '?')[
-                                    0]}
+                                'portrait': ''}
+
+                        # 处理portrait
+                        if thread["user"]["portrait"].startswith(
+                                'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/'):
+                            data['portrait'] = thread["user"]["portrait"].split(
+                                'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split('?')[0]
+                        elif thread["user"]["portrait"].startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
+                            data['portrait'] = thread["user"]["portrait"].split(
+                                'http://tb.himg.baidu.com/sys/portrait/item/')[1].split('?')[0]
+                        else:
+                            data['portrait'] = thread["user"]["portrait"]
 
                         # 获取吧头像
                         forum_head_pixmap = QPixmap()
@@ -3508,11 +4157,19 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                                 'text': cut_string(thread['content'], 50),
                                 'picture': [],
                                 'timestamp': thread['time'],
-                                'portrait': thread["user"]["portrait"].split(
-                                    'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split(
-                                    '?')[
-                                    0],
+                                'portrait': '',
                                 'timestr': ''}
+
+                        # 处理portrait
+                        if thread["user"]["portrait"].startswith(
+                                'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/'):
+                            data['portrait'] = thread["user"]["portrait"].split(
+                                'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split('?')[0]
+                        elif thread["user"]["portrait"].startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
+                            data['portrait'] = thread["user"]["portrait"].split(
+                                'http://tb.himg.baidu.com/sys/portrait/item/')[1].split('?')[0]
+                        else:
+                            data['portrait'] = thread["user"]["portrait"]
 
                         # 获取吧头像
                         forum_head_pixmap = QPixmap()
@@ -3527,9 +4184,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                             data['forum_head_pixmap'] = forum_head_pixmap
 
                         # 转换时间为字符串
-                        timeStamp = data['timestamp']
-                        timeArray = time.localtime(timeStamp)
-                        timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
+                        timestr = timestamp_to_string(data['timestamp'])
                         data['time_str'] = timestr
 
                         # 获取用户头像
@@ -3587,10 +4242,18 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                                 'text': cut_string(thread['content'], 50),
                                 'picture': [],
                                 'timestamp': thread['create_time'],
-                                'portrait': thread["user"]["portrait"].split(
-                                    'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split(
-                                    '?')[
-                                    0]}
+                                'portrait': ''}
+
+                        # 处理portrait
+                        if thread["user"]["portrait"].startswith(
+                                'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/'):
+                            data['portrait'] = thread["user"]["portrait"].split(
+                                'https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/')[1].split('?')[0]
+                        elif thread["user"]["portrait"].startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
+                            data['portrait'] = thread["user"]["portrait"].split(
+                                'http://tb.himg.baidu.com/sys/portrait/item/')[1].split('?')[0]
+                        else:
+                            data['portrait'] = thread["user"]["portrait"]
 
                         # 获取吧头像
                         forum_head_pixmap = QPixmap()
@@ -3726,8 +4389,6 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
 class ForumShowWindow(QWidget, ba_head.Ui_Form):
     """吧入口窗口，显示基础吧信息和吧内帖子等"""
     forum_name = ''
-    forum_detail_window = None
-    search_window = None
     page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
     added_thread_count = 0
     isloading = False
@@ -3752,6 +4413,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             i.verticalScrollBar().setSingleStep(20)
             i.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
 
+        self.init_load_flash()
         self.label_9.hide()
         self.pushButton.hide()
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
@@ -3770,27 +4432,22 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         if a0.key() == Qt.Key.Key_F5:
             self.refresh_all()
 
-    def open_search_window(self):
-        if not self.search_window:
-            self.search_window = TiebaSearchWindow(self.bduss, self.stoken, self.forum_name)
+    def closeEvent(self, a0):
+        self.flash_shower.hide()
+        a0.accept()
+        qt_window_mgr.del_window(self)
 
-        self.search_window.show()
-        self.search_window.raise_()
-        if self.search_window.isMinimized():
-            self.search_window.showNormal()
-        if not self.search_window.isActiveWindow():
-            self.search_window.activateWindow()
+    def init_load_flash(self):
+        self.flash_shower = LoadingFlashWidget()
+        self.flash_shower.cover_widget(self)
+
+    def open_search_window(self):
+        search_window = TiebaSearchWindow(self.bduss, self.stoken, self.forum_name)
+        qt_window_mgr.add_window(search_window)
 
     def open_detail_window(self):
-        if not self.forum_detail_window:
-            self.forum_detail_window = ForumDetailWindow(self.bduss, self.stoken, self.forum_id)
-
-        self.forum_detail_window.show()
-        self.forum_detail_window.raise_()
-        if self.forum_detail_window.isMinimized():
-            self.forum_detail_window.showNormal()
-        if not self.forum_detail_window.isActiveWindow():
-            self.forum_detail_window.activateWindow()
+        forum_detail_window = ForumDetailWindow(self.bduss, self.stoken, self.forum_id)
+        qt_window_mgr.add_window(forum_detail_window)
 
     def show_follow_result(self, r):
         if r:
@@ -3918,13 +4575,9 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
     def get_threads(self, thread_type="all"):
         def emit_data(tpe, thread):
             if tpe == 'latest_reply':
-                timeStamp = thread.last_time
-                timeArray = time.localtime(timeStamp)
-                timestr = time.strftime("最近回复于 %Y-%m-%d %H:%M:%S", timeArray)
+                timestr = '最近回复于 ' + timestamp_to_string(thread.last_time)
             else:
-                timeStamp = thread.create_time
-                timeArray = time.localtime(timeStamp)
-                timestr = time.strftime("发布于 %Y-%m-%d %H:%M:%S", timeArray)
+                timestr = '发布于 ' + timestamp_to_string(thread.create_time)
             thread_id = thread.tid
             forum_id = self.forum_id
             title = thread.title
@@ -4073,6 +4726,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         start_all_process()
 
     def load_info_async(self):
+        self.flash_shower.show()
         start_background_thread(self.load_info)
 
     def update_info_ui(self, datas):
@@ -4117,6 +4771,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             self.pushButton.setText('登录后即可关注')
             self.pushButton.setEnabled(False)
         self.pushButton.show()
+        self.flash_shower.hide()
 
     def load_info(self):
         async def get_detail():

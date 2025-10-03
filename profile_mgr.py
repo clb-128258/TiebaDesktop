@@ -4,6 +4,7 @@ import consts
 
 video_webview_show_html = ''
 local_config = {}
+current_uid = 'default'
 
 
 def load_show_html() -> str:

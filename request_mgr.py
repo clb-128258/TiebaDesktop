@@ -1,9 +1,7 @@
 """百度贴吧同步请求模块"""
 import requests
-import hashlib
+from aiotieba.helper.crypto import _sign
 
-requests.session().trust_env = True
-requests.session().verify = False
 header = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
     'sec-ch-ua': "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
@@ -29,27 +27,33 @@ header_android = {
     'Sec-Fetch-Dest': "empty",
     'Accept-Language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
 }
-MD5_KEY = 'tiebaclient!!!'
+SCHEME_HTTP = 'http://'
+SCHEME_HTTPS = 'https://'
+TIEBA_APP_HOST = 'tiebac.baidu.com'
+TIEBA_WEB_HOST = 'tieba.baidu.com'
 
 
-def calc_sign(str_dict):
-    """生成待提交数据的签名"""
+def calc_sign(str_dict: dict):
+    """生成待提交数据的签名，并把签名添加到表单字典中"""
+    sign_list_adp = []
+    for k, v in str_dict.items():
+        sign_list_adp.append((str(k), str(v)))
+    sign = _sign(sign_list_adp)  # 贴吧签名的实现较为复杂，因此这里直接调用aiotieba的
+    str_dict['sign'] = sign
+    return str_dict
 
-    md5 = hashlib.md5()
-    md5.update(('&'.join('%s=%s' % (k, v) for k, v in str_dict.items()) + MD5_KEY).encode('utf-8'))
-    return md5.hexdigest().upper()
 
-
-def calc_sign_str(string):
-    """生成待提交数据的签名"""
-
-    md5 = hashlib.md5()
-    md5.update((string + MD5_KEY).encode('utf-8'))
-    return md5.hexdigest().upper()
+def get_sign(str_dict: dict):
+    """计算并返回待提交数据的签名"""
+    sign_list_adp = []
+    for k, v in str_dict.items():
+        sign_list_adp.append((str(k), str(v)))
+    sign = _sign(sign_list_adp)  # 贴吧签名的实现较为复杂，因此这里直接调用aiotieba的
+    return sign
 
 
 def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict = None, return_json=True,
-                params: dict = None, use_mobile_header=False, host_type: int = 1):
+                params: dict = None, use_mobile_header=False, host_type: int = 1, use_https: bool = False):
     """
     执行GET请求
 
@@ -63,6 +67,7 @@ def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict
         params (dict): url参数字典
         use_mobile_header (bool): 是否使用手机版header进行请求 (安卓版贴吧 12.87.1.1)
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
+        use_https (bool): 是否使用https请求
     """
     if cookies:
         cookie = cookies
@@ -76,12 +81,17 @@ def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict
     else:
         final_header = header
     session = requests.Session()
+    session.trust_env = True
     host_name = ''
     if host_type == 1:
-        host_name = 'tieba.baidu.com'
+        host_name = TIEBA_WEB_HOST
     elif host_type == 2:
-        host_name = 'tiebac.baidu.com'
-    response = session.get(f'https://{host_name}{api}',
+        host_name = TIEBA_APP_HOST
+    if use_https:
+        scheme = SCHEME_HTTPS
+    else:
+        scheme = SCHEME_HTTP
+    response = session.get(f'{scheme}{host_name}{api}',
                            headers=final_header,
                            cookies=cookie, params=params)
     if encoding:
@@ -96,7 +106,7 @@ def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict
 
 def run_post_api(api: str, payloads: dict, bduss='', encoding='', stoken: str = '', cookies: dict = None,
                  return_json=True,
-                 params: dict = None, use_mobile_header=False, host_type: int = 1, ):
+                 params: dict = None, use_mobile_header=False, host_type: int = 1, use_https: bool = False):
     """
     执行POST请求
 
@@ -111,6 +121,7 @@ def run_post_api(api: str, payloads: dict, bduss='', encoding='', stoken: str = 
         params (dict): url参数字典
         use_mobile_header (bool): 是否使用手机版header进行请求 (安卓版贴吧 12.87.1.1)
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
+        use_https (bool): 是否使用https请求
     """
     if cookies:
         cookie = cookies
@@ -124,12 +135,18 @@ def run_post_api(api: str, payloads: dict, bduss='', encoding='', stoken: str = 
     else:
         final_header = header
     session = requests.Session()
+    session.trust_env = True
     host_name = ''
     if host_type == 1:
-        host_name = 'tieba.baidu.com'
+        host_name = TIEBA_WEB_HOST
     elif host_type == 2:
-        host_name = 'tiebac.baidu.com'
-    response = session.post(f'https://{host_name}{api}',
+        host_name = TIEBA_APP_HOST
+    if use_https:
+        scheme = SCHEME_HTTPS
+    else:
+        scheme = SCHEME_HTTP
+
+    response = session.post(f'{scheme}{host_name}{api}',
                             headers=final_header,
                             cookies=cookie, params=params, data=payloads)
     if encoding:

@@ -284,6 +284,17 @@ class QWebView2View(QWidget):
             if self.__profile.try_to_stop_thread_when_destroy:
                 self.__is_destroy_time = True
 
+    def destroyWebviewUntilComplete(self):
+        """销毁 WebView 实例，并等待销毁操作完成。"""
+        if self.__render_completed and self.__webview is not None:
+            def _load():
+                self.__webview.Dispose(True)
+                return ''
+
+            self.__get_value_ui_thread(_load)
+            if self.__profile.try_to_stop_thread_when_destroy:
+                self.__is_destroy_time = True
+
     def clearCacheData(self):
         """清除缓存数据。包括磁盘缓存、下载记录、浏览记录。"""
         if self.__render_completed and self.__webview is not None:
