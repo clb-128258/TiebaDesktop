@@ -8,7 +8,8 @@ portrait_cache_dict = {}
 
 
 def get_portrait(portrait: str) -> bytes:
-    save_portrait(portrait)
+    if not portrait_cache_dict.get(portrait):
+        save_portrait(portrait)
     with open(portrait_cache_dict[portrait]['local_path'], 'rb') as file:
         bytesdata = file.read()
         return bytesdata
@@ -45,7 +46,7 @@ def save_portrait(portrait: str):
 def save_portrait_pf():
     global portrait_cache_dict
     with open(f'{consts.datapath}/cache_index/user_portraits.json', 'wt', encoding='utf-8') as file:
-        file.write(json.dumps(portrait_cache_dict))
+        file.write(json.dumps(portrait_cache_dict, indent=4))
 
 
 def load_portrait_pf():
