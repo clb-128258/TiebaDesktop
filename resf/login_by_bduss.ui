@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>522</width>
-    <height>140</height>
+    <width>535</width>
+    <height>158</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,7 +36,9 @@ QDialog{background-color: rgb(255, 255, 255);}
    <item row="0" column="0" colspan="3">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>高级登录功能允许你通过现有的 BDUSS 和 STOKEN 进行登录。仅在网页登录功能出现问题或是在你的平台上不可用时，才推荐使用此功能。</string>
+      <string>高级登录功能允许你通过现有的 BDUSS 和 STOKEN 进行登录。
+仅在网页登录功能出现问题或是在你的平台上不可用时，才推荐使用此功能。
+注：随着版本更新，本功能可能会出现各种问题，因此不推荐使用。</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>

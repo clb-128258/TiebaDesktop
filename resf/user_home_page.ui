@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>846</width>
-    <height>655</height>
+    <width>807</width>
+    <height>613</height>
    </rect>
   </property>
   <property name="palette">
@@ -85,7 +85,7 @@
    <item row="0" column="0">
     <widget class="QFrame" name="frame">
      <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
+      <enum>QFrame::NoFrame</enum>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
@@ -223,6 +223,13 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton">
+            <property name="text">
+             <string>操作...</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -384,117 +391,6 @@
       </item>
      </layout>
     </widget>
-   </item>
-   <item row="1" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout_2">
-     <property name="spacing">
-      <number>3</number>
-     </property>
-     <item>
-      <widget class="QFrame" name="frame_3">
-       <property name="styleSheet">
-        <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
-}</string>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,1">
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="bottomMargin">
-         <number>4</number>
-        </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_11">
-          <property name="text">
-           <string>icon</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="label_12">
-          <property name="text">
-           <string>该用户被全吧封禁，贴子和回复将不可见。</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QFrame" name="frame_2">
-       <property name="styleSheet">
-        <string notr="true">QFrame{
-	background-color: rgb(199, 188, 255);
-}</string>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1">
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="bottomMargin">
-         <number>4</number>
-        </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string>icon</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="label_10">
-          <property name="text">
-           <string>该用户是贴吧大神</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QFrame" name="frame_5">
-       <property name="styleSheet">
-        <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
-}</string>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_8" columnstretch="0">
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="bottomMargin">
-         <number>4</number>
-        </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_16">
-          <property name="text">
-           <string>该用户设置了贴子评论权限。</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
    </item>
    <item row="2" column="0">
     <widget class="QTabWidget" name="tabWidget">
@@ -706,6 +602,131 @@
        </item>
       </layout>
      </widget>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QFrame" name="frame_8">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QFrame" name="frame_3">
+        <property name="styleSheet">
+         <string notr="true">QFrame{
+	background-color: rgb(154, 154, 154);
+}</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,1">
+         <property name="topMargin">
+          <number>4</number>
+         </property>
+         <property name="bottomMargin">
+          <number>4</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>icon</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_12">
+           <property name="text">
+            <string>该用户被全吧封禁，贴子和回复将不可见。</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame_2">
+        <property name="styleSheet">
+         <string notr="true">QFrame{
+	background-color: rgb(199, 188, 255);
+}</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1">
+         <property name="topMargin">
+          <number>4</number>
+         </property>
+         <property name="bottomMargin">
+          <number>4</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>icon</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_10">
+           <property name="text">
+            <string>该用户是贴吧大神</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame_5">
+        <property name="styleSheet">
+         <string notr="true">QFrame{
+	background-color: rgb(154, 154, 154);
+}</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_8" columnstretch="0">
+         <property name="topMargin">
+          <number>4</number>
+         </property>
+         <property name="bottomMargin">
+          <number>4</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_16">
+           <property name="text">
+            <string>该用户设置了贴子评论权限。</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

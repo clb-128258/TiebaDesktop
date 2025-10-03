@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>736</width>
-    <height>543</height>
+    <width>735</width>
+    <height>525</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,6 +41,12 @@ QDialog{background-color: rgb(255, 255, 255);}
    </item>
    <item row="0" column="0" colspan="2">
     <widget class="QTabWidget" name="tabWidget">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>16777215</height>
+      </size>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -48,87 +54,98 @@ QDialog{background-color: rgb(255, 255, 255);}
       <attribute name="title">
        <string>主要信息</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0">
-       <item row="3" column="1" colspan="2">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string/>
+      <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,1">
+       <item row="0" column="1" colspan="2">
+        <layout class="QGridLayout" name="gridLayout_9" columnstretch="1,0">
+         <property name="verticalSpacing">
+          <number>8</number>
          </property>
-         <property name="textInteractionFlags">
-          <set>Qt::TextBrowserInteraction</set>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <family>微软雅黑</family>
+             <pointsize>13</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextBrowserInteraction</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string>关注</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextBrowserInteraction</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="0" rowspan="4">
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-        </widget>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_7">
+           <property name="text">
+            <string>查看吧头像大图</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>118</width>
+             <height>231</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item row="2" column="1" colspan="2">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-         <property name="textInteractionFlags">
-          <set>Qt::TextBrowserInteraction</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1" colspan="2">
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="textInteractionFlags">
-          <set>Qt::TextBrowserInteraction</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1" colspan="2">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="textInteractionFlags">
-          <set>Qt::TextBrowserInteraction</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1" colspan="2">
-        <widget class="QLabel" name="label_13">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="textInteractionFlags">
-          <set>Qt::TextBrowserInteraction</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1" colspan="2">
-        <widget class="QLabel" name="label_2">
-         <property name="font">
-          <font>
-           <family>微软雅黑</family>
-           <pointsize>13</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="textInteractionFlags">
-          <set>Qt::TextBrowserInteraction</set>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1" colspan="2">
-        <widget class="QGroupBox" name="groupBox">
+        <widget class="QGroupBox" name="groupBox_3">
          <property name="title">
-          <string>我在本吧的信息</string>
+          <string>该吧的主要信息</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout">
+         <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
-           <widget class="QLabel" name="label_6">
+           <widget class="QLabel" name="label_11">
             <property name="text">
              <string/>
             </property>
@@ -138,7 +155,7 @@ QDialog{background-color: rgb(255, 255, 255);}
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_10">
+           <widget class="QLabel" name="label_3">
             <property name="text">
              <string/>
             </property>
@@ -148,7 +165,7 @@ QDialog{background-color: rgb(255, 255, 255);}
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="label_4">
             <property name="text">
              <string/>
             </property>
@@ -158,7 +175,7 @@ QDialog{background-color: rgb(255, 255, 255);}
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="label_13">
             <property name="text">
              <string/>
             </property>
@@ -168,7 +185,7 @@ QDialog{background-color: rgb(255, 255, 255);}
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_9">
+           <widget class="QLabel" name="label_12">
             <property name="text">
              <string/>
             </property>
@@ -180,83 +197,7 @@ QDialog{background-color: rgb(255, 255, 255);}
          </layout>
         </widget>
        </item>
-       <item row="0" column="0" rowspan="5">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="title">
-          <string>操作</string>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QPushButton" name="pushButton_2">
-            <property name="text">
-             <string>签到</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton">
-            <property name="text">
-             <string>关注</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_3">
-            <property name="text">
-             <string>取消关注</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="8" column="2">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="0" rowspan="5">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>118</width>
-           <height>231</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="6" column="1" colspan="2">
-        <widget class="QLabel" name="label_12">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="textInteractionFlags">
-          <set>Qt::TextBrowserInteraction</set>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1" colspan="2">
+       <item row="3" column="1" colspan="2">
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -268,6 +209,213 @@ QDialog{background-color: rgb(255, 255, 255);}
           </size>
          </property>
         </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_7">
+      <attribute name="title">
+       <string>我在本吧</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_12" rowstretch="0,0,1">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="font">
+          <font>
+           <family>微软雅黑</family>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>是否关注</string>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::TextBrowserInteraction</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>等级与签到信息</string>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>等级</string>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>头衔</string>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="0" rowspan="2">
+             <widget class="QLabel" name="label_16">
+              <property name="text">
+               <string>经验值：</string>
+              </property>
+              <property name="textInteractionFlags">
+               <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QProgressBar" name="progressBar">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>17</height>
+               </size>
+              </property>
+              <property name="value">
+               <number>0</number>
+              </property>
+              <property name="textVisible">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="label_9">
+              <property name="text">
+               <string>xxxx / xxxx，距离下一等级还差 xx</string>
+              </property>
+              <property name="textInteractionFlags">
+               <set>Qt::TextBrowserInteraction</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2" rowspan="2">
+             <widget class="QPushButton" name="pushButton_2">
+              <property name="text">
+               <string>签到</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QGridLayout" name="gridLayout_11" columnstretch="1,0">
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_18">
+              <property name="text">
+               <string>漏签天数</string>
+              </property>
+              <property name="textInteractionFlags">
+               <set>Qt::TextBrowserInteraction</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>连签天数</string>
+              </property>
+              <property name="textInteractionFlags">
+               <set>Qt::TextBrowserInteraction</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_10">
+              <property name="text">
+               <string>共计签到天数</string>
+              </property>
+              <property name="textInteractionFlags">
+               <set>Qt::TextBrowserInteraction</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" rowspan="3">
+             <widget class="QPushButton" name="pushButton_3">
+              <property name="text">
+               <string>去补签</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_6">
+      <attribute name="title">
+       <string>吧规</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_8">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QTextBrowser" name="textBrowser">
+         <property name="font">
+          <font>
+           <family>微软雅黑</family>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -328,8 +476,8 @@ QDialog{background-color: rgb(255, 255, 255);}
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>712</width>
-            <height>436</height>
+            <width>711</width>
+            <height>418</height>
            </rect>
           </property>
           <property name="palette">
@@ -456,6 +604,18 @@ QDialog{background-color: rgb(255, 255, 255);}
        <string>吧务信息</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item row="0" column="0">
         <widget class="QTreeWidget" name="treeWidget">
          <column>
@@ -483,37 +643,19 @@ QDialog{background-color: rgb(255, 255, 255);}
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="0" column="0">
-        <widget class="QTreeWidget" name="treeWidget_3">
-         <column>
-          <property name="text">
-           <string>昵称</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>百度用户名</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>吧等级</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>经验值</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>用户 ID</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>帐号状态</string>
-          </property>
-         </column>
+        <widget class="QLabel" name="label_15">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;很抱歉，出于加载时的性能问题，该功能已被停用。&lt;br/&gt;该页面将在将来的版本中删除。&lt;/p&gt;&lt;p&gt;你可以到 &lt;a href=&quot;https://tieba.baidu.com/f/like/furank?kw=xxx&amp;amp;ie=utf-8&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;牛人排行榜&lt;/span&gt;&lt;/a&gt; 中查看吧等级排行榜。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>

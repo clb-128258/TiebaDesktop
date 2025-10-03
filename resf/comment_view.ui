@@ -88,6 +88,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QLabel" name="label_4">
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
        <property name="text">
         <string>uicon</string>
        </property>
@@ -103,6 +106,9 @@
          <family>微软雅黑</family>
          <pointsize>12</pointsize>
         </font>
+       </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
        </property>
        <property name="text">
         <string>username</string>
