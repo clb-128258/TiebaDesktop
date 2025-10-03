@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\tie_detail_view.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\tie_detail_view.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -149,6 +149,7 @@ class Ui_Form(object):
         self.gridLayout_2 = QtWidgets.QGridLayout()
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.label_4 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        self.label_4.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.label_4.setText("")
         self.label_4.setAlignment(QtCore.Qt.AlignCenter)
         self.label_4.setObjectName("label_4")
@@ -160,6 +161,7 @@ class Ui_Form(object):
         font.setFamily("微软雅黑")
         font.setPointSize(12)
         self.label_3.setFont(font)
+        self.label_3.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.label_3.setText("")
         self.label_3.setObjectName("label_3")
         self.horizontalLayout_3.addWidget(self.label_3)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\comment_view.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\comment_view.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -51,6 +51,7 @@ class Ui_Form(object):
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.label_4 = QtWidgets.QLabel(Form)
+        self.label_4.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.label_4.setAlignment(QtCore.Qt.AlignCenter)
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_3.addWidget(self.label_4)
@@ -59,6 +60,7 @@ class Ui_Form(object):
         font.setFamily("微软雅黑")
         font.setPointSize(12)
         self.label_3.setFont(font)
+        self.label_3.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.label_3.setObjectName("label_3")
         self.horizontalLayout_3.addWidget(self.label_3)
         self.label_11 = QtWidgets.QLabel(Form)

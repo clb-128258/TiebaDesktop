@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\star_list.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\star_list.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -20,9 +20,10 @@ class Ui_Dialog(object):
 "")
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
-        self.horizontalLayout.setContentsMargins(6, 3, 6, 3)
+        self.horizontalLayout.setContentsMargins(6, 6, 6, 6)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.label = QtWidgets.QLabel(Dialog)
         self.label.setObjectName("label")

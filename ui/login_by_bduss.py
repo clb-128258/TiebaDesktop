@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\login_by_bduss.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\login_by_bduss.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(522, 140)
+        Dialog.resize(535, 158)
         Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "QDialog{background-color: rgb(255, 255, 255);}\n"
 "")
@@ -49,6 +49,8 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "高级登录"))
         self.lineEdit.setPlaceholderText(_translate("Dialog", "请输入 BDUSS"))
         self.lineEdit_2.setPlaceholderText(_translate("Dialog", "请输入 STOKEN"))
-        self.label.setText(_translate("Dialog", "高级登录功能允许你通过现有的 BDUSS 和 STOKEN 进行登录。仅在网页登录功能出现问题或是在你的平台上不可用时，才推荐使用此功能。"))
+        self.label.setText(_translate("Dialog", "高级登录功能允许你通过现有的 BDUSS 和 STOKEN 进行登录。\n"
+"仅在网页登录功能出现问题或是在你的平台上不可用时，才推荐使用此功能。\n"
+"注：随着版本更新，本功能可能会出现各种问题，因此不推荐使用。"))
         self.pushButton.setText(_translate("Dialog", "登录"))
         self.pushButton_2.setText(_translate("Dialog", "取消"))
