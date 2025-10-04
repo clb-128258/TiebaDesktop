@@ -414,12 +414,17 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
         self.set_black_status_ok_signal.connect(self.set_black_status_ok_slot)
         self.pushButton_2.clicked.connect(self.close)
         self.pushButton.clicked.connect(self.set_black_status_async)
+        self.pushButton_3.clicked.connect(self.open_user_homepage)
 
         self.get_black_status_async()
 
     def init_loading_flash(self):
         self.loading_widget = LoadingFlashWidget()
         self.loading_widget.cover_widget(self)
+
+    def open_user_homepage(self):
+        user_home_page = UserHomeWindow(self.bduss, self.stoken, self.user_id_portrait)
+        qt_window_mgr.add_window(user_home_page)
 
     def set_black_status_ok_slot(self, data):
         if data['success']:
@@ -512,7 +517,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                                 else:
                                     user_head_pixmap = QPixmap()
                                     user_head_pixmap.loadFromData(cache_mgr.get_portrait(i.portrait))
-                                    user_head_pixmap = user_head_pixmap.scaled(30, 30, Qt.KeepAspectRatio,
+                                    user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
                                                                                Qt.SmoothTransformation)
                                     turn_data['head'] = user_head_pixmap
 
@@ -531,7 +536,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                             else:
                                 user_head_pixmap = QPixmap()
                                 user_head_pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
-                                user_head_pixmap = user_head_pixmap.scaled(30, 30, Qt.KeepAspectRatio,
+                                user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
                                                                            Qt.SmoothTransformation)
                                 turn_data['head'] = user_head_pixmap
                                 turn_data['name'] = user_info.nick_name_new
@@ -1114,8 +1119,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
                                 'forum_name': thread['forum_name'], 'title': thread["title"], 'picture': None,
                                 'is_del': bool(thread['is_deleted'])}
 
-                        user_head_pixmap = QPixmap()
-                        portrait = thread["author"]["portrait"]
+                        portrait = thread["author"]["portrait"].split('?')[0]
                         user_head_pixmap = QPixmap()
                         user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                         user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
