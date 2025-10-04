@@ -44,7 +44,7 @@ def save_bd_hash_img(bd_hash: str, original=False) -> bytes:
     response = requests.get(head_url, headers=ex_header)
     bytes_data = response.content
     if bytes_data and response.status_code == 200:
-        local_path = f'{consts.datapath}/image_caches/bd_hash_original_{bd_hash}.jpg'
+        local_path = f'{consts.datapath}/image_caches/bd_hash_img{"_original_size" if original else ""}_{bd_hash}.jpg'
         with open(local_path, 'wb') as file:
             file.write(bytes_data)
         bd_hash_cache_dict[bd_hash + '_o' if original else bd_hash] = {'local_path': local_path,
