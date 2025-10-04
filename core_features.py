@@ -1550,14 +1550,12 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             # 找出所有预览图
                             preview_pixmap = []
                             for pic in thread.contents.imgs:
-                                pic_addr = pic.src
-                                response = requests.get(pic_addr, headers=request_mgr.header)
-                                if response.content:
-                                    pixmap = QPixmap()
-                                    pixmap.loadFromData(response.content)
-                                    pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
-                                                           Qt.SmoothTransformation)
-                                    preview_pixmap.append(pixmap)
+                                pic_hash = pic.hash
+                                pixmap = QPixmap()
+                                pixmap.loadFromData(cache_mgr.get_bd_hash_img(pic_hash))
+                                pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
+                                                       Qt.SmoothTransformation)
+                                preview_pixmap.append(pixmap)
                             data['view_pixmap'] = preview_pixmap
 
                             # 获取吧头像
@@ -4616,13 +4614,11 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             for j in thread.contents.imgs:
-                url = j.src
+                hash = j.hash
                 pixmap = QPixmap()
-                response = requests.get(url, headers=request_mgr.header)
-                if response.content:
-                    pixmap.loadFromData(response.content)
-                    pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio,
-                                           Qt.TransformationMode.SmoothTransformation)
+                pixmap.loadFromData(cache_mgr.get_bd_hash_img(hash))
+                pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio,
+                                       Qt.TransformationMode.SmoothTransformation)
                 preview_pixmap.append(pixmap)
 
             tdata = {'type': tpe,

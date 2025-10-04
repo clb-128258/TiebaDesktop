@@ -330,8 +330,11 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                     os.remove(f'{datapath}/image_caches/{i}')
                 except PermissionError:
                     continue
+
             cache_mgr.portrait_cache_dict = {}
             cache_mgr.save_portrait_pf()
+            cache_mgr.bd_hash_cache_dict = {}
+            cache_mgr.save_bdhash_pf()
             QMessageBox.information(self, '提示', '图片缓存清理成功。', QMessageBox.Ok)
             self.get_pic_size()
 
