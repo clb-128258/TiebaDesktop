@@ -3,20 +3,6 @@ import json
 import consts
 import request_mgr
 import requests
-import queue_model
-from queue_model import QueueProcess
-
-
-class QueueModel_bdhash(queue_model.QueueModel):
-    def handle_process(self, process: QueueProcess):
-        bd_hash = process.process_args[0]
-        original = process.process_args[1]
-        hash_key = bd_hash + '_o' if original else bd_hash
-        if not bd_hash_cache_dict.get(hash_key):
-            return save_bd_hash_img(bd_hash, original)
-        with open(bd_hash_cache_dict[hash_key]['local_path'], 'rb') as file:
-            bytesdata = file.read()
-            return bytesdata
 
 
 def get_bd_hash_img(bd_hash: str, original=False) -> bytes:
@@ -29,7 +15,12 @@ def get_bd_hash_img(bd_hash: str, original=False) -> bytes:
     Return:
         图像字节数据
     """
-    return bd_hash_queue.create_process_await((bd_hash, original))
+    hash_key = bd_hash + '_o' if original else bd_hash
+    if not bd_hash_cache_dict.get(hash_key):
+        return save_bd_hash_img(bd_hash, original)
+    with open(bd_hash_cache_dict[hash_key]['local_path'], 'rb') as file:
+        bytesdata = file.read()
+        return bytesdata
 
 
 def save_bd_hash_img(bd_hash: str, original=False) -> bytes:
@@ -128,4 +119,3 @@ def init_all_datas():
 
 portrait_cache_dict = {}
 bd_hash_cache_dict = {}
-bd_hash_queue = QueueModel_bdhash()

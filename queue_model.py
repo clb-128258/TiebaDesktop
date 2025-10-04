@@ -1,7 +1,6 @@
 """任务处理队列模型"""
 import queue
 import threading
-import random
 import time
 
 
