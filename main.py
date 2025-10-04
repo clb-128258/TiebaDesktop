@@ -473,6 +473,7 @@ class LoginWebView(QDialog):
                 return '', '', 0
 
         self.webview.destroyWebviewUntilComplete()  # 先销毁webview
+        time.sleep(4)
 
         # 获取用户信息
         new_loop = asyncio.new_event_loop()
@@ -687,11 +688,15 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         data = load_json(f'{datapath}/d2id_flag')
         uid = data['uid']
         if uid:
-            if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
-                shutil.rmtree(f'{datapath}/webview_data/{uid}')
-            os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
-            os.mkdir(f'{datapath}/webview_data/default')
-            save_json({'uid': ''}, f'{datapath}/d2id_flag')
+            try:
+                if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
+                    shutil.rmtree(f'{datapath}/webview_data/{uid}')
+                os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
+                os.mkdir(f'{datapath}/webview_data/default')
+            except:
+                QMessageBox.critical(self, '错误', '用户数据应用失败！', QMessageBox.Ok)
+            else:
+                save_json({'uid': ''}, f'{datapath}/d2id_flag')
 
     def _add_uinfo(self, datas):
         if not datas:
