@@ -6,7 +6,7 @@
 本软件已实现的功能有：
 
 * 多账号登录与切换
-* 首页推荐看帖、进吧看帖
+* 首页推荐看贴、进吧看贴
 * 查看帖子内的图片和视频，支持保存视频
 * 查看某吧详情信息
 * 一键签到所有吧、等级签到，并且支持 [命令行参数调用](https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/command-usages.md)
