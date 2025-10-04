@@ -90,7 +90,8 @@ def create_data():
                      f'{datapath}/cache_index', f'{datapath}/webview_data/default']  # 欲创建的文件夹
     expect_secret_json = {f'{datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件
     expect_json = {f'{datapath}/config.json': {
-        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1, 'default_sort': 0},
+        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1, 'default_sort': 0,
+                                 'enable_lz_only': False},
         'forum_view_settings': {'default_sort': 0}},
         f'{datapath}/cache_index/fidfname_index.json': {},
         f'{datapath}/cache_index/user_portraits.json': {},
@@ -2725,6 +2726,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.listWidget_4.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
+        self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
         self.init_load_flash()
 
         self.pushButton.clicked.connect(self.init_more_menu)

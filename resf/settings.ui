@@ -115,6 +115,18 @@ QDialog{background-color: rgb(255, 255, 255);}
      </widget>
      <widget class="QWidget" name="page_4">
       <layout class="QGridLayout" name="gridLayout_7">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout_6">
          <item row="0" column="0" colspan="2">
@@ -189,7 +201,7 @@ QDialog{background-color: rgb(255, 255, 255);}
           </spacer>
          </item>
          <item row="4" column="0" colspan="2">
-          <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0">
+          <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
            <item>
             <widget class="QLabel" name="label_13">
              <property name="toolTip">
@@ -217,6 +229,29 @@ QDialog{background-color: rgb(255, 255, 255);}
                <string>热门排序</string>
               </property>
              </item>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Fixed</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_3">
+             <property name="text">
+              <string>默认启用只看楼主</string>
+             </property>
             </widget>
            </item>
            <item>
@@ -319,6 +354,18 @@ QDialog{background-color: rgb(255, 255, 255);}
      </widget>
      <widget class="QWidget" name="page_2">
       <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,0,0,1">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item row="3" column="1" colspan="3">
         <widget class="Line" name="line_3">
          <property name="orientation">
