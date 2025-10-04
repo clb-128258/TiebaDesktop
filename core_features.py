@@ -1221,6 +1221,8 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
     set_head_info_signal = pyqtSignal(dict)
     set_list_info_signal = pyqtSignal(tuple)
 
+    nick_name = ''
+
     def __init__(self, bduss, stoken, user_id_portrait):
         super().__init__()
         self.setupUi(self)
@@ -1420,7 +1422,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     if user_info.err:
                         data['error'] = str(user_info.err)
                     else:
-                        data['name'] = user_info.nick_name_new
+                        self.nick_name = data['name'] = user_info.nick_name_new
                         data['sex'] = user_info.gender
                         data['level'] = user_info.glevel
                         data['agree_c'] = user_info.agree_num
@@ -1472,8 +1474,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             widget.set_thread_values(datas['view_count'], datas['agree_count'], datas['reply_count'],
                                      datas['repost_count'], datas['post_time'])
             widget.set_infos(datas['user_portrait_pixmap'], datas['user_name'], datas['title'], datas['content'],
-                             datas['forum_pixmap'], datas['forum_name'])
+                             None, datas['forum_name'])
             widget.set_picture(datas['view_pixmap'])
+            widget.label.hide()
             widget.adjustSize()
             item.setSizeHint(widget.size())
             self.listWidget_4.addItem(item)
@@ -1492,7 +1495,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     fname=datas['forum_name'], tname=datas['thread_title'], tid=datas['thread_id'],
                     fid=datas['forum_id'], sub_floor='[楼中楼] ' if datas['is_subfloor'] else '[回复贴] '))
             widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['content'],
-                            [], -1, datas['post_time_str'], datas['ip'], -2, -1, -1, False)
+                            [], -1, datas['post_time_str'], '', -2, -1, -1, False)
 
             item.setSizeHint(widget.size())
             self.listWidget_2.addItem(item)
@@ -1542,7 +1545,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
                                     'author_portrait': thread.user.portrait, 'user_name': thread.user.nick_name_new,
                                     'user_portrait_pixmap': user_head_pixmap, 'forum_name': thread.fname,
-                                    'forum_pixmap': None,
                                     'view_pixmap': [], 'view_count': thread.view_num, 'agree_count': thread.agree,
                                     'reply_count': thread.reply_num, 'repost_count': thread.share_num,
                                     'post_time': thread.create_time}
@@ -1558,21 +1560,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                 preview_pixmap.append(pixmap)
                             data['view_pixmap'] = preview_pixmap
 
-                            # 获取吧头像
-                            forum = await client.get_forum_detail(thread.fid)
-                            forum_pixmap = QPixmap()
-                            response = requests.get(forum.small_avatar, headers=request_mgr.header)
-                            if response.content:
-                                forum_pixmap.loadFromData(response.content)
-                                forum_pixmap = forum_pixmap.scaled(15, 15, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                            data['forum_pixmap'] = forum_pixmap
-
                             self.set_list_info_signal.emit((type_, data))
                     elif type_ == 'reply':
                         # 获取新版昵称
-                        name_info = await client.get_user_info(self.user_id_portrait, aiotieba.ReqUInfo.NICK_NAME)
-                        nick_name = name_info.nick_name_new
-                        user_ip = name_info.ip
+                        nick_name = self.nick_name
 
                         # 初始化数据
                         user_head_pixmap = QPixmap()
@@ -1619,7 +1610,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                     'forum_name': forum_name,
                                     'thread_title': thread_title,
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
-                                    'ip': user_ip,
                                     'user_portrait_pixmap': user_head_pixmap,
                                     'portrait': thread.user.portrait,
                                     'user_name': nick_name,
