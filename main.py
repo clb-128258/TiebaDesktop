@@ -472,8 +472,8 @@ class LoginWebView(QDialog):
             except:
                 return '', '', 0
 
-        self.webview.destroyWebviewUntilComplete()  # 先销毁webview
-        time.sleep(4)
+        self.webview.destroyWebview()  # 先销毁webview
+        time.sleep(5)
 
         # 获取用户信息
         new_loop = asyncio.new_event_loop()

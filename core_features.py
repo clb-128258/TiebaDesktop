@@ -262,14 +262,19 @@ class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
         self.setWindowFlags(Qt.WindowStaysOnTopHint)  # 始终置顶
         self.setAttribute(Qt.WA_TranslucentBackground, False)  # 背景不透明
         self.setStyleSheet('QFrame#frame{background-color: rgb(255, 255, 255); color: rgb(255, 255, 255);}')  # 白色背景
+        self.set_caption(show_caption, caption)
+
+        self.init_load_flash()
+
+    def set_caption(self, show_caption=True, caption=''):
         if show_caption:
             self.label_17.show()
             if caption:
                 self.label_17.setText(caption)
+            else:
+                self.label_17.setText('数据正在赶来的路上...')
         else:
             self.label_17.hide()
-
-        self.init_load_flash()
 
     def init_load_flash(self):
         self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
@@ -1692,6 +1697,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     """吧详细信息窗口，可显示吧详细信息、吧务信息、等级排行榜"""
     set_main_info_signal = pyqtSignal(dict)
+    action_ok_signal = pyqtSignal(dict)
 
     page_level_list = 1
     is_level_list_loading = False
@@ -1699,6 +1705,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     forum_name = ''
     forum_atavar_link = ''
     webview = None
+    is_followed = False
 
     def __init__(self, bduss, stoken, forum_id):
         super().__init__()
@@ -1712,12 +1719,15 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.init_load_flash()
 
         self.set_main_info_signal.connect(self.ui_set_main_info)
+        self.action_ok_signal.connect(self.action_ok_slot)
         self.pushButton_5.clicked.connect(self.close)
         self.treeWidget.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
         self.pushButton_4.clicked.connect(self.save_bg_image)
         self.pushButton_6.clicked.connect(lambda: pyperclip.copy(self.forum_bg_link))
         self.pushButton_3.clicked.connect(self.show_sign_webview)
         self.pushButton_7.clicked.connect(lambda: self.show_big_picture(self.forum_atavar_link))
+        self.pushButton.clicked.connect(lambda: self.do_action_async('unfollow' if self.is_followed else 'follow'))
+        self.pushButton_2.clicked.connect(lambda: self.do_action_async('sign'))
 
         self.loading_widget.show()
         self.get_main_info_async()
@@ -1786,6 +1796,78 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         opic_view.closed.connect(lambda: qt_window_mgr.del_window(opic_view))
         qt_window_mgr.add_window(opic_view)
 
+    def action_ok_slot(self, data):
+        if data['success']:
+            QMessageBox.information(self, data['title'], data['text'], QMessageBox.Ok)
+        else:
+            QMessageBox.critical(self, data['title'], data['text'], QMessageBox.Ok)
+
+        self.loading_widget.set_caption(True, '正在重新加载数据...')
+        self.loading_widget.show()
+        self.get_main_info_async()
+
+    def do_action_async(self, action_type=""):
+        run_flag = True
+        if action_type == 'unfollow':
+            if QMessageBox.warning(self, '取关贴吧', f'确定不再关注 {self.forum_name}吧？',
+                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                run_flag = False
+
+        if run_flag:
+            start_background_thread(self.do_action, (action_type,))
+
+    def do_action(self, action_type=""):
+        async def doaction():
+            turn_data = {'success': False, 'title': '', 'text': ''}
+            try:
+                aiotieba.logging.get_logger().info(f'do forum {self.forum_id} action type {action_type}')
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    if action_type == 'follow':
+                        r = await client.follow_forum(self.forum_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['title'] = '关注成功'
+                            turn_data['text'] = f'已成功关注 {self.forum_name}吧。'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '关注失败'
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'unfollow':
+                        r = await client.unfollow_forum(self.forum_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['title'] = '取消关注成功'
+                            turn_data['text'] = f'已成功取消关注 {self.forum_name}吧。'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '取消关注失败'
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'sign':
+                        r = await client.sign_forum(self.forum_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['title'] = '签到成功'
+                            turn_data['text'] = f'已成功签到 {self.forum_name}吧。'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '签到失败'
+                            turn_data['text'] = f'{r.err}'
+            except Exception as e:
+                print(type(e))
+                print(e)
+                turn_data['success'] = False
+                turn_data['title'] = '程序内部错误'
+                turn_data['text'] = str(e)
+            finally:
+                self.action_ok_signal.emit(turn_data)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(doaction())
+
+        start_async()
+
     def ui_set_main_info(self, datas):
         if not datas['err_info']:
             self.loading_widget.hide()
@@ -1806,12 +1888,14 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                   f'</body></html>')
 
             if self.bduss:
+                self.is_followed = datas['follow_info']['isfollow']
                 if datas['follow_info']['isfollow']:
                     self.pushButton.setText('取消关注')
                 else:
                     self.pushButton.setText('关注')
                 self.label_6.setText(f'你已经关注了本吧。' if datas['follow_info'][
                     'isfollow'] else f'你还没有关注{self.forum_name}吧，不妨考虑一下？')
+
                 if datas['follow_info']['isSign']:
                     self.pushButton_2.setEnabled(False)
                     self.pushButton_2.setText('已签到')
