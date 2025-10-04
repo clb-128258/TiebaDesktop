@@ -3085,23 +3085,33 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             open_url_in_browser(url)
 
     def add_post_ok_action(self, isok):
-        QMessageBox.information(self, '回贴完成', isok)
+        if not isok:
+            self.lineEdit.setText('')
+            self.comboBox.setCurrentIndex(1)
+            QMessageBox.information(self, '回贴成功', '回复贴发送成功。')
+        else:
+            QMessageBox.information(self, '回贴失败', isok)
 
     def add_post_async(self):
-        msgbox = QMessageBox()
-        msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
-        msgbox.setButtonText(QMessageBox.Help, "去网页发贴")
-        r = msgbox.warning(self, '回贴风险提示',
-                           '回复功能目前还处于测试阶段。\n'
+        if not self.lineEdit.text():
+            QMessageBox.information(self, '提示', '请输入内容后再回贴。')
+        else:
+            show_string = ('回复功能目前还处于测试阶段。\n'
                            '使用本软件回贴可能会遇到发贴失败等情况，甚至可能导致你的账号被永久全吧封禁。\n'
                            '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
-        flag = r == QMessageBox.Yes
-        if r == QMessageBox.Help:
-            url = f'https://tieba.baidu.com/p/{self.thread_id}'
-            open_url_in_browser(url)
+            msgbox = QMessageBox(QMessageBox.Warning, '回贴风险提示', show_string, parent=self)
+            msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
+            msgbox.button(QMessageBox.Help).setText("去网页发贴")
+            msgbox.button(QMessageBox.Yes).setText("无视风险继续发贴")
+            msgbox.button(QMessageBox.No).setText("取消发贴")
+            r = msgbox.exec()
+            flag = r == QMessageBox.Yes
+            if r == QMessageBox.Help:
+                url = f'https://tieba.baidu.com/p/{self.thread_id}'
+                open_url_in_browser(url)
 
-        if flag:
-            start_background_thread(self.add_post)
+            if flag:
+                start_background_thread(self.add_post)
 
     def add_post(self):
         async def dopost():
@@ -3110,7 +3120,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     result = await client.add_post(self.forum_id, self.thread_id, self.lineEdit.text())
                     if result:
-                        self.add_post_signal.emit('回贴成功。')
+                        self.add_post_signal.emit('')
                     else:
                         self.add_post_signal.emit(str(result.err))
             except Exception as e:
