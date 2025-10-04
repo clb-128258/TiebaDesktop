@@ -2093,7 +2093,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket
-    async def set_blacklist(self, id_: str | int, *, btype: BlacklistType = BlacklistType.ALL) -> BoolResponse:
+    async def set_blacklist(self, id_: str | int, btype: BlacklistType = BlacklistType.ALL) -> BoolResponse:
         """
         设置新版用户黑名单
 

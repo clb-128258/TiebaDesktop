@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, Q
 from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie, QPalette
 from ui import follow_ba, ba_item, tie_preview, ba_head, sign, tie_detail_view, comment_view, reply_comments, \
     thread_video_item, forum_detail, user_home_page, image_viewer, reply_at_me_page, star_list, settings, user_item, \
-    login_by_bduss, forum_search, loading_amt
+    login_by_bduss, forum_search, loading_amt, user_blacklist_setter
 import asyncio
 import sys
 import platform
@@ -285,7 +285,6 @@ class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
     def eventFilter(self, source, event):
         if event.type() == QEvent.Resize and source is self.parent():  # 父组件调整大小
             self.sync_parent_widget_size()
-            return True  # 让qt忽略事件
         return super(LoadingFlashWidget, self).eventFilter(source, event)  # 照常处理事件
 
     def closeEvent(self, a0):
@@ -392,6 +391,165 @@ class UserItem(QWidget, user_item.Ui_Form):
                 self.pushButton.setText('当前账号')
             self.pushButton.clicked.connect(lambda: self.switchRequested.emit((self.bduss, uname)))
             self.pushButton_2.clicked.connect(lambda: self.deleteRequested.emit((self.bduss, uname)))
+
+
+class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
+    """拉黑设置窗口"""
+    get_black_status_ok_signal = pyqtSignal(dict)
+    set_black_status_ok_signal = pyqtSignal(dict)
+
+    def __init__(self, bduss, stoken, user_id_portrait):
+        super().__init__()
+        self.setupUi(self)
+
+        self.bduss = bduss
+        self.stoken = stoken
+        self.user_id_portrait = user_id_portrait
+
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.init_loading_flash()
+
+        self.get_black_status_ok_signal.connect(self.get_black_status_ok_slot)
+        self.set_black_status_ok_signal.connect(self.set_black_status_ok_slot)
+        self.pushButton_2.clicked.connect(self.close)
+        self.pushButton.clicked.connect(self.set_black_status_async)
+
+        self.get_black_status_async()
+
+    def init_loading_flash(self):
+        self.loading_widget = LoadingFlashWidget()
+        self.loading_widget.cover_widget(self)
+
+    def set_black_status_ok_slot(self, data):
+        if data['success']:
+            QMessageBox.information(self, data['title'], data['text'], QMessageBox.Ok)
+            self.close()
+        else:
+            QMessageBox.critical(self, data['title'], data['text'], QMessageBox.Ok)
+            self.loading_widget.hide()
+
+    def set_black_status_async(self):
+        self.loading_widget.set_caption(True, '正在应用拉黑设置，请稍等...')
+        self.loading_widget.show()
+        start_background_thread(self.set_black_status)
+
+    def set_black_status(self):
+        async def doaction():
+            turn_data = {'success': False, 'title': '', 'text': ''}
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    flag = aiotieba.enums.BlacklistType.NULL
+                    if self.checkBox.isChecked():
+                        flag |= aiotieba.enums.BlacklistType.INTERACT
+                    if self.checkBox_3.isChecked():
+                        flag |= aiotieba.enums.BlacklistType.CHAT
+                    if self.checkBox_2.isChecked():
+                        flag |= aiotieba.enums.BlacklistType.FOLLOW
+
+                    r = await client.set_blacklist(self.user_id_portrait, flag)
+                    if r:
+                        turn_data['success'] = True
+                        turn_data['title'] = '拉黑成功'
+                        turn_data['text'] = '已成功对此用户设置拉黑。'
+                    else:
+                        turn_data['success'] = False
+                        turn_data['title'] = '拉黑失败'
+                        turn_data['text'] = str(r.err)
+            except Exception as e:
+                print(type(e))
+                print(e)
+                turn_data['success'] = False
+                turn_data['title'] = '程序内部错误'
+                turn_data['text'] = str(e)
+            finally:
+                self.set_black_status_ok_signal.emit(turn_data)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(doaction())
+
+        start_async()
+
+    def get_black_status_ok_slot(self, data):
+        if data['success']:
+            self.label.setPixmap(data['head'])
+            self.label_2.setText(data['name'])
+            self.checkBox.setChecked(data['black_state'][0])
+            self.checkBox_2.setChecked(data['black_state'][2])
+            self.checkBox_3.setChecked(data['black_state'][1])
+            self.loading_widget.hide()
+        else:
+            QMessageBox.critical(self, data['title'], data['text'], QMessageBox.Ok)
+            self.close()
+
+    def get_black_status_async(self):
+        self.loading_widget.show()
+        start_background_thread(self.get_black_status)
+
+    def get_black_status(self):
+        async def doaction():
+            # 互动、私信、关注
+            turn_data = {'success': True, 'head': None, 'name': '', 'black_state': [False, False, False]}
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    flaged = False
+                    blist = await client.get_blacklist()
+                    if blist.err:
+                        turn_data['success'] = False
+                        turn_data['title'] = '获取拉黑状态失败'
+                        turn_data['text'] = f'{blist.err}'
+                        flaged = True
+                    else:
+                        for i in blist.objs:
+                            if i.user_id == self.user_id_portrait or i.portrait == self.user_id_portrait:
+                                flaged = True
+                                if profile_mgr.current_uid == i.user_id:
+                                    turn_data['success'] = False
+                                    turn_data['title'] = '错误'
+                                    turn_data['text'] = '你不能拉黑自己。'
+                                else:
+                                    user_head_pixmap = QPixmap()
+                                    user_head_pixmap.loadFromData(cache_mgr.get_portrait(i.portrait))
+                                    user_head_pixmap = user_head_pixmap.scaled(30, 30, Qt.KeepAspectRatio,
+                                                                               Qt.SmoothTransformation)
+                                    turn_data['head'] = user_head_pixmap
+
+                                    turn_data['name'] = i.nick_name_new
+                                    turn_data['black_state'][0] = aiotieba.enums.BlacklistType.INTERACT in i.btype
+                                    turn_data['black_state'][1] = aiotieba.enums.BlacklistType.CHAT in i.btype
+                                    turn_data['black_state'][2] = aiotieba.enums.BlacklistType.FOLLOW in i.btype
+                                break
+
+                        if not flaged:
+                            user_info = await client.get_user_info(self.user_id_portrait)
+                            if profile_mgr.current_uid == user_info.user_id:
+                                turn_data['success'] = False
+                                turn_data['title'] = '错误'
+                                turn_data['text'] = '你不能拉黑自己。'
+                            else:
+                                user_head_pixmap = QPixmap()
+                                user_head_pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
+                                user_head_pixmap = user_head_pixmap.scaled(30, 30, Qt.KeepAspectRatio,
+                                                                           Qt.SmoothTransformation)
+                                turn_data['head'] = user_head_pixmap
+                                turn_data['name'] = user_info.nick_name_new
+            except Exception as e:
+                print(type(e))
+                print(e)
+                turn_data['success'] = False
+                turn_data['title'] = '程序内部错误'
+                turn_data['text'] = str(e)
+            finally:
+                self.get_black_status_ok_signal.emit(turn_data)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(doaction())
+
+        start_async()
 
 
 class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
@@ -1220,8 +1378,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
     """用户个人主页窗口"""
     set_head_info_signal = pyqtSignal(dict)
     set_list_info_signal = pyqtSignal(tuple)
+    action_ok_signal = pyqtSignal(dict)
 
     nick_name = ''
+    real_user_id = -1
 
     def __init__(self, bduss, stoken, user_id_portrait):
         super().__init__()
@@ -1270,6 +1430,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         if profile_mgr.local_config['thread_view_settings']['hide_ip']:
             self.label_5.hide()
 
+        self.action_ok_signal.connect(self.action_ok_slot)
         self.set_head_info_signal.connect(self.set_head_info_ui)
         self.set_list_info_signal.connect(self.set_list_info_ui)
         self.listWidget_3.itemDoubleClicked.connect(self.open_user_homepage)
@@ -1293,20 +1454,28 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         menu.setToolTipsVisible(True)
 
         follow = QAction('关注', self)
+        follow.triggered.connect(lambda: self.do_action_async('follow'))
         menu.addAction(follow)
 
         unfollow = QAction('取消关注', self)
+        unfollow.triggered.connect(lambda: self.do_action_async('unfollow'))
         menu.addAction(unfollow)
 
         menu.addSeparator()
 
         blacklist = QAction('拉黑', self)
         blacklist.setToolTip('禁止该用户与你互动（转评赞等），以及禁止该用户关注你和给你发私信。')
+        blacklist.triggered.connect(self.open_user_blacklister)
         menu.addAction(blacklist)
 
         old_mute = QAction('禁言', self)
+        old_mute.triggered.connect(lambda: self.do_action_async('mute'))
         old_mute.setToolTip('禁止该用户回复你的贴子。\nPS：该功能存在于旧版本贴吧中，已被新版本的拉黑功能取代，不推荐使用。')
         menu.addAction(old_mute)
+
+        cancel_old_mute = QAction('取消禁言', self)
+        cancel_old_mute.triggered.connect(lambda: self.do_action_async('unmute'))
+        menu.addAction(cancel_old_mute)
 
         self.pushButton.setMenu(menu)
 
@@ -1315,17 +1484,96 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
             qt_window_mgr.add_window(user_home_page)
 
+    def open_user_blacklister(self):
+        blacklister = SingleUserBlacklistWindow(self.bduss, self.stoken, self.user_id_portrait)
+        qt_window_mgr.add_window(blacklister)
+
+    def action_ok_slot(self, data):
+        if data['success']:
+            QMessageBox.information(self, data['title'], data['text'], QMessageBox.Ok)
+        else:
+            QMessageBox.critical(self, data['title'], data['text'], QMessageBox.Ok)
+
+    def do_action_async(self, action_type=""):
+        run_flag = True
+        if action_type == 'unfollow':
+            if QMessageBox.warning(self, '取关用户', f'确定要取消关注用户 {self.nick_name} 吗？',
+                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                run_flag = False
+        elif action_type == 'mute':
+            if QMessageBox.warning(self, '禁言用户', f'禁言后，该用户将无法回复你。确定要禁言用户 {self.nick_name} 吗？',
+                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                run_flag = False
+        if run_flag:
+            start_background_thread(self.do_action, (action_type,))
+
+    def do_action(self, action_type=""):
+        async def doaction():
+            turn_data = {'success': False, 'title': '', 'text': ''}
+            try:
+                aiotieba.logging.get_logger().info(f'do user {self.user_id_portrait} action type {action_type}')
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    if action_type == 'follow':
+                        r = await client.follow_user(self.user_id_portrait)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['title'] = '关注成功'
+                            turn_data['text'] = f'已成功关注该用户。'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '关注失败'
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'unfollow':
+                        r = await client.unfollow_user(self.user_id_portrait)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['title'] = '取消关注成功'
+                            turn_data['text'] = f'已成功取消关注该用户。'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '取消关注失败'
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'mute':
+                        r = await client.add_blacklist_old(self.real_user_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['title'] = '禁言成功'
+                            turn_data['text'] = f'已成功禁言该用户。'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '禁言失败'
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'unmute':
+                        r = await client.del_blacklist_old(self.real_user_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['title'] = '取消禁言成功'
+                            turn_data['text'] = f'已成功取消禁言该用户。'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '取消禁言失败'
+                            turn_data['text'] = f'{r.err}'
+            except Exception as e:
+                print(type(e))
+                print(e)
+                turn_data['success'] = False
+                turn_data['title'] = '程序内部错误'
+                turn_data['text'] = str(e)
+            finally:
+                self.action_ok_signal.emit(turn_data)
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(doaction())
+
+        start_async()
+
     def set_head_info_ui(self, data):
         if data['error']:
             QMessageBox.critical(self, '用户信息加载失败', data['error'], QMessageBox.Ok)
             self.close()
         else:
-            # 隐藏动画，显示内容
-            self.frame.show()
-            self.tabWidget.show()
-            self.frame_8.show()
-            self.flash_shower.hide()
-
             self.setWindowTitle(data['name'] + ' - 个人主页')
             self.setWindowIcon(QIcon(data['portrait_pixmap']))
 
@@ -1385,7 +1633,15 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             if have_flag_showed:
                 self.frame_8.hide()
 
+            # 隐藏动画，显示内容
+            self.frame.show()
+            self.tabWidget.show()
+            self.frame_8.show()
+            self.flash_shower.hide()
+
             # 主信息加载完之后再加载
+            if profile_mgr.current_uid == self.real_user_id:
+                self.pushButton.hide()
             for i in self.page.keys():
                 self.get_list_info_async(i)
 
@@ -1424,6 +1680,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     if user_info.err:
                         data['error'] = str(user_info.err)
                     else:
+                        self.real_user_id = user_info.user_id
                         self.nick_name = data['name'] = user_info.nick_name_new
                         data['sex'] = user_info.gender
                         data['level'] = user_info.glevel
@@ -1453,6 +1710,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             except Exception as e:
                 print(type(e))
                 print(e)
+                self.set_head_info_signal.emit({'error': '程序内部出错，请重试。'})
 
         def start_async():
             new_loop = asyncio.new_event_loop()
