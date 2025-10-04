@@ -130,7 +130,7 @@ def format_second(seconds):
 
 
 def make_thread_content(threadContents, previewPlainText=False):
-    """把帖子正文内容碎片转换成 Qt 可以解析的 HTML 代码，或者是纯文本"""
+    """把贴子正文内容碎片转换成 Qt 可以解析的 HTML 代码，或者是纯文本"""
     if previewPlainText:
         _text = ''
     else:
@@ -156,7 +156,7 @@ def make_thread_content(threadContents, previewPlainText=False):
         elif type(i) == aiotieba.get_posts._classdef.FragVoice and previewPlainText:
             _text += f'[语音，时长 {format_second(i.duration)}]'
         elif type(i) == aiotieba.get_posts._classdef.FragVideo and previewPlainText:
-            _text += f'[这是一条视频帖，时长 {format_second(i.duration)}，{i.view_num} 次浏览，进贴即可查看]'
+            _text += f'[这是一条视频贴，时长 {format_second(i.duration)}，{i.view_num} 次浏览，进贴即可查看]'
 
         elif type(i) == aiotieba.get_posts._classdef.FragAt and not previewPlainText:
             _text += f' <a href=\"user://{i.user_id}\">{i.text}</a> '
@@ -602,7 +602,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
 
 
 class ThreadPictureLabel(QLabel):
-    """嵌入在列表的帖子图片"""
+    """嵌入在列表的贴子图片"""
     set_picture_signal = pyqtSignal(QPixmap)
     opic_view = None
 
@@ -627,7 +627,7 @@ class ThreadPictureLabel(QLabel):
 
     def set_picture(self, pixmap):
         self.setPixmap(pixmap)
-        self.setToolTip('帖子图片')
+        self.setToolTip('贴子图片')
 
     def load_picture_async(self):
         start_background_thread(self.load_picture)
@@ -684,8 +684,8 @@ class ThreadPictureLabel(QLabel):
 
 
 class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
-    """点赞的帖子列表，和最新版贴吧一样，可查看点赞过的帖子\n
-    由于和收藏列表一样都是帖子列表，所以直接继承star_list.Ui_Dialog来写"""
+    """点赞的贴子列表，和最新版贴吧一样，可查看点赞过的贴子\n
+    由于和收藏列表一样都是贴子列表，所以直接继承star_list.Ui_Dialog来写"""
     add_thread = pyqtSignal(dict)
 
     def __init__(self, bduss, stoken):
@@ -700,7 +700,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowTitle('点赞列表')
-        self.label.setText('这里可以查看你点过赞的帖子。')
+        self.label.setText('这里可以查看你点过赞的贴子。')
         self.resize(720, 520)
 
         self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
@@ -744,7 +744,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
             widget.allow_home_page = True
             widget.subcomment_show_thread_button = True
             widget.set_reply_text(
-                '<a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题帖 <a href=\"tieba_thread://{tid}\">{tname}</a> 下的回复：'.format(
+                '<a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下的回复：'.format(
                     fname=infos['forum_name'], tname=infos['title'], tid=infos['thread_id'],
                     fid=infos['forum_id']))
             widget.setdatas(infos['user_portrait_pixmap'], infos['user_name'], False, infos['text'],
@@ -783,7 +783,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                                                 stoken=self.stoken, use_mobile_header=True)
 
                 for thread in resp['data']["thread_list"]:
-                    # 帖子类型0为主题，1为回复
+                    # 贴子类型0为主题，1为回复
                     data = {'type': 1 if thread.get('top_agree_post') else 0,
                             'user_name': thread['author']['name_show'],
                             'user_portrait_pixmap': None,
@@ -836,7 +836,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                     user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                     data['user_portrait_pixmap'] = user_head_pixmap
 
-                    # 获取主题帖图片
+                    # 获取主题贴图片
                     if thread.get("media") and data['type'] == 0:
                         for m in thread['media']:
                             if m["type"] == 3:  # 是图片
@@ -872,7 +872,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
 
 
 class StaredThreadsList(QDialog, star_list.Ui_Dialog):
-    """收藏的帖子列表，可查看已收藏的帖子"""
+    """收藏的贴子列表，可查看已收藏的贴子"""
     add_thread = pyqtSignal(dict)
 
     def __init__(self, bduss, stoken):
@@ -1052,7 +1052,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         widget.post_id = data['post_id']
         widget.subcomment_show_thread_button = True
         widget.set_reply_text(
-            '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题帖 <a href=\"tieba_thread://{tid}\">{tname}</a> 下{ptype}了你：'.format(
+            '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下{ptype}了你：'.format(
                 fname=data['forum_name'], tname=data['thread_title'], tid=data['thread_id'],
                 fid=data['forum_id'], sub_floor='[楼中楼] ' if data['is_subfloor'] else '[回复贴] ',
                 ptype='回复' if data['type'] == 'reply' else '@'))
@@ -1113,7 +1113,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                             # 获取吧id
                             forum_id = await client.get_fid(thread["fname"])
 
-                            # 获取帖子标题
+                            # 获取贴子标题
                             thread_title = thread['title']
 
                             # 发布时间字符串
@@ -1127,7 +1127,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
 
                             # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
                             # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
+                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复贴
                             data = {'type': type_,
                                     'thread_id': int(thread["thread_id"]),
                                     'real_post_id': int(thread["post_id"]),
@@ -1159,8 +1159,8 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                             # 获取吧id
                             forum_id = thread.fid
 
-                            # 获取帖子标题
-                            thread_title = thread.thread_title if thread.thread_title else "无法获取帖子标题，可能已被删除"
+                            # 获取贴子标题
+                            thread_title = thread.thread_title if thread.thread_title else "无法获取贴子标题，可能已被删除"
 
                             # 发布时间字符串
                             timestr = timestamp_to_string(thread.create_time)
@@ -1174,7 +1174,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
 
                             # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
                             # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
+                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复贴
                             data = {'type': type_,
                                     'thread_id': thread.tid,
                                     'real_post_id': thread.pid,
@@ -1305,7 +1305,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         menu.addAction(blacklist)
 
         old_mute = QAction('禁言', self)
-        old_mute.setToolTip('禁止该用户回复你的帖子。\nPS：该功能存在于旧版本贴吧中，已被新版本的拉黑功能取代，不推荐使用。')
+        old_mute.setToolTip('禁止该用户回复你的贴子。\nPS：该功能存在于旧版本贴吧中，已被新版本的拉黑功能取代，不推荐使用。')
         menu.addAction(old_mute)
 
         self.pushButton.setMenu(menu)
@@ -1337,7 +1337,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             self.label_3.setText('贴吧 ID：' + str(data['tieba_id']))
             self.label_4.setText('吧龄 {age} 年'.format(age=data['account_age']))
             self.label_5.setText('IP 属地：' + data['ip'])
-            self.label_14.setText('发帖数 ' + str(data['post_c']))
+            self.label_14.setText('发贴数 ' + str(data['post_c']))
             self.tabWidget.setTabText(2, '关注的吧 ({c})'.format(c=data['follow_forum_count']))
             self.tabWidget.setTabText(3, '关注的人 ({c})'.format(c=data['follow']))
             self.tabWidget.setTabText(4, '粉丝列表 ({c})'.format(c=data['fans']))
@@ -1488,7 +1488,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             widget.allow_home_page = False
             widget.subcomment_show_thread_button = True
             widget.set_reply_text(
-                '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题帖 <a href=\"tieba_thread://{tid}\">{tname}</a> 下回复：'.format(
+                '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下回复：'.format(
                     fname=datas['forum_name'], tname=datas['thread_title'], tid=datas['thread_id'],
                     fid=datas['forum_id'], sub_floor='[楼中楼] ' if datas['is_subfloor'] else '[回复贴] '))
             widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['content'],
@@ -1584,7 +1584,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         for t in post_datas.objs:
                             for st in t:
                                 post_list.append(st)
-                        post_list.sort(key=lambda k: k.create_time, reverse=True)  # 按发帖时间排序
+                        post_list.sort(key=lambda k: k.create_time, reverse=True)  # 按发贴时间排序
 
                         for thread in post_list:
                             # 初始化数据
@@ -1596,9 +1596,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             # 获取吧名称
                             forum_name = await client.get_fname(thread.fid)
 
-                            # 获取帖子标题
+                            # 获取贴子标题
                             thread_info = await client.get_posts(thread.tid, pn=1, rn=0, comment_rn=0)
-                            thread_title = thread_info.thread.title if thread_info.thread.title else "无法获取帖子标题，可能已被删除"
+                            thread_title = thread_info.thread.title if thread_info.thread.title else "无法获取贴子标题，可能已被删除"
 
                             # 发布时间字符串
                             timestr = timestamp_to_string(thread.create_time)
@@ -1612,7 +1612,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
                             # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
                             # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复帖
+                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复贴
                             data = {'thread_id': thread.tid,
                                     'real_post_id': thread.pid,
                                     'post_id': pid,
@@ -1878,9 +1878,9 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
             self.label_5.setText(datas['forum_desp'] + '\n' + datas['forum_desp_ex'])
             self.label_11.setText(f'吧 ID：{self.forum_id}')
             self.label_3.setText('关注数：' + str(datas['follow_c']))
-            self.label_4.setText('帖子数：' + str(datas['thread_c']))
+            self.label_4.setText('贴子数：' + str(datas['thread_c']))
             self.label_12.setText('吧分类：' + datas['forum_volume'])
-            self.label_13.setText('主题帖数：{0}'.format(str(datas['main_thread_c'])))
+            self.label_13.setText('主题贴数：{0}'.format(str(datas['main_thread_c'])))
             self.textBrowser.setHtml(datas['forum_rule_html'])
             self.label_15.setText(f'<html><body>'
                                   f'<p>很抱歉，出于加载时的性能问题，该功能已被停用。<br/>该页面将在将来的版本中删除。<br>'
@@ -2190,7 +2190,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
 
 class ThreadVideoItem(QWidget, thread_video_item.Ui_Form):
-    """嵌入在列表的视频帖入口组件"""
+    """嵌入在列表的视频贴入口组件"""
     source_link = ''
     length = 0
     view_num = 0
@@ -2416,7 +2416,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
 
 
 class ReplyItem(QWidget, comment_view.Ui_Form):
-    """嵌入在列表里的回复帖内容"""
+    """嵌入在列表里的回复贴内容"""
     width_count = 0
     height_count = 0
     portrait = ''
@@ -2494,7 +2494,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                     '_client_version': "12.88.1.2",
                     'agree_type': "5",  # 2点赞 5取消点赞
                     'cuid': account.cuid_galaxy2,
-                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题帖
+                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
                     'op_type': "1",  # 0点赞 1取消点赞
                     'post_id': str(self.post_id),
                     'stoken': self.stoken,
@@ -2517,7 +2517,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                     '_client_version': "12.88.1.2",
                     'agree_type': "2",  # 2点赞 5取消点赞
                     'cuid': account.cuid_galaxy2,
-                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题帖
+                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
                     'op_type': "0",  # 0点赞 1取消点赞
                     'post_id': str(self.post_id),
                     'stoken': self.stoken,
@@ -2683,7 +2683,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
 
 
 class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
-    """主题帖详情窗口，可以浏览主题帖详细内容和回复"""
+    """主题贴详情窗口，可以浏览主题贴详细内容和回复"""
     first_floor_pid = -1
     forum_id = -1
     user_id = -1
@@ -2779,15 +2779,15 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
         menu = QMenu()
 
-        copy_id = QAction('复制帖子 ID', self)
+        copy_id = QAction('复制贴子 ID', self)
         copy_id.triggered.connect(lambda: pyperclip.copy(str(self.thread_id)))
         menu.addAction(copy_id)
 
-        copy_link = QAction('复制帖子链接', self)
+        copy_link = QAction('复制贴子链接', self)
         copy_link.triggered.connect(lambda: pyperclip.copy(url))
         menu.addAction(copy_link)
 
-        open_link = QAction('在浏览器中打开帖子', self)
+        open_link = QAction('在浏览器中打开贴子', self)
         open_link.triggered.connect(lambda: open_url_in_browser(url))
         menu.addAction(open_link)
 
@@ -2858,7 +2858,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     'agree_type': "5",  # 2点赞 5取消点赞
                     'cuid': account.cuid_galaxy2,
                     'forum_id': str(self.forum_id),
-                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题帖
+                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
                     'op_type': "1",  # 0点赞 1取消点赞
                     'post_id': str(self.first_floor_pid),
                     'stoken': self.stoken,
@@ -2882,7 +2882,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     'agree_type': "2",  # 2点赞 5取消点赞
                     'cuid': account.cuid_galaxy2,
                     'forum_id': str(self.forum_id),
-                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题帖
+                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
                     'op_type': "0",  # 0点赞 1取消点赞
                     'post_id': str(self.first_floor_pid),
                     'stoken': self.stoken,
@@ -2913,7 +2913,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def store_thread_async(self, is_cancel=False):
         item = self.listWidget_4.currentItem()
         if not item:
-            # 没有回帖就使用第一楼的pid
+            # 没有回贴就使用第一楼的pid
             pid = self.first_floor_pid
             floor = 1
         else:
@@ -2942,7 +2942,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                                       bduss=self.bduss,
                                                       stoken=self.stoken, use_mobile_header=True, host_type=2)
                     if result['error_code'] == '0':
-                        self.store_thread_signal.emit(f'帖子已成功收藏到第 {floor} 楼，你可以在 ⌈我的收藏⌋ 中查看帖子。')
+                        self.store_thread_signal.emit(f'贴子已成功收藏到第 {floor} 楼，你可以在 ⌈我的收藏⌋ 中查看贴子。')
                     else:
                         self.store_thread_signal.emit(result['error_msg'])
                 else:
@@ -2958,7 +2958,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                                       bduss=self.bduss,
                                                       stoken=self.stoken, use_mobile_header=True)
                     if result['no'] == 0:
-                        self.store_thread_signal.emit('帖子已成功取消收藏。')
+                        self.store_thread_signal.emit('贴子已成功取消收藏。')
                     else:
                         self.store_thread_signal.emit(result['error'])
             except Exception as e:
@@ -3010,9 +3010,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         if self.listWidget_4.count() == 0:
             self.listWidget_4.setMinimumHeight(0)
         if v == 0:
-            self.label_2.setText('你已经到达了帖子的尽头')
+            self.label_2.setText('你已经到达了贴子的尽头')
         elif v == 1:
-            self.label_2.setText('还没有人回帖，别让楼主寂寞太久')
+            self.label_2.setText('还没有人回贴，别让楼主寂寞太久')
         elif v == 2:
             self.label_2.setText('服务器开小差了，请试试 <a href="reload_replies">重新加载</a>')
 
@@ -3148,7 +3148,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
     def update_ui_head_info(self, datas):
         if datas['err_info']:
-            QMessageBox.critical(self, '帖子加载失败', datas['err_info'], QMessageBox.Ok)
+            QMessageBox.critical(self, '贴子加载失败', datas['err_info'], QMessageBox.Ok)
             self.close()
         else:
             self.flash_shower.hide()
@@ -3619,7 +3619,7 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
 
 
 class ThreadView(QWidget, tie_preview.Ui_Form):
-    """帖子在列表内的预览小组件"""
+    """贴子在列表内的预览小组件"""
     is_treasure = False
     is_top = False
 
@@ -3741,7 +3741,7 @@ class RecommandWindow(QListWidget):
                     element.find_all(class_='post_author')[0]['href'].split('/home/main?id=')[1].split(
                         '&fr=index')[
                         0]  # 找出portrait，方便获取用户数据
-                thread_id = element['data-thread-id']  # 帖子id
+                thread_id = element['data-thread-id']  # 贴子id
                 forum_id = element['fid']  # 吧id
 
                 # 找出所有预览图
@@ -3794,13 +3794,13 @@ class RecommandWindow(QListWidget):
                 response = request_mgr.run_get_api(f'/f/index/feedlist?tag_id=like&offset={self.offset}')
                 html = response['data']['html']
 
-                # 统一帖子列表内的class类型
+                # 统一贴子列表内的class类型
                 for i in range(1, 11):
                     html = html.replace(f'clearfix j_feed_li  {i}', 'clearfix j_feed_li')
 
                 # 解析网页
                 soup = BeautifulSoup(html, "html.parser")
-                elements = soup.find_all(class_="clearfix j_feed_li")  # 找出所有帖子
+                elements = soup.find_all(class_="clearfix j_feed_li")  # 找出所有贴子
 
                 for element in elements:
                     start_background_thread(start_async, (element,))
@@ -3824,17 +3824,17 @@ class RecommandWindow(QListWidget):
                 return
 
             title = element['title']  # 找出标题
-            content = ''  # 帖子正文
+            content = ''  # 贴子正文
             if element['abstract']:
                 for i in element['abstract']:
                     if i['type'] == 0:
                         content += i['text']
             if element.get('video_info'):
-                content = '[这是一条视频帖，时长 {vlen}，{view_num} 次浏览，进贴即可查看]'.format(
+                content = '[这是一条视频贴，时长 {vlen}，{view_num} 次浏览，进贴即可查看]'.format(
                     vlen=format_second(element['video_info']['video_duration']),
                     view_num=element['video_info']['play_count'])
             portrait = element['author']['portrait'].split('?')[0]
-            thread_id = element['tid']  # 帖子id
+            thread_id = element['tid']  # 贴子id
             forum_id = element['forum']['forum_id']  # 吧id
 
             # 找出所有预览图
@@ -3885,8 +3885,8 @@ class RecommandWindow(QListWidget):
                 # 手机网页版贴吧的首页推荐接口
                 # 该接口在未登录的情况下会获取不到数据，并报未知错误 (110003)
                 # 在登录情况下，有bduss和stoken就可以实现个性化推荐
-                # 该接口包含的信息较为全面，很多信息无需再另起请求，因此该方法获取帖子数据会比旧版的快
-                # 该接口返回的视频帖较多，疑似是贴吧后端刻意为之
+                # 该接口包含的信息较为全面，很多信息无需再另起请求，因此该方法获取贴子数据会比旧版的快
+                # 该接口返回的视频贴较多，疑似是贴吧后端刻意为之
                 aiotieba.logging.get_logger().info('loading recommands from api /mg/o/getRecommPage')
                 response = request_mgr.run_get_api('/mg/o/getRecommPage?load_type=1&eqid=&refer=tieba.baidu.com'
                                                    '&page_thread_count=10',
@@ -3969,7 +3969,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                 self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_4))
                 self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_5))
                 self.tabWidget.addTab(self.tab, '贴吧')
-                self.tabWidget.addTab(self.tab_2, '帖子')
+                self.tabWidget.addTab(self.tab_2, '贴子')
                 self.tabWidget.addTab(self.tab_3, '用户')
 
                 self.lineEdit_2.hide()
@@ -3977,8 +3977,8 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                 self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab))
                 self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_2))
                 self.tabWidget.removeTab(self.tabWidget.indexOf(self.tab_3))
-                self.tabWidget.addTab(self.tab_4, '主题帖')
-                self.tabWidget.addTab(self.tab_5, '回复帖')
+                self.tabWidget.addTab(self.tab_4, '主题贴')
+                self.tabWidget.addTab(self.tab_5, '回复贴')
 
                 self.lineEdit_2.show()
 
@@ -4404,7 +4404,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
 
 
 class ForumShowWindow(QWidget, ba_head.Ui_Form):
-    """吧入口窗口，显示基础吧信息和吧内帖子等"""
+    """吧入口窗口，显示基础吧信息和吧内贴子等"""
     forum_name = ''
     page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
     added_thread_count = 0
@@ -4549,7 +4549,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.text_timer.setInterval(5000)
         self.text_timer.timeout.connect(self.label_5.clear)
 
-        self.label_5.setText(f'帖子刷新成功，已为你推荐 {self.added_thread_count} 条内容')
+        self.label_5.setText(f'贴子刷新成功，已为你推荐 {self.added_thread_count} 条内容')
         self.text_timer.start()
         self.added_thread_count = 0
 
@@ -4587,7 +4587,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
     def get_threads_async(self, thread_type="all"):
         if not self.isloading:
             if thread_type == 'all':
-                self.label_5.setText('帖子刷新中...')
+                self.label_5.setText('贴子刷新中...')
             start_background_thread(self.get_threads, (thread_type,))
 
     def get_threads(self, thread_type="all"):
@@ -4749,7 +4749,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.setWindowTitle(datas['name'] + '吧')
         self.setWindowIcon(QIcon(datas['pixmap']))
 
-        self.label_3.setText('{0} 人关注，{1} 条帖子'.format(datas['follownum'], datas['postnum']))
+        self.label_3.setText('{0} 人关注，{1} 条贴子'.format(datas['follownum'], datas['postnum']))
         self.label.setPixmap(datas['pixmap'])
         self.label_2.setText(datas['name'] + '吧')
 

@@ -309,7 +309,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         for i in os.listdir(f'{datapath}/image_caches'):
             lsc += os.stat(f'{datapath}/image_caches/{i}').st_size
         self.label_12.setText(
-            f'包括缓存到本地的帖子图片、用户头像图片等。\n总计已占用大小 {filesize_tostr(lsc)}。')
+            f'包括缓存到本地的贴子图片、用户头像图片等。\n总计已占用大小 {filesize_tostr(lsc)}。')
 
     def clear_logs(self):
         if QMessageBox.warning(self, '警告', '确认要清理日志文件吗？',
