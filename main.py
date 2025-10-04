@@ -407,6 +407,7 @@ class LoginWebView(QDialog):
     """登录百度账号的webview，用户在网页执行登陆操作，webview后台抓取bduss等登录信息"""
     islogin = False
     closeSignal = pyqtSignal()
+    need_restart = False
 
     def __init__(self):
         super().__init__()
@@ -439,6 +440,11 @@ class LoginWebView(QDialog):
             else:
                 a0.ignore()
         else:
+            if self.need_restart:
+                QMessageBox.information(self, '提示',
+                                        '账号已登录成功，为保证本地数据完全加载，你需要重启本软件。点击确定键关闭本软件，软件将在下次重新打开时自动应用你的设置。',
+                                        QMessageBox.Ok)
+                sys.exit(0)
             mainw.refresh_all_datas()  # 更新主页面信息
             self.flash_widget.hide()
             a0.accept()
@@ -467,7 +473,6 @@ class LoginWebView(QDialog):
                 return '', '', 0
 
         self.webview.destroyWebviewUntilComplete()  # 先销毁webview
-        time.sleep(3)
 
         # 获取用户信息
         new_loop = asyncio.new_event_loop()
@@ -490,13 +495,16 @@ class LoginWebView(QDialog):
         # 添加新的登录信息
         pf['login_list'].append(
             {'bduss': infos['BDUSS'], 'stoken': infos['STOKEN'], 'portrait': portrait, 'name': name, 'uid': uid})
-
         save_json_secret(pf, f'{datapath}/user_bduss')  # 保存配置文件
 
-        if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
-            shutil.rmtree(f'{datapath}/webview_data/{uid}')
-        os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
-        os.mkdir(f'{datapath}/webview_data/default')
+        try:
+            if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
+                shutil.rmtree(f'{datapath}/webview_data/{uid}')
+            os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
+            os.mkdir(f'{datapath}/webview_data/default')
+        except PermissionError:
+            self.need_restart = True
+            save_json({'uid': str(uid)}, f'{datapath}/d2id_flag')
 
         self.islogin = True
         self.closeSignal.emit()
@@ -521,6 +529,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.pushButton_5.clicked.connect(self.open_search_window)
         self.add_info.connect(self._add_uinfo)
 
+        self.handle_d2id_flag()
         self.init_profile_menu()
         self.init_pages()
         self.refresh_all_datas()
@@ -673,6 +682,16 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         d = LoginWebView()
         d.resize(1065, 680)
         d.exec()
+
+    def handle_d2id_flag(self):
+        data = load_json(f'{datapath}/d2id_flag')
+        uid = data['uid']
+        if uid:
+            if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
+                shutil.rmtree(f'{datapath}/webview_data/{uid}')
+            os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
+            os.mkdir(f'{datapath}/webview_data/default')
+            save_json({'uid': ''}, f'{datapath}/d2id_flag')
 
     def _add_uinfo(self, datas):
         if not datas:

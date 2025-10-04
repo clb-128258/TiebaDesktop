@@ -94,7 +94,8 @@ def create_data():
         'forum_view_settings': {'default_sort': 0}},
         f'{datapath}/cache_index/fidfname_index.json': {},
         f'{datapath}/cache_index/user_portraits.json': {},
-        f'{datapath}/cache_index/bd_image_hashes.json': {}}  # 欲创建的json文件
+        f'{datapath}/cache_index/bd_image_hashes.json': {},
+        f'{datapath}/d2id_flag': {'uid': ''}}  # 欲创建的json文件
 
     for i in expect_folder:
         if not os.path.isdir(i):
