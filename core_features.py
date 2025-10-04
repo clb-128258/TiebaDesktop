@@ -1277,8 +1277,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
         self.init_load_flash()
         self.get_head_info_async()
-        for i in self.page.keys():
-            self.get_list_info_async(i)
 
     def closeEvent(self, a0):
         self.flash_shower.hide()
@@ -1386,6 +1384,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     self.label_15.setText('该用户隐藏了关注吧列表。')
             if have_flag_showed:
                 self.frame_8.hide()
+
+            # 主信息加载完之后再加载
+            for i in self.page.keys():
+                self.get_list_info_async(i)
 
     def get_head_info_async(self):
         start_background_thread(self.get_head_info)
