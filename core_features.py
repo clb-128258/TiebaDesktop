@@ -2950,6 +2950,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     show_reply_end_text = pyqtSignal(int)
     store_thread_signal = pyqtSignal(str)
     agree_thread_signal = pyqtSignal(str)
+    add_post_signal = pyqtSignal(str)
 
     def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False):
         super().__init__()
@@ -2989,11 +2990,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.show_reply_end_text.connect(self.show_end_reply_ui)
         self.store_thread_signal.connect(self.store_thread_ok_action)
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
+        self.add_post_signal.connect(self.add_post_ok_action)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self.load_sub_threads_from_scroll)
         self.comboBox.currentIndexChanged.connect(self.load_sub_threads_refreshly)
         self.checkBox.stateChanged.connect(self.load_sub_threads_refreshly)
         self.label_2.linkActivated.connect(self.end_label_link_event)
         self.pushButton_4.clicked.connect(self.agree_thread_async)
+        self.pushButton_3.clicked.connect(self.add_post_async)
         self.label_3.installEventFilter(self)  # 重写事件过滤器
         self.label_4.installEventFilter(self)  # 重写事件过滤器
 
@@ -3080,6 +3083,47 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.open_thread(url.replace('tieba_thread://', ''))
         else:
             open_url_in_browser(url)
+
+    def add_post_ok_action(self, isok):
+        QMessageBox.information(self, '回贴完成', isok)
+
+    def add_post_async(self):
+        msgbox = QMessageBox()
+        msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
+        msgbox.setButtonText(QMessageBox.Help, "去网页发贴")
+        r = msgbox.warning(self, '回贴风险提示',
+                           '回复功能目前还处于测试阶段。\n'
+                           '使用本软件回贴可能会遇到发贴失败等情况，甚至可能导致你的账号被永久全吧封禁。\n'
+                           '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
+        flag = r == QMessageBox.Yes
+        if r == QMessageBox.Help:
+            url = f'https://tieba.baidu.com/p/{self.thread_id}'
+            open_url_in_browser(url)
+
+        if flag:
+            start_background_thread(self.add_post)
+
+    def add_post(self):
+        async def dopost():
+            try:
+                aiotieba.logging.get_logger().info(f'post thread {self.thread_id}')
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    result = await client.add_post(self.forum_id, self.thread_id, self.lineEdit.text())
+                    if result:
+                        self.add_post_signal.emit('回贴成功。')
+                    else:
+                        self.add_post_signal.emit(str(result.err))
+            except Exception as e:
+                print(type(e))
+                print(e)
+                self.add_post_signal.emit('程序内部出错，请重试')
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(dopost())
+
+        start_async()
 
     def agree_thread_ok_action(self, isok):
         self.pushButton_4.setText(str(self.agree_num) + ' 个赞')
