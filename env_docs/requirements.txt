@@ -6,3 +6,4 @@ pywin32==311
 beautifulsoup4==4.13.4
 pycryptodome
 pythonnet
+pyaudio
