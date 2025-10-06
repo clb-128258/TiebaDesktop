@@ -418,6 +418,10 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
 
         self.get_black_status_async()
 
+    def closeEvent(self, a0):
+        a0.accept()
+        qt_window_mgr.del_window(self)
+
     def init_loading_flash(self):
         self.loading_widget = LoadingFlashWidget()
         self.loading_widget.cover_widget(self)
@@ -499,47 +503,45 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
             turn_data = {'success': True, 'head': None, 'name': '', 'black_state': [False, False, False]}
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    flaged = False
-                    blist = await client.get_blacklist()
-                    if blist.err:
+                    user_info = await client.get_user_info(self.user_id_portrait,
+                                                           aiotieba.enums.ReqUInfo.USER_ID | aiotieba.enums.ReqUInfo.NICK_NAME | aiotieba.enums.ReqUInfo.PORTRAIT)
+                    if user_info.err:
                         turn_data['success'] = False
-                        turn_data['title'] = '获取拉黑状态失败'
-                        turn_data['text'] = f'{blist.err}'
-                        flaged = True
+                        turn_data['title'] = '获取用户信息失败'
+                        turn_data['text'] = f'{user_info.err}'
+                    elif profile_mgr.current_uid == user_info.user_id:
+                        turn_data['success'] = False
+                        turn_data['title'] = '错误'
+                        turn_data['text'] = '你不能拉黑自己。'
                     else:
-                        for i in blist.objs:
-                            if i.user_id == self.user_id_portrait or i.portrait == self.user_id_portrait:
-                                flaged = True
-                                if profile_mgr.current_uid == i.user_id:
-                                    turn_data['success'] = False
-                                    turn_data['title'] = '错误'
-                                    turn_data['text'] = '你不能拉黑自己。'
-                                else:
-                                    user_head_pixmap = QPixmap()
-                                    user_head_pixmap.loadFromData(cache_mgr.get_portrait(i.portrait))
-                                    user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
-                                                                               Qt.SmoothTransformation)
-                                    turn_data['head'] = user_head_pixmap
+                        user_head_pixmap = QPixmap()
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
+                                                                   Qt.SmoothTransformation)
+                        turn_data['head'] = user_head_pixmap
+                        turn_data['name'] = user_info.nick_name_new
 
-                                    turn_data['name'] = i.nick_name_new
-                                    turn_data['black_state'][0] = aiotieba.enums.BlacklistType.INTERACT in i.btype
-                                    turn_data['black_state'][1] = aiotieba.enums.BlacklistType.CHAT in i.btype
-                                    turn_data['black_state'][2] = aiotieba.enums.BlacklistType.FOLLOW in i.btype
-                                break
+                        payload = {
+                            'BDUSS': self.bduss,
+                            '_client_type': "2",
+                            '_client_version': "12.88.1.2",
+                            'portrait': user_info.portrait,
+                            'stoken': self.stoken,
+                        }
+                        response = request_mgr.run_post_api('/c/u/user/getUserBlackInfo',
+                                                            payloads=request_mgr.calc_sign(payload),
+                                                            use_mobile_header=True,
+                                                            bduss=payload['BDUSS'], stoken=payload['stoken'],
+                                                            host_type=2)
+                        if response['error_code'] == '0':
+                            turn_data['black_state'][0] = bool(int(response['perm_list']['interact']))
+                            turn_data['black_state'][1] = bool(int(response['perm_list']['chat']))
+                            turn_data['black_state'][2] = bool(int(response['perm_list']['follow']))
+                        else:
+                            turn_data['success'] = False
+                            turn_data['title'] = '获取拉黑状态失败'
+                            turn_data['text'] = f'{response["error_msg"]} (错误代码 {response["error_code"]})'
 
-                        if not flaged:
-                            user_info = await client.get_user_info(self.user_id_portrait)
-                            if profile_mgr.current_uid == user_info.user_id:
-                                turn_data['success'] = False
-                                turn_data['title'] = '错误'
-                                turn_data['text'] = '你不能拉黑自己。'
-                            else:
-                                user_head_pixmap = QPixmap()
-                                user_head_pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
-                                user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
-                                turn_data['head'] = user_head_pixmap
-                                turn_data['name'] = user_info.nick_name_new
             except Exception as e:
                 print(type(e))
                 print(e)
@@ -3102,7 +3104,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             msgbox = QMessageBox(QMessageBox.Warning, '回贴风险提示', show_string, parent=self)
             msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
             msgbox.button(QMessageBox.Help).setText("去网页发贴")
-            msgbox.button(QMessageBox.Yes).setText("无视风险继续发贴")
+            msgbox.button(QMessageBox.Yes).setText("无视风险，继续发贴")
             msgbox.button(QMessageBox.No).setText("取消发贴")
             r = msgbox.exec()
             flag = r == QMessageBox.Yes
