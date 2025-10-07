@@ -19,8 +19,8 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
-    <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,0,0,0">
-     <item row="0" column="4">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,0,0">
+     <item row="0" column="3">
       <widget class="QPushButton" name="pushButton_2">
        <property name="enabled">
         <bool>false</bool>
@@ -34,16 +34,6 @@
       <widget class="QLabel" name="label">
        <property name="text">
         <string>icon</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="3">
-      <widget class="QPushButton" name="pushButton_3">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>暂停</string>
        </property>
       </widget>
      </item>

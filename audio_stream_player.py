@@ -26,6 +26,7 @@ class EventType(enum.IntEnum):
     PAUSE = 1  # 执行暂停
     UNPAUSE = 2  # 解除暂停
     STOP = 3  # 停止播放
+    PLAY = 4  # 开始播放
 
 
 class HttpMp3Player(QObject):
@@ -38,10 +39,7 @@ class HttpMp3Player(QObject):
     """
     mp3_url = ''
     enable_ffmpeg_logging = False
-    playStarted = pyqtSignal()
-    playPaused = pyqtSignal()
-    playContinued = pyqtSignal()
-    playStopped = pyqtSignal(bool)  # 是否正常停止播放（播放完成或是人为停止）
+    playEvent = pyqtSignal(EventType)
     __is_pausing = False
     __playing = False
 
@@ -54,23 +52,24 @@ class HttpMp3Player(QObject):
         self.__playing = False
 
         self.__event_queue = queue.Queue()
-        self.__get_pcm_stream_thread = threading.Thread(target=self.__init_player, daemon=True)
 
     def start_play(self):
         if not self.__playing:
             self.__init_pyaudio()
+            self.__get_pcm_stream_thread = threading.Thread(target=self.__init_player, daemon=True)
             self.__get_pcm_stream_thread.start()
             self.__playing = True
-            self.playStarted.emit()
+            self.playEvent.emit(EventType.PLAY)
 
     def wait_play_finish(self):
-        self.__get_pcm_stream_thread.join()
+        try:
+            self.__get_pcm_stream_thread.join()
+        except AttributeError:
+            raise Exception('play has not started')
 
     def stop_play(self):
         if self.__playing:
             self.__event_queue.put(EventType.STOP)
-            self.__playing = False
-            do_log("Playback stopped.")
 
     def pause_play(self):
         if not self.__is_pausing:
@@ -117,22 +116,20 @@ class HttpMp3Player(QObject):
                 if not self.__event_queue.empty():
                     event_type = self.__event_queue.get()
                     if event_type == EventType.PAUSE:
-                        self.playPaused.emit()
+                        self.playEvent.emit(EventType.PAUSE)
                         need_stop = self.__handle_pause()
                         if need_stop == EventType.STOP:
                             break
                         elif need_stop == EventType.UNPAUSE:
-                            self.playContinued.emit()
+                            self.playEvent.emit(EventType.UNPAUSE)
                     elif event_type == EventType.STOP:
                         break
                 else:
                     data = self.process.stdout.read(CHUNK)
                     if not data:
                         break
-                    # 写入音频流播放
                     self.audio_stream.write(data)
         except Exception as e:
-            self.playStopped.emit(False)
             do_log(f"Error during playback: \n{type(e)}\n{e}")
         finally:
             # 清理资源
@@ -140,8 +137,9 @@ class HttpMp3Player(QObject):
             self.audio_stream.close()
             self.pa_obj.terminate()
             self.process.terminate()
-            self.playStopped.emit(True)
-            do_log("Playback finished.")
+            self.__playing = False
+            self.playEvent.emit(EventType.STOP)
+            do_log("Playback stopped.")
 
     def __init_pyaudio(self):
         # 设置音频播放参数（需与 ffmpeg 输出匹配）

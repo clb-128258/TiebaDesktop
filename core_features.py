@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, Q
 from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie, QPalette
 from ui import follow_ba, ba_item, tie_preview, ba_head, sign, tie_detail_view, comment_view, reply_comments, \
     thread_video_item, forum_detail, user_home_page, image_viewer, reply_at_me_page, star_list, settings, user_item, \
-    login_by_bduss, forum_search, loading_amt, user_blacklist_setter
+    login_by_bduss, forum_search, loading_amt, user_blacklist_setter, thread_voice_item
 import asyncio
 import sys
 import platform
@@ -27,6 +27,7 @@ import pyperclip
 import profile_mgr
 import cache_mgr
 import shutil
+import audio_stream_player
 
 if os.name == 'nt':
     import win32api
@@ -2520,6 +2521,51 @@ class ThreadVideoItem(QWidget, thread_video_item.Ui_Form):
         self.label_3.setText(f'时长 {format_second(len_)}，浏览量 {views}')
 
 
+class ThreadVoiceItem(QWidget, thread_voice_item.Ui_Form):
+    """嵌入在列表的语音贴播放组件"""
+    source_link = ''
+    length = 0
+    play_engine = None
+
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.play_engine = audio_stream_player.HttpMp3Player()
+        self.label.setPixmap(QPixmap('ui/voice_icon.png').scaled(20, 20, transformMode=Qt.SmoothTransformation))
+
+        self.play_engine.playEvent.connect(self.handle_events)
+        self.pushButton.clicked.connect(self.start_pause_audio)
+        self.pushButton_2.clicked.connect(self.play_engine.stop_play)
+
+        self.destroyed.connect(self.play_engine.stop_play)
+
+    def start_pause_audio(self):
+        if not self.play_engine.is_audio_playing():
+            self.play_engine.start_play()
+        elif not self.play_engine.is_audio_pause():
+            self.play_engine.pause_play()
+        elif self.play_engine.is_audio_pause():
+            self.play_engine.unpause_play()
+
+    def handle_events(self, type_):
+        if type_ == audio_stream_player.EventType.PLAY:
+            self.pushButton.setText('暂停')
+            self.pushButton_2.setEnabled(True)
+        elif type_ == audio_stream_player.EventType.PAUSE:
+            self.pushButton.setText('继续播放')
+        elif type_ == audio_stream_player.EventType.UNPAUSE:
+            self.pushButton.setText('暂停')
+        elif type_ == audio_stream_player.EventType.STOP:
+            self.pushButton.setText('播放')
+            self.pushButton_2.setEnabled(False)
+
+    def setdatas(self, src, len_):
+        self.source_link = src
+        self.play_engine.mp3_url = src
+        self.length = len_
+        self.label_3.setText(f'这是一条语音 [时长 {format_second(len_)}]')
+
+
 class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
     """楼中楼窗口，可查看楼中楼内的回复"""
     isLoading = False
@@ -2592,9 +2638,9 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         if datas['replyobj']:
             widget.set_reply_text(
                 '回复用户 <a href=\"user://{uid}\">{u}</a>: '.format(uid=datas['reply_uid'], u=datas['replyobj']))
-        widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'], [], '',
+        widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'], [], -1,
                         datas['create_time_str'], '', -1,
-                        datas['agree_count'], datas['ulevel'], datas['is_bawu'])
+                        datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
@@ -2635,6 +2681,13 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                             be_replied_user = uinfo.nick_name_new
                             replyer_uid = t.reply_to_id
 
+                        voice_info = {'have_voice': False, 'src': '', 'length': 0}
+                        if t.contents.voice:
+                            voice_info['have_voice'] = True
+                            voice_info[
+                                'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}&play_from=pb_voice_play'
+                            voice_info['length'] = t.contents.voice.duration
+
                         user_head_pixmap = QPixmap()
                         user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                         user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -2644,7 +2697,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                                  'agree_count': agree_num,
                                  'create_time_str': time_str, 'is_author': is_author, 'ulevel': user_level,
                                  'replyobj': be_replied_user, 'reply_uid': replyer_uid, 'is_bawu': is_bawu,
-                                 'thread_id': thread_id, 'post_id': post_id}
+                                 'thread_id': thread_id, 'post_id': post_id, 'voice_info': voice_info}
 
                         self.add_comment.emit(tdata)
             except Exception as e:
@@ -2671,7 +2724,6 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
 
 class ReplyItem(QWidget, comment_view.Ui_Form):
     """嵌入在列表里的回复贴内容"""
-    width_count = 0
     height_count = 0
     portrait = ''
     c_count = -1
@@ -2695,6 +2747,8 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
 
         self.label_13.hide()
         self.label_10.hide()
+        self.listWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.label_10.setContextMenuPolicy(Qt.NoContextMenu)
         self.label_6.linkActivated.connect(self.handle_link_event)
         self.label_10.linkActivated.connect(self.handle_link_event)
@@ -2818,13 +2872,10 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         else:
             QMessageBox.information(self, '暂无回复', f'第 {self.floor} 楼还没有任何回复。', QMessageBox.Ok)
 
-    def update_listwidget_size(self, h, w):
+    def update_listwidget_size(self, h):
         # 动态更新内容列表大小
         self.height_count += h
-        if w > self.width_count:
-            self.width_count = w
         self.listWidget.setFixedHeight(self.height_count)
-        self.listWidget.setFixedWidth(self.width_count)
 
     def open_ba_detail(self, fid):
         forum_window = ForumShowWindow(self.bduss, self.stoken, int(fid))
@@ -2863,7 +2914,11 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.label_10.show()
         self.label_10.setText(t)
 
-    def setdatas(self, uicon, uname, islz, text, pixmaps, floor, timestr, ip, reply_count, agree_count, level, isbawu):
+    def setdatas(self, uicon: QPixmap, uname: str, islz: bool, text: str, pixmaps: list, floor: int, timestr: str,
+                 ip: str, reply_count: int, agree_count: int, level: int, isbawu: bool, voice_info=None):
+        if voice_info is None:
+            voice_info = {'have_voice': False}
+
         self.label_4.setPixmap(uicon)
         self.label_3.setText(uname)
 
@@ -2920,7 +2975,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
 
             self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
 
-        if not pixmaps:
+        if not pixmaps and not voice_info['have_voice']:
             self.listWidget.hide()
         else:
             for i in pixmaps:
@@ -2931,7 +2986,16 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                 self.listWidget.addItem(item)
                 self.listWidget.setItemWidget(item, label)
 
-                self.update_listwidget_size(i['height'] + 35, i['width'] + 20)
+                self.update_listwidget_size(i['height'] + 35)
+
+            if voice_info['have_voice']:
+                voice_widget = ThreadVoiceItem()
+                voice_widget.setdatas(voice_info['src'], voice_info['length'])
+                item = QListWidgetItem()
+                item.setSizeHint(voice_widget.size())
+                self.listWidget.addItem(item)
+                self.listWidget.setItemWidget(item, voice_widget)
+                self.update_listwidget_size(voice_widget.height())
 
         self.adjustSize()
 
@@ -3339,7 +3403,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'],
                         datas['view_pixmap'],
                         datas['floor'], datas['create_time_str'], datas['user_ip'], datas['reply_num'],
-                        datas['agree_count'], datas['ulevel'], datas['is_bawu'])
+                        datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
         widget.set_grow_level(datas['grow_level'])
         item.setSizeHint(widget.size())
         self.listWidget_4.addItem(item)
@@ -3404,6 +3468,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             is_bawu = t.user.is_bawu
                             grow_level = t.user.glevel
 
+                            voice_info = {'have_voice': False, 'src': '', 'length': 0}
+                            if t.contents.voice:
+                                voice_info['have_voice'] = True
+                                voice_info[
+                                    'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}&play_from=pb_voice_play'
+                                voice_info['length'] = t.contents.voice.duration
+
                             user_head_pixmap = QPixmap()
                             user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                             user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
@@ -3424,7 +3495,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                      'agree_count': agree_num,
                                      'create_time_str': time_str, 'user_ip': user_ip, 'is_author': is_author,
                                      'floor': floor, 'reply_num': reply_num, 'ulevel': user_level, 'post_id': post_id,
-                                     'is_bawu': is_bawu, 'grow_level': grow_level}
+                                     'is_bawu': is_bawu, 'grow_level': grow_level, 'voice_info': voice_info}
 
                             self.add_reply.emit(tdata)
 
@@ -3509,7 +3580,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
             self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
 
-            if not datas['view_pixmap'] and not datas['video_info']['have_video']:
+            if not datas['view_pixmap'] and not datas['video_info']['have_video'] and not datas['voice_info'][
+                'have_voice']:
                 self.listWidget.hide()
             else:
                 if datas['video_info']['have_video']:
@@ -3521,6 +3593,15 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     self.listWidget.addItem(item)
                     self.listWidget.setItemWidget(item, video_widget)
                     self.update_listwidget_size(video_widget.height() + 5)
+
+                if datas['voice_info']['have_voice']:
+                    voice_widget = ThreadVoiceItem()
+                    voice_widget.setdatas(datas['voice_info']['src'], datas['voice_info']['length'])
+                    item = QListWidgetItem()
+                    item.setSizeHint(voice_widget.size())
+                    self.listWidget.addItem(item)
+                    self.listWidget.setItemWidget(item, voice_widget)
+                    self.update_listwidget_size(voice_widget.height())
 
                 for i in datas['view_pixmap']:
                     label = ThreadPictureLabel(i['width'], i['height'], i['src'], i['view_src'])
@@ -3579,6 +3660,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             video_info['length'] = thread_info.thread.contents.video.duration
                             video_info['view'] = thread_info.thread.contents.video.view_num
 
+                        voice_info = {'have_voice': False, 'src': '', 'length': 0}
+                        if thread_info.thread.contents.voice:
+                            voice_info['have_voice'] = True
+                            voice_info[
+                                'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={thread_info.thread.contents.voice.md5}&play_from=pb_voice_play'
+                            voice_info['length'] = thread_info.thread.contents.voice.duration
+
                         user_head_pixmap = QPixmap()
                         user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                         user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -3603,6 +3691,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                  'forum_pixmap': forum_pixmap, 'view_pixmap': preview_pixmap, 'agree_count': agree_num,
                                  'create_time_str': time_str, 'user_ip': user_ip, 'is_help': is_help,
                                  'uf_level': user_forum_level, 'err_info': '', 'video_info': video_info,
+                                 'voice_info': voice_info,
                                  'user_grow_level': user_grow_level, 'is_forum_manager': is_forum_manager,
                                  'post_num': post_num}
 
