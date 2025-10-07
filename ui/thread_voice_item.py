@@ -22,7 +22,7 @@ class Ui_Form(object):
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName("gridLayout")
         self.pushButton_2 = QtWidgets.QPushButton(Form)
-        self.pushButton_2.setEnabled(False)
+        self.pushButton_2.setEnabled(True)
         self.pushButton_2.setObjectName("pushButton_2")
         self.gridLayout.addWidget(self.pushButton_2, 0, 3, 1, 1)
         self.label = QtWidgets.QLabel(Form)

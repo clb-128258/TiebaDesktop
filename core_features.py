@@ -351,6 +351,8 @@ class UserItem(QWidget, user_item.Ui_Form):
         self.bduss = bduss
         self.stoken = stoken
         self.setPortrait.connect(self.label.setPixmap)
+        self.label_3.setToolTip(
+            '请注意，贴吧 ID 与用户 ID 不同，贴吧 ID 显示在贴吧 APP 的个人主页上，用户 ID 则主要供 APP 内部使用。')
 
     def mouseDoubleClickEvent(self, a0):
         a0.accept()
@@ -368,7 +370,7 @@ class UserItem(QWidget, user_item.Ui_Form):
         pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPortrait.emit(pixmap)
 
-    def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False):
+    def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False, is_tieba_uid=False):
         if uicon:
             if isinstance(uicon, QPixmap):
                 self.label.setPixmap(uicon)
@@ -379,7 +381,7 @@ class UserItem(QWidget, user_item.Ui_Form):
             self.label.hide()
         self.label_2.setText(uname)
         if uid != -1:
-            self.label_3.setText(f'用户 ID: {uid}')
+            self.label_3.setText(f'{"贴吧 ID" if is_tieba_uid else "用户 ID"}: {uid}')
             self.toolButton.clicked.connect(lambda: pyperclip.copy(uid))
         else:
             self.label_3.hide()
@@ -2532,6 +2534,7 @@ class ThreadVoiceItem(QWidget, thread_voice_item.Ui_Form):
         self.setupUi(self)
         self.play_engine = audio_stream_player.HttpMp3Player()
         self.label.setPixmap(QPixmap('ui/voice_icon.png').scaled(20, 20, transformMode=Qt.SmoothTransformation))
+        self.pushButton_2.hide()
 
         self.play_engine.playEvent.connect(self.handle_events)
         self.pushButton.clicked.connect(self.start_pause_audio)
@@ -2550,14 +2553,14 @@ class ThreadVoiceItem(QWidget, thread_voice_item.Ui_Form):
     def handle_events(self, type_):
         if type_ == audio_stream_player.EventType.PLAY:
             self.pushButton.setText('暂停')
-            self.pushButton_2.setEnabled(True)
+            self.pushButton_2.show()
         elif type_ == audio_stream_player.EventType.PAUSE:
             self.pushButton.setText('继续播放')
         elif type_ == audio_stream_player.EventType.UNPAUSE:
             self.pushButton.setText('暂停')
         elif type_ == audio_stream_player.EventType.STOP:
             self.pushButton.setText('播放')
-            self.pushButton_2.setEnabled(False)
+            self.pushButton_2.hide()
 
     def setdatas(self, src, len_):
         self.source_link = src
@@ -4324,10 +4327,14 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
         self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
 
         for i in self.listwidgets:
+            i.verticalScrollBar().setSingleStep(20)
+
+        contain_thread_listwidgets = [self.listWidget_2, self.listWidget_4, self.listWidget_5]
+        for i in contain_thread_listwidgets:
             i.setStyleSheet('QListWidget{outline:0px;}'
                             'QListWidget::item:hover {color:white; background-color:white;}'
                             'QListWidget::item:selected {color:white; background-color:white;}')
-            i.verticalScrollBar().setSingleStep(20)
+
         self.listWidget_2.verticalScrollBar().valueChanged.connect(
             lambda: self.scroll_load_more('thread', self.listWidget_2))
         self.listWidget_4.verticalScrollBar().valueChanged.connect(
@@ -4424,7 +4431,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
             widget = UserItem(self.bduss, self.stoken)
             widget.user_portrait_id = datas['portrait']
             widget.show_homepage_by_click = True
-            widget.setdatas(datas['portrait'], datas['name'], datas['user_id'])
+            widget.setdatas(datas['portrait'], datas['name'], datas['tieba_id'], is_tieba_uid=True)
             item.setSizeHint(widget.size())
             self.listWidget_3.addItem(item)
             self.listWidget_3.setItemWidget(item, widget)
@@ -4792,7 +4799,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
         except Exception as e:
             print(f'{type(e)}\n{e}')
         else:
-            if response['data']['has_more']:
+            if response['data'].get('has_more', False):
                 self.page[search_area]['page'] += 1
             else:
                 self.page[search_area]['page'] = -1

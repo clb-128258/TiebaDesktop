@@ -23,7 +23,7 @@
      <item row="0" column="3">
       <widget class="QPushButton" name="pushButton_2">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="text">
         <string>停止</string>
