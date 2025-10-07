@@ -565,7 +565,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
 class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
     """图片查看器窗口，支持旋转缩放图片，以及保存"""
     updateImage = pyqtSignal(QPixmap)
-    finishDownload = pyqtSignal()
+    finishDownload = pyqtSignal(bool)
     closed = pyqtSignal()
     start_pos = None
     round_angle = 0
@@ -703,25 +703,33 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
             image = QImage()
             self.originalImage = image
 
-            response = requests.get(self.src, headers=request_mgr.header)
-            if response.content:
-                if self.originalImage.loadFromData(response.content):
-                    self.finishDownload.emit()
+            success_flag = False
+            try:
+                response = requests.get(self.src, headers=request_mgr.header)
+                if response.content:
+                    if self.originalImage.loadFromData(response.content):
+                        success_flag = True
+            except Exception as e:
+                print(type(e))
+                print(e)
+            finally:
+                self.finishDownload.emit(success_flag)
 
         result_image = self.originalImage
-        if self.round_angle != 0:
-            result_image = result_image.transformed(QTransform().rotate(self.round_angle))
-        if ruler != 1:
-            nw = int(self.originalImage.width() * ruler)
-            nh = int(self.originalImage.height() * ruler)
-            if int(self.round_angle / 90) % 2 != 0:
-                # 交换图片长宽值以实现正确缩放
-                _ = nh
-                nh = nw
-                nw = _
-            result_image = result_image.scaled(nw, nh, Qt.AspectRatioMode.KeepAspectRatio,
-                                               Qt.TransformationMode.SmoothTransformation)
-        self.updateImage.emit(QPixmap.fromImage(result_image))
+        if not result_image.isNull():
+            if self.round_angle != 0:
+                result_image = result_image.transformed(QTransform().rotate(self.round_angle))
+            if ruler != 1:
+                nw = int(self.originalImage.width() * ruler)
+                nh = int(self.originalImage.height() * ruler)
+                if int(self.round_angle / 90) % 2 != 0:
+                    # 交换图片长宽值以实现正确缩放
+                    _ = nh
+                    nh = nw
+                    nw = _
+                result_image = result_image.scaled(nw, nh, Qt.AspectRatioMode.KeepAspectRatio,
+                                                   Qt.TransformationMode.SmoothTransformation)
+            self.updateImage.emit(QPixmap.fromImage(result_image))
         self.isResizing = False
 
     def resize_image(self):
@@ -751,18 +759,21 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
             else:
                 QMessageBox.information(self, '提示', '文件保存成功。', QMessageBox.StandardButton.Ok)
 
-    def update_download_state(self):
-        self.pushButton_4.setEnabled(True)
-        self.pushButton_2.setEnabled(True)
-        self.spinBox.setEnabled(True)
+    def update_download_state(self, f):
         self.show_movie.stop()
-        self.downloadOk = True
+        if not f:
+            self.label.setText('图片加载失败，请重新打开图片窗口以重新加载。')
+        else:
+            self.downloadOk = True
+            self.pushButton_4.setEnabled(True)
+            self.pushButton_2.setEnabled(True)
+            self.spinBox.setEnabled(True)
 
     def load_image(self):
         self.setWindowTitle(f'[加载中...] - 图片查看器')
 
         self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
-        self.show_movie.setScaledSize(QSize(80, 80))
+        self.show_movie.setScaledSize(QSize(100, 100))
         self.show_movie.frameChanged.connect(lambda: self.label.setPixmap(self.show_movie.currentPixmap()))
 
         self.resize_image()
