@@ -528,16 +528,19 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.pushButton.setIcon(QIcon('ui/more.png'))
         self.pushButton.setStyleSheet("QPushButton::menu-indicator{image:none;}")
+        self.notice_syncer = TiebaMsgSyncer()
 
         self.pushButton_3.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
         self.pushButton_4.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(2))
         self.pushButton_2.clicked.connect(self.refresh_recommand)
         self.pushButton_5.clicked.connect(self.open_search_window)
         self.add_info.connect(self._add_uinfo)
+        self.notice_syncer.noticeCountChanged.connect(self.set_unread_count)
 
         self.handle_d2id_flag()
         self.init_profile_menu()
         self.init_pages()
+        self.notice_syncer.start_sync()
         self.refresh_all_datas()
 
     def closeEvent(self, a0):
@@ -552,6 +555,15 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5 and self.stackedWidget.currentIndex() == 0:
             self.refresh_recommand()
+
+    def set_unread_count(self):
+        if self.notice_syncer.have_basic_unread_notice():
+            self.pushButton_4.setStyleSheet('QPushButton{color: red;}')
+            self.pushButton_4.setText(
+                f'消息 ({self.notice_syncer.get_unread_notice_count(UnreadMessageType.TOTAL_COUNT)})')
+        else:
+            self.pushButton_4.setStyleSheet('')
+            self.pushButton_4.setText('消息')
 
     def refresh_recommand(self):
         if self.stackedWidget.currentIndex() == 0:
@@ -589,8 +601,10 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.flist.stoken = self.user_data['stoken']
         self.interactionlist.bduss = self.user_data['bduss']
         self.interactionlist.stoken = self.user_data['stoken']
-        self.flist.get_bars_async()
+        self.notice_syncer.set_account(self.user_data['bduss'], self.user_data['stoken'])
+
         self.recommend.get_recommand_async()
+        self.flist.get_bars_async()
         self.interactionlist.refresh_list()
 
     def open_user_homepage(self, uid):
