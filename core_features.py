@@ -1,6 +1,6 @@
 """核心模块，实现了程序内大部分功能，本程序的主要函数和类均封装在此处"""
 from PyQt5.QtWidgets import QWidget, QDialog, QMessageBox, QListWidgetItem, \
-    QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem
+    QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem, QFrame
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, QEvent, QMimeData, QUrl, QSize, \
     QByteArray, QObject
 from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie, QPalette
@@ -2803,9 +2803,9 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         self.floor_num = floor
         self.comment_count = comment_count
 
+        self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
         self.listWidget.verticalScrollBar().setSingleStep(25)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
                                       'QListWidget::item:hover {color:white; background-color:white;}'
                                       'QListWidget::item:selected {color:white; background-color:white;}')
@@ -2853,18 +2853,29 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
             self.label.setText(f'第 {datas[0]} 楼的回复，共 {datas[1]} 条')
 
     def ui_add_comment(self, datas):
-        item = QListWidgetItem()
         widget = ReplyItem(self.bduss, self.stoken)
         widget.portrait = datas['portrait']
         widget.thread_id = datas['thread_id']
         widget.post_id = datas['post_id']
-        widget.is_comment = True
-        if datas['replyobj']:
-            widget.set_reply_text(
-                '回复用户 <a href=\"user://{uid}\">{u}</a>: '.format(uid=datas['reply_uid'], u=datas['replyobj']))
-        widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'], [], -1,
-                        datas['create_time_str'], '', -1,
-                        datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
+        if not datas['is_floor']:
+            widget.is_comment = True
+            if datas['replyobj']:
+                widget.set_reply_text(
+                    '回复用户 <a href=\"user://{uid}\">{u}</a>: '.format(uid=datas['reply_uid'], u=datas['replyobj']))
+            widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'], [],
+                            -1,
+                            datas['create_time_str'], '', -1,
+                            datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
+        else:
+            widget.is_comment = False
+            widget.set_reply_text(f'当前楼层信息')
+            widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['content'],
+                            datas['pictures'],
+                            datas['floor'],
+                            datas['create_time_str'], '', -1, -1, datas['ulevel'], datas['is_bawu'],
+                            voice_info=datas['voice_info'])
+
+        item = QListWidgetItem()
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
@@ -2887,6 +2898,49 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                         self.set_floor_info.emit((comments.post.floor, comments.page.total_count))
                     aiotieba.logging.get_logger().info(
                         f'itering sub-replies (thread_id {self.thread_id} post_id {self.post_id} floor {comments.post.floor} page {self.page})')
+
+                    # 获取当前楼层信息
+                    floor_thread = comments.post
+                    content = make_thread_content(floor_thread.contents.objs)
+                    portrait = floor_thread.user.portrait
+                    user_name = floor_thread.user.nick_name_new
+                    time_str = timestamp_to_string(floor_thread.create_time)
+                    user_level = floor_thread.user.level
+                    is_bawu = floor_thread.user.is_bawu
+                    thread_id = floor_thread.tid
+                    post_id = floor_thread.pid
+                    floor = floor_thread.floor
+                    reply_num = comments.page.total_count
+
+                    voice_info = {'have_voice': False, 'src': '', 'length': 0}
+                    if floor_thread.contents.voice:
+                        voice_info['have_voice'] = True
+                        voice_info[
+                            'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={floor_thread.contents.voice.md5}&play_from=pb_voice_play'
+                        voice_info['length'] = floor_thread.contents.voice.duration
+
+                    user_head_pixmap = QPixmap()
+                    user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                    user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                    preview_pixmap = []
+                    for j in floor_thread.contents.imgs:
+                        # width, height, src, view_src
+                        src = j.origin_src
+                        view_src = j.src
+                        height = j.show_height
+                        width = j.show_width
+                        preview_pixmap.append(
+                            {'width': width, 'height': height, 'src': src, 'view_src': view_src})
+
+                    tdata = {'is_floor': True, 'content': content, 'portrait': portrait, 'user_name': user_name,
+                             'user_portrait_pixmap': user_head_pixmap,
+                             'create_time_str': time_str, 'ulevel': user_level, 'is_bawu': is_bawu,
+                             'thread_id': thread_id, 'post_id': post_id, 'voice_info': voice_info,
+                             'pictures': preview_pixmap, 'floor': floor, 'reply_num': reply_num}
+
+                    self.add_comment.emit(tdata)
+
                     for t in comments.objs:
                         content = make_thread_content(t.contents.objs)
                         portrait = t.user.portrait
@@ -2916,7 +2970,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                         user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                         user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-                        tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
+                        tdata = {'is_floor': False, 'content': content, 'portrait': portrait, 'user_name': user_name,
                                  'user_portrait_pixmap': user_head_pixmap,
                                  'agree_count': agree_num,
                                  'create_time_str': time_str, 'is_author': is_author, 'ulevel': user_level,
@@ -3180,6 +3234,8 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                                                     self.c_count, show_thread_button=self.subcomment_show_thread_button)
             self.replyWindow.show()
             self.replyWindow.raise_()
+            if self.replyWindow.isMinimized():
+                self.replyWindow.showNormal()
             if not self.replyWindow.isActiveWindow():
                 self.replyWindow.activateWindow()
         else:
