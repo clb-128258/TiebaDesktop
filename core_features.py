@@ -3894,7 +3894,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
 
             if not datas['view_pixmap'] and not datas['video_info']['have_video'] and not datas['voice_info'][
-                'have_voice']:
+                'have_voice'] and not datas['repost_info']['have_repost']:
                 self.listWidget.hide()
             else:
                 if datas['video_info']['have_video']:
@@ -3925,6 +3925,23 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     self.listWidget.setItemWidget(item, label)
 
                     self.update_listwidget_size(i['height'] + 35)
+
+                if datas['repost_info']['have_repost']:
+                    repost_widget = ThreadView(self.bduss, datas['repost_info']['thread_id'],
+                                               datas['repost_info']['forum_id'], self.stoken)
+                    repost_widget.set_infos(datas['repost_info']['author_portrait_pixmap'],
+                                            datas['repost_info']['author_name'], datas['repost_info']['title'],
+                                            datas['repost_info']['content'], None, datas['repost_info']['forum_name'])
+                    repost_widget.set_picture([])
+                    repost_widget.label_11.show()
+                    repost_widget.label_11.setText('这是被转发的贴子。')
+                    repost_widget.adjustSize()
+
+                    item = QListWidgetItem()
+                    item.setSizeHint(repost_widget.size())
+                    self.listWidget.addItem(item)
+                    self.listWidget.setItemWidget(item, repost_widget)
+                    self.update_listwidget_size(repost_widget.height())
 
     def get_thread_head_info_async(self):
         start_background_thread(self.get_thread_head_info)
@@ -3980,6 +3997,27 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                 'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={thread_info.thread.contents.voice.md5}&play_from=pb_voice_play'
                             voice_info['length'] = thread_info.thread.contents.voice.duration
 
+                        repost_info = {'have_repost': thread_info.thread.is_share, 'author_portrait_pixmap': None,
+                                       'author_name': '', 'title': '', 'content': '', 'thread_id': -1, 'forum_id': -1,
+                                       'forum_name': ''}
+                        if thread_info.thread.is_share:
+                            repost_user_info = await client.get_user_info(thread_info.thread.share_origin.author_id,
+                                                                          aiotieba.enums.ReqUInfo.PORTRAIT | aiotieba.enums.ReqUInfo.NICK_NAME)
+
+                            repost_user_head_pixmap = QPixmap()
+                            repost_user_head_pixmap.loadFromData(cache_mgr.get_portrait(repost_user_info.portrait))
+                            repost_user_head_pixmap = repost_user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
+                                                                                     Qt.SmoothTransformation)
+                            repost_info['author_portrait_pixmap'] = repost_user_head_pixmap
+                            repost_info['author_name'] = repost_user_info.nick_name_new
+
+                            repost_info['title'] = thread_info.thread.share_origin.title
+                            repost_info['content'] = cut_string(
+                                make_thread_content(thread_info.thread.share_origin.contents, True), 150)
+                            repost_info['thread_id'] = thread_info.thread.share_origin.tid
+                            repost_info['forum_id'] = thread_info.thread.share_origin.fid
+                            repost_info['forum_name'] = thread_info.thread.share_origin.fname
+
                         user_head_pixmap = QPixmap()
                         user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                         user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -3998,15 +4036,27 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             width = j.show_width
                             preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
-                        tdata = {'forum_id': forum_id, 'title': title,
-                                 'content': content, 'author_portrait': portrait, 'user_name': user_name,
-                                 'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
-                                 'forum_pixmap': forum_pixmap, 'view_pixmap': preview_pixmap, 'agree_count': agree_num,
-                                 'create_time_str': time_str, 'user_ip': user_ip, 'is_help': is_help,
-                                 'uf_level': user_forum_level, 'err_info': '', 'video_info': video_info,
-                                 'voice_info': voice_info,
-                                 'user_grow_level': user_grow_level, 'is_forum_manager': is_forum_manager,
-                                 'post_num': post_num}
+                        tdata = {'forum_id': forum_id,  # 吧id
+                                 'title': title,  # 标题
+                                 'content': content,  # 正内容
+                                 'author_portrait': portrait,  # 作者portrait
+                                 'user_name': user_name,  # 作者昵称
+                                 'user_portrait_pixmap': user_head_pixmap,  # 作者头像QPixmap
+                                 'forum_name': forum_name,  # 吧名称
+                                 'forum_pixmap': forum_pixmap,  # 吧头像QPixmap
+                                 'view_pixmap': preview_pixmap,  # 主题内图片列表
+                                 'agree_count': agree_num,  # 点赞数
+                                 'create_time_str': time_str,  # 发布时间字符串
+                                 'user_ip': user_ip,  # 作者ip属地
+                                 'is_help': is_help,  # 是否为求助贴
+                                 'uf_level': user_forum_level,  # 吧等级
+                                 'err_info': '',  # 错误信息
+                                 'video_info': video_info,  # 视频贴信息
+                                 'voice_info': voice_info,  # 语音内容信息
+                                 'user_grow_level': user_grow_level,  # 用户成长等级
+                                 'is_forum_manager': is_forum_manager,  # 是否为吧务
+                                 'post_num': post_num,  # 回贴数
+                                 'repost_info': repost_info}  # 转发贴信息
 
                         aiotieba.logging.get_logger().info(
                             f'load thread {self.thread_id} main info ok, send to qt side')
@@ -4373,6 +4423,8 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
 
         if baicon:
             self.label.setPixmap(baicon)
+        else:
+            self.label.hide()
 
         if not text:
             self.label_6.hide()
