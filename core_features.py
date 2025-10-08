@@ -2899,47 +2899,48 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                     aiotieba.logging.get_logger().info(
                         f'itering sub-replies (thread_id {self.thread_id} post_id {self.post_id} floor {comments.post.floor} page {self.page})')
 
-                    # 获取当前楼层信息
-                    floor_thread = comments.post
-                    content = make_thread_content(floor_thread.contents.objs)
-                    portrait = floor_thread.user.portrait
-                    user_name = floor_thread.user.nick_name_new
-                    time_str = timestamp_to_string(floor_thread.create_time)
-                    user_level = floor_thread.user.level
-                    is_bawu = floor_thread.user.is_bawu
-                    thread_id = floor_thread.tid
-                    post_id = floor_thread.pid
-                    floor = floor_thread.floor
-                    reply_num = comments.page.total_count
+                    if self.page == 1:
+                        # 获取当前楼层信息
+                        floor_thread = comments.post
+                        content = make_thread_content(floor_thread.contents.objs)
+                        portrait = floor_thread.user.portrait
+                        user_name = floor_thread.user.nick_name_new
+                        time_str = timestamp_to_string(floor_thread.create_time)
+                        user_level = floor_thread.user.level
+                        is_bawu = floor_thread.user.is_bawu
+                        thread_id = floor_thread.tid
+                        post_id = floor_thread.pid
+                        floor = floor_thread.floor
+                        reply_num = comments.page.total_count
 
-                    voice_info = {'have_voice': False, 'src': '', 'length': 0}
-                    if floor_thread.contents.voice:
-                        voice_info['have_voice'] = True
-                        voice_info[
-                            'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={floor_thread.contents.voice.md5}&play_from=pb_voice_play'
-                        voice_info['length'] = floor_thread.contents.voice.duration
+                        voice_info = {'have_voice': False, 'src': '', 'length': 0}
+                        if floor_thread.contents.voice:
+                            voice_info['have_voice'] = True
+                            voice_info[
+                                'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={floor_thread.contents.voice.md5}&play_from=pb_voice_play'
+                            voice_info['length'] = floor_thread.contents.voice.duration
 
-                    user_head_pixmap = QPixmap()
-                    user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                    user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        user_head_pixmap = QPixmap()
+                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                        user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-                    preview_pixmap = []
-                    for j in floor_thread.contents.imgs:
-                        # width, height, src, view_src
-                        src = j.origin_src
-                        view_src = j.src
-                        height = j.show_height
-                        width = j.show_width
-                        preview_pixmap.append(
-                            {'width': width, 'height': height, 'src': src, 'view_src': view_src})
+                        preview_pixmap = []
+                        for j in floor_thread.contents.imgs:
+                            # width, height, src, view_src
+                            src = j.origin_src
+                            view_src = j.src
+                            height = j.show_height
+                            width = j.show_width
+                            preview_pixmap.append(
+                                {'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
-                    tdata = {'is_floor': True, 'content': content, 'portrait': portrait, 'user_name': user_name,
-                             'user_portrait_pixmap': user_head_pixmap,
-                             'create_time_str': time_str, 'ulevel': user_level, 'is_bawu': is_bawu,
-                             'thread_id': thread_id, 'post_id': post_id, 'voice_info': voice_info,
-                             'pictures': preview_pixmap, 'floor': floor, 'reply_num': reply_num}
+                        tdata = {'is_floor': True, 'content': content, 'portrait': portrait, 'user_name': user_name,
+                                 'user_portrait_pixmap': user_head_pixmap,
+                                 'create_time_str': time_str, 'ulevel': user_level, 'is_bawu': is_bawu,
+                                 'thread_id': thread_id, 'post_id': post_id, 'voice_info': voice_info,
+                                 'pictures': preview_pixmap, 'floor': floor, 'reply_num': reply_num}
 
-                    self.add_comment.emit(tdata)
+                        self.add_comment.emit(tdata)
 
                     for t in comments.objs:
                         content = make_thread_content(t.contents.objs)
