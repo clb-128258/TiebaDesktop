@@ -151,6 +151,41 @@
        <property name="currentIndex">
         <number>0</number>
        </property>
+       <widget class="QWidget" name="tab_3">
+        <attribute name="title">
+         <string>赞过我的</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_5">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QListWidget" name="listWidget_3">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="sizeAdjustPolicy">
+            <enum>QAbstractScrollArea::AdjustToContents</enum>
+           </property>
+           <property name="verticalScrollMode">
+            <enum>QAbstractItemView::ScrollPerPixel</enum>
+           </property>
+           <property name="horizontalScrollMode">
+            <enum>QAbstractItemView::ScrollPerPixel</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
        <widget class="QWidget" name="tab">
         <attribute name="title">
          <string>回复我的</string>
