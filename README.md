@@ -30,5 +30,10 @@
 
 # 致谢
 
-另外要特别感谢这个开源仓库 [lumina37/aiotieba](https://github.com/lumina37/aiotieba)，没有这个仓库就没有本软件的诞生。  
-再贴个友情链接：[TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)
+另外要特别感谢以下开源仓库：  
+[lumina37/aiotieba - 贴吧 API 的 Python 实现](https://github.com/lumina37/aiotieba)，没有这个仓库就没有本软件的诞生。  
+[n0099/tbclient.protobuf - 贴吧 .proto 定义合集](https://github.com/n0099/tbclient.protobuf)，该仓库为本项目的 protobuf 开发提供了很大的便利.  
+
+# 友情链接
+
+贴个友情链接：[TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)
