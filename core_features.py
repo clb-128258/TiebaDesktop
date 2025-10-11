@@ -1976,10 +1976,14 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             widget.post_id = datas['post_id']
             widget.allow_home_page = False
             widget.subcomment_show_thread_button = True
+            forum_link_html='<a href=\"tieba_forum://{fid}\">{fname}吧</a>'.format(fname=datas['forum_name'],fid=datas['forum_id'])
+            forum_link_html=forum_link_html if datas['forum_name'] else '贴吧动态'
             widget.set_reply_text(
-                '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下回复：'.format(
-                    fname=datas['forum_name'], tname=datas['thread_title'], tid=datas['thread_id'],
-                    fid=datas['forum_id'], sub_floor='[楼中楼] ' if datas['is_subfloor'] else '[回复贴] '))
+                '{sub_floor}在 {forum_link} 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下回复：'.format(
+                    tname=datas['thread_title'],
+                    tid=datas['thread_id'],
+                    sub_floor='[楼中楼] ' if datas['is_subfloor'] else '[回复贴] ',
+                    forum_link=forum_link_html))
             widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['content'],
                             [], -1, datas['post_time_str'], '', -2, -1, -1, False)
 
@@ -2030,7 +2034,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             data = {'thread_id': thread.tid, 'forum_id': thread.fid, 'title': thread.title,
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
                                     'author_portrait': thread.user.portrait, 'user_name': thread.user.nick_name_new,
-                                    'user_portrait_pixmap': user_head_pixmap, 'forum_name': thread.fname,
+                                    'user_portrait_pixmap': user_head_pixmap, 'forum_name': thread.fname if thread.fname else "贴吧动态",
                                     'view_pixmap': [], 'view_count': thread.view_num, 'agree_count': thread.agree,
                                     'reply_count': thread.reply_num, 'repost_count': thread.share_num,
                                     'post_time': thread.create_time}
@@ -2069,7 +2073,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                                                            Qt.SmoothTransformation)
 
                             # 获取吧名称
-                            forum_name = await client.get_fname(thread.fid)
+                            if thread.fid!=0:
+                                forum_name = await client.get_fname(thread.fid)
+                            else:
+                                forum_name=''
 
                             # 获取贴子标题
                             thread_info = await client.get_posts(thread.tid, pn=1, rn=0, comment_rn=0)
@@ -3901,9 +3908,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.close()
         else:
             self.flash_shower.hide()
-            self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
-            self.pushButton_2.setText(datas['forum_name'] + '吧')
-            self.pushButton_2.setIcon(QIcon(datas['forum_pixmap']))
+            if self.forum_id != 0:
+                self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
+                self.pushButton_2.setText(datas['forum_name'] + '吧')
+                self.pushButton_2.setIcon(QIcon(datas['forum_pixmap']))
+            else:
+                self.setWindowTitle(datas['title'] + ' - 贴吧动态')
+                self.pushButton_2.hide()
             self.pushButton_4.setText(str(datas['agree_count']) + ' 个赞')
             self.label_4.setPixmap(datas['user_portrait_pixmap'])
             self.label_3.setText(datas['user_name'])
@@ -4018,14 +4029,19 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             self.head_data_signal.emit(
                                 {'err_info': str(thread_info.err)})
                     else:
-                        forum_info = await client.get_forum_detail(thread_info.forum.fid)
+                        self.forum_id = forum_id = thread_info.forum.fid
+
+                        if self.forum_id != 0:
+                            forum_info = await client.get_forum_detail(self.forum_id)
+                            forum_name = forum_info.fname
+                            forum_pic_url = forum_info.small_avatar
+                        else:
+                            forum_name = ''
+                            forum_pic_url = ''
 
                         preview_pixmap = []
-                        self.forum_id = forum_id = forum_info.fid
                         self.user_id = thread_info.thread.user.user_id
                         self.first_floor_pid = thread_info.thread.pid
-                        forum_name = forum_info.fname
-                        forum_pic_url = forum_info.small_avatar
                         title = thread_info.thread.title
                         content = make_thread_content(thread_info.thread.contents.objs)
                         portrait = thread_info.thread.user.portrait
@@ -4080,10 +4096,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
                         forum_pixmap = QPixmap()
-                        response = requests.get(forum_pic_url, headers=request_mgr.header)
-                        if response.content:
-                            forum_pixmap.loadFromData(response.content)
-                            forum_pixmap = forum_pixmap.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        if forum_pic_url:
+                            response = requests.get(forum_pic_url, headers=request_mgr.header)
+                            if response.content:
+                                forum_pixmap.loadFromData(response.content)
+                                forum_pixmap = forum_pixmap.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
                         for j in thread_info.thread.contents.imgs:
                             # width, height, src, view_src
