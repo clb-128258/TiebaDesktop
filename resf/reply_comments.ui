@@ -55,7 +55,7 @@ QDialog{background-color: rgb(255, 255, 255);}
    <item row="1" column="3">
     <widget class="QPushButton" name="pushButton">
      <property name="text">
-      <string>查看主题帖</string>
+      <string>查看主题贴</string>
      </property>
     </widget>
    </item>

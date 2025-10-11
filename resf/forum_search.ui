@@ -119,7 +119,7 @@ QDialog{background-color: rgb(255, 255, 255);}
      </widget>
      <widget class="QWidget" name="tab_2">
       <attribute name="title">
-       <string>帖子 (全吧)</string>
+       <string>贴子 (全吧)</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
        <property name="leftMargin">

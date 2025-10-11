@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\tie_detail_view.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\tie_detail_view.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -335,24 +335,24 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "帖子预览"))
+        Form.setWindowTitle(_translate("Form", "贴子预览"))
         self.checkBox.setText(_translate("Form", "只看楼主"))
         self.comboBox.setItemText(0, _translate("Form", "正序"))
         self.comboBox.setItemText(1, _translate("Form", "倒序"))
         self.comboBox.setItemText(2, _translate("Form", "热门排序"))
         self.pushButton_4.setText(_translate("Form", "赞"))
         self.pushButton.setText(_translate("Form", "..."))
-        self.lineEdit.setPlaceholderText(_translate("Form", "发帖千百度，文明第一步"))
-        self.pushButton_3.setText(_translate("Form", "发帖"))
+        self.lineEdit.setPlaceholderText(_translate("Form", "发贴千百度，文明第一步"))
+        self.pushButton_3.setText(_translate("Form", "发贴"))
         self.label_11.setText(_translate("Form", "吧务"))
         self.label_10.setToolTip(_translate("Form", "该用户的贴吧成长等级"))
         self.label_10.setText(_translate("Form", "Lv.1"))
         self.label_9.setToolTip(_translate("Form", "该用户的吧等级"))
         self.label_9.setText(_translate("Form", "Lv.1"))
-        self.label_2.setText(_translate("Form", "你已经到达了帖子的尽头"))
+        self.label_2.setText(_translate("Form", "你已经到达了贴子的尽头"))
         self.label_5.setText(_translate("Form", "数据加载中..."))
-        self.label_13.setText(_translate("Form", "精华帖"))
-        self.label_12.setText(_translate("Form", "置顶帖"))
-        self.label_8.setToolTip(_translate("Form", "在求助帖下回帖，一次经验 +6。"))
-        self.label_8.setText(_translate("Form", "求助帖"))
+        self.label_13.setText(_translate("Form", "精华贴"))
+        self.label_12.setText(_translate("Form", "置顶贴"))
+        self.label_8.setToolTip(_translate("Form", "在求助贴下回贴，一次经验 +6。"))
+        self.label_8.setText(_translate("Form", "求助贴"))
         self.label_7.setText(_translate("Form", "共 x 条回复"))

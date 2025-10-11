@@ -50,7 +50,7 @@ QDialog{background-color: rgb(255, 255, 255);}
      </item>
      <item>
       <property name="text">
-       <string>看帖设置</string>
+       <string>看贴设置</string>
       </property>
      </item>
      <item>
@@ -145,7 +145,7 @@ QDialog{background-color: rgb(255, 255, 255);}
          <item row="2" column="0" colspan="2">
           <widget class="QCheckBox" name="checkBox_2">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在帖子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string>不显示用户的 IP 属地</string>
@@ -164,7 +164,7 @@ QDialog{background-color: rgb(255, 255, 255);}
            <item>
             <widget class="QLabel" name="label_10">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看帖时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看贴时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>贴吧表情大小：</string>
@@ -205,10 +205,10 @@ QDialog{background-color: rgb(255, 255, 255);}
            <item>
             <widget class="QLabel" name="label_13">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看帖时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看贴时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
-              <string>看帖回复默认排序：</string>
+              <string>看贴回复默认排序：</string>
              </property>
             </widget>
            </item>
@@ -272,10 +272,10 @@ QDialog{background-color: rgb(255, 255, 255);}
          <item row="1" column="0" colspan="2">
           <widget class="QCheckBox" name="checkBox">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频帖子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频贴子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
-            <string>首页不推荐视频帖</string>
+            <string>首页不推荐视频贴</string>
            </property>
           </widget>
          </item>
@@ -284,10 +284,10 @@ QDialog{background-color: rgb(255, 255, 255);}
            <item>
             <widget class="QLabel" name="label_14">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看帖时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看贴时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
-              <string>进吧看帖默认板块：</string>
+              <string>进吧看贴默认板块：</string>
              </property>
             </widget>
            </item>
@@ -455,7 +455,7 @@ QDialog{background-color: rgb(255, 255, 255);}
        <item row="5" column="1" colspan="3">
         <widget class="QLabel" name="label_12">
          <property name="text">
-          <string>包括缓存到本地的帖子图片、用户头像图片等。
+          <string>包括缓存到本地的贴子图片、用户头像图片等。
 总计已占用大小 x。</string>
          </property>
         </widget>

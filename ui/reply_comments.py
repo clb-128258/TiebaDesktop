@@ -53,4 +53,4 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "楼中楼回复"))
         self.pushButton_2.setText(_translate("Dialog", "刷新"))
         self.label.setText(_translate("Dialog", "第 x 楼的回复，共 x 条"))
-        self.pushButton.setText(_translate("Dialog", "查看主题帖"))
+        self.pushButton.setText(_translate("Dialog", "查看主题贴"))

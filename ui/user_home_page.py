@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\user_home_page.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\user_home_page.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -347,7 +347,7 @@ class Ui_Form(object):
         self.label_9.setText(_translate("Form", "Lv.0"))
         self.pushButton.setText(_translate("Form", "操作..."))
         self.label_13.setText(_translate("Form", "sex"))
-        self.label_14.setText(_translate("Form", "xx 发帖"))
+        self.label_14.setText(_translate("Form", "xx 发贴"))
         self.label_8.setText(_translate("Form", "xx 点赞"))
         self.label_3.setText(_translate("Form", "贴吧 ID："))
         self.label_4.setText(_translate("Form", "吧龄 xx 年"))

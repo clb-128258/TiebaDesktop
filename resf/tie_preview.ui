@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>帖子预览</string>
+   <string>贴子预览</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
@@ -249,7 +249,7 @@
            </font>
           </property>
           <property name="text">
-           <string>进帖</string>
+           <string>进贴</string>
           </property>
           <property name="flat">
            <bool>true</bool>

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\star_list.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\star_list.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -49,5 +49,5 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "收藏列表"))
-        self.label.setText(_translate("Dialog", "这里可以查看你收藏的帖子。"))
+        self.label.setText(_translate("Dialog", "这里可以查看你收藏的贴子。"))
         self.pushButton.setText(_translate("Dialog", "刷新"))

@@ -129,7 +129,7 @@ class Ui_Dialog(object):
         self.lineEdit.setPlaceholderText(_translate("Dialog", "输入搜索关键字"))
         self.pushButton.setText(_translate("Dialog", "搜索"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("Dialog", "吧 (全吧)"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("Dialog", "帖子 (全吧)"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("Dialog", "贴子 (全吧)"))
         self.checkBox.setText(_translate("Dialog", "过滤搜索结果中没有贴吧 ID 且粉丝为 0 的用户（需重新发起搜索来使设置生效）"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("Dialog", "人 (全吧)"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("Dialog", "主题 (吧内)"))

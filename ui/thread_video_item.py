@@ -48,6 +48,6 @@ class Ui_Form(object):
         Form.setWindowTitle(_translate("Form", "Form"))
         self.pushButton.setText(_translate("Form", "保存视频"))
         self.pushButton_2.setText(_translate("Form", "播放视频"))
-        self.label_2.setText(_translate("Form", "这是一篇视频帖"))
+        self.label_2.setText(_translate("Form", "这是一篇视频贴"))
         self.pushButton_3.setText(_translate("Form", "关闭视频"))
         self.label_3.setText(_translate("Form", "时间，浏览数"))

@@ -75,7 +75,7 @@
    </palette>
   </property>
   <property name="windowTitle">
-   <string>帖子预览</string>
+   <string>贴子预览</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
@@ -258,14 +258,14 @@ QPushButton:pressed {
      <item>
       <widget class="QLineEdit" name="lineEdit">
        <property name="placeholderText">
-        <string>发帖千百度，文明第一步</string>
+        <string>发贴千百度，文明第一步</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_3">
        <property name="text">
-        <string>发帖</string>
+        <string>发贴</string>
        </property>
       </widget>
      </item>
@@ -530,7 +530,7 @@ QPushButton:pressed {
           </font>
          </property>
          <property name="text">
-          <string>你已经到达了帖子的尽头</string>
+          <string>你已经到达了贴子的尽头</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -620,7 +620,7 @@ QPushButton:pressed {
 </string>
              </property>
              <property name="text">
-              <string>精华帖</string>
+              <string>精华贴</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
@@ -652,7 +652,7 @@ QPushButton:pressed {
 </string>
              </property>
              <property name="text">
-              <string>置顶帖</string>
+              <string>置顶贴</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
@@ -674,7 +674,7 @@ QPushButton:pressed {
               </size>
              </property>
              <property name="toolTip">
-              <string>在求助帖下回帖，一次经验 +6。</string>
+              <string>在求助贴下回贴，一次经验 +6。</string>
              </property>
              <property name="styleSheet">
               <string notr="true">QLabel{
@@ -684,7 +684,7 @@ QPushButton:pressed {
 </string>
              </property>
              <property name="text">
-              <string>求助帖</string>
+              <string>求助贴</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>

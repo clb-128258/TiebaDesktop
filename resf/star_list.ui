@@ -51,7 +51,7 @@ QDialog{background-color: rgb(255, 255, 255);}
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>这里可以查看你收藏的帖子。</string>
+        <string>这里可以查看你收藏的贴子。</string>
        </property>
       </widget>
      </item>
