@@ -7,15 +7,15 @@
 
 * 多账号登录与切换
 * 首页推荐看贴、进吧看贴
-* 查看贴子内的图片和视频，支持保存视频
+* 查看贴子内的富媒体（如图片、视频、语音等），支持保存视频
 * 查看某吧详情信息
-* 一键签到所有吧、等级签到，并且支持 [命令行参数调用](https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/command-usages.md)
+* 一键签到所有吧、成长等级签到，并且支持 [命令行参数调用](https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/command-usages.md)
 * 查看自己关注的吧
 * 查看用户的个人主页，其中可以查看该用户发布的主题和回复、关注的吧、关注/粉丝列表
 * 关注、拉黑禁言某个用户
-* 查看回复和@我的人
+* 查看点赞、回复或@我的人
 * 查看收藏列表和点赞列表
-* 后续会持续更新新功能
+* 后续会持续更新功能
 
 # 如何使用
 
@@ -30,5 +30,10 @@
 
 # 致谢
 
-另外要特别感谢这个开源仓库 [lumina37/aiotieba](https://github.com/lumina37/aiotieba)，没有这个仓库就没有本软件的诞生。  
-再贴个友情链接：[TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)
+另外要特别感谢以下开源仓库：  
+[lumina37/aiotieba - 贴吧 API 的 Python 实现](https://github.com/lumina37/aiotieba)，没有这个仓库就没有本软件的诞生。  
+[n0099/tbclient.protobuf - 贴吧 .proto 定义合集](https://github.com/n0099/tbclient.protobuf)，该仓库为本项目的 protobuf 开发提供了很大的便利.  
+
+# 友情链接
+
+贴个友情链接：[TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)
