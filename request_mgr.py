@@ -195,10 +195,7 @@ def run_protobuf_api(api: str, payloads: bytes, cmd_id: int, bduss='', stoken: s
     else:
         cookie = {}
 
-    if use_mobile_header:
-        final_header = header_android
-    else:
-        final_header = header
+    final_header = header_protobuf
 
     params = {'cmd': str(cmd_id), 'format': 'protobuf'}
 
