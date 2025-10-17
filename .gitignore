@@ -3,3 +3,4 @@
 /.venv/
 /resf/change_index.json
 /resf/protobuf/proto_source/
+/proto/__pycache__
