@@ -631,18 +631,18 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                         payload = GetUserBlackInfoReqIdl_pb2.GetUserBlackInfoReqIdl()
 
                         payload.data.common._client_type = 2
-                        payload.data.common._client_version=request_mgr.TIEBA_CLIENT_VERSION
-                        payload.data.common.BDUSS=self.bduss
-                        payload.data.common.stoken=self.stoken
+                        payload.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+                        payload.data.common.BDUSS = self.bduss
+                        payload.data.common.stoken = self.stoken
 
                         payload.data.black_uid = user_info.user_id
 
                         response = request_mgr.run_protobuf_api('/c/u/user/getUserBlackInfo',
-                                                            payloads=payload.SerializeToString(),
-                                                            cmd_id=309698,
-                                                            bduss=self.bduss, stoken=self.stoken,
-                                                            host_type=2)
-                        final_response=GetUserBlackInfoResIdl_pb2.GetUserBlackInfoResIdl()
+                                                                payloads=payload.SerializeToString(),
+                                                                cmd_id=309698,
+                                                                bduss=self.bduss, stoken=self.stoken,
+                                                                host_type=2)
+                        final_response = GetUserBlackInfoResIdl_pb2.GetUserBlackInfoResIdl()
                         final_response.ParseFromString(response)
 
                         if final_response.error.errorno == 0:
@@ -652,7 +652,8 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                         else:
                             turn_data['success'] = False
                             turn_data['title'] = '获取拉黑状态失败'
-                            turn_data['text'] = f'{final_response.error.errmsg} (错误代码 {final_response.error.errorno})'
+                            turn_data[
+                                'text'] = f'{final_response.error.errmsg} (错误代码 {final_response.error.errorno})'
 
             except Exception as e:
                 print(type(e))
@@ -2218,7 +2219,6 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.treeWidget.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
         self.pushButton_4.clicked.connect(self.save_bg_image)
         self.pushButton_6.clicked.connect(lambda: pyperclip.copy(self.forum_bg_link))
-        # self.pushButton_3.clicked.connect(self.show_sign_webview)
         self.pushButton_7.clicked.connect(lambda: self.show_big_picture(self.forum_atavar_link))
         self.pushButton.clicked.connect(lambda: self.do_action_async('unfollow' if self.is_followed else 'follow'))
         self.pushButton_2.clicked.connect(lambda: self.do_action_async('sign'))
@@ -2375,11 +2375,19 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                 self.label_6.setText(f'你已经关注了本吧。' if datas['follow_info'][
                     'isfollow'] else f'你还没有关注{self.forum_name}吧，不妨考虑一下？')
 
+                ts = time.time() - datas["follow_info"]["follow_day"] * 86400
+                timeArray = time.localtime(ts)
+                follow_date_str = time.strftime("%Y年%m月%d日", timeArray)
+                self.label_7.setText('等级：' + str(datas['follow_info']['level']))
+                self.label_8.setText('等级头衔：' + datas['follow_info']['level_flag'])
+                self.label_25.setText(
+                    f'关注天数：{datas["follow_info"]["follow_day"]} 天 (大约是在 {follow_date_str} 那天关注的)')
+                self.label_26.setText(f'总发贴数：{datas["follow_info"]["total_thread_num"]}')
+                self.label_27.setText(f'今日发贴回贴数：{datas["follow_info"]["today_post_num"]}')
+
                 if datas['follow_info']['isSign']:
                     self.pushButton_2.setEnabled(False)
                     self.pushButton_2.setText('已签到')
-                self.label_7.setText('等级：' + str(datas['follow_info']['level']))
-                self.label_8.setText('等级头衔：' + datas['follow_info']['level_flag'])
                 self.label_9.setText(
                     f'{datas["follow_info"]["exp"]} / {datas["follow_info"]["next_exp"]}，距离下一等级还差 {datas["follow_info"]["next_exp"] - datas["follow_info"]["exp"]} 经验值')
                 self.progressBar.setRange(0, datas["follow_info"]["next_exp"])
@@ -2388,6 +2396,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                 self.label_10.setText(f'共计签到天数：{datas["follow_info"]["total_sign_count"]}')
                 self.label_17.setText(f'连签天数：{datas["follow_info"]["continuous_sign_count"]}')
                 self.label_18.setText(f'漏签天数：{datas["follow_info"]["forget_sign_count"]}')
+                self.label_28.setText(f'今日签到名次：第 {datas["follow_info"]["today_sign_rank"]} 个签到')
             else:
                 self.pushButton.hide()
                 self.label_6.setText('你还没有登录，登录后即可查看自己的信息。')
@@ -2442,7 +2451,8 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                             'forum_desp': '', 'thread_c': 0, 'follow_c': 0, 'main_thread_c': 0,
                             'follow_info': {'isfollow': False, 'level': 0, 'exp': 0, 'level_flag': '', 'isSign': False,
                                             'next_exp': 0, 'total_sign_count': 0, 'continuous_sign_count': 0,
-                                            'forget_sign_count': 0},
+                                            'forget_sign_count': 0, 'follow_day': 0, 'today_sign_rank': 0,
+                                            'total_thread_num': 0, 'today_post_num': 0},
                             'forum_volume': '', 'err_info': '', 'friend_forum_list': [],
                             'bg_pic_info': {'url': '', 'pixmap': None}, 'forum_desp_ex': '', 'forum_rule_html': ''}
 
@@ -2545,7 +2555,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         else:
                             data['forum_rule_html'] = '<html><h2>很抱歉，本吧吧主并没有在此设置吧规。</h2></html>'
 
-                    async def get_level_info():
+                    async def get_sign_info():
                         if self.bduss:
                             # 在登录情况下，获取签到信息
                             payload = {
@@ -2570,6 +2580,32 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                 resp_sign_info["data"]['forum'][0]["sign_in_info"]["user_info"]["cont_sign_num"])
                             data['follow_info']['forget_sign_count'] = int(
                                 resp_sign_info["data"]['forum'][0]["sign_in_info"]["user_info"]["miss_sign_num"])
+
+                    async def get_user_forum_level_info():
+                        if self.bduss:
+                            # 在登录情况下，获取新版我在本吧信息
+                            params = {
+                                "_client_type": "2",
+                                "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
+                                "BDUSS": self.bduss,
+                                "stoken": self.stoken,
+                                "forum_id": str(self.forum_id),
+                                "subapp_type": "hybrid"
+                            }
+                            resp_mytb_info = request_mgr.run_get_api('/c/f/forum/getUserForumLevelInfo',
+                                                                     bduss=self.bduss,
+                                                                     stoken=self.stoken, use_mobile_header=True,
+                                                                     host_type=1, params=params)
+
+                            # 整理我在本吧信息
+                            data['follow_info']['follow_day'] = int(
+                                resp_mytb_info["data"]['user_forum_info']["follow_days"])
+                            data['follow_info']['today_sign_rank'] = int(
+                                resp_mytb_info["data"]['user_forum_info']["day_sign_no"])
+                            data['follow_info']['total_thread_num'] = int(
+                                resp_mytb_info["data"]['user_forum_info']["thread_num"])
+                            data['follow_info']['today_post_num'] = int(
+                                resp_mytb_info["data"]['user_forum_info']["day_post_num"])
 
                     async def get_forum_bg():
                         # 获取吧背景图片
@@ -2648,10 +2684,14 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         data['main_thread_c'] = forum_info.thread_num
                         data['forum_volume'] = f'{forum_info.category} - {forum_info.subcategory}'
 
-                        await asyncio.gather(get_forum_rule(), get_forum_desp_ex(), get_level_info(), get_forum_bg(),
+                        await asyncio.gather(get_forum_rule(),
+                                             get_forum_desp_ex(),
+                                             get_sign_info(),
+                                             get_forum_bg(),
                                              get_forums_heads(),
                                              get_bawu_infos(),
                                              get_self_forum_head(),
+                                             get_user_forum_level_info(),
                                              return_exceptions=True)
 
                     self.set_main_info_signal.emit(data)
