@@ -1,9 +1,4 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-import os
-import shutil
-import time
-
-import cache_mgr
 import proxytool
 from core_features import *
 from ui import mainwindow

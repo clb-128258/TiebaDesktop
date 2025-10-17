@@ -668,6 +668,10 @@ class QWebView2View(QWidget):
                 self.__token_got = True
                 self.tokenGot.emit(cookies_dic)
 
+    def __on_js_msg_received(self, _, args):
+        message = args.TryGetWebMessageAsString()
+        print(message)
+
     def __on_webview_ready(self, webview_instance, args):
         if not args.IsSuccess:
             print(args.InitializationException)
@@ -691,6 +695,7 @@ class QWebView2View(QWidget):
         core.FaviconChanged += self.__on_icon_changed
         core.ContainsFullScreenElementChanged += self.__on_fullscreen_requested
         core.WebResourceRequested += self.__on_request_got
+        core.WebMessageReceived += self.__on_js_msg_received
 
         settings = core.Settings
         settings.AreBrowserAcceleratorKeysEnabled = configuration.enable_keyboard_keys

@@ -1,13 +1,13 @@
 """核心模块，实现了程序内大部分功能，本程序的主要函数和类均封装在此处"""
 from PyQt5.QtWidgets import QWidget, QDialog, QMessageBox, QListWidgetItem, \
-    QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem, QFrame
+    QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, QEvent, QMimeData, QUrl, QSize, \
     QByteArray, QObject
-from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie, QPalette
+from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie
 from ui import follow_ba, ba_item, tie_preview, ba_head, sign, tie_detail_view, comment_view, reply_comments, \
     thread_video_item, forum_detail, user_home_page, image_viewer, reply_at_me_page, star_list, settings, user_item, \
     login_by_bduss, forum_search, loading_amt, user_blacklist_setter, thread_voice_item, agreed_item
-import asyncio
+
 import sys
 import platform
 import os
@@ -29,6 +29,9 @@ import cache_mgr
 import shutil
 import audio_stream_player
 import queue
+
+# 引入protobuf
+from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
 
 if os.name == 'nt':
     import win32api
@@ -343,7 +346,7 @@ class TiebaMsgSyncer(QObject):
         payloads = {
             "BDUSS": self.bduss,
             "_client_type": "2",
-            "_client_version": "12.88.1.2",
+            "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
             "stoken": self.stoken,
         }
         resp = request_mgr.run_post_api('/c/s/msg', request_mgr.calc_sign(payloads), use_mobile_header=True,
@@ -625,26 +628,31 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                         turn_data['head'] = user_head_pixmap
                         turn_data['name'] = user_info.nick_name_new
 
-                        payload = {
-                            'BDUSS': self.bduss,
-                            '_client_type': "2",
-                            '_client_version': "12.88.1.2",
-                            'portrait': user_info.portrait,
-                            'stoken': self.stoken,
-                        }
-                        response = request_mgr.run_post_api('/c/u/user/getUserBlackInfo',
-                                                            payloads=request_mgr.calc_sign(payload),
-                                                            use_mobile_header=True,
-                                                            bduss=payload['BDUSS'], stoken=payload['stoken'],
+                        payload = GetUserBlackInfoReqIdl_pb2.GetUserBlackInfoReqIdl()
+
+                        payload.data.common._client_type = 2
+                        payload.data.common._client_version=request_mgr.TIEBA_CLIENT_VERSION
+                        payload.data.common.BDUSS=self.bduss
+                        payload.data.common.stoken=self.stoken
+
+                        payload.data.black_uid = user_info.user_id
+
+                        response = request_mgr.run_protobuf_api('/c/u/user/getUserBlackInfo',
+                                                            payloads=payload.SerializeToString(),
+                                                            cmd_id=309698,
+                                                            bduss=self.bduss, stoken=self.stoken,
                                                             host_type=2)
-                        if response['error_code'] == '0':
-                            turn_data['black_state'][0] = bool(int(response['perm_list']['interact']))
-                            turn_data['black_state'][1] = bool(int(response['perm_list']['chat']))
-                            turn_data['black_state'][2] = bool(int(response['perm_list']['follow']))
+                        final_response=GetUserBlackInfoResIdl_pb2.GetUserBlackInfoResIdl()
+                        final_response.ParseFromString(response)
+
+                        if final_response.error.errorno == 0:
+                            turn_data['black_state'][0] = bool(int(final_response.data.perm_list.interact))
+                            turn_data['black_state'][1] = bool(int(final_response.data.perm_list.chat))
+                            turn_data['black_state'][2] = bool(int(final_response.data.perm_list.follow))
                         else:
                             turn_data['success'] = False
                             turn_data['title'] = '获取拉黑状态失败'
-                            turn_data['text'] = f'{response["error_msg"]} (错误代码 {response["error_code"]})'
+                            turn_data['text'] = f'{final_response.error.errmsg} (错误代码 {final_response.error.errorno})'
 
             except Exception as e:
                 print(type(e))
@@ -1395,7 +1403,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                         payload = {
                             'BDUSS': self.bduss,
                             '_client_type': '2',
-                            '_client_version': '12.87.1.0',
+                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                             'pn': str(self.reply_page),
                             'stoken': self.stoken,
                         }
@@ -1497,7 +1505,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                         payload = {
                             'BDUSS': self.bduss,
                             '_client_type': '2',
-                            '_client_version': '12.87.1.0',
+                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                             'id': str(self.latest_agree_id),
                             'rn': '20',
                             'stoken': self.stoken,
@@ -1899,37 +1907,42 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             'desp': '',
                             'bd_user_name': ''}
 
-                    # 获取用户信息
-                    user_info = await client.get_user_info(self.user_id_portrait, aiotieba.ReqUInfo.ALL)
-
-                    # 判断是否出错
-                    if user_info.err:
-                        data['error'] = str(user_info.err)
+                    if not self.user_id_portrait:
+                        data['error'] = '无法加载匿名用户的个人主页信息。出现此提示也有可能是程序内部出现错误。'
+                    elif self.user_id_portrait == '00000000':
+                        data['error'] = '无法加载匿名用户的个人主页信息。'
                     else:
-                        self.real_user_id = user_info.user_id
-                        self.nick_name = data['name'] = user_info.nick_name_new
-                        data['sex'] = user_info.gender
-                        data['level'] = user_info.glevel
-                        data['agree_c'] = user_info.agree_num
-                        data['tieba_id'] = user_info.tieba_uid
-                        data['account_age'] = user_info.age
-                        data['ip'] = user_info.ip
-                        data['follow_forum_count'] = user_info.forum_num
-                        data['follow'] = user_info.follow_num
-                        data['fans'] = user_info.fan_num
-                        data['is_dashen'] = bool(user_info.is_god)
-                        data['is_banned'] = bool(user_info.is_blocked)
-                        data['thread_reply_permission'] = user_info.priv_reply
-                        data['follow_forums_show_permission'] = user_info.priv_like
-                        data['desp'] = user_info.sign
-                        data['post_c'] = user_info.post_num
-                        data['bd_user_name'] = user_info.user_name
+                        # 获取用户信息
+                        user_info = await client.get_user_info(self.user_id_portrait, aiotieba.ReqUInfo.ALL)
 
-                        pixmap = QPixmap()
-                        pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
-                        pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
-                                               Qt.SmoothTransformation)
-                        data['portrait_pixmap'] = pixmap
+                        # 判断是否出错
+                        if user_info.err:
+                            data['error'] = str(user_info.err)
+                        else:
+                            self.real_user_id = user_info.user_id
+                            self.nick_name = data['name'] = user_info.nick_name_new
+                            data['sex'] = user_info.gender
+                            data['level'] = user_info.glevel
+                            data['agree_c'] = user_info.agree_num
+                            data['tieba_id'] = user_info.tieba_uid
+                            data['account_age'] = user_info.age
+                            data['ip'] = user_info.ip
+                            data['follow_forum_count'] = user_info.forum_num
+                            data['follow'] = user_info.follow_num
+                            data['fans'] = user_info.fan_num
+                            data['is_dashen'] = bool(user_info.is_god)
+                            data['is_banned'] = bool(user_info.is_blocked)
+                            data['thread_reply_permission'] = user_info.priv_reply
+                            data['follow_forums_show_permission'] = user_info.priv_like
+                            data['desp'] = user_info.sign
+                            data['post_c'] = user_info.post_num
+                            data['bd_user_name'] = user_info.user_name
+
+                            pixmap = QPixmap()
+                            pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
+                            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
+                                                   Qt.SmoothTransformation)
+                            data['portrait_pixmap'] = pixmap
 
                     self.set_head_info_signal.emit(data)
 
@@ -1976,8 +1989,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             widget.post_id = datas['post_id']
             widget.allow_home_page = False
             widget.subcomment_show_thread_button = True
-            forum_link_html='<a href=\"tieba_forum://{fid}\">{fname}吧</a>'.format(fname=datas['forum_name'],fid=datas['forum_id'])
-            forum_link_html=forum_link_html if datas['forum_name'] else '贴吧动态'
+            forum_link_html = '<a href=\"tieba_forum://{fid}\">{fname}吧</a>'.format(fname=datas['forum_name'],
+                                                                                     fid=datas['forum_id'])
+            forum_link_html = forum_link_html if datas['forum_name'] else '贴吧动态'
             widget.set_reply_text(
                 '{sub_floor}在 {forum_link} 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下回复：'.format(
                     tname=datas['thread_title'],
@@ -2034,7 +2048,8 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             data = {'thread_id': thread.tid, 'forum_id': thread.fid, 'title': thread.title,
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
                                     'author_portrait': thread.user.portrait, 'user_name': thread.user.nick_name_new,
-                                    'user_portrait_pixmap': user_head_pixmap, 'forum_name': thread.fname if thread.fname else "贴吧动态",
+                                    'user_portrait_pixmap': user_head_pixmap,
+                                    'forum_name': thread.fname if thread.fname else "贴吧动态",
                                     'view_pixmap': [], 'view_count': thread.view_num, 'agree_count': thread.agree,
                                     'reply_count': thread.reply_num, 'repost_count': thread.share_num,
                                     'post_time': thread.create_time}
@@ -2073,10 +2088,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                                                            Qt.SmoothTransformation)
 
                             # 获取吧名称
-                            if thread.fid!=0:
+                            if thread.fid != 0:
                                 forum_name = await client.get_fname(thread.fid)
                             else:
-                                forum_name=''
+                                forum_name = ''
 
                             # 获取贴子标题
                             thread_info = await client.get_posts(thread.tid, pn=1, rn=0, comment_rn=0)
@@ -2181,12 +2196,9 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     set_main_info_signal = pyqtSignal(dict)
     action_ok_signal = pyqtSignal(dict)
 
-    page_level_list = 1
-    is_level_list_loading = False
     forum_bg_link = ''
     forum_name = ''
     forum_atavar_link = ''
-    webview = None
     is_followed = False
 
     def __init__(self, bduss, stoken, forum_id):
@@ -2206,7 +2218,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.treeWidget.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
         self.pushButton_4.clicked.connect(self.save_bg_image)
         self.pushButton_6.clicked.connect(lambda: pyperclip.copy(self.forum_bg_link))
-        self.pushButton_3.clicked.connect(self.show_sign_webview)
+        # self.pushButton_3.clicked.connect(self.show_sign_webview)
         self.pushButton_7.clicked.connect(lambda: self.show_big_picture(self.forum_atavar_link))
         self.pushButton.clicked.connect(lambda: self.do_action_async('unfollow' if self.is_followed else 'follow'))
         self.pushButton_2.clicked.connect(lambda: self.do_action_async('sign'))
@@ -2216,7 +2228,6 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
     def closeEvent(self, a0):
         self.loading_widget.hide()
-        self.destroy_webview()
         a0.accept()
         qt_window_mgr.del_window(self)
 
@@ -2235,43 +2246,6 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         if isinstance(item, ExtTreeWidgetItem):
             user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
             qt_window_mgr.add_window(user_home_page)
-
-    def destroy_webview(self):
-        if self.webview:
-            self.webview.close()
-            self.webview.destroyWebview()
-            self.webview = None
-
-    def show_sign_webview(self):
-        if self.webview:
-            self.webview.show()
-            self.webview.raise_()
-            if self.webview.isMinimized():
-                self.webview.showNormal()
-            if not self.webview.isActiveWindow():
-                self.webview.activateWindow()
-        else:
-            webview2.loadLibs()
-            self.webview = webview2.QWebView2View()
-
-            self.webview.resize(630, 590)
-            self.webview.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-            self.webview.setWindowTitle('补签（存在功能性问题，慎用）')
-
-            self.webview.windowCloseRequested.connect(self.destroy_webview)
-            self.webview.loadAfterRender(
-                f'https://tieba.baidu.com/mo/q/resign/index?forum_id={self.forum_id}')
-
-            profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
-                                              enable_link_hover_text=False,
-                                              enable_zoom_factor=False, enable_error_page=True,
-                                              enable_context_menu=True, enable_keyboard_keys=True,
-                                              handle_newtab_byuser=False,
-                                              user_agent=request_mgr.header_android['User-Agent'])
-            self.webview.setProfile(profile)
-
-            self.webview.initRender()
-            self.webview.show()
 
     def show_big_picture(self, link):
         opic_view = NetworkImageViewer(link)
@@ -2325,15 +2299,38 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                             turn_data['title'] = '取消关注失败'
                             turn_data['text'] = f'{r.err}'
                     elif action_type == 'sign':
-                        r = await client.sign_forum(self.forum_id)
-                        if r:
+                        tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
+                            {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
+                                                            use_mobile_header=True,
+                                                            host_type=2)
+                        tbs = tsb_resp["anti"]["tbs"]
+
+                        payload = {
+                            'BDUSS': self.bduss,
+                            '_client_type': "2",
+                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                            'fid': self.forum_id,
+                            'kw': self.forum_name,
+                            'stoken': self.stoken,
+                            'tbs': tbs,
+                        }
+                        r = request_mgr.run_post_api('/c/c/forum/sign',
+                                                     payloads=request_mgr.calc_sign(payload),
+                                                     bduss=self.bduss, stoken=self.stoken,
+                                                     use_mobile_header=True,
+                                                     host_type=2)
+                        if r['error_code'] == '0':
+                            user_sign_rank = r['user_info']['user_sign_rank']
+                            sign_bonus_point = r['user_info']['sign_bonus_point']
+
                             turn_data['success'] = True
                             turn_data['title'] = '签到成功'
-                            turn_data['text'] = f'已成功签到 {self.forum_name}吧。'
+                            turn_data[
+                                'text'] = f'{self.forum_name}吧 已签到成功。\n本次签到经验 +{sign_bonus_point}，你是今天本吧第 {user_sign_rank} 个签到的用户。'
                         else:
                             turn_data['success'] = False
                             turn_data['title'] = '签到失败'
-                            turn_data['text'] = f'{r.err}'
+                            turn_data['text'] = f'{r["error_msg"]} (错误代码 {r["error_code"]})'
             except Exception as e:
                 print(type(e))
                 print(e)
@@ -2453,7 +2450,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         payload = {
                             'BDUSS': self.bduss,
                             '_client_type': "2",
-                            '_client_version': "12.87.1.1",
+                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                             'forum_id': str(self.forum_id),
                             'is_newfrs': '1',
                             'stoken': self.stoken,
@@ -2476,7 +2473,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         payload = {
                             'BDUSS': self.bduss,
                             '_client_type': "2",
-                            '_client_version': "12.87.1.1",
+                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                             'forum_id': str(self.forum_id),
                             'stoken': self.stoken,
                         }
@@ -2554,7 +2551,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                             payload = {
                                 'BDUSS': self.bduss,
                                 '_client_type': "2",
-                                '_client_version': "12.88.1.2",
+                                '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                                 'forum_ids': str(self.forum_id),
                                 'from': "frs",
                                 'stoken': self.stoken,
@@ -3167,14 +3164,15 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             account = aiotieba.Account()  # 实例化account以便计算一些数据
             # 拿tbs
             tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
-                {'_client_version': '12.87.1.1', 'bdusstoken': self.bduss}), use_mobile_header=True, host_type=2)
+                {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
+                                                use_mobile_header=True, host_type=2)
             tbs = tsb_resp["anti"]["tbs"]
 
             if iscancel:
                 payload = {
                     'BDUSS': self.bduss,
                     '_client_type': "2",
-                    '_client_version': "12.88.1.2",
+                    '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                     'agree_type': "5",  # 2点赞 5取消点赞
                     'cuid': account.cuid_galaxy2,
                     'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
@@ -3197,7 +3195,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                 payload = {
                     'BDUSS': self.bduss,
                     '_client_type': "2",
-                    '_client_version': "12.88.1.2",
+                    '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                     'agree_type': "2",  # 2点赞 5取消点赞
                     'cuid': account.cuid_galaxy2,
                     'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
@@ -3593,63 +3591,67 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def agree_thread(self, iscancel=False):
         aiotieba.logging.get_logger().info(f'agree thread {self.thread_id}')
         try:
-            account = aiotieba.Account()  # 实例化account以便计算一些数据
-            # 拿tbs
-            tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
-                {'_client_version': '12.87.1.1', 'bdusstoken': self.bduss}), use_mobile_header=True, host_type=2)
-            tbs = tsb_resp["anti"]["tbs"]
-
-            if iscancel:
-                payload = {
-                    'BDUSS': self.bduss,
-                    '_client_type': "2",
-                    '_client_version': "12.88.1.2",
-                    'agree_type': "5",  # 2点赞 5取消点赞
-                    'cuid': account.cuid_galaxy2,
-                    'forum_id': str(self.forum_id),
-                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
-                    'op_type': "1",  # 0点赞 1取消点赞
-                    'post_id': str(self.first_floor_pid),
-                    'stoken': self.stoken,
-                    'tbs': tbs,
-                    'thread_id': str(self.thread_id),
-                }
-
-                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                    host_type=2)
-                if int(response['error_code']) == 0:
-                    self.agree_num -= 1
-                    self.agree_thread_signal.emit('取消点赞成功。')
-                else:
-                    self.agree_thread_signal.emit(response['error_msg'])
+            if self.user_id == 0:
+                self.agree_thread_signal.emit('不能给匿名用户点赞。')
             else:
-                payload = {
-                    'BDUSS': self.bduss,
-                    '_client_type': "2",
-                    '_client_version': "12.88.1.2",
-                    'agree_type': "2",  # 2点赞 5取消点赞
-                    'cuid': account.cuid_galaxy2,
-                    'forum_id': str(self.forum_id),
-                    'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
-                    'op_type': "0",  # 0点赞 1取消点赞
-                    'post_id': str(self.first_floor_pid),
-                    'stoken': self.stoken,
-                    'tbs': tbs,
-                    'thread_id': str(self.thread_id),
-                }
+                account = aiotieba.Account()  # 实例化account以便计算一些数据
+                # 拿tbs
+                tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
+                    {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
+                                                    use_mobile_header=True, host_type=2)
+                tbs = tsb_resp["anti"]["tbs"]
 
-                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                    host_type=2)
-                if int(response['error_code']) == 0:
-                    self.agree_num += 1
-                    is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
-                    self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
-                elif int(response['error_code']) == 3280001:
-                    self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                if iscancel:
+                    payload = {
+                        'BDUSS': self.bduss,
+                        '_client_type': "2",
+                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                        'agree_type': "5",  # 2点赞 5取消点赞
+                        'cuid': account.cuid_galaxy2,
+                        'forum_id': str(self.forum_id),
+                        'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
+                        'op_type': "1",  # 0点赞 1取消点赞
+                        'post_id': str(self.first_floor_pid),
+                        'stoken': self.stoken,
+                        'tbs': tbs,
+                        'thread_id': str(self.thread_id),
+                    }
+
+                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                        host_type=2)
+                    if int(response['error_code']) == 0:
+                        self.agree_num -= 1
+                        self.agree_thread_signal.emit('取消点赞成功。')
+                    else:
+                        self.agree_thread_signal.emit(response['error_msg'])
                 else:
-                    self.agree_thread_signal.emit(response['error_msg'])
+                    payload = {
+                        'BDUSS': self.bduss,
+                        '_client_type': "2",
+                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                        'agree_type': "2",  # 2点赞 5取消点赞
+                        'cuid': account.cuid_galaxy2,
+                        'forum_id': str(self.forum_id),
+                        'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
+                        'op_type': "0",  # 0点赞 1取消点赞
+                        'post_id': str(self.first_floor_pid),
+                        'stoken': self.stoken,
+                        'tbs': tbs,
+                        'thread_id': str(self.thread_id),
+                    }
+
+                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                        host_type=2)
+                    if int(response['error_code']) == 0:
+                        self.agree_num += 1
+                        is_expa2 = bool(int(response["data"].get("agree", {"is_first_agree": False})["is_first_agree"]))
+                        self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
+                    elif int(response['error_code']) == 3280001:
+                        self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                    else:
+                        self.agree_thread_signal.emit(response['error_msg'])
 
         except Exception as e:
             print(type(e))
@@ -3683,7 +3685,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     payload = {
                         'BDUSS': self.bduss,
                         '_client_type': "2",
-                        '_client_version': "12.88.1.2",
+                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
                         'data': data,
                         'stoken': self.stoken,
                     }
@@ -4149,7 +4151,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
 class ForumItem(QWidget, ba_item.Ui_Form):
     """列表内嵌入的吧组件"""
-    signok = pyqtSignal(str)
+    signok = pyqtSignal(tuple)
 
     def __init__(self, fid, issign, bduss, stoken, fname):
         super().__init__()
@@ -4173,16 +4175,12 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         self.open_ba_detail()
 
     def update_sign_ui(self, isok):
-        if not isok:
-            QMessageBox.information(self, '签到成功', f'{self.forum_name}吧签到成功，经验 +8。')
-            self.pushButton_2.setEnabled(False)
-            self.pushButton_2.setText('已签到')
-        elif isok == '[ALREADY_SIGN]':
-            QMessageBox.information(self, '已经签到过了', f'你已签到过 {self.forum_name}吧，无需再签到。')
+        if isok[0]:
+            QMessageBox.information(self, isok[1], isok[2])
             self.pushButton_2.setEnabled(False)
             self.pushButton_2.setText('已签到')
         else:
-            QMessageBox.critical(self, '签到失败', isok)
+            QMessageBox.critical(self, isok[1], isok[2])
             self.pushButton_2.setEnabled(True)
 
     def sign_async(self):
@@ -4192,19 +4190,46 @@ class ForumItem(QWidget, ba_item.Ui_Form):
 
     def sign(self):
         async def dosign():
-            async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                r = await client.sign_forum(self.forum_id)
-                if r:
-                    result_str = ''
-                else:
-                    if isinstance(r.err, aiotieba.exception.TiebaServerError):
-                        if r.err.code == 160002:
-                            result_str = '[ALREADY_SIGN]'
-                        else:
-                            result_str = f'{r.err.msg} ({r.err.code})'
-                    else:
-                        result_str = str(r.err)
-                self.signok.emit(result_str)
+            turn_data = [False, '签到完成', '']
+
+            tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
+                {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
+                                                use_mobile_header=True,
+                                                host_type=2)
+            tbs = tsb_resp["anti"]["tbs"]
+
+            payload = {
+                'BDUSS': self.bduss,
+                '_client_type': "2",
+                '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                'fid': self.forum_id,
+                'kw': self.forum_name,
+                'stoken': self.stoken,
+                'tbs': tbs,
+            }
+            r = request_mgr.run_post_api('/c/c/forum/sign',
+                                         payloads=request_mgr.calc_sign(payload),
+                                         bduss=self.bduss, stoken=self.stoken,
+                                         use_mobile_header=True,
+                                         host_type=2)
+            if r['error_code'] == '0':
+                user_sign_rank = r['user_info']['user_sign_rank']
+                sign_bonus_point = r['user_info']['sign_bonus_point']
+
+                turn_data[0] = True
+                turn_data[1] = '签到成功'
+                turn_data[
+                    2] = f'{self.forum_name}吧 已签到成功。\n本次签到经验 +{sign_bonus_point}，你是今天本吧第 {user_sign_rank} 个签到的用户。'
+            elif r['error_code'] == '160002':
+                turn_data[0] = True
+                turn_data[1] = '已经签到过了'
+                turn_data[2] = f'你已签到过 {self.forum_name}吧，无需再签到。'
+            else:
+                turn_data[0] = False
+                turn_data[1] = '签到失败'
+                turn_data[2] = f'{r["error_msg"]} (错误代码 {r["error_code"]})'
+
+            self.signok.emit(tuple(turn_data))
 
         def start_async():
             new_loop = asyncio.new_event_loop()
@@ -4930,7 +4955,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                     'st': "5",
                     'tt': "1",
                     'ct': "2",
-                    'cv': "12.87.1.1",
+                    'cv': request_mgr.TIEBA_CLIENT_VERSION,
                     'fname': forum_name,
                     'word': query,
                     'pn': str(self.page[search_area]['page']),
@@ -5002,7 +5027,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                     'st': "5",
                     'tt': "3",
                     'ct': "2",
-                    'cv': "12.87.1.1",
+                    'cv': request_mgr.TIEBA_CLIENT_VERSION,
                     'fname': forum_name,
                     'word': query,
                     'pn': str(self.page[search_area]['page']),
