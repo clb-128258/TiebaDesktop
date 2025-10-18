@@ -99,8 +99,6 @@ def create_data():
                                  'enable_lz_only': False},
         'forum_view_settings': {'default_sort': 0}},
         f'{datapath}/cache_index/fidfname_index.json': {},
-        f'{datapath}/cache_index/user_portraits.json': {},
-        f'{datapath}/cache_index/bd_image_hashes.json': {},
         f'{datapath}/d2id_flag': {'uid': ''}}  # 欲创建的json文件
 
     for i in expect_folder:
@@ -330,7 +328,7 @@ class TiebaMsgSyncer(QObject):
                     if self.bduss and self.stoken:
                         self.load_unread_notice_from_api()
                     else:
-                        time.sleep(20)
+                        time.sleep(5)
                         continue
                 except Exception as e:
                     print('load_unread_notice_from_api error:')

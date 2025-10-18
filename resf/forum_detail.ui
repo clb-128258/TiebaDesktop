@@ -413,6 +413,47 @@ QDialog{background-color: rgb(255, 255, 255);}
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_8">
+      <attribute name="title">
+       <string>头衔对照表</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_13">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QTableWidget" name="tableWidget">
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <column>
+          <property name="text">
+           <string>等级</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>对应头衔</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>所需经验值</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tab_6">
       <attribute name="title">
        <string>吧规</string>
@@ -644,6 +685,9 @@ QDialog{background-color: rgb(255, 255, 255);}
        </property>
        <item row="0" column="0">
         <widget class="QTreeWidget" name="treeWidget">
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
          <column>
           <property name="text">
            <string>用户</string>
