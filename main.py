@@ -526,7 +526,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.notice_syncer = TiebaMsgSyncer()
 
         self.pushButton_3.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
-        self.pushButton_4.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(2))
+        self.pushButton_4.clicked.connect(self.switch_interact_page)
         self.pushButton_2.clicked.connect(self.refresh_recommand)
         self.pushButton_5.clicked.connect(self.open_search_window)
         self.add_info.connect(self._add_uinfo)
@@ -559,6 +559,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         else:
             self.pushButton_4.setStyleSheet('')
             self.pushButton_4.setText('消息')
+
+    def switch_interact_page(self):
+        if self.interactionlist.is_first_show:
+            self.interactionlist.refresh_list()
+            self.interactionlist.is_first_show = False
+        self.stackedWidget.setCurrentIndex(2)
 
     def refresh_recommand(self):
         if self.stackedWidget.currentIndex() == 0:
@@ -596,11 +602,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.flist.stoken = self.user_data['stoken']
         self.interactionlist.bduss = self.user_data['bduss']
         self.interactionlist.stoken = self.user_data['stoken']
+        self.interactionlist.is_first_show = True
         self.notice_syncer.set_account(self.user_data['bduss'], self.user_data['stoken'])
 
         self.recommend.get_recommand_async()
         self.flist.get_bars_async()
-        self.interactionlist.refresh_list()
+        if self.stackedWidget.currentIndex() == 2:
+            self.switch_interact_page()
 
     def open_user_homepage(self, uid):
         user_home_page = UserHomeWindow(self.user_data['bduss'], self.user_data['stoken'], uid)

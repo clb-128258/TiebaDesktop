@@ -330,7 +330,8 @@ class TiebaMsgSyncer(QObject):
                     if self.bduss and self.stoken:
                         self.load_unread_notice_from_api()
                     else:
-                        raise Exception('user has not logged in.')
+                        time.sleep(20)
+                        continue
                 except Exception as e:
                     print('load_unread_notice_from_api error:')
                     print(e)
@@ -1291,6 +1292,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
     is_at_loading = False
     is_agree_loading = False
     latest_agree_id = 0
+    is_first_show = True
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -1874,9 +1876,11 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             self.frame_8.show()
             self.flash_shower.hide()
 
-            # 主信息加载完之后再加载
-            if profile_mgr.current_uid == self.real_user_id:
+            # 查看当前用户主页或未登录时不显示操作按钮
+            if profile_mgr.current_uid == self.real_user_id or not self.bduss:
                 self.pushButton.hide()
+
+            # 主信息加载完之后再加载
             for i in self.page.keys():
                 self.get_list_info_async(i)
 
@@ -1908,9 +1912,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             'desp': '',
                             'bd_user_name': ''}
 
-                    if not self.user_id_portrait:
-                        data['error'] = '无法加载匿名用户的个人主页信息。出现此提示也有可能是程序内部出现错误。'
-                    elif self.user_id_portrait == '00000000':
+                    if self.user_id_portrait in ('00000000', 0):
                         data['error'] = '无法加载匿名用户的个人主页信息。'
                     else:
                         # 获取用户信息
@@ -2222,6 +2224,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.pushButton_7.clicked.connect(lambda: self.show_big_picture(self.forum_atavar_link))
         self.pushButton.clicked.connect(lambda: self.do_action_async('unfollow' if self.is_followed else 'follow'))
         self.pushButton_2.clicked.connect(lambda: self.do_action_async('sign'))
+        self.pushButton_8.clicked.connect(self.refresh_main_data)
 
         self.loading_widget.show()
         self.get_main_info_async()
@@ -2234,6 +2237,11 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     def init_load_flash(self):
         self.loading_widget = LoadingFlashWidget()
         self.loading_widget.cover_widget(self)
+
+    def refresh_main_data(self):
+        self.loading_widget.set_caption(True, '正在重新加载数据...')
+        self.loading_widget.show()
+        self.get_main_info_async()
 
     def save_bg_image(self):
         if self.forum_bg_link:
@@ -2255,12 +2263,9 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     def action_ok_slot(self, data):
         if data['success']:
             QMessageBox.information(self, data['title'], data['text'], QMessageBox.Ok)
+            self.refresh_main_data()
         else:
             QMessageBox.critical(self, data['title'], data['text'], QMessageBox.Ok)
-
-        self.loading_widget.set_caption(True, '正在重新加载数据...')
-        self.loading_widget.show()
-        self.get_main_info_async()
 
     def do_action_async(self, action_type=""):
         run_flag = True
@@ -3201,62 +3206,67 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
     def agree_thread(self, iscancel=False):
         aiotieba.logging.get_logger().info(f'agree reply/comment {self.post_id} in thread {self.thread_id}')
         try:
-            account = aiotieba.Account()  # 实例化account以便计算一些数据
-            # 拿tbs
-            tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
-                {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
-                                                use_mobile_header=True, host_type=2)
-            tbs = tsb_resp["anti"]["tbs"]
-
-            if iscancel:
-                payload = {
-                    'BDUSS': self.bduss,
-                    '_client_type': "2",
-                    '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                    'agree_type': "5",  # 2点赞 5取消点赞
-                    'cuid': account.cuid_galaxy2,
-                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
-                    'op_type': "1",  # 0点赞 1取消点赞
-                    'post_id': str(self.post_id),
-                    'stoken': self.stoken,
-                    'tbs': tbs,
-                    'thread_id': str(self.thread_id),
-                }
-
-                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                    host_type=2)
-                if int(response['error_code']) == 0:
-                    self.agree_num -= 1
-                    self.agree_thread_signal.emit('取消点赞成功。')
-                else:
-                    self.agree_thread_signal.emit(response['error_msg'])
+            if not self.bduss:
+                self.agree_thread_signal.emit('你还没有登录，登录后即可为这条回复点赞。')
+            elif self.portrait == '00000000':
+                self.agree_thread_signal.emit('不能给匿名用户点赞。')
             else:
-                payload = {
-                    'BDUSS': self.bduss,
-                    '_client_type': "2",
-                    '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                    'agree_type': "2",  # 2点赞 5取消点赞
-                    'cuid': account.cuid_galaxy2,
-                    'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
-                    'op_type': "0",  # 0点赞 1取消点赞
-                    'post_id': str(self.post_id),
-                    'stoken': self.stoken,
-                    'tbs': tbs,
-                    'thread_id': str(self.thread_id),
-                }
+                account = aiotieba.Account()  # 实例化account以便计算一些数据
+                # 拿tbs
+                tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
+                    {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
+                                                    use_mobile_header=True, host_type=2)
+                tbs = tsb_resp["anti"]["tbs"]
 
-                response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                    use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                    host_type=2)
-                if int(response['error_code']) == 0:
-                    self.agree_num += 1
-                    is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
-                    self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
-                elif int(response['error_code']) == 3280001:
-                    self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                if iscancel:
+                    payload = {
+                        'BDUSS': self.bduss,
+                        '_client_type': "2",
+                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                        'agree_type': "5",  # 2点赞 5取消点赞
+                        'cuid': account.cuid_galaxy2,
+                        'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
+                        'op_type': "1",  # 0点赞 1取消点赞
+                        'post_id': str(self.post_id),
+                        'stoken': self.stoken,
+                        'tbs': tbs,
+                        'thread_id': str(self.thread_id),
+                    }
+
+                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                        host_type=2)
+                    if int(response['error_code']) == 0:
+                        self.agree_num -= 1
+                        self.agree_thread_signal.emit('取消点赞成功。')
+                    else:
+                        self.agree_thread_signal.emit(response['error_msg'])
                 else:
-                    self.agree_thread_signal.emit(response['error_msg'])
+                    payload = {
+                        'BDUSS': self.bduss,
+                        '_client_type': "2",
+                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                        'agree_type': "2",  # 2点赞 5取消点赞
+                        'cuid': account.cuid_galaxy2,
+                        'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
+                        'op_type': "0",  # 0点赞 1取消点赞
+                        'post_id': str(self.post_id),
+                        'stoken': self.stoken,
+                        'tbs': tbs,
+                        'thread_id': str(self.thread_id),
+                    }
+
+                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
+                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
+                                                        host_type=2)
+                    if int(response['error_code']) == 0:
+                        self.agree_num += 1
+                        is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
+                        self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
+                    elif int(response['error_code']) == 3280001:
+                        self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                    else:
+                        self.agree_thread_signal.emit(response['error_msg'])
 
         except Exception as e:
             print(type(e))
@@ -3576,6 +3586,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def add_post_async(self):
         if not self.lineEdit.text():
             QMessageBox.information(self, '提示', '请输入内容后再回贴。')
+        elif not self.bduss:
+            QMessageBox.information(self, '提示', '目前处于游客状态，请登录后再回贴。')
         else:
             show_string = ('回复功能目前还处于测试阶段。\n'
                            '使用本软件回贴可能会遇到发贴失败等情况，甚至可能导致你的账号被永久全吧封禁。\n'
@@ -3631,7 +3643,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def agree_thread(self, iscancel=False):
         aiotieba.logging.get_logger().info(f'agree thread {self.thread_id}')
         try:
-            if self.user_id == 0:
+            if not self.bduss:
+                self.agree_thread_signal.emit('你还没有登录，登录后即可为贴子点赞。')
+            elif self.user_id == 0:
                 self.agree_thread_signal.emit('不能给匿名用户点赞。')
             else:
                 account = aiotieba.Account()  # 实例化account以便计算一些数据

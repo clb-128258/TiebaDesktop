@@ -22,9 +22,6 @@ class Ui_Dialog(object):
         self.gridLayout_5.setObjectName("gridLayout_5")
         spacerItem = QtWidgets.QSpacerItem(490, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_5.addItem(spacerItem, 1, 0, 1, 1)
-        self.pushButton_5 = QtWidgets.QPushButton(Dialog)
-        self.pushButton_5.setObjectName("pushButton_5")
-        self.gridLayout_5.addWidget(self.pushButton_5, 1, 1, 1, 1)
         self.tabWidget = QtWidgets.QTabWidget(Dialog)
         self.tabWidget.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.tabWidget.setObjectName("tabWidget")
@@ -281,7 +278,13 @@ class Ui_Dialog(object):
         self.label_15.setObjectName("label_15")
         self.gridLayout_4.addWidget(self.label_15, 0, 0, 1, 1)
         self.tabWidget.addTab(self.tab_4, "")
-        self.gridLayout_5.addWidget(self.tabWidget, 0, 0, 1, 2)
+        self.gridLayout_5.addWidget(self.tabWidget, 0, 0, 1, 3)
+        self.pushButton_5 = QtWidgets.QPushButton(Dialog)
+        self.pushButton_5.setObjectName("pushButton_5")
+        self.gridLayout_5.addWidget(self.pushButton_5, 1, 2, 1, 1)
+        self.pushButton_8 = QtWidgets.QPushButton(Dialog)
+        self.pushButton_8.setObjectName("pushButton_8")
+        self.gridLayout_5.addWidget(self.pushButton_8, 1, 1, 1, 1)
 
         self.retranslateUi(Dialog)
         self.tabWidget.setCurrentIndex(0)
@@ -290,7 +293,6 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "吧详情"))
-        self.pushButton_5.setText(_translate("Dialog", "确定"))
         self.pushButton.setText(_translate("Dialog", "关注"))
         self.pushButton_7.setText(_translate("Dialog", "查看吧头像大图"))
         self.groupBox_3.setTitle(_translate("Dialog", "该吧的主要信息"))
@@ -326,3 +328,5 @@ class Ui_Dialog(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("Dialog", "吧务信息"))
         self.label_15.setText(_translate("Dialog", "<html><head/><body><p>很抱歉，出于加载时的性能问题，该功能已被停用。<br/>该页面将在将来的版本中删除。</p><p>你可以到 <a href=\"https://tieba.baidu.com/f/like/furank?kw=xxx&amp;ie=utf-8\"><span style=\" text-decoration: underline; color:#0000ff;\">牛人排行榜</span></a> 中查看吧等级排行榜。</p></body></html>"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("Dialog", "等级排行榜"))
+        self.pushButton_5.setText(_translate("Dialog", "关闭"))
+        self.pushButton_8.setText(_translate("Dialog", "重新加载"))
