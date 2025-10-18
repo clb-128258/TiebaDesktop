@@ -1,6 +1,6 @@
 """核心模块，实现了程序内大部分功能，本程序的主要函数和类均封装在此处"""
 from PyQt5.QtWidgets import QWidget, QDialog, QMessageBox, QListWidgetItem, \
-    QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem
+    QListWidget, QApplication, QMainWindow, QMenu, QAction, QLabel, QFileDialog, QTreeWidgetItem, QTableWidgetItem
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, QEvent, QMimeData, QUrl, QSize, \
     QByteArray, QObject
 from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie
@@ -2210,6 +2210,8 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.forum_id = forum_id
 
         self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
+        self.tableWidget.setEditTriggers(QListWidget.NoEditTriggers)
+        self.tableWidget.verticalHeader().setVisible(False)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_load_flash()
 
@@ -2378,13 +2380,16 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                 self.label_6.setText(f'你已经关注了本吧。' if datas['follow_info'][
                     'isfollow'] else f'你还没有关注{self.forum_name}吧，不妨考虑一下？')
 
-                ts = time.time() - datas["follow_info"]["follow_day"] * 86400
-                timeArray = time.localtime(ts)
-                follow_date_str = time.strftime("%Y年%m月%d日", timeArray)
+                if datas['follow_info']['isfollow']:
+                    ts = time.time() - datas["follow_info"]["follow_day"] * 86400
+                    timeArray = time.localtime(ts)
+                    follow_date_str = time.strftime("(大约是在 %Y年%m月%d日 那天关注的)", timeArray)
+                else:
+                    follow_date_str = ''
                 self.label_7.setText('等级：' + str(datas['follow_info']['level']))
                 self.label_8.setText('等级头衔：' + datas['follow_info']['level_flag'])
                 self.label_25.setText(
-                    f'关注天数：{datas["follow_info"]["follow_day"]} 天 (大约是在 {follow_date_str} 那天关注的)')
+                    f'关注天数：{datas["follow_info"]["follow_day"]} 天 {follow_date_str}')
                 self.label_26.setText(f'总发贴数：{datas["follow_info"]["total_thread_num"]}')
                 self.label_27.setText(f'今日发贴回贴数：{datas["follow_info"]["today_post_num"]}')
 
@@ -2436,6 +2441,16 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                 item.setText(1, str(i['level']))
                 item.setText(2, i['type'])
                 bawu_types[i['type']].addChild(item)
+
+            count = 0
+            for i in datas['forum_level_value_index']:
+                self.tableWidget.insertRow(count)
+                self.tableWidget.setItem(count, 0, QTableWidgetItem(str(count + 1)))
+                self.tableWidget.setItem(count, 1, QTableWidgetItem(i['name']))
+                self.tableWidget.setItem(count, 2, QTableWidgetItem(str(i['score'])))
+                count += 1
+            self.tableWidget.setHorizontalHeaderLabels(('等级', '头衔', '所需经验值'))
+
         else:
             QMessageBox.critical(self, '吧信息加载异常', datas['err_info'], QMessageBox.Ok)
             self.close()
@@ -2443,6 +2458,8 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     def get_main_info_async(self):
         self.treeWidget.clear()
         self.listWidget.clear()
+        self.tableWidget.clear()
+        self.tableWidget.setRowCount(0)
         start_background_thread(self.get_main_info)
 
     def get_main_info(self):
@@ -2457,7 +2474,8 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                             'forget_sign_count': 0, 'follow_day': 0, 'today_sign_rank': 0,
                                             'total_thread_num': 0, 'today_post_num': 0},
                             'forum_volume': '', 'err_info': '', 'friend_forum_list': [],
-                            'bg_pic_info': {'url': '', 'pixmap': None}, 'forum_desp_ex': '', 'forum_rule_html': ''}
+                            'bg_pic_info': {'url': '', 'pixmap': None}, 'forum_desp_ex': '', 'forum_rule_html': '',
+                            'forum_level_value_index': []}
 
                     async def get_forum_desp_ex():
                         payload = {
@@ -2609,6 +2627,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                 resp_mytb_info["data"]['user_forum_info']["thread_num"])
                             data['follow_info']['today_post_num'] = int(
                                 resp_mytb_info["data"]['user_forum_info']["day_post_num"])
+                            data['forum_level_value_index'] = resp_mytb_info["data"]['level_info']["list"]
 
                     async def get_forum_bg():
                         # 获取吧背景图片
