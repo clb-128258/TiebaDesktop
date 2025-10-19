@@ -238,7 +238,7 @@ class QWebView2View(QWidget):
     fullScreenRequested = pyqtSignal(bool)
     iconChanged = pyqtSignal(QIcon)
 
-    __newtabSignal = pyqtSignal(str)
+    newtabSignal = pyqtSignal(str)
     __setparentsignal = pyqtSignal()
     __render_completed = False
     __webview = None
@@ -253,7 +253,7 @@ class QWebView2View(QWidget):
         super().__init__()
         self.__profile = None
         self.__set_background()
-        self.__newtabSignal.connect(self.createWindow)
+        self.newtabSignal.connect(self.createWindow)
         self.__setparentsignal.connect(self.__set_parent)
 
     def resizeEvent(self, a0):
@@ -271,7 +271,6 @@ class QWebView2View(QWidget):
     def createWindow(self, newPageUrl: str):
         """在 handle_newtab_byuser 特性启用时，应当在此处重写新页面事件。"""
         pass
-        self.load(newPageUrl)
 
     def destroyWebview(self):
         """销毁 WebView 实例。"""
@@ -626,7 +625,7 @@ class QWebView2View(QWidget):
             args.Handled = False
         else:
             args.Handled = True
-            self.__newtabSignal.emit(args.Uri)
+            self.newtabSignal.emit(args.Uri)
 
     def __on_window_close(self, _, args):
         self.windowCloseRequested.emit()

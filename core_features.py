@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QLocale, QTranslator, QPoint, Q
 from PyQt5.QtGui import QPixmap, QIcon, QPixmapCache, QCursor, QDrag, QImage, QTransform, QMovie
 from ui import follow_ba, ba_item, tie_preview, ba_head, sign, tie_detail_view, comment_view, reply_comments, \
     thread_video_item, forum_detail, user_home_page, image_viewer, reply_at_me_page, star_list, settings, user_item, \
-    login_by_bduss, forum_search, loading_amt, user_blacklist_setter, thread_voice_item, agreed_item
+    login_by_bduss, forum_search, loading_amt, user_blacklist_setter, thread_voice_item, agreed_item, tb_browser
 
 import sys
 import platform
@@ -29,6 +29,7 @@ import cache_mgr
 import shutil
 import audio_stream_player
 import queue
+import yarl
 
 # 引入protobuf
 from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
@@ -97,7 +98,8 @@ def create_data():
     expect_json = {f'{datapath}/config.json': {
         'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1, 'default_sort': 0,
                                  'enable_lz_only': False},
-        'forum_view_settings': {'default_sort': 0}},
+        'forum_view_settings': {'default_sort': 0},
+        'web_browser_settings': {'url_open_policy': 0}},
         f'{datapath}/cache_index/fidfname_index.json': {},
         f'{datapath}/d2id_flag': {'uid': ''}}  # 欲创建的json文件
 
@@ -221,15 +223,45 @@ def filesize_tostr(size: int):
         return f'{round(size / 1024 ** 4, 2)} TB'
 
 
-def open_url_in_browser(url):
-    """在系统默认浏览器内打开网页"""
-    shell = ''
-    # 针对不同系统进行识别
-    if os.name == 'nt':
-        shell = f'start \"\" \"{url}\"'
-    elif os.name == 'posix':
-        shell = f'xdg-open {url}'
-    start_background_thread(lambda sh: subprocess.call(sh, shell=True), (shell,))
+def open_url_in_browser(url, always_os_browser=False):
+    """在浏览器内打开网页"""
+
+    def open_in_system():
+        shell = ''
+        # 针对不同系统进行识别
+        if os.name == 'nt':
+            shell = f'start \"\" \"{url}\"'
+        elif os.name == 'posix':
+            shell = f'xdg-open {url}'
+        start_background_thread(lambda sh: subprocess.call(sh, shell=True), (shell,))
+
+    def open_in_webview():
+        browser = TiebaWebBrowser()
+        qt_window_mgr.add_window(browser)
+        browser.add_new_page(url)
+
+    url_list = (
+        'http://tieba.baidu.com',
+        'https://tieba.baidu.com',
+        'http://tiebac.baidu.com',
+        'https://tiebac.baidu.com',
+        'http://c.tieba.baidu.com',
+        'https://c.tieba.baidu.com')
+    is_http = url.startswith((request_mgr.SCHEME_HTTP, request_mgr.SCHEME_HTTPS))
+    is_tieba_link = url.startswith(url_list)
+
+    if always_os_browser or not is_http:  # 手动指定强制使用系统浏览器，或是非http协议时
+        open_in_system()  # 在系统内打开
+    else:
+        policy = profile_mgr.local_config['web_browser_settings']['url_open_policy']
+        if policy == 0:  # 策略为始终在内置浏览器打开
+            open_in_webview()
+        elif policy == 1 and is_tieba_link:  # 策略为只打开贴吧链接，且当前链接为贴吧链接
+            open_in_webview()
+        elif policy == 1 and not is_tieba_link:  # 策略为只打开贴吧链接，但当前链接不是贴吧链接
+            open_in_system()
+        elif policy == 2:  # 策略为不使用内置浏览器
+            open_in_system()
 
 
 def timestamp_to_string(ts: int):
@@ -969,6 +1001,263 @@ class ThreadPictureLabel(QLabel):
         path, type_ = QFileDialog.getSaveFileName(self, '选择图片保存位置', '', 'JPEG 图片 (*.jpg;*.jpeg)')
         if path:
             start_background_thread(http_downloader, (path, self.src_addr))
+
+
+class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
+    """贴吧页面内置浏览器"""
+
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.toolButton.setIcon(QIcon('ui/back.png'))
+        self.toolButton_2.setIcon(QIcon('ui/forward.png'))
+        self.toolButton_3.setIcon(QIcon('ui/refresh.png'))
+        self.toolButton_5.setIcon(QIcon('ui/os_browser.png'))
+        self.default_profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
+                                                       enable_link_hover_text=False,
+                                                       enable_zoom_factor=True, enable_error_page=True,
+                                                       enable_context_menu=True, enable_keyboard_keys=True,
+                                                       handle_newtab_byuser=True)
+
+        self.tabWidget.tabCloseRequested.connect(self.remove_widget)
+        self.tabWidget.currentChanged.connect(self.on_tab_changed)
+        self.lineEdit.returnPressed.connect(self.load_new_page)
+        self.toolButton.clicked.connect(self.button_back)
+        self.toolButton_2.clicked.connect(self.button_forward)
+        self.toolButton_3.clicked.connect(self.button_refresh)
+        self.toolButton_5.clicked.connect(self.button_os_browser)
+        self.toolButton_4.clicked.connect(self.init_more_menu)
+
+    def closeEvent(self, a0):
+        a0.accept()
+        while self.tabWidget.count() != 0:
+            self.remove_widget(0)
+        qt_window_mgr.del_window(self)
+
+    def keyPressEvent(self, a0):
+        if a0.modifiers() == Qt.ControlModifier and a0.key() == Qt.Key_W:
+            self.remove_widget(self.tabWidget.currentIndex())
+
+    def open_in_tieba(self, url):
+        def open_ba_detail(fname):
+            async def get_fid():
+                try:
+                    async with aiotieba.Client(proxy=True) as client:
+                        fid = await client.get_fid(fname)
+                        return fid
+                except:
+                    return 0
+
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            fid = asyncio.run(get_fid())
+
+            forum_window = ForumShowWindow(profile_mgr.current_bduss, profile_mgr.current_stoken, int(fid))
+            qt_window_mgr.add_window(forum_window)
+            forum_window.load_info_async()
+            forum_window.get_threads_async()
+
+        def open_thread(tid):
+            third_party_thread = ThreadDetailView(profile_mgr.current_bduss, profile_mgr.current_stoken, int(tid))
+            qt_window_mgr.add_window(third_party_thread)
+
+        def open_user_homepage(uid):
+            user_home_page = UserHomeWindow(profile_mgr.current_bduss, profile_mgr.current_stoken, uid)
+            qt_window_mgr.add_window(user_home_page)
+
+        if url.startswith('user://'):
+            user_sign = url.replace('user://', '')
+            # 判断是不是portrait
+            if not user_sign.startswith('tb.'):
+                open_user_homepage(int(user_sign))
+            else:
+                open_user_homepage(user_sign)
+        elif url.startswith('tieba_thread://'):
+            open_thread(url.replace('tieba_thread://', ''))
+        elif url.startswith('tieba_forum_namely://'):
+            open_ba_detail(url.replace('tieba_forum_namely://', ''))
+        else:
+            print(url, 'is not a tieba link')
+
+    def parse_weburl_to_tburl(self):
+        tb_url = ''
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            if widget.isRenderInitOk():
+                url = widget.url()
+                tb_thread_urls = ('http://tieba.baidu.com/p/', 'https://tieba.baidu.com/p/',)
+                tb_forum_urls = ('http://tieba.baidu.com/f', 'https://tieba.baidu.com/f',)
+                tb_homepage_urls = ('http://tieba.baidu.com/home/main/?id=', 'https://tieba.baidu.com/home/main/?id=',)
+                if url.startswith(tb_thread_urls):
+                    thread_id = url.split('?')[0].split('/')[-1]
+                    tb_url = f'tieba_thread://{thread_id}'
+                elif url.startswith(tb_forum_urls):
+                    forum_name = yarl.URL(url).query['kw']
+                    tb_url = f'tieba_forum_namely://{forum_name}'
+                elif url.startswith(tb_homepage_urls):
+                    portrait = yarl.URL(url).query['id']
+                    tb_url = f'user://{portrait}'
+
+        return tb_url
+
+    def init_more_menu(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            if widget.isRenderInitOk():
+                menu = QMenu()
+
+                jump_url = self.parse_weburl_to_tburl()
+                jump_to_tbd = QAction('在贴吧桌面中打开此页面', self)
+                jump_to_tbd.triggered.connect(lambda: self.open_in_tieba(jump_url))
+                menu.addAction(jump_to_tbd)
+                if not jump_url:
+                    jump_to_tbd.setVisible(False)
+
+                menu.addSeparator()
+
+                current_zoom = QAction(f'当前网页缩放 {int(widget.zoomFactor() * 100)}%', self)
+                current_zoom.setEnabled(False)
+                menu.addAction(current_zoom)
+
+                zoom_bigger = QAction('增加 10% 缩放', self)
+                zoom_bigger.triggered.connect(lambda: widget.setZoomFactor(widget.zoomFactor() + 0.1))
+                menu.addAction(zoom_bigger)
+
+                zoom_smaller = QAction('减小 10% 缩放', self)
+                zoom_smaller.triggered.connect(lambda: widget.setZoomFactor(widget.zoomFactor() - 0.1))
+                menu.addAction(zoom_smaller)
+
+                menu.addSeparator()
+
+                print_page = QAction('打印网页', self)
+                print_page.triggered.connect(widget.openPrintDialog)
+                menu.addAction(print_page)
+
+                downloads = QAction('下载记录', self)
+                downloads.triggered.connect(widget.openDefaultDownloadDialog)
+                menu.addAction(downloads)
+
+                taskmgr = QAction('任务管理器', self)
+                taskmgr.triggered.connect(widget.openChromiumTaskmgrWindow)
+                menu.addAction(taskmgr)
+
+                devtools = QAction('开发者工具', self)
+                devtools.triggered.connect(widget.openDevtoolsWindow)
+                menu.addAction(devtools)
+
+                bt_pos = self.toolButton_4.mapToGlobal(QPoint(0, 0))
+                menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.toolButton_4.height()))
+
+    def button_back(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            widget.back()
+
+    def button_forward(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            widget.forward()
+
+    def button_refresh(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            widget.reload()
+
+    def button_os_browser(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            open_url_in_browser(widget.url(), True)
+
+    def load_new_page(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            url = self.lineEdit.text()
+            if not url.startswith(('http://', 'https://')):
+                url = 'http://' + url
+            widget.load(url)
+
+    def on_tab_changed(self):
+        self.reset_url_text()
+        self.reset_main_title()
+
+    def reset_main_title(self):
+        widget = self.tabWidget.currentWidget()
+        if widget:
+            self.setWindowIcon(widget.windowIcon())
+            self.setWindowTitle(cut_string(widget.windowTitle(), 20) + ' - 贴吧桌面')
+
+    def reset_url_text(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View):
+            self.lineEdit.setText(widget.url())
+
+    def handle_fullscreen(self, is_fullscreen):
+        if is_fullscreen:
+            self.showFullScreen()
+            self.frame.hide()
+            self.tabWidget.tabBar().hide()
+        else:
+            self.showNormal()
+            self.frame.show()
+            self.tabWidget.tabBar().show()
+
+    def add_new_page(self, url):
+        def stop_ani():
+            webview.show_movie.stop()
+            webview.setWindowIcon(webview.icon())
+            webview.setWindowTitle(webview.title())
+
+        webview2.loadLibs()
+
+        webview = webview2.QWebView2View()
+        webview.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        webview.setWindowTitle('正在加载...')
+
+        webview.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
+        webview.show_movie.setScaledSize(QSize(50, 50))
+        webview.show_movie.frameChanged.connect(
+            lambda: webview.setWindowIcon(QIcon(webview.show_movie.currentPixmap())))
+
+        webview.titleChanged.connect(webview.setWindowTitle)
+        webview.iconChanged.connect(webview.setWindowIcon)
+        webview.fullScreenRequested.connect(self.handle_fullscreen)
+        webview.windowCloseRequested.connect(lambda: self.remove_widget(self.tabWidget.indexOf(webview)))
+        webview.newtabSignal.connect(self.add_new_page)
+        webview.loadStarted.connect(webview.show_movie.start)
+        webview.loadStarted.connect(lambda: webview.setWindowTitle('正在加载...'))
+        webview.loadFinished.connect(stop_ani)
+        webview.urlChanged.connect(self.reset_url_text)
+        webview.setProfile(self.default_profile)
+        webview.loadAfterRender(url)
+
+        self.add_new_widget(webview)
+        webview.initRender()
+
+    def add_new_widget(self, widget: QWidget):
+        self.tabWidget.addTab(widget, widget.windowIcon(), widget.windowTitle())
+        widget.windowIconChanged.connect(lambda icon: self.tabWidget.setTabIcon(self.tabWidget.indexOf(widget), icon))
+        widget.windowTitleChanged.connect(
+            lambda title: self.tabWidget.setTabText(self.tabWidget.indexOf(widget), cut_string(title, 20)))
+        widget.windowTitleChanged.connect(
+            lambda title: self.tabWidget.setTabToolTip(self.tabWidget.indexOf(widget), title))
+        widget.windowIconChanged.connect(self.reset_main_title)
+        widget.windowTitleChanged.connect(self.reset_main_title)
+
+        self.tabWidget.setCurrentWidget(widget)
+
+    def remove_widget(self, index: int):
+        widget = self.tabWidget.widget(index)
+        self.tabWidget.removeTab(index)
+        if isinstance(widget, webview2.QWebView2View):
+            widget.destroyWebview()
+            widget.show_movie.stop()
+        widget.deleteLater()
+        del widget
+
+        if self.tabWidget.count() == 0:
+            self.close()
 
 
 class AgreedThreadsList(QDialog, star_list.Ui_Dialog):

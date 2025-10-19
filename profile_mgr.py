@@ -5,6 +5,8 @@ import consts
 video_webview_show_html = ''
 local_config = {}
 current_uid = 'default'
+current_bduss = ''
+current_stoken = ''
 
 
 def load_show_html() -> str:

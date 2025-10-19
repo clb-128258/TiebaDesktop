@@ -1,4 +1,5 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
+import profile_mgr
 import proxytool
 from core_features import *
 from ui import mainwindow
@@ -170,6 +171,19 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton.clicked.connect(self.clear_account_list)
         self.pushButton_5.clicked.connect(self.save_local_config)
         self.pushButton_8.clicked.connect(self.clear_pics)
+        self.pushButton_7.clicked.connect(self.clear_webview_cache)
+        self.pushButton_9.clicked.connect(self.clear_webview_cookies)
+        self.pushButton_6.clicked.connect(self.save_local_config)
+
+        webview2.loadLibs()
+        self.webview = webview2.QWebView2View()
+        self.webview.setProfile(
+            webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
+        self.webview.initRender()
+
+    def closeEvent(self, a0):
+        a0.accept()
+        self.webview.destroyWebview()
 
     def init_login_button_menu(self):
         menu = QMenu()
@@ -191,6 +205,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         profile_mgr.local_config['thread_view_settings']['default_sort'] = self.comboBox.currentIndex()
         profile_mgr.local_config['forum_view_settings']['default_sort'] = self.comboBox_2.currentIndex()
         profile_mgr.local_config['thread_view_settings']['enable_lz_only'] = self.checkBox_3.isChecked()
+        profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
         profile_mgr.save_local_config()
         QMessageBox.information(self, '提示', '设置保存成功。', QMessageBox.Ok)
 
@@ -266,6 +281,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
         self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
         self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
+        self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
 
     def get_logon_accounts(self):
         # 清空数据
@@ -326,12 +342,29 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 except PermissionError:
                     continue
 
-            cache_mgr.portrait_cache_dict = {}
-            cache_mgr.save_portrait_pf()
-            cache_mgr.bd_hash_cache_dict = {}
-            cache_mgr.save_bdhash_pf()
             QMessageBox.information(self, '提示', '图片缓存清理成功。', QMessageBox.Ok)
             self.get_pic_size()
+
+    def clear_webview_cache(self):
+        if QMessageBox.warning(self, '警告', '确认要清空浏览器缓存数据吗？',
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            try:
+                self.webview.clearCacheData()
+            except:
+                QMessageBox.critical(self, '错误', '浏览器缓存清理失败。', QMessageBox.Ok)
+            else:
+                QMessageBox.information(self, '提示', '浏览器缓存清理成功。', QMessageBox.Ok)
+
+    def clear_webview_cookies(self):
+        if QMessageBox.warning(self, '警告',
+                               '清空 Cookies 会导致你的贴吧账号在浏览器内退出登录，其它网站亦是如此。此操作不可撤销。确认要清空浏览器 Cookies 数据吗？',
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            try:
+                self.webview.clearCookies()
+            except:
+                QMessageBox.critical(self, '错误', '浏览器 Cookies 数据清理失败。', QMessageBox.Ok)
+            else:
+                QMessageBox.information(self, '提示', '浏览器 Cookies 数据清理成功。', QMessageBox.Ok)
 
 
 class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
@@ -756,12 +789,17 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                         break
 
             if not self.user_data['bduss']:
+                profile_mgr.current_uid = 'default'
+                profile_mgr.current_stoken = ''
+                profile_mgr.current_bduss = ''
                 pixmap = QPixmap('ui/default_user_image.png')
                 pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.add_info.emit([pixmap, '未登录'])
             else:
                 # 获取用户信息
                 profile_mgr.current_uid = self.user_data['uid']
+                profile_mgr.current_bduss = self.user_data['bduss']
+                profile_mgr.current_stoken = self.user_data['stoken']
                 name = self.user_data['name']
                 self.self_user_portrait = self.user_data['portrait']
 
