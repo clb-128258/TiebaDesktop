@@ -182,8 +182,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.webview.initRender()
 
     def closeEvent(self, a0):
-        a0.accept()
         self.webview.destroyWebview()
+        a0.accept()
 
     def init_login_button_menu(self):
         menu = QMenu()
