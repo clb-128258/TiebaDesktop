@@ -1,11 +1,5 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-import profile_mgr
-import proxytool
 from core_features import *
-from ui import mainwindow
-
-requests.session().trust_env = True
-requests.session().verify = False
 
 
 def excepthook(type, value, traceback):
@@ -812,6 +806,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 if __name__ == "__main__":
     sys.excepthook = excepthook
 
+    locale.setlocale(locale.LC_CTYPE, 'chinese')
     create_data()
     init_log()
     proxytool.set_proxy()

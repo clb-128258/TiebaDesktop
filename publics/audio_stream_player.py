@@ -107,7 +107,8 @@ class HttpMp3Player(QObject):
             cmd,
             stdout=subprocess.PIPE,
             stderr=sys.stderr if self.enable_ffmpeg_logging else subprocess.DEVNULL,
-            bufsize=1024
+            bufsize=1024,
+            creationflags=subprocess.CREATE_NO_WINDOW
         )
 
         try:
