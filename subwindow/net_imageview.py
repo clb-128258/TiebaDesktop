@@ -7,6 +7,7 @@ from PyQt5.QtCore import pyqtSignal, QEvent, Qt, QMimeData, QUrl, QByteArray, QS
 from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
 from PyQt5.QtWidgets import QWidget, QApplication, QMenu, QAction, QFileDialog, QMessageBox
 
+import publics.logging as logging
 from publics import request_mgr
 from ui import image_viewer
 
@@ -159,8 +160,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
                     if self.originalImage.loadFromData(response.content):
                         success_flag = True
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
             finally:
                 self.finishDownload.emit(success_flag)
 

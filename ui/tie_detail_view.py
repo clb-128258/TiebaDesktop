@@ -202,6 +202,7 @@ class Ui_Form(object):
         font.setFamily("微软雅黑")
         font.setPointSize(11)
         self.label_9.setFont(font)
+        self.label_9.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.label_9.setStyleSheet("QLabel{\n"
 "    color: rgb(255, 255, 255);\n"
 "    background-color: rgb(101, 211, 171);\n"
@@ -347,7 +348,7 @@ class Ui_Form(object):
         self.label_11.setText(_translate("Form", "吧务"))
         self.label_10.setToolTip(_translate("Form", "该用户的贴吧成长等级"))
         self.label_10.setText(_translate("Form", "Lv.1"))
-        self.label_9.setToolTip(_translate("Form", "该用户的吧等级"))
+        self.label_9.setToolTip(_translate("Form", "该用户的吧等级，点击可查看头衔对照表"))
         self.label_9.setText(_translate("Form", "Lv.1"))
         self.label_2.setText(_translate("Form", "你已经到达了贴子的尽头"))
         self.label_5.setText(_translate("Form", "数据加载中..."))

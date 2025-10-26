@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetIte
 from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string
+import publics.logging as logging
 from ui import tie_detail_view
 
 
@@ -79,15 +80,19 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.pushButton_3.clicked.connect(self.add_post_async)
         self.label_3.installEventFilter(self)  # 重写事件过滤器
         self.label_4.installEventFilter(self)  # 重写事件过滤器
+        self.label_9.installEventFilter(self)  # 重写事件过滤器
 
         self.flash_shower.show()
         self.get_thread_head_info_async()
         self.get_sub_thread_async()
 
     def eventFilter(self, source, event):
-        if event.type() == QEvent.Type.MouseButtonRelease and source in (
-                self.label_3, self.label_4):
-            self.open_user_homepage(self.user_id)
+        if event.type() == QEvent.Type.MouseButtonRelease:
+            if source in (self.label_3, self.label_4):
+                self.open_user_homepage(self.user_id)
+            elif source == self.label_9:
+                self.open_forum_detail_page()
+
         return super(ThreadDetailView, self).eventFilter(source, event)  # 照常处理事件
 
     def closeEvent(self, a0):
@@ -153,6 +158,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
         qt_window_mgr.add_window(user_home_page)
 
+    def open_forum_detail_page(self):
+        from subwindow.forum_detail import ForumDetailWindow
+        forum_detail_page = ForumDetailWindow(self.bduss, self.stoken, self.forum_id, 2)
+        qt_window_mgr.add_window(forum_detail_page)
+
     def handle_link_event(self, url):
         open_url_in_browser(url)
 
@@ -190,7 +200,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def add_post(self):
         async def dopost():
             try:
-                aiotieba.logging.get_logger().info(f'post thread {self.thread_id}')
+                logging.log_INFO(f'post thread {self.thread_id}')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     result = await client.add_post(self.forum_id, self.thread_id, self.lineEdit.text())
                     if result:
@@ -198,8 +208,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     else:
                         self.add_post_signal.emit(str(result.err))
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 self.add_post_signal.emit('程序内部出错，请重试')
 
         def start_async():
@@ -222,7 +231,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         start_background_thread(self.agree_thread, (is_cancel,))
 
     def agree_thread(self, iscancel=False):
-        aiotieba.logging.get_logger().info(f'agree thread {self.thread_id}')
+        logging.log_INFO(f'agree thread {self.thread_id}')
         try:
             if not self.bduss:
                 self.agree_thread_signal.emit('你还没有登录，登录后即可为贴子点赞。')
@@ -310,7 +319,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
     def store_thread(self, current_post_id: int, is_cancel=False, floor=-1):
         async def dosign():
-            aiotieba.logging.get_logger().info(f'store thread {self.thread_id}')
+            logging.log_INFO(f'store thread {self.thread_id}')
             try:
                 if not is_cancel:
                     # 客户端收藏接口
@@ -348,8 +357,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     else:
                         self.store_thread_signal.emit(result['error'])
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 self.store_thread_signal.emit('程序内部出错，请重试')
 
         def start_async():
@@ -440,7 +448,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
     def get_sub_thread(self):
         async def dosign():
-            aiotieba.logging.get_logger().info(f'loading thread {self.thread_id} replies list page {self.reply_page}')
+            logging.log_INFO(f'loading thread {self.thread_id} replies list page {self.reply_page}')
             self.is_getting_replys = True
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
@@ -463,7 +471,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         self.reply_page = -1
                         self.show_reply_end_text.emit(1)
                     else:
-                        aiotieba.logging.get_logger().info(
+                        logging.log_INFO(
                             f'itering thread {self.thread_id} replies list page {self.reply_page}')
                         for t in thread_info.objs:
                             if t.floor == 1:  # 跳过第一楼
@@ -515,7 +523,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
                             self.add_reply.emit(tdata)
 
-                        aiotieba.logging.get_logger().info(
+                        logging.log_INFO(
                             f'load thread {self.thread_id} replies list page {self.reply_page} ok')
 
                         if sort_type == aiotieba.PostSortType.DESC:  # 在倒序查看时要递减页数
@@ -527,8 +535,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             self.show_reply_end_text.emit(0)
 
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 if not isinstance(e, RuntimeError):
                     self.show_reply_end_text.emit(2)
             finally:
@@ -594,7 +601,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
                 qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255);}'
             elif 10 <= datas['uf_level'] <= 15:  # 黄牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(253, 194, 53);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(255, 172, 29);}'
             elif datas['uf_level'] >= 16:  # 橙牌老东西
                 qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48);}'
 
@@ -662,7 +669,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         async def dosign():
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    aiotieba.logging.get_logger().info(f'loading thread {self.thread_id} main info')
+                    logging.log_INFO(f'loading thread {self.thread_id} main info')
                     thread_info = await client.get_posts(self.thread_id)
                     if thread_info.err:
                         if isinstance(thread_info.err,
@@ -776,12 +783,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                  'post_num': post_num,  # 回贴数
                                  'repost_info': repost_info}  # 转发贴信息
 
-                        aiotieba.logging.get_logger().info(
+                        logging.log_INFO(
                             f'load thread {self.thread_id} main info ok, send to qt side')
                         self.head_data_signal.emit(tdata)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         def start_async():
             new_loop = asyncio.new_event_loop()

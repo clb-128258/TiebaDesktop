@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetIte
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr
 from publics.funcs import LoadingFlashWidget, ExtListWidgetItem, start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string
+import publics.logging as logging
 
 from ui import user_home_page
 
@@ -151,7 +152,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         async def doaction():
             turn_data = {'success': False, 'title': '', 'text': ''}
             try:
-                aiotieba.logging.get_logger().info(f'do user {self.user_id_portrait} action type {action_type}')
+                logging.log_INFO(f'do user {self.user_id_portrait} action type {action_type}')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     if action_type == 'follow':
                         r = await client.follow_user(self.user_id_portrait)
@@ -194,8 +195,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             turn_data['title'] = '取消禁言失败'
                             turn_data['text'] = f'{r.err}'
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 turn_data['success'] = False
                 turn_data['title'] = '程序内部错误'
                 turn_data['text'] = str(e)
@@ -353,8 +353,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     self.set_head_info_signal.emit(data)
 
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 self.set_head_info_signal.emit({'error': '程序内部出错，请重试。'})
 
         def start_async():
@@ -417,11 +416,13 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             item = QListWidgetItem()
             widget = ForumItem(datas['forum_id'], True, self.bduss, self.stoken, datas['forum_name'])
             widget.pushButton_2.hide()
-            widget.set_info(datas['forum_pixmap'], datas['forum_name'] + '吧',
-                            '{cfollow_info}[等级 {level}，经验值 {exp}] {desp}'.format(
-                                cfollow_info='[共同关注] ' if datas['is_common_follow'] else '',
-                                level=datas['level'], exp=datas['exp'],
-                                desp=datas['forum_desp']))
+            widget.set_info(datas['forum_pixmap'],
+                            datas['forum_name'] + '吧',
+                            datas['forum_desp'],
+                            'Lv.{level} | 经验值 {exp}'.format(
+                                level=datas['level'],
+                                exp=datas['exp'])
+                            )
             widget.set_level_color(datas['level'])
             item.setSizeHint(widget.size())
             self.listWidget.addItem(item)
@@ -585,8 +586,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
                             self.set_list_info_signal.emit((type_, data))
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
             else:
                 self.page[type_]['page'] += 1
             finally:

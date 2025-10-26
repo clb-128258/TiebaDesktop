@@ -1,7 +1,7 @@
 import asyncio
 import gc
 
-import aiotieba
+import publics.logging as logging
 import requests
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
@@ -102,7 +102,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
         async def run_func():
             try:
                 self.isloading = True
-                aiotieba.logging.get_logger().info(f'loading userAgreedThreadsList page {self.page}')
+                logging.log_INFO(f'loading userAgreedThreadsList page {self.page}')
                 payload = {
                     'BDUSS': self.bduss,
                     'stoken': self.stoken,
@@ -182,10 +182,9 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
 
                     self.add_thread.emit(data)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
             else:
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'load userAgreedThreadsList page {self.page} successful')
                 if not resp['data']['has_more']:
                     self.page = -1

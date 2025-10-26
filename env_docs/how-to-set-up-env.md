@@ -24,6 +24,11 @@ pip install -r project/env_docs/requirements.txt   // 安装依赖
 安装完依赖后，把 project/env_docs/aiotieba-fix-files 下的所有文件（不包括这个文件夹本身）全都复制到
 project/venv/Lib/site-packages/aiotieba 中，并用前者中的文件**替换**掉后者中出现冲突的文件。
 
+## 配置 ffmpeg
+
+下载 ffmpeg 的二进制文件（具体下载方法请自行搜索，这里不做过多说明），并使用下载到的 ffmpeg.exe 替换掉项目中的的占位文件
+project/ffmpeg/ffmpeg.exe。
+
 至此，本项目的环境全部配置完成。
 
 ## 最后一步 - 运行！

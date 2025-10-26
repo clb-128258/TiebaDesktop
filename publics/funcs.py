@@ -1,7 +1,5 @@
 import asyncio
 import os
-import pathlib
-import platform
 import queue
 import subprocess
 import threading
@@ -18,17 +16,10 @@ import aiotieba
 import json
 
 from publics import aes, profile_mgr, request_mgr, qt_window_mgr, cache_mgr
+import publics.logging as logging
 from ui import loading_amt, user_item
 
 datapath = consts.datapath
-
-
-def init_log():
-    """初始化日志系统"""
-    if consts.enable_log_file:
-        aiotieba.logging.enable_filelog(aiotieba.logging.logging.INFO, pathlib.Path(f'{datapath}/logs'))
-    aiotieba.logging.get_logger().info(
-        f'TiebaDesktop started, App version {consts.APP_VERSION_STR} ({consts.APP_VERSION_NUM}), System {platform.system()} {platform.version()}')
 
 
 def cut_string(text: str, length: int, moretext: str = '...'):
@@ -67,7 +58,7 @@ def load_json_secret(filename):
 
 def create_data():
     """识别用户的电脑上是否存在用户数据，如不存在则创建"""
-    aiotieba.logging.get_logger().info('Creating user data')
+    logging.log_INFO('Creating user data')
     global datapath
     expect_folder = [datapath, f'{datapath}/webview_data', f'{datapath}/logs', f'{datapath}/image_caches',
                      f'{datapath}/cache_index', f'{datapath}/webview_data/default']  # 欲创建的文件夹
@@ -170,18 +161,18 @@ def http_downloader(path, src):
         path (str): 文件在本地的保存路径
         src (str): 源文件url
     """
-    aiotieba.logging.get_logger().info(f'start download {src} to local file {path}.')
+    logging.log_INFO(f'start download {src} to local file {path}.')
     resp = requests.get(src, headers=request_mgr.header, stream=True)
     if resp.status_code == 200:
-        aiotieba.logging.get_logger().info(f'server returned status code 200, start to write data.')
+        logging.log_INFO(f'server returned status code 200, start to write data.')
         f = open(path + '.crdownload', 'wb')
         for i in resp.iter_content(chunk_size=128 * 1024):
             f.write(i)
         f.close()
         os.rename(path + '.crdownload', path)  # 改回最终文件格式
-        aiotieba.logging.get_logger().info(f'file write finish, download OK.')
+        logging.log_INFO(f'file write finish, download OK.')
     else:
-        aiotieba.logging.get_logger().info(f'can not download file because http {resp.status_code} error.')
+        logging.log_INFO(f'can not download file because http {resp.status_code} error.')
 
 
 def filesize_tostr(size: int):
@@ -311,107 +302,6 @@ def timestamp_to_string(ts: int):
         timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
 
     return timestr
-
-
-class UnreadMessageType:
-    """未读消息数类型"""
-    BOOKMARK = "bookmark"  # 收藏
-    TOTAL_COUNT = "count"  # 总通知数量
-    NEW_FANS = "fans"  # 新粉丝
-    REPLY = "replyme"  # 回复我的
-    AT = "atme"  # @我的
-    AGREE = "agree"  # 点赞我的
-    OFFICIAL_SYSTEM_NOTIFICATION = "pletter"  # 系统通知（例如贴子被系统删）
-
-
-class TiebaMsgSyncer(QObject):
-    """
-    贴吧用户状态同步器
-
-    Args:
-        bduss (str): 该用户的bduss
-        stoken (str): 该用户的stoken
-    """
-
-    unread_msg_counts: dict = {}
-    noticeCountChanged = pyqtSignal()
-    is_running = False
-
-    def __init__(self, bduss: str = "", stoken: str = ""):
-        super().__init__()
-        self.set_account(bduss, stoken)
-        self.event_queue = queue.Queue()
-
-    def set_account(self, bduss: str, stoken: str):
-        """重新设置账户"""
-        self.bduss = bduss
-        self.stoken = stoken
-
-    def start_sync(self):
-        """开始状态同步"""
-        if not self.is_running:
-            self.sync_thread = start_background_thread(self.unread_notice_sync_thread)
-
-    def stop_sync(self):
-        """停止状态同步"""
-        if self.is_running:
-            self.event_queue.put('stop')
-
-    def have_basic_unread_notice(self):
-        """当前是否存在未读的点赞、回复、@通知"""
-        return self.get_unread_notice_count(UnreadMessageType.AGREE) + self.get_unread_notice_count(
-            UnreadMessageType.AT) + self.get_unread_notice_count(UnreadMessageType.REPLY) != 0
-
-    def have_unread_notice(self):
-        """当前是否存在未读通知"""
-        return self.get_unread_notice_count(UnreadMessageType.TOTAL_COUNT) != 0
-
-    def get_unread_notice_count(self, msg_type):
-        """获取某个类型的未读通知数"""
-        return self.unread_msg_counts.get(msg_type, 0)
-
-    def unread_notice_sync_thread(self):
-        """未读通知数同步线程"""
-        self.is_running = True
-        aiotieba.logging.get_logger().info('notice syncer started')
-        while True:
-            if not self.event_queue.empty():
-                e = self.event_queue.get()
-                if e == 'stop':
-                    break
-            else:
-                try:
-                    if self.bduss and self.stoken:
-                        self.load_unread_notice_from_api()
-                    else:
-                        time.sleep(5)
-                        continue
-                except Exception as e:
-                    print('load_unread_notice_from_api error:')
-                    print(e)
-                else:
-                    self.noticeCountChanged.emit()
-                finally:
-                    time.sleep(5)
-        self.is_running = False
-        aiotieba.logging.get_logger().info('notice syncer stopped')
-
-    def load_unread_notice_from_api(self):
-        """从接口重新加载未读通知数"""
-        payloads = {
-            "BDUSS": self.bduss,
-            "_client_type": "2",
-            "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
-            "stoken": self.stoken,
-        }
-        resp = request_mgr.run_post_api('/c/s/msg', request_mgr.calc_sign(payloads), use_mobile_header=True,
-                                        host_type=2)
-        self.unread_msg_counts = resp['message']
-        if self.unread_msg_counts:
-            self.unread_msg_counts['count'] = 0
-            for k, v in tuple(self.unread_msg_counts.items()):
-                if k != 'count':
-                    self.unread_msg_counts['count'] += v
 
 
 class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):

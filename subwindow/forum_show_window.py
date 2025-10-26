@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string
+import publics.logging as logging
 
 from ui import ba_head
 
@@ -97,8 +98,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                     r = await client.follow_forum(self.forum_id)
                     self.follow_forum_ok.emit(bool(r))
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
@@ -205,56 +205,59 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             start_background_thread(self.get_threads, (thread_type,))
 
     def get_threads(self, thread_type="all"):
-        def emit_data(tpe, thread):
-            if tpe == 'latest_reply':
-                timestr = '最近回复于 ' + timestamp_to_string(thread.last_time)
-            else:
-                timestr = '发布于 ' + timestamp_to_string(thread.create_time)
-            thread_id = thread.tid
-            forum_id = self.forum_id
-            title = thread.title
-            _text = make_thread_content(thread.contents.objs, previewPlainText=True)
-            content = cut_string(_text, 50)
-            user_name = thread.user.nick_name_new
-            portrait = thread.user.portrait
-            preview_pixmap = []
-            view_count = thread.view_num
-            agree_count = thread.agree
-            reply_count = thread.reply_num
-            repost_count = thread.share_num
-            is_treasure = thread.is_good
-            is_top = thread.is_top
+        try:
+            def emit_data(tpe, thread):
+                if tpe == 'latest_reply':
+                    timestr = '最近回复于 ' + timestamp_to_string(thread.last_time)
+                else:
+                    timestr = '发布于 ' + timestamp_to_string(thread.create_time)
+                thread_id = thread.tid
+                forum_id = self.forum_id
+                title = thread.title
+                _text = make_thread_content(thread.contents.objs, previewPlainText=True)
+                content = cut_string(_text, 50)
+                user_name = thread.user.nick_name_new
+                portrait = thread.user.portrait
+                preview_pixmap = []
+                view_count = thread.view_num
+                agree_count = thread.agree
+                reply_count = thread.reply_num
+                repost_count = thread.share_num
+                is_treasure = thread.is_good
+                is_top = thread.is_top
 
-            user_head_pixmap = QPixmap()
-            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                user_head_pixmap = QPixmap()
+                user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
+                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-            for j in thread.contents.imgs:
-                hash = j.hash
-                pixmap = QPixmap()
-                pixmap.loadFromData(cache_mgr.get_bd_hash_img(hash))
-                pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio,
-                                       Qt.TransformationMode.SmoothTransformation)
-                preview_pixmap.append(pixmap)
+                for j in thread.contents.imgs:
+                    hash = j.hash
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(cache_mgr.get_bd_hash_img(hash))
+                    pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio,
+                                           Qt.TransformationMode.SmoothTransformation)
+                    preview_pixmap.append(pixmap)
 
-            tdata = {'type': tpe,
-                     'thread_id': thread_id,
-                     'forum_id': forum_id,
-                     'title': title,
-                     'content': content,
-                     'user_name': user_name,
-                     'user_portrait_pixmap': user_head_pixmap,
-                     'forum_name': '',
-                     'forum_pixmap': QPixmap(),
-                     'view_pixmap': preview_pixmap,
-                     'time_stamp': timestr,
-                     'view_count': view_count,
-                     'agree_count': agree_count,
-                     'reply_count': reply_count,
-                     'repost_count': repost_count,
-                     'is_treasure': is_treasure,
-                     'is_top': is_top}
-            self.add_thread.emit(tdata)
+                tdata = {'type': tpe,
+                         'thread_id': thread_id,
+                         'forum_id': forum_id,
+                         'title': title,
+                         'content': content,
+                         'user_name': user_name,
+                         'user_portrait_pixmap': user_head_pixmap,
+                         'forum_name': '',
+                         'forum_pixmap': QPixmap(),
+                         'view_pixmap': preview_pixmap,
+                         'time_stamp': timestr,
+                         'view_count': view_count,
+                         'agree_count': agree_count,
+                         'reply_count': reply_count,
+                         'repost_count': repost_count,
+                         'is_treasure': is_treasure,
+                         'is_top': is_top}
+                self.add_thread.emit(tdata)
+        except Exception as e:
+            logging.log_exception(e)
 
         async def get_latest_reply_detail():
             try:
@@ -264,8 +267,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                         if not i.is_top:
                             emit_data('latest_reply', i)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         async def get_latest_send_detail():
             try:
@@ -276,8 +278,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                         if not i.is_top:
                             emit_data('latest_send', i)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         async def get_hot_detail():
             try:
@@ -288,8 +289,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                         if not i.is_top:
                             emit_data('hot', i)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         async def get_top_detail():
             try:
@@ -300,8 +300,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                         if i.is_top:
                             emit_data('top', i)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         async def get_treasure_detail():
             try:
@@ -312,8 +311,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                         if not i.is_top:
                             emit_data('treasure', i)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         def run_a_async(func):
             new_loop = asyncio.new_event_loop()
@@ -373,7 +371,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
                 qss = qss.replace('[color]', 'rgb(101, 161, 255)')
             elif 10 <= datas['uf_level'] <= 15:  # 黄牌
-                qss = qss.replace('[color]', 'rgb(253, 194, 53)')
+                qss = qss.replace('[color]', 'rgb(255, 172, 29)')
             elif datas['uf_level'] >= 16:  # 橙牌老东西
                 qss = qss.replace('[color]', 'rgb(247, 126, 48)')
 
@@ -403,13 +401,13 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         async def get_detail():
             async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                 # 获取吧信息
-                aiotieba.logging.get_logger().info(f'forum (id {self.forum_id}) loading head_info')
+                logging.log_INFO(f'forum (id {self.forum_id}) loading head_info')
                 forum = await client.get_forum(self.forum_id)
 
                 level_info = ''
                 level_value = 1
                 if self.bduss:
-                    aiotieba.logging.get_logger().info(
+                    logging.log_INFO(
                         f'forum (id {self.forum_id}, name {forum.fname}) loading level_info')
                     forum_level_info = await client.get_forum_level(self.forum_id)
                     isFollowed = 1 if forum_level_info.is_like else 0
@@ -423,11 +421,11 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 follow_count = forum.member_num
                 post_count = forum.post_num
                 if forum.has_bawu:
-                    aiotieba.logging.get_logger().info(
+                    logging.log_INFO(
                         f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_info')
                     bawuinfo = await client.get_bawu_info(self.forum_id)
                     forum_admin_name = bawuinfo.admin[0].nick_name_new
-                    aiotieba.logging.get_logger().info(
+                    logging.log_INFO(
                         f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_portrait_bin_info')
                     forum_admin_pixmap = QPixmap()
                     forum_admin_pixmap.loadFromData(cache_mgr.get_portrait(bawuinfo.admin[0].portrait))
@@ -435,7 +433,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 else:
                     forum_admin_name = ''
                     forum_admin_pixmap = None
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'forum (id {self.forum_id}, name {forum_name}) loading headimg_bin_info')
                 forum_pixmap = QPixmap()
                 response = requests.get(forum.small_avatar, headers=request_mgr.header)
@@ -443,7 +441,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                     forum_pixmap.loadFromData(response.content)
                     forum_pixmap = forum_pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
                 tdata = {'name': forum_name, 'pixmap': forum_pixmap, 'slogan': forum_slogan, 'follownum': follow_count,
                          'postnum': post_count, 'admin_name': forum_admin_name, 'admin_pixmap': forum_admin_pixmap,

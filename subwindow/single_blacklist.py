@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox
 
 from publics import qt_window_mgr, profile_mgr, cache_mgr, request_mgr
 from publics.funcs import LoadingFlashWidget, start_background_thread
+import publics.logging as logging
 from ui import user_blacklist_setter
 
 
@@ -88,8 +89,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                         turn_data['title'] = '拉黑失败'
                         turn_data['text'] = str(r.err)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 turn_data['success'] = False
                 turn_data['title'] = '程序内部错误'
                 turn_data['text'] = str(e)
@@ -171,8 +171,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                                 'text'] = f'{final_response.error.errmsg} (错误代码 {final_response.error.errorno})'
 
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 turn_data['success'] = False
                 turn_data['title'] = '程序内部错误'
                 turn_data['text'] = str(e)

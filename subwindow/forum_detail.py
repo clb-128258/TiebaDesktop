@@ -10,7 +10,9 @@ from PyQt5.QtWidgets import QDialog, QListWidget, QTreeWidgetItem, QFileDialog, 
     QTableWidgetItem
 
 from publics import qt_window_mgr, request_mgr, cache_mgr
-from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem
+from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
+    open_url_in_browser
+import publics.logging as logging
 
 from ui import forum_detail
 
@@ -25,7 +27,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
     forum_atavar_link = ''
     is_followed = False
 
-    def __init__(self, bduss, stoken, forum_id):
+    def __init__(self, bduss, stoken, forum_id, default_index=0):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
@@ -48,7 +50,9 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.pushButton.clicked.connect(lambda: self.do_action_async('unfollow' if self.is_followed else 'follow'))
         self.pushButton_2.clicked.connect(lambda: self.do_action_async('sign'))
         self.pushButton_8.clicked.connect(self.refresh_main_data)
+        self.label_15.linkActivated.connect(open_url_in_browser)
 
+        self.tabWidget.setCurrentIndex(default_index)
         self.loading_widget.show()
         self.get_main_info_async()
 
@@ -106,7 +110,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         async def doaction():
             turn_data = {'success': False, 'title': '', 'text': ''}
             try:
-                aiotieba.logging.get_logger().info(f'do forum {self.forum_id} action type {action_type}')
+                logging.log_INFO(f'do forum {self.forum_id} action type {action_type}')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     if action_type == 'follow':
                         r = await client.follow_forum(self.forum_id)
@@ -162,8 +166,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                             turn_data['title'] = '签到失败'
                             turn_data['text'] = f'{r["error_msg"]} (错误代码 {r["error_code"]})'
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 turn_data['success'] = False
                 turn_data['title'] = '程序内部错误'
                 turn_data['text'] = str(e)
@@ -544,8 +547,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
                     self.set_main_info_signal.emit(data)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
 
         def start_async():
             new_loop = asyncio.new_event_loop()

@@ -479,8 +479,11 @@ QPushButton:pressed {
                <pointsize>11</pointsize>
               </font>
              </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
              <property name="toolTip">
-              <string>该用户的吧等级</string>
+              <string>该用户的吧等级，点击可查看头衔对照表</string>
              </property>
              <property name="styleSheet">
               <string notr="true">QLabel{

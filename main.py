@@ -5,8 +5,7 @@ from core_features import *
 def excepthook(type, value, traceback):
     """捕获并打印错误"""
     if type != SystemExit:
-        aiotieba.logging.get_logger().warning(f"A error in main thread caught: ")
-        aiotieba.logging.get_logger().warning(f'{type}: {value}')
+        log_exception(value)
         aiotieba.logging.get_logger().warning(f'Error details: ')
         while traceback:
             frame = traceback.tb_frame
@@ -26,14 +25,14 @@ def set_qt_languages():
             translator = QTranslator()
             if translator.load(i):
                 app.installTranslator(translator)
-                aiotieba.logging.get_logger().info(f'Qt language file {i} loaded')
+                logging.log_INFO(f'Qt language file {i} loaded')
                 translators.append(translator)
         return translators
 
 
 def check_webview2():
     """检查用户的电脑是否安装了webview2"""
-    aiotieba.logging.get_logger().info(f'Checking webview2')
+    logging.log_INFO(f'Checking webview2')
 
     if not webview2.isWebView2Installed():
         msgbox = QMessageBox()
@@ -46,7 +45,7 @@ def handle_command_events():
     """处理命令行参数，与命令行参数有关的代码均在此执行"""
     cmds = sys.argv
     dont_run_gui = False
-    aiotieba.logging.get_logger().info('Handling command args')
+    logging.log_INFO('Handling command args')
 
     def get_current_user():
         user_data = {'bduss': '', 'stoken': ''}
@@ -128,16 +127,16 @@ def handle_command_events():
 
     if '--set-current-account' in cmds:
         dont_run_gui = True
-        aiotieba.logging.get_logger().info('--set-current-account started')
+        logging.log_INFO('--set-current-account started')
         start_async(switch_account())
     else:
         if '--sign-all-forums' in cmds:
             dont_run_gui = True
-            aiotieba.logging.get_logger().info('--sign-all-forums started')
+            logging.log_INFO('--sign-all-forums started')
             start_async(sign_all())
         if '--sign-grows' in cmds:
             dont_run_gui = True
-            aiotieba.logging.get_logger().info('--sign-grows started')
+            logging.log_INFO('--sign-grows started')
             start_async(sign_grow())
     if dont_run_gui:
         sys.exit(0)
@@ -818,12 +817,12 @@ if __name__ == "__main__":
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     app = QApplication(sys.argv)
     translates = set_qt_languages()
-    aiotieba.logging.get_logger().info('Qt init complete')
+    logging.log_INFO('Qt init complete')
     check_webview2()
 
-    aiotieba.logging.get_logger().info('Initing main window')
+    logging.log_INFO('Initing main window')
     mainw = MainWindow()
     mainw.show()
-    aiotieba.logging.get_logger().info('Mainwindow showed, into the main loop')
+    logging.log_INFO('Mainwindow showed, into the main loop')
 
     sys.exit(app.exec())

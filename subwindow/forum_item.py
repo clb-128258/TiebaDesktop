@@ -21,6 +21,8 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         self.stoken = stoken
         self.forum_name = fname
 
+        self.label_9.hide()
+
         self.signok.connect(self.update_sign_ui)
         self.pushButton.clicked.connect(self.open_ba_detail)
         self.pushButton_2.clicked.connect(self.sign_async)
@@ -104,24 +106,24 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         forum_window.load_info_async()
         forum_window.get_threads_async()
 
-    def set_info(self, headpixmap, name, desp):
+    def set_info(self, headpixmap, name, normaldesp='', leveldesp=''):
         self.label.setPixmap(headpixmap)
         self.label_2.setText(name)
-        self.label_3.setText(desp)
+        self.label_3.setText(normaldesp)
+        if leveldesp:
+            self.label_9.show()
+            self.label_9.setText(leveldesp)
 
     def set_level_color(self, level):
-        qss = 'QLabel{color: [color];font-weight: [is_high_level];}'
-        if level >= 10:  # 10级以上粗体显示
-            qss = qss.replace('[is_high_level]', 'bold')
-        else:
-            qss = qss.replace('[is_high_level]', 'normal')
+        qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 2px 4px;border-style: '
+               'solid;border-color: [color]}')
         if 1 <= level <= 3:  # 绿牌
             qss = qss.replace('[color]', 'rgb(101, 211, 171)')
         elif 4 <= level <= 9:  # 蓝牌
             qss = qss.replace('[color]', 'rgb(101, 161, 255)')
         elif 10 <= level <= 15:  # 黄牌
-            qss = qss.replace('[color]', 'rgb(253, 194, 53)')
+            qss = qss.replace('[color]', 'rgb(255, 172, 29)')
         elif level >= 16:  # 橙牌老东西
             qss = qss.replace('[color]', 'rgb(247, 126, 48)')
 
-        self.label_3.setStyleSheet(qss)  # 为不同等级设置qss
+        self.label_9.setStyleSheet(qss)  # 为不同等级设置qss

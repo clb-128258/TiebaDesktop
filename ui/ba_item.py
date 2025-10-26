@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(320, 73)
+        Form.resize(349, 72)
         Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "")
         self.gridLayout = QtWidgets.QGridLayout(Form)
@@ -23,9 +23,6 @@ class Ui_Form(object):
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 0, 0, 2, 1)
-        self.label_3 = QtWidgets.QLabel(Form)
-        self.label_3.setObjectName("label_3")
-        self.gridLayout.addWidget(self.label_3, 1, 1, 1, 1)
         self.label_2 = QtWidgets.QLabel(Form)
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
@@ -36,10 +33,31 @@ class Ui_Form(object):
         self.pushButton = QtWidgets.QPushButton(Form)
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 0, 2, 1, 1)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label_9 = QtWidgets.QLabel(Form)
+        self.label_9.setMinimumSize(QtCore.QSize(0, 0))
+        self.label_9.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(10)
+        self.label_9.setFont(font)
+        self.label_9.setStyleSheet("QLabel{\n"
+"    color: rgb(255, 255, 255);\n"
+"    background-color: rgb(101, 211, 171);\n"
+"}\n"
+"")
+        self.label_9.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_9.setObjectName("label_9")
+        self.horizontalLayout_2.addWidget(self.label_9)
+        self.label_3 = QtWidgets.QLabel(Form)
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout_2.addWidget(self.label_3)
+        self.horizontalLayout_2.setStretch(1, 1)
+        self.gridLayout.addLayout(self.horizontalLayout_2, 1, 1, 1, 1)
         self.pushButton_2 = QtWidgets.QPushButton(Form)
         self.pushButton_2.setObjectName("pushButton_2")
         self.gridLayout.addWidget(self.pushButton_2, 1, 2, 1, 1)
-        self.gridLayout.setColumnStretch(1, 1)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -48,7 +66,9 @@ class Ui_Form(object):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
         self.label.setText(_translate("Form", "baicon"))
-        self.label_3.setText(_translate("Form", "level,sign"))
         self.label_2.setText(_translate("Form", "baname"))
         self.pushButton.setText(_translate("Form", "进吧"))
+        self.label_9.setToolTip(_translate("Form", "<html><head/><body><p><span style=\" font-size:9pt;\">你在本吧的等级</span></p></body></html>"))
+        self.label_9.setText(_translate("Form", "Lv.1"))
+        self.label_3.setText(_translate("Form", "level,sign"))
         self.pushButton_2.setText(_translate("Form", "签到"))

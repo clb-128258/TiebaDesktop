@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QDialog, QMessageBox, QListWidgetItem
 
 from publics import qt_window_mgr, cache_mgr
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string
+import publics.logging as logging
 
 from ui import reply_comments
 
@@ -116,7 +117,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         async def dosign():
             self.isLoading = True
             try:
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'loading sub-replies (thread_id {self.thread_id} post_id {self.post_id} page {self.page})')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     comments = await client.get_comments(self.thread_id, self.post_id, self.page)
@@ -124,7 +125,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                         raise Exception(comments.err)
                     if self.floor_num == -1 and self.comment_count == -2:
                         self.set_floor_info.emit((comments.post.floor, comments.page.total_count))
-                    aiotieba.logging.get_logger().info(
+                    logging.log_INFO(
                         f'itering sub-replies (thread_id {self.thread_id} post_id {self.post_id} floor {comments.post.floor} page {self.page})')
 
                     if self.page == 1:
@@ -208,15 +209,14 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
 
                         self.add_comment.emit(tdata)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
                 self.set_floor_info.emit((-1, str(e)))
             else:
                 if comments.has_more:
                     self.page += 1
                 else:
                     self.page = -1
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'load sub-replies (thread_id {self.thread_id} post_id {self.post_id}) finished and page changed to {self.page}')
             finally:
                 self.isLoading = False

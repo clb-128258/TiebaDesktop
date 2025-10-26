@@ -543,8 +543,8 @@ QDialog{background-color: rgb(255, 255, 255);}
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>100</width>
-            <height>30</height>
+            <width>711</width>
+            <height>418</height>
            </rect>
           </property>
           <property name="palette">
@@ -724,7 +724,7 @@ QDialog{background-color: rgb(255, 255, 255);}
           <bool>true</bool>
          </property>
          <property name="openExternalLinks">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>

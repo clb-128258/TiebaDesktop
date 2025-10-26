@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QWidget, QListWidgetItem
 
 from publics import request_mgr, cache_mgr
 from publics.funcs import start_background_thread, timestamp_to_string
+import publics.logging as logging
 
 from ui import reply_at_me_page
 
@@ -130,7 +131,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
     def load_inter_data(self, type_):
         async def run_func():
             try:
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'loading userInteractionsList {type_}, page (reply {self.reply_page} at {self.at_page} agree {self.agree_page})')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     if type_ == "reply":
@@ -311,8 +312,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                                     'pic_link': pic_link}
                             self.add_post_data.emit(data)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
             else:
                 if type_ == "reply":
                     if bool(int(datas["page"]["has_more"])):
@@ -332,7 +332,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                     else:
                         self.agree_page = -1
                     self.is_agree_loading = False
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'load userInteractionsList {type_}, page (reply {self.reply_page} at {self.at_page} agree {self.agree_page}) successful')
 
         def start_async():

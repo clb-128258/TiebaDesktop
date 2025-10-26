@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 
 from publics import request_mgr, qt_window_mgr, profile_mgr
 from publics.funcs import start_background_thread, open_url_in_browser
+import publics.logging as logging
 
 from ui import comment_view
 
@@ -74,7 +75,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         start_background_thread(self.agree_thread, (is_cancel,))
 
     def agree_thread(self, iscancel=False):
-        aiotieba.logging.get_logger().info(f'agree reply/comment {self.post_id} in thread {self.thread_id}')
+        logging.log_INFO(f'agree reply/comment {self.post_id} in thread {self.thread_id}')
         try:
             if not self.bduss:
                 self.agree_thread_signal.emit('你还没有登录，登录后即可为这条回复点赞。')
@@ -256,7 +257,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             elif 4 <= level <= 9:  # 蓝牌
                 qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255);}'
             elif 10 <= level <= 15:  # 黄牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(253, 194, 53);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(255, 172, 29);}'
             elif level >= 16:  # 橙牌老东西
                 qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48);}'
 

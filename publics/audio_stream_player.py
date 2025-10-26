@@ -4,7 +4,7 @@ import subprocess
 import os
 import queue
 import threading
-from aiotieba.logging import get_logger
+from publics.logging import log_INFO
 from PyQt5.QtCore import QObject, pyqtSignal
 import time
 import enum
@@ -18,7 +18,7 @@ CHUNK = 1024  # 每次读取的字节数
 
 
 def do_log(info: str):
-    get_logger().info("[HTTP Mp3 Play Engine] " + info)
+    log_INFO("[HTTP Mp3 Play Engine] " + info)
 
 
 class EventType(enum.IntEnum):

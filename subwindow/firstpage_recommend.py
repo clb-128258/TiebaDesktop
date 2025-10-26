@@ -1,5 +1,6 @@
 import asyncio
 
+import publics.logging as logging
 import aiotieba
 import requests
 from PyQt5.QtCore import pyqtSignal, Qt
@@ -118,7 +119,7 @@ class RecommandWindow(QListWidget):
             try:
                 # 贴吧电脑网页版的推荐接口，不登录也能获取
                 # 在登录情况下，需要传一组特定的cookie才能使推荐个性化（不只是bduss和stoken），否则是默认推荐
-                aiotieba.logging.get_logger().info('loading recommands from api /f/index/feedlist')
+                logging.log_INFO('loading recommands from api /f/index/feedlist')
                 response = request_mgr.run_get_api(f'/f/index/feedlist?tag_id=like&offset={self.offset}')
                 html = response['data']['html']
 
@@ -133,13 +134,12 @@ class RecommandWindow(QListWidget):
                 for element in elements:
                     start_background_thread(start_async, (element,))
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
             else:
                 self.offset += 20
             finally:
                 self.isloading = False
-                aiotieba.logging.get_logger().info('loading recommands from api /f/index/feedlist finished')
+                logging.log_INFO('loading recommands from api /f/index/feedlist finished')
 
         func()
 
@@ -202,9 +202,12 @@ class RecommandWindow(QListWidget):
             self.add_tie.emit(tdata)
 
         def start_async(element):
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            asyncio.run(get_detail(element))
+            try:
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                asyncio.run(get_detail(element))
+            except Exception as e:
+                logging.log_exception(e)
 
         def func():
             global datapath
@@ -215,7 +218,7 @@ class RecommandWindow(QListWidget):
                 # 在登录情况下，有bduss和stoken就可以实现个性化推荐
                 # 该接口包含的信息较为全面，很多信息无需再另起请求，因此该方法获取贴子数据会比旧版的快
                 # 该接口返回的视频贴较多，疑似是贴吧后端刻意为之
-                aiotieba.logging.get_logger().info('loading recommands from api /mg/o/getRecommPage')
+                logging.log_INFO('loading recommands from api /mg/o/getRecommPage')
                 response = request_mgr.run_get_api('/mg/o/getRecommPage?load_type=1&eqid=&refer=tieba.baidu.com'
                                                    '&page_thread_count=10',
                                                    bduss=self.bduss, stoken=self.stoken)
@@ -225,15 +228,11 @@ class RecommandWindow(QListWidget):
                     tlist = response['data']['thread_list']
                     for element in tlist:
                         start_background_thread(start_async, (element,))
-                    aiotieba.logging.get_logger().info('loading recommands from api /mg/o/getRecommPage finished')
+                    logging.log_INFO('loading recommands from api /mg/o/getRecommPage finished')
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
             finally:
                 self.isloading = False
 
         func()
 
-
-def import_circularly():
-    from subwindow.thread_preview_item import ThreadView

@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, cache_mgr
 from publics.funcs import start_background_thread
+import publics.logging as logging
 from ui import star_list
 
 
@@ -87,7 +88,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
         async def run_func():
             try:
                 self.isloading = True
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'loading userThreadStoreList page {self.page}')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     resp = request_mgr.run_get_api(f'/mg/o/threadstore?pn={self.page}&rn=10&eqid=&refer=',
@@ -114,10 +115,9 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
 
                         self.add_thread.emit(data)
             except Exception as e:
-                print(type(e))
-                print(e)
+                logging.log_exception(e)
             else:
-                aiotieba.logging.get_logger().info(
+                logging.log_INFO(
                     f'load userThreadStoreList page {self.page} successful')
                 if not resp['data']['has_more']:
                     self.page = -1

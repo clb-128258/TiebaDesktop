@@ -6,6 +6,9 @@ from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, Q
 from publics import profile_mgr, webview2
 from publics import proxytool
 from publics.funcs import *
+from publics.logging import init_log
+from publics.logging import log_exception, log_INFO
+from publics.tb_syncer import *
 
 from subwindow.agree_thread_list import AgreedThreadsList
 from subwindow.firstpage_recommend import RecommandWindow

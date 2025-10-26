@@ -1,7 +1,7 @@
 import asyncio
 import gc
 
-import aiotieba
+import publics.logging as logging
 import requests
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QPixmapCache, QPixmap
@@ -45,7 +45,7 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
         from subwindow.forum_item import ForumItem
         item = QListWidgetItem()
         widget = ForumItem(data[3], data[4], self.bduss, self.stoken, data[1])
-        widget.set_info(data[0], data[1] + '吧', data[2])
+        widget.set_info(data[0], data[1] + '吧', leveldesp=data[2])
         widget.set_level_color(data[5])
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
@@ -69,7 +69,7 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
     def get_bars(self):
         async def func():
             try:
-                aiotieba.logging.get_logger().info('loading userself follow forum list')
+                logging.log_INFO('loading userself follow forum list')
 
                 payload = {
                     'BDUSS': self.bduss,
@@ -89,11 +89,13 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
 
                     level_str = forum['level_name']
                     level_value = forum['level_id']
-                    ba_info_str = f'[Lv.{level_value}] {level_str}'
+                    ba_info_str = f'Lv.{level_value} {level_str}'
                     self.add_ba.emit([pixmap, name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1, level_value])
+            except Exception as e:
+                logging.log_exception(e)
             finally:
                 self.ba_add_ok.emit()
-                aiotieba.logging.get_logger().info('load userself follow forum list complete')
+                logging.log_INFO('load userself follow forum list complete')
 
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
