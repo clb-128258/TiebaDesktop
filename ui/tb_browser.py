@@ -38,74 +38,75 @@ class Ui_Form(object):
         Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "\n"
 "\n"
-"QToolButton {\n"
-"    background-color: transparent;\n"
-"    border: none;\n"
-"    border-radius: 6px;\n"
-"    padding: 6px;\n"
-"    /* 设置图标大小 */\n"
-"    icon-size: 24px;\n"
-"    /* 可选：设置最小尺寸，保持按钮大小一致 */\n"
-"    min-width: 10px;\n"
-"    min-height: 10px;\n"
-"}\n"
+"                QToolButton {\n"
+"                background-color: transparent;\n"
+"                border: none;\n"
+"                border-radius: 6px;\n"
+"                padding: 6px;\n"
+"                /* 设置图标大小 */\n"
+"                icon-size: 24px;\n"
+"                /* 可选：设置最小尺寸，保持按钮大小一致 */\n"
+"                min-width: 10px;\n"
+"                min-height: 10px;\n"
+"                }\n"
 "\n"
-"/* 鼠标悬停时：轻微灰色背景 */\n"
-"QToolButton:hover {\n"
-"    background-color: rgba(0, 0, 0, 0.08);\n"
-"}\n"
+"                /* 鼠标悬停时：轻微灰色背景 */\n"
+"                QToolButton:hover {\n"
+"                background-color: rgba(0, 0, 0, 0.08);\n"
+"                }\n"
 "\n"
-"/* 按下时：更深的背景色，模拟按下效果 */\n"
-"QToolButton:pressed {\n"
-"    background-color: rgba(0, 0, 0, 0.15);\n"
-"}\n"
+"                /* 按下时：更深的背景色，模拟按下效果 */\n"
+"                QToolButton:pressed {\n"
+"                background-color: rgba(0, 0, 0, 0.15);\n"
+"                }\n"
 "\n"
-"/* 禁用状态：半透明，显示不可点击 */\n"
-"QToolButton:disabled {\n"
-"    background-color: transparent;\n"
-"    opacity: 0.4;\n"
-"}\n"
+"                /* 禁用状态：半透明，显示不可点击 */\n"
+"                QToolButton:disabled {\n"
+"                background-color: transparent;\n"
+"                opacity: 0.4;\n"
+"                }\n"
 "\n"
-"/* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
-"QToolButton::menu-indicator {\n"
-"    image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */\n"
-"    subcontrol-position: right center;\n"
-"    subcontrol-origin: padding;\n"
-"    left: -4px;\n"
-"}")
+"                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
+"                QToolButton::menu-indicator {\n"
+"                image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */\n"
+"                subcontrol-position: right center;\n"
+"                subcontrol-origin: padding;\n"
+"                left: -4px;\n"
+"                }\n"
+"            ")
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
         self.tabWidget = QtWidgets.QTabWidget(Form)
         self.tabWidget.setStyleSheet("/* 设置整个 QTabWidget 背景透明 */\n"
-"QTabWidget {\n"
-"    background: transparent;\n"
-"}\n"
-"QTabWidget::pane {\n"
-"    border: none;\n"
-"}\n"
-"QTabWidget::tab-bar {\n"
-"     alignment: left;\n"
-"}\n"
-"QTabBar::tab {\n"
-"    padding: 6px;\n"
-"    padding-left: 10px;\n"
-"    padding-right: 10px;\n"
-"    border-radius: 14px;\n"
-"}\n"
-"QTabBar::QToolButton{\n"
-"    alignment: left;\n"
-"}\n"
-"QTabBar::tab:hover {\n"
-"    font: 9pt \"微软雅黑\";\n"
-"    background: rgb(232, 232, 232);\n"
-"}\n"
-"QTabBar::tab:selected{\n"
-"    font: 9pt \"微软雅黑\";\n"
-"    background: rgb(202, 202, 202);\n"
-"}\n"
+"                            QTabWidget {\n"
+"                            background: transparent;\n"
+"                            }\n"
+"                            QTabWidget::pane {\n"
+"                            border: none;\n"
+"                            }\n"
+"                            QTabWidget::tab-bar {\n"
+"                            alignment: left;\n"
+"                            }\n"
+"                            QTabBar::tab {\n"
+"                            padding: 6px;\n"
+"                            padding-left: 10px;\n"
+"                            padding-right: 10px;\n"
+"                            border-radius: 14px;\n"
+"                            }\n"
+"                            QTabBar::QToolButton{\n"
+"                            alignment: left;\n"
+"                            }\n"
+"                            QTabBar::tab:hover {\n"
+"                            font: 9pt \"微软雅黑\";\n"
+"                            background: rgb(232, 232, 232);\n"
+"                            }\n"
+"                            QTabBar::tab:selected{\n"
+"                            font: 9pt \"微软雅黑\";\n"
+"                            background: rgb(202, 202, 202);\n"
+"                            }\n"
 "\n"
-"")
+"                        ")
         self.tabWidget.setTabsClosable(True)
         self.tabWidget.setMovable(True)
         self.tabWidget.setObjectName("tabWidget")
@@ -130,28 +131,32 @@ class Ui_Form(object):
         font.setPointSize(10)
         self.lineEdit.setFont(font)
         self.lineEdit.setStyleSheet("QLineEdit {\n"
-"    background-color: white;\n"
-"    border: 1px solid #cccccc;\n"
-"    border-radius: 15px;\n"
-"    padding: 5px;\n"
-"}\n"
+"                                        background-color: white;\n"
+"                                        border: 1px solid #cccccc;\n"
+"                                        border-radius: 15px;\n"
+"                                        padding: 5px;\n"
+"                                        }\n"
 "\n"
-"QLineEdit:hover {\n"
-"    border: 1px solid #cccccc;\n"
-"    background-color: #f0f0f0; /* 悬浮时的背景颜色 */\n"
-"    border-color: #999999; /* 悬浮时的边框颜色 */\n"
-"}\n"
+"                                        QLineEdit:hover {\n"
+"                                        border: 1px solid #cccccc;\n"
+"                                        background-color: #f0f0f0; /* 悬浮时的背景颜色 */\n"
+"                                        border-color: #999999; /* 悬浮时的边框颜色 */\n"
+"                                        }\n"
 "\n"
-"QLineEdit:focus {\n"
-"    border: 2px solid #cccccc;\n"
-"    background-color: #e0e0ff; /* 选中时的背景颜色 */\n"
-"    border-color: #0078d7; /* 选中时的边框颜色 */\n"
-"}")
+"                                        QLineEdit:focus {\n"
+"                                        border: 2px solid #cccccc;\n"
+"                                        background-color: #e0e0ff; /* 选中时的背景颜色 */\n"
+"                                        border-color: #0078d7; /* 选中时的边框颜色 */\n"
+"                                        }\n"
+"                                    ")
         self.lineEdit.setObjectName("lineEdit")
         self.horizontalLayout.addWidget(self.lineEdit)
         self.toolButton_5 = QtWidgets.QToolButton(self.frame)
         self.toolButton_5.setObjectName("toolButton_5")
         self.horizontalLayout.addWidget(self.toolButton_5)
+        self.toolButton_6 = QtWidgets.QToolButton(self.frame)
+        self.toolButton_6.setObjectName("toolButton_6")
+        self.horizontalLayout.addWidget(self.toolButton_6)
         self.toolButton_4 = QtWidgets.QToolButton(self.frame)
         self.toolButton_4.setObjectName("toolButton_4")
         self.horizontalLayout.addWidget(self.toolButton_4)
@@ -173,5 +178,7 @@ class Ui_Form(object):
         self.lineEdit.setPlaceholderText(_translate("Form", "输入网址"))
         self.toolButton_5.setToolTip(_translate("Form", "<html><head/><body><p>在系统浏览器内打开</p></body></html>"))
         self.toolButton_5.setText(_translate("Form", "ob"))
-        self.toolButton_4.setToolTip(_translate("Form", "<html><head/><body><p>更多</p></body></html>"))
-        self.toolButton_4.setText(_translate("Form", "..."))
+        self.toolButton_6.setToolTip(_translate("Form", "<html><head/><body><p>在贴吧桌面中打开</p></body></html>"))
+        self.toolButton_6.setText(_translate("Form", "oc"))
+        self.toolButton_4.setToolTip(_translate("Form", "<html><head/><body><p>查看下载内容</p></body></html>"))
+        self.toolButton_4.setText(_translate("Form", "dl"))

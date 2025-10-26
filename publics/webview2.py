@@ -6,6 +6,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal
 import requests
 from platform import machine
+import threading
 
 # 判断一下是不是windows
 if os.name == 'nt':

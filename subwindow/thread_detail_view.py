@@ -154,17 +154,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         qt_window_mgr.add_window(user_home_page)
 
     def handle_link_event(self, url):
-        if url.startswith('user://'):
-            user_sign = url.replace('user://', '')
-            # 判断是不是portrait
-            if not user_sign.startswith('tb.'):
-                self.open_user_homepage(int(user_sign))
-            else:
-                self.open_user_homepage(user_sign)
-        elif url.startswith('tieba_thread://'):
-            self.open_thread(url.replace('tieba_thread://', ''))
-        else:
-            open_url_in_browser(url)
+        open_url_in_browser(url)
 
     def add_post_ok_action(self, isok):
         if not isok:

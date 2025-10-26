@@ -5,7 +5,7 @@
     <script>const VERSION_STR = "1.0";</script>
     <meta charset="utf-8">
     <meta name=viewport
-        content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui">
+          content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui">
     <meta name="referrer" content="no-referrer">
     <title>H5 视频播放器 - 贴吧桌面</title>
     <style type="text/css">
@@ -19,39 +19,39 @@
 </head>
 
 <body>
-    <div id="videoArea"></div>
-    <script src="https://unpkg.byted-static.com/xgplayer/2.31.6/browser/index.js" charset="utf-8"></script>
-    <script>
-        let player = new Player({
-            "id": "videoArea",
-            "playsinline": true,
-            "whitelist": [
-                ""
-            ],
-            "keyShortcut": "on",
-            "playbackRate": [
-                0.25,
-                0.5,
-                1,
-                1.25,
-                1.5,
-                2,
-                4,
-                8,
-                10
-            ],
-            "download": true,
-            "pip": true,
-            "screenShot": true,
-            "url": "[vurl]",
-            "autoplay": true,
-            "fluid": true,
-            "volume": 0.5
-        });
+<div id="videoArea"></div>
+<script src="https://unpkg.byted-static.com/xgplayer/2.31.6/browser/index.js" charset="utf-8"></script>
+<script>
+    let player = new Player({
+        "id": "videoArea",
+        "playsinline": true,
+        "whitelist": [
+            ""
+        ],
+        "keyShortcut": "on",
+        "playbackRate": [
+            0.25,
+            0.5,
+            1,
+            1.25,
+            1.5,
+            2,
+            4,
+            8,
+            10
+        ],
+        "download": true,
+        "pip": true,
+        "screenShot": true,
+        "url": "[vurl]",
+        "autoplay": true,
+        "fluid": true,
+        "volume": 0.5
+    });
 
-        console.info("CLB TiebaDesktop HTML5 Video Player Version " + VERSION_STR);
-        console.info("Video play engine made by xgplayer.js, website: https://v2.h5player.bytedance.com/")
-    </script>
+    console.info("CLB TiebaDesktop HTML5 Video Player Version " + VERSION_STR);
+    console.info("Video play engine made by xgplayer.js, website: https://v2.h5player.bytedance.com/")
+</script>
 </body>
 
 </html>

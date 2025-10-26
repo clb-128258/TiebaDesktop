@@ -6,21 +6,20 @@ from google.protobuf.internal import builder as _builder
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
-
 from aiotieba.api._protobuf import CommonReq_pb2 as CommonReq__pb2
 
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eGetUserBlackInfo/DataReq.proto\x1a\x0f\x43ommonReq.proto\"8\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x11\n\tblack_uid\x18\x02 \x01(\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x1eGetUserBlackInfo/DataReq.proto\x1a\x0f\x43ommonReq.proto\"8\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x11\n\tblack_uid\x18\x02 \x01(\x03\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetUserBlackInfo.DataReq_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
-
-  DESCRIPTOR._options = None
-  _DATAREQ._serialized_start=51
-  _DATAREQ._serialized_end=107
+    DESCRIPTOR._options = None
+    _DATAREQ._serialized_start = 51
+    _DATAREQ._serialized_end = 107
 # @@protoc_insertion_point(module_scope)

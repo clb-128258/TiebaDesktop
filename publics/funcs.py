@@ -1,3 +1,4 @@
+import asyncio
 import os
 import pathlib
 import platform
@@ -200,7 +201,11 @@ def filesize_tostr(size: int):
 
 
 def open_url_in_browser(url, always_os_browser=False):
-    """在浏览器内打开网页"""
+    """根据url打开相应的界面"""
+    from subwindow.forum_show_window import ForumShowWindow
+    from subwindow.thread_detail_view import ThreadDetailView
+    from subwindow.user_home_page import UserHomeWindow
+    from subwindow.tieba_web_browser import TiebaWebBrowser
 
     def open_in_system():
         shell = ''
@@ -212,7 +217,6 @@ def open_url_in_browser(url, always_os_browser=False):
         start_background_thread(lambda sh: subprocess.call(sh, shell=True), (shell,))
 
     def open_in_webview():
-        from subwindow.tieba_web_browser import TiebaWebBrowser
         browser = TiebaWebBrowser()
         qt_window_mgr.add_window(browser)
         browser.add_new_page(url)
@@ -227,18 +231,61 @@ def open_url_in_browser(url, always_os_browser=False):
     is_http = url.startswith((request_mgr.SCHEME_HTTP, request_mgr.SCHEME_HTTPS))
     is_tieba_link = url.startswith(url_list)
 
-    if always_os_browser or not is_http:  # 手动指定强制使用系统浏览器，或是非http协议时
-        open_in_system()  # 在系统内打开
+    def open_ba_detail(fname_id):
+        async def get_fid():
+            try:
+                async with aiotieba.Client(proxy=True) as client:
+                    fid = await client.get_fid(fname_id)
+                    return fid
+            except:
+                return 0
+
+        if isinstance(fname_id, str):
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            fid = asyncio.run(get_fid())
+        else:
+            fid = fname_id
+
+        forum_window = ForumShowWindow(profile_mgr.current_bduss, profile_mgr.current_stoken, int(fid))
+        qt_window_mgr.add_window(forum_window)
+        forum_window.load_info_async()
+        forum_window.get_threads_async()
+
+    def open_thread(tid):
+        third_party_thread = ThreadDetailView(profile_mgr.current_bduss, profile_mgr.current_stoken, int(tid))
+        qt_window_mgr.add_window(third_party_thread)
+
+    def open_user_homepage(uid):
+        user_home_page = UserHomeWindow(profile_mgr.current_bduss, profile_mgr.current_stoken, uid)
+        qt_window_mgr.add_window(user_home_page)
+
+    if url.startswith('user://'):
+        user_sign = url.replace('user://', '')
+        # 判断是不是portrait
+        if not user_sign.startswith('tb.'):
+            open_user_homepage(int(user_sign))
+        else:
+            open_user_homepage(user_sign)
+    elif url.startswith('tieba_thread://'):
+        open_thread(url.replace('tieba_thread://', ''))
+    elif url.startswith('tieba_forum_namely://'):
+        open_ba_detail(url.replace('tieba_forum_namely://', ''))
+    elif url.startswith('tieba_forum://'):
+        open_ba_detail(int(url.replace('tieba_forum://', '')))
     else:
-        policy = profile_mgr.local_config['web_browser_settings']['url_open_policy']
-        if policy == 0:  # 策略为始终在内置浏览器打开
-            open_in_webview()
-        elif policy == 1 and is_tieba_link:  # 策略为只打开贴吧链接，且当前链接为贴吧链接
-            open_in_webview()
-        elif policy == 1 and not is_tieba_link:  # 策略为只打开贴吧链接，但当前链接不是贴吧链接
-            open_in_system()
-        elif policy == 2:  # 策略为不使用内置浏览器
-            open_in_system()
+        if always_os_browser or not is_http:  # 手动指定强制使用系统浏览器，或是非http协议时
+            open_in_system()  # 在系统内打开
+        else:
+            policy = profile_mgr.local_config['web_browser_settings']['url_open_policy']
+            if policy == 0:  # 策略为始终在内置浏览器打开
+                open_in_webview()
+            elif policy == 1 and is_tieba_link:  # 策略为只打开贴吧链接，且当前链接为贴吧链接
+                open_in_webview()
+            elif policy == 1 and not is_tieba_link:  # 策略为只打开贴吧链接，但当前链接不是贴吧链接
+                open_in_system()
+            elif policy == 2:  # 策略为不使用内置浏览器
+                open_in_system()
 
 
 def timestamp_to_string(ts: int):

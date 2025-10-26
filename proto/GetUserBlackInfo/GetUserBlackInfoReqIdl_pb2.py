@@ -6,21 +6,20 @@ from google.protobuf.internal import builder as _builder
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
-
 from proto.GetUserBlackInfo import DataReq_pb2 as GetUserBlackInfo_dot_DataReq__pb2
 
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-GetUserBlackInfo/GetUserBlackInfoReqIdl.proto\x1a\x1eGetUserBlackInfo/DataReq.proto\"0\n\x16GetUserBlackInfoReqIdl\x12\x16\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x08.DataReqb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n-GetUserBlackInfo/GetUserBlackInfoReqIdl.proto\x1a\x1eGetUserBlackInfo/DataReq.proto\"0\n\x16GetUserBlackInfoReqIdl\x12\x16\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x08.DataReqb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetUserBlackInfo.GetUserBlackInfoReqIdl_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
-
-  DESCRIPTOR._options = None
-  _GETUSERBLACKINFOREQIDL._serialized_start=81
-  _GETUSERBLACKINFOREQIDL._serialized_end=129
+    DESCRIPTOR._options = None
+    _GETUSERBLACKINFOREQIDL._serialized_start = 81
+    _GETUSERBLACKINFOREQIDL._serialized_end = 129
 # @@protoc_insertion_point(module_scope)

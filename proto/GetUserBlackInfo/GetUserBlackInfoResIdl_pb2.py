@@ -6,22 +6,21 @@ from google.protobuf.internal import builder as _builder
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
-
 from aiotieba.api._protobuf import Error_pb2 as Error__pb2
 from proto.GetUserBlackInfo import DataRes_pb2 as GetUserBlackInfo_dot_DataRes__pb2
 
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-GetUserBlackInfo/GetUserBlackInfoResIdl.proto\x1a\x0b\x45rror.proto\x1a\x1eGetUserBlackInfo/DataRes.proto\"G\n\x16GetUserBlackInfoResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Error\x12\x16\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x08.DataResb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n-GetUserBlackInfo/GetUserBlackInfoResIdl.proto\x1a\x0b\x45rror.proto\x1a\x1eGetUserBlackInfo/DataRes.proto\"G\n\x16GetUserBlackInfoResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Error\x12\x16\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x08.DataResb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetUserBlackInfo.GetUserBlackInfoResIdl_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
-
-  DESCRIPTOR._options = None
-  _GETUSERBLACKINFORESIDL._serialized_start=94
-  _GETUSERBLACKINFORESIDL._serialized_end=165
+    DESCRIPTOR._options = None
+    _GETUSERBLACKINFORESIDL._serialized_start = 94
+    _GETUSERBLACKINFORESIDL._serialized_end = 165
 # @@protoc_insertion_point(module_scope)

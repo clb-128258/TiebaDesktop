@@ -6,21 +6,20 @@ from google.protobuf.internal import builder as _builder
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
-
 from proto import PermissionList_pb2 as PermissionList__pb2
 
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eGetUserBlackInfo/DataRes.proto\x1a\x14PermissionList.proto\"E\n\x07\x44\x61taRes\x12\x16\n\x0eis_black_white\x18\x01 \x01(\x05\x12\"\n\tperm_list\x18\x02 \x01(\x0b\x32\x0f.PermissionListb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x1eGetUserBlackInfo/DataRes.proto\x1a\x14PermissionList.proto\"E\n\x07\x44\x61taRes\x12\x16\n\x0eis_black_white\x18\x01 \x01(\x05\x12\"\n\tperm_list\x18\x02 \x01(\x0b\x32\x0f.PermissionListb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetUserBlackInfo.DataRes_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
-
-  DESCRIPTOR._options = None
-  _DATARES._serialized_start=56
-  _DATARES._serialized_end=125
+    DESCRIPTOR._options = None
+    _DATARES._serialized_start = 56
+    _DATARES._serialized_end = 125
 # @@protoc_insertion_point(module_scope)

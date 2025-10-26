@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\1.1.0-beta\resf\comment_view.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\comment_view.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
