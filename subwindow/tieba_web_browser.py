@@ -1,11 +1,7 @@
-import asyncio
-
-import aiotieba
 import yarl
-from PyQt5.QtCore import Qt, QPoint, QSize, QByteArray, QTimer
+from PyQt5.QtCore import Qt,  QSize, QByteArray
 from PyQt5.QtGui import QIcon, QMovie
-from PyQt5.QtWidgets import QWidget, QMenu, QAction
-
+from PyQt5.QtWidgets import QWidget
 from consts import datapath
 from publics import webview2, profile_mgr, qt_window_mgr
 from publics.funcs import open_url_in_browser, cut_string

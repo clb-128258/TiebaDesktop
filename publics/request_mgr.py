@@ -1,8 +1,13 @@
 """百度贴吧同步请求模块"""
 import requests
 import consts
-from aiotieba.helper.crypto import _sign
+import hashlib
 
+SCHEME_HTTP = 'http://'
+SCHEME_HTTPS = 'https://'
+TIEBA_APP_HOST = 'tiebac.baidu.com'
+TIEBA_WEB_HOST = 'tieba.baidu.com'
+TIEBA_CLIENT_VERSION = '12.91.1.0'
 header = {
     'User-Agent': f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 CLBTiebaDesktop/{consts.APP_VERSION_STR}',
     'sec-ch-ua': "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
@@ -18,7 +23,7 @@ header = {
     'x-requested-with': 'XMLHttpRequest'
 }
 header_android = {
-    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/12.87.1.1 skin/default CLBTiebaDesktop/{consts.APP_VERSION_STR}",
+    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/{TIEBA_CLIENT_VERSION} skin/default CLBTiebaDesktop/{consts.APP_VERSION_STR}",
     'Accept': "application/json, text/plain, */*",
     'Accept-Encoding': "gzip, deflate",
     'x-requested-with': "XMLHttpRequest",
@@ -29,7 +34,7 @@ header_android = {
     'Accept-Language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 header_protobuf = {
-    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/12.87.1.1 skin/default CLBTiebaDesktop/{consts.APP_VERSION_STR}",
+    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) tieba/{TIEBA_CLIENT_VERSION} CLBTiebaDesktop/{consts.APP_VERSION_STR}",
     'Accept': "*/*",
     'Accept-Encoding': "gzip, deflate",
     'Sec-Fetch-Site': "same-origin",
@@ -38,30 +43,24 @@ header_protobuf = {
     'Accept-Language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
     "x_bd_data_type": "protobuf"
 }
-SCHEME_HTTP = 'http://'
-SCHEME_HTTPS = 'https://'
-TIEBA_APP_HOST = 'tiebac.baidu.com'
-TIEBA_WEB_HOST = 'tieba.baidu.com'
-TIEBA_CLIENT_VERSION = '12.91.1.0'
+
+
+def generate_sign_key(str_dict: dict):
+    """贴吧表单签名的纯python实现"""
+    form_content = ''
+    for k, v in str_dict.items():
+        form_content += f'{k}={v}'
+    form_content += 'tiebaclient!!!'
+    md5_key = hashlib.md5(form_content.encode()).hexdigest().upper()
+
+    return md5_key
 
 
 def calc_sign(str_dict: dict):
     """生成待提交数据的签名，并把签名添加到表单字典中"""
-    sign_list_adp = []
-    for k, v in str_dict.items():
-        sign_list_adp.append((str(k), str(v)))
-    sign = _sign(sign_list_adp)  # 贴吧签名的实现较为复杂，因此这里直接调用aiotieba的
-    str_dict['sign'] = sign
+    signkey = generate_sign_key(str_dict)
+    str_dict['sign'] = signkey
     return str_dict
-
-
-def get_sign(str_dict: dict):
-    """计算并返回待提交数据的签名"""
-    sign_list_adp = []
-    for k, v in str_dict.items():
-        sign_list_adp.append((str(k), str(v)))
-    sign = _sign(sign_list_adp)  # 贴吧签名的实现较为复杂，因此这里直接调用aiotieba的
-    return sign
 
 
 def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict = None, return_json=True,

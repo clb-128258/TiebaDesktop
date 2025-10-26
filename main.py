@@ -1,4 +1,6 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
+import time
+
 from core_features import *
 
 
@@ -168,14 +170,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton_9.clicked.connect(self.clear_webview_cookies)
         self.pushButton_6.clicked.connect(self.save_local_config)
 
-        webview2.loadLibs()
-        self.webview = webview2.QWebView2View()
-        self.webview.setProfile(
-            webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
-        self.webview.initRender()
-
     def closeEvent(self, a0):
-        self.webview.destroyWebview()
         a0.accept()
 
     def init_login_button_menu(self):
@@ -327,7 +322,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.get_log_size()
 
     def clear_pics(self):
-        if QMessageBox.warning(self, '警告', '确认要清理图片缓存吗？',
+        if QMessageBox.warning(self, '警告', '确认要清理图片缓存吗？清理这些数据需要一些时间，请耐心等待。',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             for i in os.listdir(f'{datapath}/image_caches'):
                 try:
@@ -339,25 +334,45 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.get_pic_size()
 
     def clear_webview_cache(self):
-        if QMessageBox.warning(self, '警告', '确认要清空浏览器缓存数据吗？',
+        if QMessageBox.warning(self, '警告', '确认要清空浏览器缓存数据吗？清理这些数据需要一些时间，请耐心等待。',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             try:
-                self.webview.clearCacheData()
+                def on_loaded():
+                    webview.clearCacheData()
+                    time.sleep(2)
+                    webview.destroyWebview()
+
+                    QMessageBox.information(self, '提示', '浏览器缓存清理成功。', QMessageBox.Ok)
+
+                webview2.loadLibs()
+                webview = webview2.QWebView2View()
+                webview.setProfile(
+                    webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
+                webview.renderInitializationCompleted.connect(on_loaded)
+                webview.initRender()
             except:
                 QMessageBox.critical(self, '错误', '浏览器缓存清理失败。', QMessageBox.Ok)
-            else:
-                QMessageBox.information(self, '提示', '浏览器缓存清理成功。', QMessageBox.Ok)
 
     def clear_webview_cookies(self):
         if QMessageBox.warning(self, '警告',
-                               '清空 Cookies 会导致你的贴吧账号在浏览器内退出登录，其它网站亦是如此。此操作不可撤销。确认要清空浏览器 Cookies 数据吗？',
+                               '清空 Cookies 会导致你的贴吧账号在浏览器内退出登录，其它网站亦是如此。此操作不可撤销。\n确认要清空浏览器 Cookies 数据吗？清理这些数据需要一些时间，请耐心等待。',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             try:
-                self.webview.clearCookies()
+                def on_loaded():
+                    webview.clearCookies()
+                    time.sleep(2)
+                    webview.destroyWebview()
+
+                    QMessageBox.information(self, '提示', '浏览器 Cookies 数据清理成功。', QMessageBox.Ok)
+
+                webview2.loadLibs()
+                webview = webview2.QWebView2View()
+                webview.setProfile(
+                    webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
+                webview.renderInitializationCompleted.connect(on_loaded)
+                webview.initRender()
             except:
                 QMessageBox.critical(self, '错误', '浏览器 Cookies 数据清理失败。', QMessageBox.Ok)
-            else:
-                QMessageBox.information(self, '提示', '浏览器 Cookies 数据清理成功。', QMessageBox.Ok)
 
 
 class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
