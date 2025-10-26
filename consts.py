@@ -2,7 +2,7 @@
 import os
 
 enable_log_file = True
-APP_VERSION_STR = '1.1.2-release'
+APP_VERSION_STR = '1.1.2-beta'
 APP_VERSION_NUM = 4
 encrypt_key = 'G6WxHyBcliRT5KqcaLkskO5SKB3JJ9dX'
 datapath = './tiebadesktop_userdata'
