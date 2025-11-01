@@ -2,13 +2,14 @@ import asyncio
 
 import aiotieba
 import requests
+import pyperclip
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr
 from publics.funcs import LoadingFlashWidget, ExtListWidgetItem, start_background_thread, cut_string, \
-    make_thread_content, timestamp_to_string
+    make_thread_content, timestamp_to_string, open_url_in_browser
 import publics.logging as logging
 
 from ui import user_home_page
@@ -22,6 +23,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
     nick_name = ''
     real_user_id = -1
+    real_tieba_id = -1
+    real_portrait = ''
+    real_baidu_user_name = ''
 
     def __init__(self, bduss, stoken, user_id_portrait):
         super().__init__()
@@ -110,12 +114,77 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
         old_mute = QAction('禁言', self)
         old_mute.triggered.connect(lambda: self.do_action_async('mute'))
-        old_mute.setToolTip('禁止该用户回复你的贴子。\nPS：该功能存在于旧版本贴吧中，已被新版本的拉黑功能取代，不推荐使用。')
+        old_mute.setToolTip('禁止该用户回复你的贴子。\n'
+                            'PS：该功能存在于旧版本贴吧中，已被新版本的拉黑功能取代，不推荐使用。')
         menu.addAction(old_mute)
 
         cancel_old_mute = QAction('取消禁言', self)
         cancel_old_mute.triggered.connect(lambda: self.do_action_async('unmute'))
         menu.addAction(cancel_old_mute)
+
+        menu.addSeparator()
+
+        copy_datas = QMenu(self)
+        copy_datas.setToolTipsVisible(True)
+        copy_datas.setTitle('复制...')
+
+        copy_nickname = QAction('复制昵称', self)
+        copy_nickname.setToolTip('复制该用户的昵称。')
+        copy_nickname.triggered.connect(lambda: pyperclip.copy(self.nick_name))
+        copy_datas.addAction(copy_nickname)
+
+        copy_user_name = QAction('复制用户名', self)
+        copy_user_name.setToolTip(
+            '复制该用户使用的用户名。\n'
+            '用户名在所有百度系产品是通用的，不同于昵称，具有唯一性。该字段可能为空。')
+        copy_user_name.triggered.connect(lambda: pyperclip.copy(self.real_baidu_user_name))
+        copy_datas.addAction(copy_user_name)
+
+        copy_tieba_id = QAction('复制贴吧 ID', self)
+        copy_tieba_id.setToolTip('复制贴吧 APP 个人主页内显示的贴吧 ID。该字段可能为空。')
+        copy_tieba_id.triggered.connect(lambda: pyperclip.copy(self.real_tieba_id))
+        copy_datas.addAction(copy_tieba_id)
+
+        copy_user_id = QAction('复制用户 ID', self)
+        copy_user_id.setToolTip(
+            '复制贴吧内部使用的用户 ID。\n'
+            '请注意，用户 ID 不是贴吧 ID，两者是有区别的。\n'
+            '该字段一定不为空，且具有唯一性，可用于标识用户身份。')
+        copy_user_id.triggered.connect(lambda: pyperclip.copy(self.real_user_id))
+        copy_datas.addAction(copy_user_id)
+
+        copy_portrait = QAction('复制 Portrait 字段', self)
+        copy_portrait.setToolTip(
+            '复制贴吧内部使用的 Portrait。\n'
+            '该字段一定不为空，且具有唯一性，可用于标识用户身份，或直接用于获取用户头像图片。')
+        copy_portrait.triggered.connect(lambda: pyperclip.copy(self.real_portrait))
+        copy_datas.addAction(copy_portrait)
+
+        menu.addMenu(copy_datas)
+
+        open_in_browser = QAction('在浏览器内打开', self)
+        open_in_browser.triggered.connect(
+            lambda: open_url_in_browser(f'https://tieba.baidu.com/home/main?id={self.real_portrait}'))
+        menu.addAction(open_in_browser)
+
+        show_follow_forum_strongly_menu = QMenu(self)
+        show_follow_forum_strongly_menu.setTitle('查询该用户关注的吧')
+
+        chengqing = QAction('澄清·工具箱', self)
+        chengqing.triggered.connect(lambda: open_url_in_browser(f'http://chengqing.cc/'))
+        show_follow_forum_strongly_menu.addAction(chengqing)
+
+        buer = QAction('不二的贴吧工具箱', self)
+        buer.triggered.connect(
+            lambda: open_url_in_browser(f'https://www.82cat.com/tieba/forum/{self.real_baidu_user_name}/1'))
+        show_follow_forum_strongly_menu.addAction(buer)
+
+        ouotool = QAction('ouo 工具箱', self)
+        ouotool.triggered.connect(
+            lambda: open_url_in_browser(f'https://ouotool.com/tb?un={self.real_baidu_user_name}'))
+        show_follow_forum_strongly_menu.addAction(ouotool)
+
+        menu.addMenu(show_follow_forum_strongly_menu)
 
         self.pushButton.setMenu(menu)
 
@@ -327,10 +396,11 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         else:
                             self.real_user_id = user_info.user_id
                             self.nick_name = data['name'] = user_info.nick_name_new
+                            self.real_portrait = user_info.portrait
                             data['sex'] = user_info.gender
                             data['level'] = user_info.glevel
                             data['agree_c'] = user_info.agree_num
-                            data['tieba_id'] = user_info.tieba_uid
+                            self.real_tieba_id = data['tieba_id'] = user_info.tieba_uid
                             data['account_age'] = user_info.age
                             data['ip'] = user_info.ip
                             data['follow_forum_count'] = user_info.forum_num
@@ -342,7 +412,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             data['follow_forums_show_permission'] = user_info.priv_like
                             data['desp'] = user_info.sign
                             data['post_c'] = user_info.post_num
-                            data['bd_user_name'] = user_info.user_name
+                            self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
 
                             pixmap = QPixmap()
                             pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
