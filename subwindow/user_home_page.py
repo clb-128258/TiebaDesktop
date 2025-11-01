@@ -35,7 +35,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.user_id_portrait = user_id_portrait
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.label_11.setPixmap(QPixmap('ui/user_ban.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
+        self.label_11.setPixmap(QPixmap('ui/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
         self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
         self.init_user_action_menu()
 
