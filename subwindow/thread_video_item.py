@@ -46,7 +46,6 @@ class ThreadVideoItem(QWidget, thread_video_item.Ui_Form):
             if not self.webview.isActiveWindow():
                 self.webview.activateWindow()
         else:
-            webview2.loadLibs()
             self.webview = webview2.QWebView2View()
 
             self.webview.resize(920, 530)

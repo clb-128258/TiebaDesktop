@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(1022, 615)
+        Form.resize(1215, 701)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -41,10 +41,10 @@ class Ui_Form(object):
 "                QToolButton {\n"
 "                background-color: transparent;\n"
 "                border: none;\n"
-"                border-radius: 6px;\n"
-"                padding: 6px;\n"
+"                border-radius: 17px;\n"
+"                padding: 4px;\n"
 "                /* 设置图标大小 */\n"
-"                icon-size: 24px;\n"
+"                icon-size: 26px;\n"
 "                /* 可选：设置最小尺寸，保持按钮大小一致 */\n"
 "                min-width: 10px;\n"
 "                min-height: 10px;\n"

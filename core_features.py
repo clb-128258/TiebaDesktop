@@ -17,6 +17,7 @@ from subwindow.interact_list import UserInteractionsList
 from subwindow.star_thread_list import StaredThreadsList
 from subwindow.tieba_search_entry import TiebaSearchWindow
 from subwindow.user_home_page import UserHomeWindow
+from subwindow.history_list import HistoryViewWindow
 
 from ui import mainwindow, settings, login_by_bduss
 

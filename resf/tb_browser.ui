@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1022</width>
-    <height>615</height>
+    <width>1215</width>
+    <height>701</height>
    </rect>
   </property>
   <property name="palette">
@@ -84,10 +84,10 @@
                 QToolButton {
                 background-color: transparent;
                 border: none;
-                border-radius: 6px;
-                padding: 6px;
+                border-radius: 17px;
+                padding: 4px;
                 /* 设置图标大小 */
-                icon-size: 24px;
+                icon-size: 26px;
                 /* 可选：设置最小尺寸，保持按钮大小一致 */
                 min-width: 10px;
                 min-height: 10px;

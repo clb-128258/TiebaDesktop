@@ -1,6 +1,4 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-import time
-
 from core_features import *
 
 
@@ -41,6 +39,8 @@ def check_webview2():
         msgbox.warning(None, '运行警告',
                        '你的电脑上似乎还未安装 WebView2 运行时。本程序的部分功能（如登录等）将不可用。',
                        QMessageBox.Ok)
+    else:
+        webview2.loadLibs()
 
 
 def handle_command_events():
@@ -344,7 +344,6 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
                     QMessageBox.information(self, '提示', '浏览器缓存清理成功。', QMessageBox.Ok)
 
-                webview2.loadLibs()
                 webview = webview2.QWebView2View()
                 webview.setProfile(
                     webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
@@ -365,7 +364,6 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
                     QMessageBox.information(self, '提示', '浏览器 Cookies 数据清理成功。', QMessageBox.Ok)
 
-                webview2.loadLibs()
                 webview = webview2.QWebView2View()
                 webview.setProfile(
                     webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
@@ -459,7 +457,6 @@ class LoginWebView(QDialog):
         self.closeSignal.connect(self.close)
         self.init_flash_widget()
 
-        webview2.loadLibs()
         self.webview = webview2.QWebView2View()
         self.webview.setParent(self)
         self.webview.tokenGot.connect(self.start_login)
@@ -667,6 +664,10 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         tb_search_window = TiebaSearchWindow(self.user_data['bduss'], self.user_data['stoken'])
         qt_window_mgr.add_window(tb_search_window)
 
+    def open_history_window(self):
+        history_window = HistoryViewWindow()
+        qt_window_mgr.add_window(history_window)
+
     def init_pages(self):
         self.recommend = RecommandWindow(self.user_data['bduss'], self.user_data['stoken'])
         self.stackedWidget.addWidget(self.recommend)
@@ -696,6 +697,10 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.my_agrees = QAction('我的点赞', self)
         self.my_agrees.triggered.connect(self.open_agreed_window)
         menu.addAction(self.my_agrees)
+
+        self.view_history = QAction('浏览记录', self)
+        self.view_history.triggered.connect(self.open_history_window)
+        menu.addAction(self.view_history)
 
         menu.addSeparator()
         self.login = QAction('添加新账号', self)

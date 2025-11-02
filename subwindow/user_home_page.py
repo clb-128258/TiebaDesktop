@@ -420,6 +420,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                                    Qt.SmoothTransformation)
                             data['portrait_pixmap'] = pixmap
 
+                            profile_mgr.add_view_history(2, {"uid": self.real_user_id, "portrait": self.real_portrait,
+                                                             "nickname": self.nick_name})
+
                     self.set_head_info_signal.emit(data)
 
             except Exception as e:

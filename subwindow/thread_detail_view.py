@@ -761,6 +761,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             width = j.show_width
                             preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
+                        profile_mgr.add_view_history(1,
+                                                     {"thread_id": self.thread_id, "title": f'{title} - {forum_name}吧'})
+
                         tdata = {'forum_id': forum_id,  # 吧id
                                  'title': title,  # 标题
                                  'content': content,  # 正内容

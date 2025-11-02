@@ -4,6 +4,7 @@ import queue
 import subprocess
 import threading
 import time
+import datetime
 
 import pyperclip
 import requests
@@ -69,7 +70,8 @@ def create_data():
         'forum_view_settings': {'default_sort': 0},
         'web_browser_settings': {'url_open_policy': 0}},
         f'{datapath}/cache_index/fidfname_index.json': {},
-        f'{datapath}/d2id_flag': {'uid': ''}}  # 欲创建的json文件
+        f'{datapath}/d2id_flag': {'uid': ''},
+        f'{datapath}/view_history': []}  # 欲创建的json文件
 
     for i in expect_folder:
         if not os.path.isdir(i):
@@ -285,16 +287,24 @@ def timestamp_to_string(ts: int):
     current_time = time.time()
     time_separation = abs(current_time - ts)
     if time_separation < 60:  # 一分钟以内
-        timestr = f'{round(time_separation)} 秒前'
+        timestr = f'{int(time_separation)} 秒前'
     elif time_separation < 3600:  # 一小时以内
-        timestr = f'{round(time_separation / 60)} 分钟前'
+        timestr = f'{int(time_separation / 60)} 分钟前'
     elif time_separation < 86400:  # 一天以内
-        timestr = f'{round(time_separation / 3600)} 小时前'
+        timestr = f'{int(time_separation / 3600)} 小时前'
     elif time_separation < 604800:  # 一星期以内
         timeArray = time.localtime(ts)
         nodate_timestr = time.strftime("%H:%M:%S", timeArray)
-        timestr = f'{round(time_separation / 86400)} 天前的 {nodate_timestr}'
-    elif ts >= current_time - (current_time % 31536000):  # 今年以内
+        pass_days = int(time_separation / 86400)
+        if pass_days == 1:
+            pass_days_str = '昨天'
+        elif pass_days == 2:
+            pass_days_str = '前天'
+        else:
+            pass_days_str = f'{pass_days} 天前'
+
+        timestr = f'{pass_days_str}的 {nodate_timestr}'
+    elif ts >= current_time - datetime.datetime(datetime.datetime.now().year, 1, 1).timestamp():  # 今年以内
         timeArray = time.localtime(ts)
         timestr = time.strftime("%m-%d %H:%M:%S", timeArray)
     else:  # 更早的

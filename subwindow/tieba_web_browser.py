@@ -1,10 +1,10 @@
 import yarl
-from PyQt5.QtCore import Qt,  QSize, QByteArray
+from PyQt5.QtCore import Qt, QSize, QByteArray
 from PyQt5.QtGui import QIcon, QMovie
 from PyQt5.QtWidgets import QWidget
 from consts import datapath
-from publics import webview2, profile_mgr, qt_window_mgr
-from publics.funcs import open_url_in_browser, cut_string
+from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr
+from publics.funcs import open_url_in_browser, cut_string, start_background_thread
 
 from ui import tb_browser
 
@@ -54,7 +54,7 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
     def parse_weburl_to_tburl(self):
         tb_url = ''
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             if widget.isRenderInitOk():
                 url = widget.url()
                 tb_thread_urls = ('http://tieba.baidu.com/p/', 'https://tieba.baidu.com/p/',)
@@ -75,22 +75,22 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
 
     def button_back(self):
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             widget.back()
 
     def button_forward(self):
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             widget.forward()
 
     def button_refresh(self):
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             widget.reload()
 
     def button_os_browser(self):
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             open_url_in_browser(widget.url(), True)
 
     def button_open_client(self):
@@ -100,12 +100,12 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
 
     def button_open_downloads(self):
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             widget.openDefaultDownloadDialog()
 
     def load_new_page(self):
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             url = self.lineEdit.text()
             if not url.startswith(('http://', 'https://')):
                 url = 'http://' + url
@@ -131,7 +131,7 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
 
     def reset_url_text(self):
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             self.lineEdit.setText(widget.url())
         else:
             self.lineEdit.setText('')
@@ -147,37 +147,10 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
             self.tabWidget.tabBar().show()
 
     def add_new_page(self, url):
-        def stop_ani():
-            webview.show_movie.stop()
-            webview.setWindowIcon(webview.icon())
-            webview.setWindowTitle(webview.title())
-
-        webview2.loadLibs()
-
-        webview = webview2.QWebView2View()
-        webview.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        webview.setWindowTitle('正在加载...')
-
-        webview.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
-        webview.show_movie.setScaledSize(QSize(50, 50))
-        webview.show_movie.frameChanged.connect(
-            lambda: webview.setWindowIcon(QIcon(webview.show_movie.currentPixmap())))
-
-        webview.titleChanged.connect(webview.setWindowTitle)
-        webview.iconChanged.connect(webview.setWindowIcon)
-        webview.fullScreenRequested.connect(self.handle_fullscreen)
-        webview.windowCloseRequested.connect(lambda: self.remove_widget(self.tabWidget.indexOf(webview)))
-        webview.newtabSignal.connect(self.add_new_page)
-        webview.loadStarted.connect(webview.show_movie.start)
-        webview.loadStarted.connect(lambda: webview.setWindowTitle('正在加载...'))
-        webview.loadFinished.connect(stop_ani)
-        webview.urlChanged.connect(self.reset_url_text)
-        webview.urlChanged.connect(self.reset_client_button_visitable)
-        webview.setProfile(self.default_profile)
-        webview.loadAfterRender(url)
-
-        self.add_new_widget(webview)
+        webview = ExtWebView2(self.default_profile, url)
+        webview.bind_to_tab_container(self)
         webview.initRender()
+        self.add_new_widget(webview)
 
     def add_new_widget(self, widget: QWidget):
         self.tabWidget.addTab(widget, widget.windowIcon(), widget.windowTitle())
@@ -186,6 +159,7 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
             lambda title: self.tabWidget.setTabText(self.tabWidget.indexOf(widget), cut_string(title, 20)))
         widget.windowTitleChanged.connect(
             lambda title: self.tabWidget.setTabToolTip(self.tabWidget.indexOf(widget), title))
+
         widget.windowIconChanged.connect(self.reset_main_title)
         widget.windowTitleChanged.connect(self.reset_main_title)
 
@@ -194,7 +168,7 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
     def remove_widget(self, index: int):
         widget = self.tabWidget.widget(index)
         self.tabWidget.removeTab(index)
-        if isinstance(widget, webview2.QWebView2View):
+        if isinstance(widget, ExtWebView2):
             widget.destroyWebview()
             widget.show_movie.stop()
         widget.deleteLater()
@@ -202,3 +176,60 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
 
         if self.tabWidget.count() == 0:
             self.close()
+
+
+class ExtWebView2(webview2.QWebView2View):
+    """经过重写的webview2"""
+
+    def __init__(self, profile: webview2.WebViewProfile, url: str):
+        super().__init__()
+
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.setWindowTitle('正在加载...')
+
+        self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
+        self.show_movie.setScaledSize(QSize(50, 50))
+        self.show_movie.frameChanged.connect(
+            lambda: self.setWindowIcon(QIcon(self.show_movie.currentPixmap())))
+
+        self.titleChanged.connect(self.setWindowTitle)
+        self.iconChanged.connect(self.setWindowIcon)
+
+        self.loadStarted.connect(self.start_ani)
+        self.loadFinished.connect(self.stop_ani)
+
+        self.setProfile(profile)
+        self.loadAfterRender(url)
+
+    def record_history(self, icon_url, title, url):
+        md5 = cache_mgr.save_md5_ico(icon_url)
+        profile_mgr.add_view_history(4, {"web_icon_md5": md5, "web_title": title, "web_url": url})
+
+    def start_ani(self):
+        self.show_movie.start()
+        self.setWindowTitle('正在加载...')
+
+    def stop_ani(self, isok):
+        self.show_movie.stop()
+        self.setWindowIcon(self.icon())
+        self.setWindowTitle(self.title())
+
+        if isok:
+            start_background_thread(self.record_history, (self.iconUrl(), self.title(), self.url()))
+        else:
+            start_background_thread(self.record_history, ('', self.url(), self.url()))
+
+    def bind_to_tab_container(self, tc: TiebaWebBrowser):
+        try:
+            self.fullScreenRequested.disconnect()
+            self.windowCloseRequested.disconnect()
+            self.newtabSignal.connect.disconnect()
+            self.urlChanged.connect.disconnect()
+        except TypeError:
+            pass
+
+        self.fullScreenRequested.connect(tc.handle_fullscreen)
+        self.windowCloseRequested.connect(lambda: tc.remove_widget(tc.tabWidget.indexOf(self)))
+        self.newtabSignal.connect(tc.add_new_page)
+        self.urlChanged.connect(tc.reset_url_text)
+        self.urlChanged.connect(tc.reset_client_button_visitable)

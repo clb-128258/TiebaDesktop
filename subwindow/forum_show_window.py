@@ -433,6 +433,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 else:
                     forum_admin_name = ''
                     forum_admin_pixmap = None
+
                 logging.log_INFO(
                     f'forum (id {self.forum_id}, name {forum_name}) loading headimg_bin_info')
                 forum_pixmap = QPixmap()
@@ -440,6 +441,10 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 if response.content:
                     forum_pixmap.loadFromData(response.content)
                     forum_pixmap = forum_pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                md5v = cache_mgr.save_md5_ico(forum.small_avatar)
+                profile_mgr.add_view_history(3, {"icon_md5": md5v, "forum_id": self.forum_id,
+                                                 "forum_name": self.forum_name})
 
                 logging.log_INFO(
                     f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
