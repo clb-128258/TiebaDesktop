@@ -186,7 +186,6 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
             self.forum_name = datas['forum_name']
             self.label_2.setText(datas['forum_name'] + '吧')
             self.label.setPixmap(datas['forum_pixmap'])
-            self.label_5.setText(datas['forum_desp'] + '\n' + datas['forum_desp_ex'])
             self.label_11.setText(f'吧 ID：{self.forum_id}')
             self.label_3.setText('关注数：' + str(datas['follow_c']))
             self.label_4.setText('贴子数：' + str(datas['thread_c']))
@@ -198,6 +197,16 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                   f'你可以到 <a href="https://tieba.baidu.com/f/like/furank?kw={self.forum_name}&ie=utf-8">牛人排行榜</a> '
                                   f'中查看{self.forum_name}吧的等级排行榜。</p>'
                                   f'</body></html>')
+
+            forum_desp_text = ''
+            if datas['forum_desp']:
+                forum_desp_text += datas['forum_desp']
+            if datas['forum_desp_ex']:
+                forum_desp_text += '\n' + datas['forum_desp_ex']
+            if not forum_desp_text:
+                self.label_5.hide()
+            else:
+                self.label_5.setText(forum_desp_text)
 
             if self.bduss:
                 self.is_followed = datas['follow_info']['isfollow']

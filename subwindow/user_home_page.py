@@ -27,7 +27,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
     real_portrait = ''
     real_baidu_user_name = ''
 
-    def __init__(self, bduss, stoken, user_id_portrait):
+    def __init__(self, bduss, stoken, user_id_portrait, tab_index=0):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
@@ -80,6 +80,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.listWidget_3.itemDoubleClicked.connect(self.open_user_homepage)
         self.listWidget_5.itemDoubleClicked.connect(self.open_user_homepage)
 
+        self.tabWidget.setCurrentIndex(tab_index)
         self.init_load_flash()
         self.get_head_info_async()
 
@@ -492,9 +493,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             widget.set_info(datas['forum_pixmap'],
                             datas['forum_name'] + '吧',
                             datas['forum_desp'],
-                            'Lv.{level} | 经验值 {exp}'.format(
+                            '{common_follow_flag}Lv.{level} | 经验值 {exp}'.format(
+                                common_follow_flag='共同关注 | ' if datas['is_common_follow'] else '',
                                 level=datas['level'],
-                                exp=datas['exp'])
+                                exp=datas['exp']),
                             )
             widget.set_level_color(datas['level'])
             item.setSizeHint(widget.size())

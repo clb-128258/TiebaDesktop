@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(127, 458)
+        Form.resize(119, 458)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -133,7 +133,7 @@ class Ui_Form(object):
         spacerItem2 = QtWidgets.QSpacerItem(0, 50, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         self.gridLayout_4.addItem(spacerItem2, 1, 0, 1, 3)
         self.gridLayout_4.setColumnStretch(0, 2)
-        self.gridLayout_4.setColumnStretch(1, 6)
+        self.gridLayout_4.setColumnStretch(1, 10)
         self.gridLayout_4.setColumnStretch(2, 2)
 
         self.retranslateUi(Form)

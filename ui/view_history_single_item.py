@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(161, 23)
+        Form.resize(165, 31)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -107,5 +107,5 @@ class Ui_Form(object):
         self.label.setText(_translate("Form", "icon"))
         self.label_2.setText(_translate("Form", "history_text"))
         self.label_3.setText(_translate("Form", "time"))
-        self.toolButton_3.setToolTip(_translate("Form", "<html><head/><body><p>刷新</p></body></html>"))
+        self.toolButton_3.setToolTip(_translate("Form", "<html><head/><body><p>删除此条记录</p></body></html>"))
         self.toolButton_3.setText(_translate("Form", "X"))

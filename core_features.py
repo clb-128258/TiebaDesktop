@@ -1,7 +1,7 @@
 """核心模块，实现了程序内大部分功能，本程序的主要函数和类均封装在此处"""
 from PyQt5.QtCore import QLocale, QTranslator, QTimer
 from PyQt5.QtGui import QPixmapCache
-from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, QApplication
+from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, QApplication, QWidgetAction
 
 from publics import profile_mgr, webview2
 from publics import proxytool
@@ -18,6 +18,7 @@ from subwindow.star_thread_list import StaredThreadsList
 from subwindow.tieba_search_entry import TiebaSearchWindow
 from subwindow.user_home_page import UserHomeWindow
 from subwindow.history_list import HistoryViewWindow
+from subwindow.mainwindow_menu import MainPopupMenu
 
 from ui import mainwindow, settings, login_by_bduss
 

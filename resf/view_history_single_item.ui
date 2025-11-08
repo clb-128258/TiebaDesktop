@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>161</width>
-    <height>23</height>
+    <width>165</width>
+    <height>31</height>
    </rect>
   </property>
   <property name="palette">
@@ -166,7 +166,7 @@
      <item>
       <widget class="QToolButton" name="toolButton_3">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;刷新&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;删除此条记录&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>X</string>

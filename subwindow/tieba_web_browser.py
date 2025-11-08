@@ -202,8 +202,12 @@ class ExtWebView2(webview2.QWebView2View):
         self.loadAfterRender(url)
 
     def record_history(self, icon_url, title, url):
-        md5 = cache_mgr.save_md5_ico(icon_url)
-        profile_mgr.add_view_history(4, {"web_icon_md5": md5, "web_title": title, "web_url": url})
+        if url:
+            if icon_url:
+                md5 = cache_mgr.save_md5_ico(icon_url)
+            else:
+                md5 = ''
+            profile_mgr.add_view_history(4, {"web_icon_md5": md5, "web_title": title, "web_url": url})
 
     def start_ani(self):
         self.show_movie.start()

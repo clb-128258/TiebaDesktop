@@ -32,7 +32,6 @@ class SingleHistoryItem(QWidget, view_history_single_item.Ui_Form):
         self.setupUi(self)
 
         self.parent_listwidget = parent_listwidget
-        self.toolButton_3.hide()
 
         self.setIconAsync.connect(self.label.setPixmap)
 
@@ -57,25 +56,21 @@ class SingleHistoryItem(QWidget, view_history_single_item.Ui_Form):
     def sizeHint(self):
         height = self.height()
         # 获取父QListWidget的宽度
-        width = self.parent_listwidget.width() + 30
+        width = self.parent_listwidget.width()
 
         return QSize(width, height)
 
     def load_icon(self):
         pixmap = QPixmap()
-        if self.history_info['type'] == 1:
-            pixmap.load('ui/tieba_logo_small.png')
-        elif self.history_info['type'] == 2:
+        if self.history_info['type'] == 2:
             pixmap.loadFromData(cache_mgr.get_portrait(self.history_info["user_info"]["portrait"]))
         elif self.history_info['type'] == 3:
             pixmap.loadFromData(cache_mgr.get_md5_icon(self.history_info["forum_info"]["icon_md5"]))
         elif self.history_info['type'] == 4:
-            web_md5 = self.history_info["web_info"]["web_icon_md5"]
-            if web_md5:
-                pixmap.loadFromData(cache_mgr.get_md5_icon(web_md5))
-            else:
-                pixmap.load('ui/tieba_logo_small.png')
+            pixmap.loadFromData(cache_mgr.get_md5_icon(self.history_info["web_info"]["web_icon_md5"]))
 
+        if pixmap.isNull():
+            pixmap.load('ui/tieba_logo_small.png')
         pixmap = pixmap.scaled(20, 20, transformMode=Qt.SmoothTransformation)
 
         self.setIconAsync.emit(pixmap)
@@ -148,6 +143,7 @@ class DayHistoryItem(QWidget, view_history_item.Ui_Form):
 
 
 class HistoryViewWindow(QWidget, view_history.Ui_Form):
+    """浏览记录窗口"""
     def __init__(self):
         super().__init__()
         self.setupUi(self)

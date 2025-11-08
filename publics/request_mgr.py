@@ -2,6 +2,7 @@
 import requests
 import consts
 import hashlib
+import enum
 
 SCHEME_HTTP = 'http://'
 SCHEME_HTTPS = 'https://'
@@ -43,6 +44,12 @@ header_protobuf = {
     'Accept-Language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
     "x_bd_data_type": "protobuf"
 }
+
+
+class TiebaClientType(enum.IntEnum):
+    """贴吧客户端类型"""
+    IPHONE = 1  # ios版客户端
+    ANDROID = 2  # 安卓客户端
 
 
 def generate_sign_key(str_dict: dict):

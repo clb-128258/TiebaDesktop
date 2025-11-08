@@ -645,28 +645,17 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         self.recommend.get_recommand_async()
         self.flist.get_bars_async()
+        self.user_info_widget.get_self_info_async()
         if self.stackedWidget.currentIndex() == 2:
             self.switch_interact_page()
-
-    def open_user_homepage(self, uid):
-        user_home_page = UserHomeWindow(self.user_data['bduss'], self.user_data['stoken'], uid)
-        qt_window_mgr.add_window(user_home_page)
-
-    def open_star_window(self):
-        user_stared_list = StaredThreadsList(self.user_data['bduss'], self.user_data['stoken'])
-        qt_window_mgr.add_window(user_stared_list)
-
-    def open_agreed_window(self):
-        user_stared_list = AgreedThreadsList(self.user_data['bduss'], self.user_data['stoken'])
-        qt_window_mgr.add_window(user_stared_list)
 
     def open_search_window(self):
         tb_search_window = TiebaSearchWindow(self.user_data['bduss'], self.user_data['stoken'])
         qt_window_mgr.add_window(tb_search_window)
 
-    def open_history_window(self):
-        history_window = HistoryViewWindow()
-        qt_window_mgr.add_window(history_window)
+    def open_agreed_window(self):
+        user_stared_list = AgreedThreadsList(profile_mgr.current_bduss, profile_mgr.current_stoken)
+        qt_window_mgr.add_window(user_stared_list)
 
     def init_pages(self):
         self.recommend = RecommandWindow(self.user_data['bduss'], self.user_data['stoken'])
@@ -686,24 +675,19 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
     def init_profile_menu(self):
         menu = QMenu()
-        self.my_homepage = QAction('我的个人主页', self)
-        self.my_homepage.triggered.connect(lambda: self.open_user_homepage(self.self_user_portrait))
-        menu.addAction(self.my_homepage)
 
-        self.my_favourite = QAction('我的收藏', self)
-        self.my_favourite.triggered.connect(self.open_star_window)
-        menu.addAction(self.my_favourite)
+        self.user_info_widget = MainPopupMenu(menu)
+        self.user_info_widget_action = QWidgetAction(self)
+        self.user_info_widget.followForumClicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
+        self.user_info_widget_action.setDefaultWidget(self.user_info_widget)
+        menu.addAction(self.user_info_widget_action)
 
         self.my_agrees = QAction('我的点赞', self)
         self.my_agrees.triggered.connect(self.open_agreed_window)
         menu.addAction(self.my_agrees)
 
-        self.view_history = QAction('浏览记录', self)
-        self.view_history.triggered.connect(self.open_history_window)
-        menu.addAction(self.view_history)
-
         menu.addSeparator()
-        self.login = QAction('添加新账号', self)
+        self.login = QAction('登录账号', self)
         self.login.triggered.connect(self.login_exec)
         menu.addAction(self.login)
 
@@ -720,15 +704,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
     def set_profile_menu(self):
         if self.user_data['bduss']:
-            self.my_homepage.setVisible(True)
+            self.user_info_widget_action.setVisible(True)
             self.my_agrees.setVisible(True)
-            self.my_favourite.setVisible(True)
             self.exit_login_ac.setVisible(True)
             self.login.setVisible(False)
         else:
-            self.my_homepage.setVisible(False)
+            self.user_info_widget_action.setVisible(False)
             self.my_agrees.setVisible(False)
-            self.my_favourite.setVisible(False)
             self.exit_login_ac.setVisible(False)
             self.login.setVisible(True)
 
