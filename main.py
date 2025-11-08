@@ -1,4 +1,8 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
+import platform
+import time
+
+import consts
 from core_features import *
 
 
@@ -153,7 +157,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_6.setPixmap(QPixmap('ui/tieba_logo_small.png'))
-        self.label_8.setText(f'版本 {consts.APP_VERSION_STR}')
+        self.set_debug_info()
         self.get_log_size()
         self.get_pic_size()
         self.get_logon_accounts()
@@ -169,6 +173,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton_7.clicked.connect(self.clear_webview_cache)
         self.pushButton_9.clicked.connect(self.clear_webview_cookies)
         self.pushButton_6.clicked.connect(self.save_local_config)
+        self.pushButton_11.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
+        self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
 
     def closeEvent(self, a0):
         a0.accept()
@@ -196,6 +202,15 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
         profile_mgr.save_local_config()
         QMessageBox.information(self, '提示', '设置保存成功。', QMessageBox.Ok)
+
+    def set_debug_info(self):
+        self.label_8.setText(f'版本 {consts.APP_VERSION_STR}')
+        self.label_23.setText(f'Qt 版本：{QT_VERSION_STR} ({QT_VERSION})')
+        self.label_22.setText(f'用户数据目录：{consts.datapath}')
+        self.label_21.setText(f'内部版本信息：version {consts.APP_VERSION_NUM} '
+                              f'with aiotieba {aiotieba.__version__}, TiebaRequestMgr Client Version {request_mgr.TIEBA_CLIENT_VERSION}')
+        self.label_20.setText(f'操作系统版本：{platform.system()} {platform.version()}, on {platform.machine()} CPU')
+        self.label_16.setText('当前系统时间：' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
     def add_account(self):
         d = LoginWebView()
@@ -686,30 +701,32 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.my_agrees.triggered.connect(self.open_agreed_window)
         menu.addAction(self.my_agrees)
 
-        menu.addSeparator()
         self.login = QAction('登录账号', self)
         self.login.triggered.connect(self.login_exec)
         menu.addAction(self.login)
 
-        self.exit_login_ac = QAction('退出当前账号', self)
+        menu.addSeparator()
+
+        self.setting = QAction('软件设置', self)
+        self.setting.triggered.connect(self.open_settings_window)
+        menu.addAction(self.setting)
+
+        self.exit_login_ac = QAction('退出登录', self)
         self.exit_login_ac.triggered.connect(self.exit_login)
         menu.addAction(self.exit_login_ac)
 
-        menu.addSeparator()
-        self.setting = QAction('设置', self)
-        self.setting.triggered.connect(self.open_settings_window)
-        menu.addAction(self.setting)
+        self.exit_whole_app = QAction('退出软件', self)
+        self.exit_whole_app.triggered.connect(self.close)
+        menu.addAction(self.exit_whole_app)
 
         self.pushButton.setMenu(menu)
 
     def set_profile_menu(self):
         if self.user_data['bduss']:
-            self.user_info_widget_action.setVisible(True)
             self.my_agrees.setVisible(True)
             self.exit_login_ac.setVisible(True)
             self.login.setVisible(False)
         else:
-            self.user_info_widget_action.setVisible(False)
             self.my_agrees.setVisible(False)
             self.exit_login_ac.setVisible(False)
             self.login.setVisible(True)

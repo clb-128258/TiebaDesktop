@@ -333,13 +333,15 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     self.label_16.setText('由于隐私设置，只有粉丝可以评论该用户的贴子。')
                 elif data['thread_reply_permission'] == 6:
                     self.label_16.setText('由于隐私设置，只有该用户关注的人可以评论该用户的贴子。')
-            if data['follow_forums_show_permission'] != 1:
+            if data['follow_forums_show_permission'] != 1 or not self.bduss:
                 self.frame_4.show()
                 have_flag_showed = True
                 if data['follow_forums_show_permission'] == 2:
                     self.label_15.setText('该用户设置关注吧列表仅好友可见。')
                 elif data['follow_forums_show_permission'] == 3:
                     self.label_15.setText('该用户隐藏了关注吧列表。')
+                elif not self.bduss:
+                    self.label_15.setText('你还没有登录账号，无法获取关注吧列表，请先登录。')
             if have_flag_showed:
                 self.frame_8.hide()
 

@@ -10,7 +10,7 @@ import time
 import enum
 import sys
 
-FFMPEG_PATH = os.getcwd().replace("\\", "/") + f'/ffmpeg/ffmpeg.exe'  # 本地ffmpeg路径
+FFMPEG_PATH = os.getcwd().replace("\\", "/") + f'/ffmpeg/ffmpeg'  # 本地ffmpeg路径
 FORMAT = pyaudio.paInt16  # 16-bit PCM
 CHANNELS = 2  # 立体声
 RATE = 44100  # 采样率 44.1kHz

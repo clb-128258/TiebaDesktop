@@ -1,6 +1,5 @@
 from PyQt5.QtGui import QPixmap
 
-from subwindow.agree_thread_list import AgreedThreadsList
 from subwindow.history_list import HistoryViewWindow
 from subwindow.star_thread_list import StaredThreadsList
 from subwindow.user_home_page import UserHomeWindow
@@ -81,25 +80,39 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
         qt_window_mgr.add_window(history_window)
 
     def open_user_homepage(self, tab=0):
-        user_home_page = UserHomeWindow(profile_mgr.current_bduss, profile_mgr.current_stoken, profile_mgr.current_uid,
-                                        tab)
-        qt_window_mgr.add_window(user_home_page)
+        if profile_mgr.current_uid != 'default':
+            user_home_page = UserHomeWindow(profile_mgr.current_bduss, profile_mgr.current_stoken,
+                                            profile_mgr.current_uid,
+                                            tab)
+            qt_window_mgr.add_window(user_home_page)
 
     def open_star_window(self):
         user_stared_list = StaredThreadsList(profile_mgr.current_bduss, profile_mgr.current_stoken)
         qt_window_mgr.add_window(user_stared_list)
 
     def _ui_set_self_info(self, data):
-        self.label.setPixmap(data['portrait_pixmap'])
-        self.label_2.setText(data['nickname'])
-        self.label_3.setText('贴吧 ID: ' + str(data['tieba_id']))
+        widgets = [self.toolButton_3, self.frame_1, self.frame_2, self.frame_3, self.frame_4, self.frame_6]
 
-        self.label_8.setText(str(data['agree_me_num']))
-        self.label_10.setText(str(data['follow_forum_num']))
-        self.label_4.setText(str(data['follow']))
-        self.label_6.setText(str(data['fans']))
+        self.label.setPixmap(data['portrait_pixmap'])
         self.label_12.setText(str(data['view_history_num']))
-        self.label_14.setText(str(data['store_num']))
+        if profile_mgr.current_bduss:
+            for i in widgets:
+                i.show()
+
+            self.label_2.setText(data['nickname'])
+            self.label_3.setText('贴吧 ID: ' + str(data['tieba_id']))
+
+            self.label_8.setText(str(data['agree_me_num']))
+            self.label_10.setText(str(data['follow_forum_num']))
+            self.label_4.setText(str(data['follow']))
+            self.label_6.setText(str(data['fans']))
+            self.label_14.setText(str(data['store_num']))
+        else:
+            for i in widgets:
+                i.hide()
+
+            self.label_2.setText('未登录')
+            self.label_3.setText('登录后即可使用所有功能')
 
         self.adjustSize()
         self.resizeEvent(None)
@@ -114,7 +127,7 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
                          'store_num': 0,
                          'fans': 0,
                          'follow': 0,
-                         'view_history_num': 0,
+                         'view_history_num': len(profile_mgr.view_history),
                          'follow_forum_num': 0}
 
             if profile_mgr.current_bduss:
@@ -143,10 +156,16 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
                 emit_data['store_num'] = int(resp['user']['favorite_num'])
                 emit_data['fans'] = int(resp['user']['fans_num'])
                 emit_data['follow'] = int(resp['user']['concern_num'])
-                emit_data['view_history_num'] = len(profile_mgr.view_history)
-                emit_data['follow_forum_num'] = int(resp['user']['my_like_num'])
 
-                self.infoLoaded.emit(emit_data)
+                emit_data['follow_forum_num'] = int(resp['user']['my_like_num'])
+            else:
+                pixmap = QPixmap()
+                pixmap.load('ui/default_user_image.png')
+                pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
+                                       Qt.SmoothTransformation)
+                emit_data['portrait_pixmap'] = pixmap
+
+            self.infoLoaded.emit(emit_data)
 
         def start_async():
             loop = asyncio.new_event_loop()
