@@ -5,10 +5,10 @@ import threading
 import requests
 from PyQt5.QtCore import pyqtSignal, QEvent, Qt, QMimeData, QUrl, QByteArray, QSize
 from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
-from PyQt5.QtWidgets import QWidget, QApplication, QMenu, QAction, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QWidget, QApplication, QMenu, QAction, QFileDialog
 
 import publics.logging as logging
-from publics import request_mgr
+from publics import request_mgr, top_toast_widget
 from ui import image_viewer
 
 
@@ -32,6 +32,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label.setText('图片加载中...')
         self.init_menu()
+        self.init_top_toaster()
         self.scrollArea.viewport().installEventFilter(self)  # 重写事件过滤器
 
         self.updateImage.connect(self._resizeslot)
@@ -46,6 +47,10 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
                 self.wheelEvent(event)  # 手动执行缩放事件
                 return True  # 让qt忽略事件
         return super(NetworkImageViewer, self).eventFilter(source, event)  # 否则照常处理事件
+
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
 
     def closeEvent(self, e):
         self.closed.emit()
@@ -204,14 +209,18 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
                 if not self.originalImage.isNull():
                     self.originalImage.save(path)
             except Exception as e:
-                QMessageBox.critical(self, '文件保存失败', str(e), QMessageBox.StandardButton.Ok)
+                self.top_toaster.showToast(
+                    top_toast_widget.ToastMessage(str(e), icon_type=top_toast_widget.ToastIconType.ERROR))
             else:
-                QMessageBox.information(self, '提示', '文件保存成功。', QMessageBox.StandardButton.Ok)
+                self.top_toaster.showToast(
+                    top_toast_widget.ToastMessage('文件保存成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
 
     def update_download_state(self, f):
         self.show_movie.stop()
         if not f:
-            self.label.setText('图片加载失败，请重新打开图片窗口以重新加载。')
+            self.reset_title()
+            self.label.clear()
+            top_toast_widget.ToastMessage('图片加载失败，请重新加载试试', icon_type=top_toast_widget.ToastIconType.ERROR)
         else:
             self.downloadOk = True
             self.pushButton_4.setEnabled(True)

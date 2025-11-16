@@ -33,6 +33,8 @@ class SingleHistoryItem(QWidget, view_history_single_item.Ui_Form):
 
         self.parent_listwidget = parent_listwidget
 
+        self.toolButton_3.hide()
+
         self.setIconAsync.connect(self.label.setPixmap)
 
         if info:

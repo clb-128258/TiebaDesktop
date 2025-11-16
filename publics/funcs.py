@@ -304,7 +304,7 @@ def timestamp_to_string(ts: int):
             pass_days_str = f'{pass_days} 天前'
 
         timestr = f'{pass_days_str}的 {nodate_timestr}'
-    elif ts >= current_time - datetime.datetime(datetime.datetime.now().year, 1, 1).timestamp():  # 今年以内
+    elif ts >= datetime.datetime(datetime.datetime.now().year, 1, 1, 0, 0, 0).timestamp():  # 今年以内
         timeArray = time.localtime(ts)
         timestr = time.strftime("%m-%d %H:%M:%S", timeArray)
     else:  # 更早的

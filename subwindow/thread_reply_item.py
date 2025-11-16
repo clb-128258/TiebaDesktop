@@ -26,6 +26,9 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
     is_comment = False
     agree_thread_signal = pyqtSignal(str)
 
+    show_msg_outside=False
+    messageAdded=pyqtSignal(str)
+
     def __init__(self, bduss, stoken):
         super().__init__()
         self.setupUi(self)
@@ -69,7 +72,10 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
                 self.agree_thread_async(True)
         else:
-            QMessageBox.information(self, '点赞操作完成', isok)
+            if self.show_msg_outside:
+                self.messageAdded.emit(isok)
+            else:
+                QMessageBox.information(self, '点赞操作完成', isok)
 
     def agree_thread_async(self, is_cancel=False):
         start_background_thread(self.agree_thread, (is_cancel,))
@@ -78,9 +84,9 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         logging.log_INFO(f'agree reply/comment {self.post_id} in thread {self.thread_id}')
         try:
             if not self.bduss:
-                self.agree_thread_signal.emit('你还没有登录，登录后即可为这条回复点赞。')
+                self.agree_thread_signal.emit('你还没有登录，登录后即可为这条回复点赞')
             elif self.portrait == '00000000':
-                self.agree_thread_signal.emit('不能给匿名用户点赞。')
+                self.agree_thread_signal.emit('不能给匿名用户点赞')
             else:
                 account = aiotieba.Account()  # 实例化account以便计算一些数据
                 # 拿tbs
@@ -109,7 +115,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                                                         host_type=2)
                     if int(response['error_code']) == 0:
                         self.agree_num -= 1
-                        self.agree_thread_signal.emit('取消点赞成功。')
+                        self.agree_thread_signal.emit('取消点赞成功')
                     else:
                         self.agree_thread_signal.emit(response['error_msg'])
                 else:
@@ -133,7 +139,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                     if int(response['error_code']) == 0:
                         self.agree_num += 1
                         is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
-                        self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
+                        self.agree_thread_signal.emit("点赞成功 首赞经验 +2" if is_expa2 else "点赞成功")
                     elif int(response['error_code']) == 3280001:
                         self.agree_thread_signal.emit('[ALREADY_AGREE]')
                     else:
@@ -167,7 +173,10 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             if not self.replyWindow.isActiveWindow():
                 self.replyWindow.activateWindow()
         else:
-            QMessageBox.information(self, '暂无回复', f'第 {self.floor} 楼还没有任何回复。', QMessageBox.Ok)
+            if self.show_msg_outside:
+                self.messageAdded.emit(f'第 {self.floor} 楼还没有任何回复')
+            else:
+                QMessageBox.information(self, '暂无回复', f'第 {self.floor} 楼还没有任何回复。', QMessageBox.Ok)
 
     def update_listwidget_size(self, h):
         # 动态更新内容列表大小

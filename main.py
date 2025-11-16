@@ -1,8 +1,4 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-import platform
-import time
-
-import consts
 from core_features import *
 
 
@@ -157,6 +153,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_6.setPixmap(QPixmap('ui/tieba_logo_small.png'))
+        self.init_top_toaster()
         self.set_debug_info()
         self.get_log_size()
         self.get_pic_size()
@@ -178,6 +175,10 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
     def closeEvent(self, a0):
         a0.accept()
+
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
 
     def init_login_button_menu(self):
         menu = QMenu()
@@ -201,7 +202,9 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         profile_mgr.local_config['thread_view_settings']['enable_lz_only'] = self.checkBox_3.isChecked()
         profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
         profile_mgr.save_local_config()
-        QMessageBox.information(self, '提示', '设置保存成功。', QMessageBox.Ok)
+
+        toast = top_toast_widget.ToastMessage('设置保存成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+        self.top_toaster.showToast(toast)
 
     def set_debug_info(self):
         self.label_8.setText(f'版本 {consts.APP_VERSION_STR}')
@@ -235,7 +238,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             os.mkdir(f'{datapath}/webview_data')
             mainw.refresh_all_datas()  # 更新主页面信息
             self.get_logon_accounts()
-            QMessageBox.information(self, '提示', '登录信息清空成功。', QMessageBox.Ok)
+            toast = top_toast_widget.ToastMessage('登录信息清空成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.top_toaster.showToast(toast)
 
     def switch_account(self, bduss="", name=""):
         if not bduss:
@@ -252,7 +256,10 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 save_json_secret(account_list, f'{datapath}/user_bduss')
                 mainw.refresh_all_datas()  # 更新主页面信息
                 self.get_logon_accounts()
-                QMessageBox.information(self, '提示', '账号切换成功。', QMessageBox.Ok)
+
+                toast = top_toast_widget.ToastMessage(f'已切换到账号 {name}',
+                                                      icon_type=top_toast_widget.ToastIconType.SUCCESS)
+                self.top_toaster.showToast(toast)
 
     def delete_account(self, bduss="", name=""):
         if not bduss:
@@ -274,7 +281,10 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             save_json_secret(account_list, f'{datapath}/user_bduss')
             mainw.refresh_all_datas()  # 更新主页面信息
             self.get_logon_accounts()
-            QMessageBox.information(self, '提示', '账号信息删除成功。', QMessageBox.Ok)
+
+            toast = top_toast_widget.ToastMessage(f'账号信息删除成功',
+                                                  icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.top_toaster.showToast(toast)
 
     def load_local_config(self):
         self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
@@ -333,7 +343,10 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                     os.remove(f'{datapath}/logs/{i}')
                 except PermissionError:
                     continue
-            QMessageBox.information(self, '提示', '文件清理成功。', QMessageBox.Ok)
+
+            toast = top_toast_widget.ToastMessage(f'文件清理成功',
+                                                  icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.top_toaster.showToast(toast)
             self.get_log_size()
 
     def clear_pics(self):
@@ -345,7 +358,9 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 except PermissionError:
                     continue
 
-            QMessageBox.information(self, '提示', '图片缓存清理成功。', QMessageBox.Ok)
+            toast = top_toast_widget.ToastMessage(f'图片缓存清理成功',
+                                                  icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.top_toaster.showToast(toast)
             self.get_pic_size()
 
     def clear_webview_cache(self):
@@ -357,7 +372,9 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                     time.sleep(2)
                     webview.destroyWebview()
 
-                    QMessageBox.information(self, '提示', '浏览器缓存清理成功。', QMessageBox.Ok)
+                    toast = top_toast_widget.ToastMessage(f'浏览器缓存清理成功',
+                                                          icon_type=top_toast_widget.ToastIconType.SUCCESS)
+                    self.top_toaster.showToast(toast)
 
                 webview = webview2.QWebView2View()
                 webview.setProfile(
@@ -365,7 +382,9 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 webview.renderInitializationCompleted.connect(on_loaded)
                 webview.initRender()
             except:
-                QMessageBox.critical(self, '错误', '浏览器缓存清理失败。', QMessageBox.Ok)
+                toast = top_toast_widget.ToastMessage(f'浏览器缓存清理失败',
+                                                      icon_type=top_toast_widget.ToastIconType.ERROR)
+                self.top_toaster.showToast(toast)
 
     def clear_webview_cookies(self):
         if QMessageBox.warning(self, '警告',
@@ -377,7 +396,9 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                     time.sleep(2)
                     webview.destroyWebview()
 
-                    QMessageBox.information(self, '提示', '浏览器 Cookies 数据清理成功。', QMessageBox.Ok)
+                    toast = top_toast_widget.ToastMessage(f'浏览器 Cookies 数据清理成功',
+                                                          icon_type=top_toast_widget.ToastIconType.SUCCESS)
+                    self.top_toaster.showToast(toast)
 
                 webview = webview2.QWebView2View()
                 webview.setProfile(
@@ -385,7 +406,9 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 webview.renderInitializationCompleted.connect(on_loaded)
                 webview.initRender()
             except:
-                QMessageBox.critical(self, '错误', '浏览器 Cookies 数据清理失败。', QMessageBox.Ok)
+                toast = top_toast_widget.ToastMessage(f'浏览器 Cookies 数据清理失败',
+                                                      icon_type=top_toast_widget.ToastIconType.ERROR)
+                self.top_toaster.showToast(toast)
 
 
 class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):

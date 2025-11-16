@@ -31,7 +31,7 @@ def load_local_config() -> dict:
 def save_local_config():
     global local_config
     with open(f'{consts.datapath}/config.json', 'wt') as file:
-        file.write(json.dumps(local_config))
+        file.write(json.dumps(local_config, indent=4))
 
 
 def load_view_history() -> dict:
@@ -130,7 +130,7 @@ def add_view_history(type_: int, data_dict: dict):
 def save_view_history():
     global view_history
     with open(f'{consts.datapath}/view_history', 'wt') as file:
-        file.write(json.dumps(view_history))
+        file.write(json.dumps(view_history, indent=4))
 
 
 def init_all_datas():

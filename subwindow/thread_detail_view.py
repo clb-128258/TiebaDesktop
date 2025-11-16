@@ -8,7 +8,7 @@ from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr
+from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr, top_toast_widget
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string
 import publics.logging as logging
@@ -62,6 +62,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
         self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
         self.init_load_flash()
+        self.init_top_toaster()
 
         self.pushButton.clicked.connect(self.init_more_menu)
         self.label_6.linkActivated.connect(self.handle_link_event)
@@ -110,6 +111,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def init_load_flash(self):
         self.flash_shower = LoadingFlashWidget()
         self.flash_shower.cover_widget(self)
+
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
 
     def end_label_link_event(self, url):
         if url == 'reload_replies':
@@ -167,18 +172,25 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         open_url_in_browser(url)
 
     def add_post_ok_action(self, isok):
+        toast = top_toast_widget.ToastMessage()
+
         if not isok:
             self.lineEdit.setText('')
             self.comboBox.setCurrentIndex(1)
-            QMessageBox.information(self, '回贴成功', '回复贴发送成功。')
+            toast.title = '回贴成功'
+            toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
         else:
-            QMessageBox.information(self, '回贴失败', isok)
+            toast.title = isok
+            toast.icon_type = top_toast_widget.ToastIconType.ERROR
+        self.top_toaster.showToast(toast)
 
     def add_post_async(self):
         if not self.lineEdit.text():
-            QMessageBox.information(self, '提示', '请输入内容后再回贴。')
+            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='请输入内容后再回贴',
+                                                                     icon_type=top_toast_widget.ToastIconType.INFORMATION))
         elif not self.bduss:
-            QMessageBox.information(self, '提示', '目前处于游客状态，请登录后再回贴。')
+            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='目前处于游客状态，请登录后再回贴',
+                                                                     icon_type=top_toast_widget.ToastIconType.INFORMATION))
         else:
             show_string = ('回复功能目前还处于测试阶段。\n'
                            '使用本软件回贴可能会遇到发贴失败等情况，甚至可能导致你的账号被永久全吧封禁。\n'
@@ -225,7 +237,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
                 self.agree_thread_async(True)
         else:
-            QMessageBox.information(self, '点赞操作完成', isok)
+            toast = top_toast_widget.ToastMessage(isok, 2000, top_toast_widget.ToastIconType.INFORMATION)
+            self.top_toaster.showToast(toast)
 
     def agree_thread_async(self, is_cancel=False):
         start_background_thread(self.agree_thread, (is_cancel,))
@@ -234,9 +247,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         logging.log_INFO(f'agree thread {self.thread_id}')
         try:
             if not self.bduss:
-                self.agree_thread_signal.emit('你还没有登录，登录后即可为贴子点赞。')
+                self.agree_thread_signal.emit('登录后即可为贴子点赞')
             elif self.user_id == 0:
-                self.agree_thread_signal.emit('不能给匿名用户点赞。')
+                self.agree_thread_signal.emit('不能给匿名用户点赞')
             else:
                 account = aiotieba.Account()  # 实例化account以便计算一些数据
                 # 拿tbs
@@ -266,7 +279,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                                         host_type=2)
                     if int(response['error_code']) == 0:
                         self.agree_num -= 1
-                        self.agree_thread_signal.emit('取消点赞成功。')
+                        self.agree_thread_signal.emit('取消点赞成功')
                     else:
                         self.agree_thread_signal.emit(response['error_msg'])
                 else:
@@ -291,7 +304,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     if int(response['error_code']) == 0:
                         self.agree_num += 1
                         is_expa2 = bool(int(response["data"].get("agree", {"is_first_agree": False})["is_first_agree"]))
-                        self.agree_thread_signal.emit(f'{"点赞成功，本吧首赞经验 +2" if is_expa2 else "点赞成功"}。')
+                        self.agree_thread_signal.emit("点赞成功 首赞经验 +2" if is_expa2 else "点赞成功")
                     elif int(response['error_code']) == 3280001:
                         self.agree_thread_signal.emit('[ALREADY_AGREE]')
                     else:
@@ -303,7 +316,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.agree_thread_signal.emit('程序内部出错，请重试')
 
     def store_thread_ok_action(self, isok):
-        QMessageBox.information(self, '操作完成', isok)
+        toast = top_toast_widget.ToastMessage(isok, 2000, top_toast_widget.ToastIconType.INFORMATION)
+        self.top_toaster.showToast(toast)
 
     def store_thread_async(self, is_cancel=False):
         item = self.listWidget_4.currentItem()
@@ -337,7 +351,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                                       bduss=self.bduss,
                                                       stoken=self.stoken, use_mobile_header=True, host_type=2)
                     if result['error_code'] == '0':
-                        self.store_thread_signal.emit(f'贴子已成功收藏到第 {floor} 楼，你可以在 ⌈我的收藏⌋ 中查看贴子。')
+                        self.store_thread_signal.emit(f'贴子已收藏到第 {floor} 楼')
                     else:
                         self.store_thread_signal.emit(result['error_msg'])
                 else:
@@ -353,7 +367,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                                       bduss=self.bduss,
                                                       stoken=self.stoken, use_mobile_header=True)
                     if result['no'] == 0:
-                        self.store_thread_signal.emit('贴子已成功取消收藏。')
+                        self.store_thread_signal.emit('取消收藏成功')
                     else:
                         self.store_thread_signal.emit(result['error'])
             except Exception as e:
@@ -429,6 +443,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         datas['floor'], datas['create_time_str'], datas['user_ip'], datas['reply_num'],
                         datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
         widget.set_grow_level(datas['grow_level'])
+        widget.show_msg_outside = True
+        widget.messageAdded.connect(lambda text: self.top_toaster.showToast(
+            top_toast_widget.ToastMessage(text, 2000, top_toast_widget.ToastIconType.INFORMATION)))
         item.setSizeHint(widget.size())
         self.listWidget_4.addItem(item)
         self.listWidget_4.setItemWidget(item, widget)
@@ -762,7 +779,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
                         profile_mgr.add_view_history(1,
-                                                     {"thread_id": self.thread_id, "title": f'{title} - {forum_name}吧'})
+                                                     {"thread_id": self.thread_id,
+                                                      "title": f'{title} - {forum_name}吧'})
 
                         tdata = {'forum_id': forum_id,  # 吧id
                                  'title': title,  # 标题

@@ -9,6 +9,7 @@ from publics.funcs import *
 from publics.logging import init_log
 from publics.logging import log_exception, log_INFO
 from publics.tb_syncer import *
+from publics import top_toast_widget
 
 from subwindow.agree_thread_list import AgreedThreadsList
 from subwindow.firstpage_recommend import RecommandWindow
@@ -31,6 +32,8 @@ import gc
 import consts
 import shutil
 import locale
+import platform
+import time
 
 if os.name == 'nt':
     import win32api

@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QDialog, QMessageBox, QListWidgetItem
 
-from publics import qt_window_mgr, cache_mgr
+from publics import qt_window_mgr, cache_mgr, top_toast_widget
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string
 import publics.logging as logging
 
@@ -31,6 +31,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         self.comment_count = comment_count
 
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
+        self.init_top_toaster()
         self.listWidget.verticalScrollBar().setSingleStep(25)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
@@ -55,6 +56,10 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         a0.accept()
         qt_window_mgr.del_window(self)
 
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
+
     def open_thread_detail(self):
         from subwindow.thread_detail_view import ThreadDetailView
         thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id))
@@ -76,13 +81,17 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
 
     def ui_set_floor_info(self, datas):
         if datas[0] == -1:
-            QMessageBox.critical(self, '楼中楼加载失败', datas[1], QMessageBox.Ok)
+            self.top_toaster.showToast(
+                top_toast_widget.ToastMessage(datas[1], 2000, top_toast_widget.ToastIconType.ERROR))
         else:
             self.label.setText(f'第 {datas[0]} 楼的回复，共 {datas[1]} 条')
 
     def ui_add_comment(self, datas):
         from subwindow.thread_reply_item import ReplyItem
         widget = ReplyItem(self.bduss, self.stoken)
+        widget.show_msg_outside = True
+        widget.messageAdded.connect(lambda text: self.top_toaster.showToast(
+            top_toast_widget.ToastMessage(text, 2000, top_toast_widget.ToastIconType.INFORMATION)))
         widget.portrait = datas['portrait']
         widget.thread_id = datas['thread_id']
         widget.post_id = datas['post_id']

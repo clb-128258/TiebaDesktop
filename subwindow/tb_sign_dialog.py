@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDialog, QMessageBox
 
-from publics import request_mgr
+from publics import request_mgr, top_toast_widget
 from publics.funcs import start_background_thread
 from ui import sign
 
@@ -29,6 +29,7 @@ class SignAllDialog(QDialog, sign.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.lineEdit.setText(f'\"{sys.executable}\" --sign-all-forums --sign-grows')
+        self.init_top_toaster()
 
         self.update_label_count.connect(lambda text: self.label_3.setText(text))
         self.sign_grow_ok.connect(self.show_grow_sign_msg)
@@ -39,13 +40,18 @@ class SignAllDialog(QDialog, sign.Ui_Dialog):
         self.bduss = bduss
         self.stoken = stoken
 
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
+
     def sign_all(self):
         self.sign_grow_async()
         self.sign_all_forum_async()
 
     def show_grow_sign_msg(self, result):
         if not result:
-            QMessageBox.information(self, '签到成功', '成长等级签到成功。')
+            self.top_toaster.showToast(
+                top_toast_widget.ToastMessage('成长等级签到成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
         else:
             QMessageBox.critical(self, '签到失败', result)
 
