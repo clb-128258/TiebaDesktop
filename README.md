@@ -38,4 +38,6 @@
 
 # 友情链接
 
-贴个友情链接：[TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)
+友情链接：  
+[TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)
+[NeoTieBa - 一个基于 Tauri2.0 + Vue3 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)
