@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr
+from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, top_toast_widget
 from publics.funcs import LoadingFlashWidget, ExtListWidgetItem, start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser
 import publics.logging as logging
@@ -81,6 +81,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.listWidget_5.itemDoubleClicked.connect(self.open_user_homepage)
 
         self.tabWidget.setCurrentIndex(tab_index)
+        self.init_top_toaster()
         self.init_load_flash()
         self.get_head_info_async()
 
@@ -93,6 +94,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.flash_shower = LoadingFlashWidget()
         self.flash_shower.cover_widget(self)
         self.flash_shower.show()
+
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
 
     def init_user_action_menu(self):
         menu = QMenu(self)
@@ -200,10 +205,14 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         qt_window_mgr.add_window(blacklister)
 
     def action_ok_slot(self, data):
+        toast = top_toast_widget.ToastMessage()
+        toast.title = data['text']
         if data['success']:
-            QMessageBox.information(self, data['title'], data['text'], QMessageBox.Ok)
+            toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
         else:
-            QMessageBox.critical(self, data['title'], data['text'], QMessageBox.Ok)
+            toast.icon_type = top_toast_widget.ToastIconType.ERROR
+
+        self.top_toaster.showToast(toast)
 
     def do_action_async(self, action_type=""):
         run_flag = True
@@ -220,7 +229,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
     def do_action(self, action_type=""):
         async def doaction():
-            turn_data = {'success': False, 'title': '', 'text': ''}
+            turn_data = {'success': False, 'text': ''}
             try:
                 logging.log_INFO(f'do user {self.user_id_portrait} action type {action_type}')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
@@ -228,46 +237,37 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         r = await client.follow_user(self.user_id_portrait)
                         if r:
                             turn_data['success'] = True
-                            turn_data['title'] = '关注成功'
-                            turn_data['text'] = f'已成功关注该用户。'
+                            turn_data['text'] = '关注成功'
                         else:
                             turn_data['success'] = False
-                            turn_data['title'] = '关注失败'
                             turn_data['text'] = f'{r.err}'
                     elif action_type == 'unfollow':
                         r = await client.unfollow_user(self.user_id_portrait)
                         if r:
                             turn_data['success'] = True
-                            turn_data['title'] = '取消关注成功'
-                            turn_data['text'] = f'已成功取消关注该用户。'
+                            turn_data['text'] = f'取消关注成功'
                         else:
                             turn_data['success'] = False
-                            turn_data['title'] = '取消关注失败'
                             turn_data['text'] = f'{r.err}'
                     elif action_type == 'mute':
                         r = await client.add_blacklist_old(self.real_user_id)
                         if r:
                             turn_data['success'] = True
-                            turn_data['title'] = '禁言成功'
-                            turn_data['text'] = f'已成功禁言该用户。'
+                            turn_data['text'] = f'禁言用户成功'
                         else:
                             turn_data['success'] = False
-                            turn_data['title'] = '禁言失败'
                             turn_data['text'] = f'{r.err}'
                     elif action_type == 'unmute':
                         r = await client.del_blacklist_old(self.real_user_id)
                         if r:
                             turn_data['success'] = True
-                            turn_data['title'] = '取消禁言成功'
-                            turn_data['text'] = f'已成功取消禁言该用户。'
+                            turn_data['text'] = f'取消禁言用户成功'
                         else:
                             turn_data['success'] = False
-                            turn_data['title'] = '取消禁言失败'
                             turn_data['text'] = f'{r.err}'
             except Exception as e:
                 logging.log_exception(e)
                 turn_data['success'] = False
-                turn_data['title'] = '程序内部错误'
                 turn_data['text'] = str(e)
             finally:
                 self.action_ok_signal.emit(turn_data)

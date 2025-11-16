@@ -1,4 +1,6 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
+import os
+
 from core_features import *
 
 
@@ -467,8 +469,8 @@ class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
 
                 save_json_secret(pf, f'{datapath}/user_bduss')
                 mainw.refresh_all_datas()  # 更新主页面信息
-                if os.path.isdir(f'{datapath}/webview_data/{self.uid}'):  # 把旧的数据删掉
-                    shutil.rmtree(f'{datapath}/webview_data/{self.uid}')
+                if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
+                    shutil.rmtree(f'{datapath}/webview_data/{uid}')
                 os.mkdir(f'{datapath}/webview_data/{profile_mgr.current_uid}')
 
                 QMessageBox.information(self, '登录成功', f'账号 {name} 已经登录成功，登录信息已保存至本地。',
@@ -847,7 +849,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 if __name__ == "__main__":
     sys.excepthook = excepthook
 
-    locale.setlocale(locale.LC_CTYPE, 'chinese')
+    if os.name == 'nt':
+        locale.setlocale(locale.LC_CTYPE, 'chinese')
+
     create_data()
     init_log()
     proxytool.set_proxy()

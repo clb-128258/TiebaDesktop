@@ -3,7 +3,7 @@ from datetime import datetime
 from PyQt5.QtCore import Qt
 
 from ui import view_history, view_history_item, view_history_single_item
-from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs
+from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, top_toast_widget
 
 from PyQt5.QtWidgets import QWidget, QListWidgetItem, QMessageBox, QGraphicsDropShadowEffect
 from PyQt5.QtGui import QIcon, QPixmap, QColor
@@ -146,6 +146,7 @@ class DayHistoryItem(QWidget, view_history_item.Ui_Form):
 
 class HistoryViewWindow(QWidget, view_history.Ui_Form):
     """浏览记录窗口"""
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -157,6 +158,7 @@ class HistoryViewWindow(QWidget, view_history.Ui_Form):
                                         'QListWidget#listWidget_2::item:hover {color:white; background-color:white;}'
                                         'QListWidget#listWidget_2::item:selected {color:white; background-color:white;}')
         self.listWidget_2.verticalScrollBar().setSingleStep(20)
+        self.init_top_toaster()
 
         self.listWidget.currentRowChanged.connect(self.load_history)
         self.pushButton.clicked.connect(self.clear_history)
@@ -168,13 +170,18 @@ class HistoryViewWindow(QWidget, view_history.Ui_Form):
         a0.accept()
         qt_window_mgr.del_window(self)
 
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
+
     def clear_history(self):
         if QMessageBox.warning(self, '警告', '确认要清空浏览记录吗？',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             profile_mgr.view_history.clear()
             profile_mgr.save_view_history()
             self.load_history()
-            QMessageBox.information(self, '提示', '浏览记录清空成功。')
+            self.top_toaster.showToast(
+                top_toast_widget.ToastMessage('浏览记录清空成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
 
     def load_history(self, index: int = -1):
         if index == -1:

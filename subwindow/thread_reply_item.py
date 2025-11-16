@@ -26,8 +26,8 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
     is_comment = False
     agree_thread_signal = pyqtSignal(str)
 
-    show_msg_outside=False
-    messageAdded=pyqtSignal(str)
+    show_msg_outside = False
+    messageAdded = pyqtSignal(str)
 
     def __init__(self, bduss, stoken):
         super().__init__()

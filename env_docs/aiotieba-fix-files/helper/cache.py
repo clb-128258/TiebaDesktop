@@ -13,8 +13,8 @@ import time
 sys.path.append(os.getcwd())  # 添加程序所在路径，以便正确引入consts.py
 import consts
 
-_fname2fid: ClassVar[OrderedDict] = OrderedDict()
-_fid2fname: ClassVar[OrderedDict] = OrderedDict()
+_fname2fid = OrderedDict()
+_fid2fname = OrderedDict()
 _sync_queue = queue.Queue()
 
 
@@ -47,7 +47,7 @@ def clear_repeat_items():
                 final_data[k] = v
 
         with open(f'{consts.datapath}/cache_index/fidfname_index.json', 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(final_data, ensure_ascii=False, indent=4))
+            f.write(json.dumps(final_data, indent=4))
 
         LOG().info('disk fid2fname cache repeat cleared')
 
@@ -58,7 +58,7 @@ def save_caches():
     """
 
     with open(f'{consts.datapath}/cache_index/fidfname_index.json', 'wt', encoding='utf-8') as f:
-        f.write(json.dumps(_fid2fname, ensure_ascii=False, indent=4))
+        f.write(json.dumps(_fid2fname, indent=4))
         LOG().info('disk fid2fname cache saved')
 
 
