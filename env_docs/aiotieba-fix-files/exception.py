@@ -111,7 +111,7 @@ class HTTPStatusError(RuntimeError):
         self.msg = msg
 
     def __str__(self):
-        return f'{self.msg} ({self.code})'
+        return f'{self.code} {self.msg}'
 
 
 class TiebaValueError(RuntimeError):

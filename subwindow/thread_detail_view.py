@@ -575,6 +575,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                 self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
                 self.pushButton_2.setText(datas['forum_name'] + '吧')
                 self.pushButton_2.setIcon(QIcon(datas['forum_pixmap']))
+                self.pushButton_2.setToolTip(datas['forum_slogan'] if datas['forum_slogan'] else "点击进入此吧")
             else:
                 self.setWindowTitle(datas['title'] + ' - 贴吧动态')
                 self.pushButton_2.hide()
@@ -703,9 +704,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             forum_info = await client.get_forum_detail(self.forum_id)
                             forum_name = forum_info.fname
                             forum_pic_url = forum_info.small_avatar
+                            forum_slogan = forum_info.slogan
                         else:
                             forum_name = ''
                             forum_pic_url = ''
+                            forum_slogan = ''
 
                         preview_pixmap = []
                         self.user_id = thread_info.thread.user.user_id
@@ -802,7 +805,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                  'user_grow_level': user_grow_level,  # 用户成长等级
                                  'is_forum_manager': is_forum_manager,  # 是否为吧务
                                  'post_num': post_num,  # 回贴数
-                                 'repost_info': repost_info}  # 转发贴信息
+                                 'repost_info': repost_info,  # 转发贴信息
+                                 'forum_slogan': forum_slogan  # 吧标语
+                                 }
 
                         logging.log_INFO(
                             f'load thread {self.thread_id} main info ok, send to qt side')

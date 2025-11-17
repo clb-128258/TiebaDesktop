@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QWidget, QFileDialog
 from consts import datapath
 from publics import webview2
 from publics import profile_mgr
-from publics.funcs import start_background_thread, http_downloader, format_second
+from publics.funcs import start_background_thread, http_downloader, format_second, large_num_to_string
 from ui import thread_video_item
 
 
@@ -81,4 +81,4 @@ class ThreadVideoItem(QWidget, thread_video_item.Ui_Form):
         right_link = self.source_link.replace('tb-video.bdstatic.com', 'bos.nj.bpc.baidu.com')
         self.webview_show_html = self.webview_show_html.replace('[vurl]', right_link)
 
-        self.label_3.setText(f'时长 {format_second(len_)}，浏览量 {views}')
+        self.label_3.setText(f'时长 {format_second(len_)}，浏览量 {large_num_to_string(views)}')

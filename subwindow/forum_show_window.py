@@ -359,8 +359,8 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.setWindowTitle(datas['name'] + '吧')
         self.setWindowIcon(QIcon(datas['pixmap']))
 
-        self.label_3.setText('{0}人关注，{1}条贴子'.format(large_num_to_string(datas['follownum']),
-                                                          large_num_to_string(datas['postnum'])))
+        self.label_3.setText('{0}人关注，{1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
+                                                          large_num_to_string(datas['postnum'], endspace=True)))
         self.label.setPixmap(datas['pixmap'])
         self.label_2.setText(datas['name'] + '吧')
 
@@ -403,33 +403,38 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                 # 获取吧信息
                 logging.log_INFO(f'forum (id {self.forum_id}) loading head_info')
-                forum = await client.get_forum(self.forum_id)
+                forum_name = await client.get_fname(self.forum_id)
+
+                payload = {
+                    'BDUSS': self.bduss,
+                    '_client_type': "2",
+                    '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                    'kw': forum_name,
+                    'stoken': self.stoken
+                }
+
+                resp = request_mgr.run_post_api('/c/f/frs/frsBottom', request_mgr.calc_sign(payload), bduss=self.bduss,
+                                                stoken=self.stoken, host_type=2, use_mobile_header=True)
 
                 level_info = ''
                 level_value = 1
                 if self.bduss:
-                    logging.log_INFO(
-                        f'forum (id {self.forum_id}, name {forum.fname}) loading level_info')
-                    forum_level_info = await client.get_forum_level(self.forum_id)
-                    isFollowed = 1 if forum_level_info.is_like else 0
-                    if forum_level_info.is_like:
-                        level_info = f'Lv.{forum_level_info.user_level} {forum_level_info.level_name}'
-                        level_value = forum_level_info.user_level
+                    isFollowed = 1 if resp["forum"]["is_like"] else 0
+                    if resp["forum"]["is_like"]:
+                        level_info = f'Lv.{resp["forum"]["user_level"]} {resp["forum"]["level_name"]}'
+                        level_value = resp["forum"]["user_level"]
                 else:
                     isFollowed = 2
-                self.forum_name = forum_name = forum.fname
-                forum_slogan = forum.slogan
-                follow_count = forum.member_num
-                post_count = forum.post_num
-                if forum.has_bawu:
-                    logging.log_INFO(
-                        f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_info')
-                    bawuinfo = await client.get_bawu_info(self.forum_id)
-                    forum_admin_name = bawuinfo.admin[0].nick_name_new
+                self.forum_name = forum_name = resp["forum"]["name"]
+                forum_slogan = resp["forum"]["slogan"]
+                follow_count = resp["forum"]["member_num"]
+                post_count = resp["forum"]["post_num"]
+                if admin_info := resp["forum"].get("managers"):
+                    forum_admin_name = admin_info[0]["show_name"]
                     logging.log_INFO(
                         f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_portrait_bin_info')
                     forum_admin_pixmap = QPixmap()
-                    forum_admin_pixmap.loadFromData(cache_mgr.get_portrait(bawuinfo.admin[0].portrait))
+                    forum_admin_pixmap.loadFromData(cache_mgr.get_portrait(admin_info[0]["portrait"].split('?')[0]))
                     forum_admin_pixmap = forum_admin_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 else:
                     forum_admin_name = ''
@@ -438,20 +443,27 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 logging.log_INFO(
                     f'forum (id {self.forum_id}, name {forum_name}) loading headimg_bin_info')
                 forum_pixmap = QPixmap()
-                response = requests.get(forum.small_avatar, headers=request_mgr.header)
+                response = requests.get(resp['forum']["avatar"], headers=request_mgr.header)
                 if response.content:
                     forum_pixmap.loadFromData(response.content)
                     forum_pixmap = forum_pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-                md5v = cache_mgr.save_md5_ico(forum.small_avatar)
+                md5v = cache_mgr.save_md5_ico(resp['forum']["avatar"])
                 profile_mgr.add_view_history(3, {"icon_md5": md5v, "forum_id": self.forum_id,
                                                  "forum_name": self.forum_name})
 
                 logging.log_INFO(
                     f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
-                tdata = {'name': forum_name, 'pixmap': forum_pixmap, 'slogan': forum_slogan, 'follownum': follow_count,
-                         'postnum': post_count, 'admin_name': forum_admin_name, 'admin_pixmap': forum_admin_pixmap,
-                         'is_followed': isFollowed, 'level_info': level_info, 'uf_level': level_value}
+                tdata = {'name': forum_name,
+                         'pixmap': forum_pixmap,
+                         'slogan': forum_slogan,
+                         'follownum': follow_count,
+                         'postnum': post_count,
+                         'admin_name': forum_admin_name,
+                         'admin_pixmap': forum_admin_pixmap,
+                         'is_followed': isFollowed,
+                         'level_info': level_info,
+                         'uf_level': level_value}
                 self.update_signal.emit(tdata)
 
         new_loop = asyncio.new_event_loop()

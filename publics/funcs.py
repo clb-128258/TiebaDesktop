@@ -104,10 +104,17 @@ def format_second(seconds):
     return minute + ':' + second
 
 
-def large_num_to_string(num: int):
-    """把大数字转换为字符串"""
+def large_num_to_string(num: int, prespace=False, endspace=False):
+    """
+    把大数字转换为字符串
+
+    Args:
+        num (int): 欲转换的数字
+        prespace (bool): 在结果数值没有单位后缀时 是否在前面添加空格字符
+        endspace (bool): 在结果数值没有单位后缀时 是否在后面添加空格字符
+    """
     if num < 10 ** 4:
-        return str(num)
+        return ' ' if prespace else "" + str(num) + ' ' if endspace else ""
     elif 10 ** 4 <= num < 10 ** 8:
         return str(round(num / 10 ** 4, 2)) + ' 万'
     elif num >= 10 ** 8:

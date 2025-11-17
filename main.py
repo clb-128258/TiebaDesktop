@@ -3,6 +3,7 @@ import os
 
 import aiotieba.helper.cache
 
+import consts
 from core_features import *
 
 
@@ -45,6 +46,22 @@ def check_webview2():
                        QMessageBox.Ok)
     else:
         webview2.loadLibs()
+
+
+def reset_udf():
+    """根据命令行参数重设datapath"""
+    cmds = sys.argv
+    if '--reset-udf' in cmds:
+        udf = ''
+        for i in cmds:
+            if i.startswith('--udf-path='):
+                udf = int(i.split('=')[1])
+        if os.path.isdir(udf):
+            consts.datapath = udf
+            logging.log_INFO(f'UserDataPath is reset by --reset-udf.')
+        else:
+            logging.log_INFO(f'{udf} is not a valid folder, please create it first.')
+        logging.log_INFO(f'Now UserDataPath is {udf}.')
 
 
 def handle_command_events():
@@ -944,6 +961,7 @@ if __name__ == "__main__":
     if os.name == 'nt':
         locale.setlocale(locale.LC_CTYPE, 'chinese')
 
+    reset_udf()
     create_data()
     init_log()
     proxytool.set_proxy()
