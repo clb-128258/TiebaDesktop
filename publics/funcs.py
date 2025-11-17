@@ -104,6 +104,16 @@ def format_second(seconds):
     return minute + ':' + second
 
 
+def large_num_to_string(num: int):
+    """把大数字转换为字符串"""
+    if num < 10 ** 4:
+        return str(num)
+    elif 10 ** 4 <= num < 10 ** 8:
+        return str(round(num / 10 ** 4, 2)) + ' 万'
+    elif num >= 10 ** 8:
+        return str(round(num / 10 ** 8, 2)) + ' 亿'
+
+
 def make_thread_content(threadContents, previewPlainText=False):
     """把贴子正文内容碎片转换成 Qt 可以解析的 HTML 代码，或者是纯文本"""
     if previewPlainText:

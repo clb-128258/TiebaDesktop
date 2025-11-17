@@ -1,5 +1,6 @@
 import asyncio
 import time
+import datetime
 
 import aiotieba
 import pyperclip
@@ -11,7 +12,7 @@ from PyQt5.QtWidgets import QDialog, QListWidget, QTreeWidgetItem, QFileDialog, 
 
 from publics import qt_window_mgr, request_mgr, cache_mgr
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
-    open_url_in_browser
+    open_url_in_browser, large_num_to_string
 import publics.logging as logging
 
 from ui import forum_detail
@@ -40,9 +41,9 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_load_flash()
 
+        self.listWidget_2.currentRowChanged.connect(lambda row: self.stackedWidget.setCurrentIndex(row))
         self.set_main_info_signal.connect(self.ui_set_main_info)
         self.action_ok_signal.connect(self.action_ok_slot)
-        self.pushButton_5.clicked.connect(self.close)
         self.treeWidget.itemDoubleClicked[QTreeWidgetItem, int].connect(self.open_user_homepage)
         self.pushButton_4.clicked.connect(self.save_bg_image)
         self.pushButton_6.clicked.connect(lambda: pyperclip.copy(self.forum_bg_link))
@@ -52,7 +53,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.pushButton_8.clicked.connect(self.refresh_main_data)
         self.label_15.linkActivated.connect(open_url_in_browser)
 
-        self.tabWidget.setCurrentIndex(default_index)
+        self.listWidget_2.setCurrentRow(default_index)
         self.loading_widget.show()
         self.get_main_info_async()
 
@@ -187,10 +188,10 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
             self.label_2.setText(datas['forum_name'] + '吧')
             self.label.setPixmap(datas['forum_pixmap'])
             self.label_11.setText(f'吧 ID：{self.forum_id}')
-            self.label_3.setText('关注数：' + str(datas['follow_c']))
-            self.label_4.setText('贴子数：' + str(datas['thread_c']))
-            self.label_12.setText('吧分类：' + datas['forum_volume'])
-            self.label_13.setText('主题贴数：{0}'.format(str(datas['main_thread_c'])))
+            self.label_3.setText(large_num_to_string(datas['follow_c']))
+            self.label_4.setText(large_num_to_string(datas['thread_c']))
+            self.label_12.setText(datas['forum_volume'])
+            self.label_13.setText(large_num_to_string(datas['main_thread_c']))
             self.textBrowser.setHtml(datas['forum_rule_html'])
             self.label_15.setText(f'<html><body>'
                                   f'<p>很抱歉，出于加载时的性能问题，该功能已被停用。<br/>该页面将在将来的版本中删除。<br>'
@@ -219,8 +220,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
                 if datas['follow_info']['isfollow']:
                     ts = time.time() - datas["follow_info"]["follow_day"] * 86400
-                    timeArray = time.localtime(ts)
-                    follow_date_str = time.strftime("(大约是在 %Y年%m月%d日 那天关注的)", timeArray)
+                    follow_date_str = datetime.datetime.fromtimestamp(ts).strftime('(大约是在 %Y年%m月%d日 那天关注的)')
                 else:
                     follow_date_str = ''
                 self.label_7.setText('等级：' + str(datas['follow_info']['level']))

@@ -1,6 +1,8 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
 import os
 
+import aiotieba.helper.cache
+
 from core_features import *
 
 
@@ -148,6 +150,9 @@ def handle_command_events():
 
 class SettingsWindow(QDialog, settings.Ui_Dialog):
     """设置窗口"""
+    scanFinish = pyqtSignal(dict)
+    clearFinish = pyqtSignal(bool)
+    scannedDetailData = {}
 
     def __init__(self):
         super().__init__()
@@ -155,25 +160,29 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_6.setPixmap(QPixmap('ui/tieba_logo_small.png'))
+        self.groupBox_3.hide()
         self.init_top_toaster()
+        self.init_load_animation()
         self.set_debug_info()
-        self.get_log_size()
-        self.get_pic_size()
         self.get_logon_accounts()
         self.load_local_config()
 
         self.init_login_button_menu()
         self.listWidget.currentRowChanged.connect(self.stackedWidget.setCurrentIndex)
         self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{datapath}/logs'))
-        self.pushButton_4.clicked.connect(self.clear_logs)
         self.pushButton.clicked.connect(self.clear_account_list)
         self.pushButton_5.clicked.connect(self.save_local_config)
-        self.pushButton_8.clicked.connect(self.clear_pics)
-        self.pushButton_7.clicked.connect(self.clear_webview_cache)
-        self.pushButton_9.clicked.connect(self.clear_webview_cookies)
-        self.pushButton_6.clicked.connect(self.save_local_config)
         self.pushButton_11.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
         self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
+        self.pushButton_12.clicked.connect(self.scan_use_detail_async)
+        self.pushButton_4.clicked.connect(self.clear_caches_async)
+        self.scanFinish.connect(self._set_use_detail_ui)
+        self.clearFinish.connect(self._on_caches_cleared)
+
+        self.clearTypeCb = [self.checkBox_4, self.checkBox_5, self.checkBox_9, self.checkBox_10, self.checkBox_8,
+                            self.checkBox_11, self.checkBox_7, self.checkBox_6]
+        for i in self.clearTypeCb:
+            i.stateChanged.connect(self.calc_willfree_size)
 
     def closeEvent(self, a0):
         a0.accept()
@@ -181,6 +190,11 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
+
+    def init_load_animation(self):
+        self.load_animation = LoadingFlashWidget()
+        self.load_animation.cover_widget(self.groupBox_3)
+        self.load_animation.hide()
 
     def init_login_button_menu(self):
         menu = QMenu()
@@ -227,6 +241,175 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         d = SeniorLoginDialog()
         d.exec()
         self.get_logon_accounts()
+
+    def calc_willfree_size(self):
+        free_size = 0
+        select_num = 0
+
+        for i in self.clearTypeCb:
+            if i.isChecked():
+                select_num += 1
+
+        if self.checkBox_4.isChecked():
+            free_size += self.scannedDetailData["image_cache_size"]
+        if self.checkBox_5.isChecked():
+            free_size += self.scannedDetailData["log_size"]
+        if self.checkBox_9.isChecked():
+            free_size += self.scannedDetailData["default_webview_size"]
+        if self.checkBox_10.isChecked():
+            free_size += self.scannedDetailData["fidcache_size"]
+        if self.checkBox_7.isChecked():
+            free_size += self.scannedDetailData["current_webview_cache_size"]
+        if self.checkBox_6.isChecked():
+            free_size += self.scannedDetailData["current_webview_cookie_size"]
+
+        self.label_3.setText(f'已选 {select_num} 个条目，大约可清理 {filesize_tostr(free_size)} 空间')
+
+    def _on_caches_cleared(self, isok):
+        self.load_animation.hide()
+        toast = top_toast_widget.ToastMessage()
+        if isok:
+            toast.title = '数据清理成功'
+            toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
+
+            self.groupBox_3.hide()
+            self.label_26.setText('点击左侧按钮以分析本地数据存储情况')
+        else:
+            toast.title = '抱歉，数据清理失败，请重试'
+            toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
+        self.top_toaster.showToast(toast)
+
+    def clear_caches_async(self):
+        if QMessageBox.warning(self, '清理数据',
+                               '确认要清理这些数据吗？本操作需要一定时间，请耐心等待，清理数据时请不要关闭本窗口。',
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            self.load_animation.set_caption(caption='正在清理数据，请稍等...')
+            self.load_animation.show()
+
+            webview = webview2.QWebView2View()
+            webview.setProfile(
+                webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
+            webview.initRender()
+
+            start_background_thread(self.clear_caches, args=(webview,))
+
+    def clear_caches(self, webview_obj: webview2.QWebView2View):
+        def clear_folder(path):
+            if os.path.isdir(path):
+                for i in os.listdir(path):
+                    try:
+                        item_path = f'{path}/{i}'
+                        if os.path.isfile(item_path):
+                            os.remove(item_path)
+                        elif os.path.isdir(item_path):
+                            shutil.rmtree(item_path)
+                    except PermissionError:
+                        continue
+
+        try:
+            while not webview_obj.isRenderInitOk():
+                time.sleep(1)
+
+            if self.checkBox_4.isChecked():
+                clear_folder(f'{datapath}/image_caches')
+            if self.checkBox_5.isChecked():
+                clear_folder(f'{datapath}/logs')
+            if self.checkBox_9.isChecked():
+                clear_folder(f'{datapath}/webview_data/default')
+            if self.checkBox_10.isChecked():
+                aiotieba.helper.cache._fname2fid.clear()
+                aiotieba.helper.cache._fid2fname.clear()
+                aiotieba.helper.cache.save_caches()
+                aiotieba.helper.cache.clear_repeat_items()
+            if self.checkBox_7.isChecked():
+                webview_obj.clearCacheData()
+                time.sleep(4)
+            if self.checkBox_6.isChecked():
+                webview_obj.clearCookies()
+                time.sleep(4)
+
+            webview_obj.destroyWebviewUntilComplete()
+        except Exception as e:
+            logging.log_exception(e)
+            self.clearFinish.emit(False)
+        else:
+            self.clearFinish.emit(True)
+
+    def _set_use_detail_ui(self, data):
+        self.scannedDetailData = data
+
+        self.checkBox_4.setText(f'图像缓存 ({filesize_tostr(data["image_cache_size"])})')
+        self.checkBox_5.setText(f'日志文件 ({filesize_tostr(data["log_size"])})')
+        self.checkBox_9.setText(f'游客用户的 WebView 数据 ({filesize_tostr(data["default_webview_size"])})')
+        self.checkBox_10.setText(f'吧信息缓存 ({data["fidcache_num"]} 条)')
+        self.checkBox_8.setText(f'主要配置文件 ({filesize_tostr(data["main_profile_size"])})')
+        self.checkBox_11.setText(f'所有用户的 WebView 数据 ({filesize_tostr(data["total_webview_size"])})')
+        self.checkBox_7.setText(f'当前账号的 WebView 缓存 ({filesize_tostr(data["current_webview_cache_size"])})')
+        self.checkBox_6.setText(
+            f'当前账号的 WebView Cookies 数据 ({filesize_tostr(data["current_webview_cookie_size"])})')
+
+        for i in self.clearTypeCb:
+            i.setChecked(False)
+        self.pushButton_12.setEnabled(True)
+        self.label_26.setText(f'分析完成，贴吧桌面已存储了 {filesize_tostr(data["total_data_size"])} 的用户数据。')
+        self.load_animation.hide()
+
+    def scan_use_detail_async(self):
+        self.pushButton_12.setEnabled(False)
+        self.label_26.setText('正在分析本地数据存储情况，请稍等...')
+        self.groupBox_3.show()
+        self.load_animation.set_caption(caption='正在分析存储情况...')
+        self.load_animation.show()
+
+        start_background_thread(self.scan_use_detail)
+
+    def scan_use_detail(self):
+        def scan_tree_total_size(path):
+            tsize = 0
+            if os.path.isdir(path):
+                for root, dirs, files in os.walk(path):
+                    for name in files:
+                        path = os.path.join(root, name)
+                        tsize += os.stat(path).st_size
+
+            return tsize
+
+        data = {'total_data_size': 0,
+                'image_cache_size': 0,
+                'log_size': 0,
+                'default_webview_size': 0,
+                'fidcache_num': 0,
+                'main_profile_size': 0,
+                'total_webview_size': 0,
+                'current_webview_cache_size': 0,
+                'current_webview_cookie_size': 0,
+                'fidcache_size': 0}
+
+        lsc_log = scan_tree_total_size(f'{datapath}/logs')  # 日志文件总大小
+        lsc_img = scan_tree_total_size(f'{datapath}/image_caches')  # 图片缓存文件总大小
+        data['image_cache_size'] = lsc_img
+        data['log_size'] = lsc_log
+
+        for i in os.listdir(datapath):
+            if os.path.isfile(f'{datapath}/{i}'):
+                data['main_profile_size'] += os.stat(f'{datapath}/{i}').st_size
+
+        data['default_webview_size'] = scan_tree_total_size(f'{datapath}/webview_data/default')
+        data['current_webview_cache_size'] = scan_tree_total_size(
+            f'{datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Cache')
+        data['current_webview_cookie_size'] = scan_tree_total_size(
+            f'{datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Network')
+        data['total_webview_size'] = scan_tree_total_size(f'{datapath}/webview_data')
+        data['fidcache_num'] = len(aiotieba.helper.cache._fname2fid.keys())
+        data['fidcache_size'] = os.stat(f'{datapath}/cache_index/fidfname_index.json').st_size
+
+        data['total_data_size'] = (lsc_img +
+                                   lsc_log +
+                                   data['main_profile_size'] +
+                                   data['total_webview_size'] +
+                                   data['fidcache_size'])
+
+        self.scanFinish.emit(data)
 
     def clear_account_list(self):
         if QMessageBox.warning(self, '警告', '确认要清空本地的所有登录信息吗？这会导致所有用户退出登录。',
@@ -320,97 +503,6 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             item.setSizeHint(widget.size())
             self.listWidget_2.addItem(item)
             self.listWidget_2.setItemWidget(item, widget)
-
-    def get_log_size(self):
-        lc = 0  # 文件个数
-        lsc = 0  # 文件总大小
-        for i in os.listdir(f'{datapath}/logs'):
-            lc += 1
-            lsc += os.stat(f'{datapath}/logs/{i}').st_size
-        self.label_3.setText(
-            f'日志文件可用于诊断程序问题。\n你的电脑上共有 {lc} 份日志文件，总计大小 {filesize_tostr(lsc)}。\n你可以查看它们，或是全部删除。')
-
-    def get_pic_size(self):
-        lsc = 0  # 文件总大小
-        for i in os.listdir(f'{datapath}/image_caches'):
-            lsc += os.stat(f'{datapath}/image_caches/{i}').st_size
-        self.label_12.setText(
-            f'包括缓存到本地的贴子图片、用户头像图片等。\n总计已占用大小 {filesize_tostr(lsc)}。')
-
-    def clear_logs(self):
-        if QMessageBox.warning(self, '警告', '确认要清理日志文件吗？',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            for i in os.listdir(f'{datapath}/logs'):
-                try:
-                    os.remove(f'{datapath}/logs/{i}')
-                except PermissionError:
-                    continue
-
-            toast = top_toast_widget.ToastMessage(f'文件清理成功',
-                                                  icon_type=top_toast_widget.ToastIconType.SUCCESS)
-            self.top_toaster.showToast(toast)
-            self.get_log_size()
-
-    def clear_pics(self):
-        if QMessageBox.warning(self, '警告', '确认要清理图片缓存吗？清理这些数据需要一些时间，请耐心等待。',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            for i in os.listdir(f'{datapath}/image_caches'):
-                try:
-                    os.remove(f'{datapath}/image_caches/{i}')
-                except PermissionError:
-                    continue
-
-            toast = top_toast_widget.ToastMessage(f'图片缓存清理成功',
-                                                  icon_type=top_toast_widget.ToastIconType.SUCCESS)
-            self.top_toaster.showToast(toast)
-            self.get_pic_size()
-
-    def clear_webview_cache(self):
-        if QMessageBox.warning(self, '警告', '确认要清空浏览器缓存数据吗？清理这些数据需要一些时间，请耐心等待。',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            try:
-                def on_loaded():
-                    webview.clearCacheData()
-                    time.sleep(2)
-                    webview.destroyWebview()
-
-                    toast = top_toast_widget.ToastMessage(f'浏览器缓存清理成功',
-                                                          icon_type=top_toast_widget.ToastIconType.SUCCESS)
-                    self.top_toaster.showToast(toast)
-
-                webview = webview2.QWebView2View()
-                webview.setProfile(
-                    webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
-                webview.renderInitializationCompleted.connect(on_loaded)
-                webview.initRender()
-            except:
-                toast = top_toast_widget.ToastMessage(f'浏览器缓存清理失败',
-                                                      icon_type=top_toast_widget.ToastIconType.ERROR)
-                self.top_toaster.showToast(toast)
-
-    def clear_webview_cookies(self):
-        if QMessageBox.warning(self, '警告',
-                               '清空 Cookies 会导致你的贴吧账号在浏览器内退出登录，其它网站亦是如此。此操作不可撤销。\n确认要清空浏览器 Cookies 数据吗？清理这些数据需要一些时间，请耐心等待。',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            try:
-                def on_loaded():
-                    webview.clearCookies()
-                    time.sleep(2)
-                    webview.destroyWebview()
-
-                    toast = top_toast_widget.ToastMessage(f'浏览器 Cookies 数据清理成功',
-                                                          icon_type=top_toast_widget.ToastIconType.SUCCESS)
-                    self.top_toaster.showToast(toast)
-
-                webview = webview2.QWebView2View()
-                webview.setProfile(
-                    webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
-                webview.renderInitializationCompleted.connect(on_loaded)
-                webview.initRender()
-            except:
-                toast = top_toast_widget.ToastMessage(f'浏览器 Cookies 数据清理失败',
-                                                      icon_type=top_toast_widget.ToastIconType.ERROR)
-                self.top_toaster.showToast(toast)
 
 
 class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):

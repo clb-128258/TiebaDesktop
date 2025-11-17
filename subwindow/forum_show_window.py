@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
-    make_thread_content, cut_string
+    make_thread_content, cut_string, large_num_to_string
 import publics.logging as logging
 
 from ui import ba_head
@@ -359,7 +359,8 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.setWindowTitle(datas['name'] + '吧')
         self.setWindowIcon(QIcon(datas['pixmap']))
 
-        self.label_3.setText('{0} 人关注，{1} 条贴子'.format(datas['follownum'], datas['postnum']))
+        self.label_3.setText('{0}人关注，{1}条贴子'.format(large_num_to_string(datas['follownum']),
+                                                          large_num_to_string(datas['postnum'])))
         self.label.setPixmap(datas['pixmap'])
         self.label_2.setText(datas['name'] + '吧')
 
