@@ -1,9 +1,4 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-import os
-
-import aiotieba.helper.cache
-
-import consts
 from core_features import *
 
 
@@ -55,13 +50,15 @@ def reset_udf():
         udf = ''
         for i in cmds:
             if i.startswith('--udf-path='):
-                udf = int(i.split('=')[1])
+                udf = i.split('=')[1]
         if os.path.isdir(udf):
+            global datapath
             consts.datapath = udf
+            datapath = udf
             logging.log_INFO(f'UserDataPath is reset by --reset-udf.')
         else:
             logging.log_INFO(f'{udf} is not a valid folder, please create it first.')
-        logging.log_INFO(f'Now UserDataPath is {udf}.')
+        logging.log_INFO(f'Now UserDataPath is {consts.datapath}.')
 
 
 def handle_command_events():

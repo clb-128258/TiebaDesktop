@@ -27,6 +27,7 @@ import sys
 import os
 import requests
 import aiotieba
+import aiotieba.helper.cache
 import asyncio
 import gc
 import consts
