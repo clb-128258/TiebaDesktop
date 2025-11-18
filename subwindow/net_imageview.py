@@ -1,9 +1,10 @@
 import gc
 import os
 import threading
+import time
 
 import requests
-from PyQt5.QtCore import pyqtSignal, QEvent, Qt, QMimeData, QUrl, QByteArray, QSize
+from PyQt5.QtCore import pyqtSignal, QEvent, Qt, QMimeData, QUrl, QByteArray, QSize, QBuffer, QIODevice
 from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
 from PyQt5.QtWidgets import QWidget, QApplication, QMenu, QAction, QFileDialog
 
@@ -16,6 +17,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
     """图片查看器窗口，支持旋转缩放图片，以及保存"""
     updateImage = pyqtSignal(QPixmap)
     finishDownload = pyqtSignal(bool)
+    gifLoaded = pyqtSignal(bytes)
     closed = pyqtSignal()
     start_pos = None
     round_angle = 0
@@ -23,6 +25,8 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
     originalImage = None
     downloadOk = False
     isResizing = False
+    isGif = False
+    gif_container = None
 
     def __init__(self, src):
         super().__init__()
@@ -38,6 +42,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
         self.updateImage.connect(self._resizeslot)
         self.spinBox.valueChanged.connect(self.resize_image)
         self.finishDownload.connect(self.update_download_state)
+        self.gifLoaded.connect(self.show_gif)
 
         self.load_image()
 
@@ -62,12 +67,20 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
     def mouseMoveEvent(self, a0):
         if a0.buttons() and Qt.MouseButton.LeftButton and self.downloadOk:
             distance = (a0.pos() - self.start_pos).manhattanLength()
-            temp_name = '{0}/{1}'.format(os.getenv('temp'), 'view_pic.jpg')
+
+            timestr = time.strftime("%Y%m%d_%H%M%S", time.localtime(time.time()))
+            temp_name = '{0}/{1}.{2}'.format(os.getenv('temp'), f'PictureDownload_{timestr}',
+                                             'gif' if self.isGif else 'jpg')
             if distance >= QApplication.startDragDistance():
                 self.isDraging = True
                 self.reset_title()
-                if not self.originalImage.isNull():
-                    self.originalImage.save(temp_name)
+                if self.isGif:
+                    if not self.gif_byte_array.isNull():
+                        with open(temp_name, 'wb') as file:
+                            file.write(self.gif_byte_array.data())
+                else:
+                    if not self.originalImage.isNull():
+                        self.originalImage.save(temp_name)
                 mime_data = QMimeData()
                 url = QUrl()
                 url.setUrl("file:///" + temp_name)
@@ -76,24 +89,31 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
                 drag = QDrag(self)
                 drag.setMimeData(mime_data)
                 drag.setHotSpot(a0.pos())
-                drag.exec(Qt.DropAction.MoveAction | Qt.DropAction.CopyAction | Qt.DropAction.LinkAction,
-                          Qt.DropAction.CopyAction)
+                drag.exec(Qt.DropAction.MoveAction | Qt.DropAction.LinkAction, Qt.DropAction.CopyAction)
+                if os.path.isfile(temp_name):
+                    os.remove(temp_name)
                 self.isDraging = False
                 self.reset_title()
 
     def destroyEvent(self):
         try:
             self.show_movie.stop()
+            if self.gif_container:
+                self.gif_container.stop()
+                self.gif_buffer.close()
+                self.gif_byte_array.clear()
             del self.originalImage
-            self.destroy()
             self.deleteLater()
-            gc.collect()
         except:
             pass
 
     def init_menu(self):
         menu = QMenu(self)
 
+        self.action_pause_gif = QAction('暂停 GIF 播放', self)
+        self.action_pause_gif.triggered.connect(self.pause_play_gif)
+        menu.addAction(self.action_pause_gif)
+        menu.addSeparator()
         transform_left = QAction('顺时针旋转 90 度', self)
         transform_left.triggered.connect(self.transform_image_left)
         menu.addAction(transform_left)
@@ -108,9 +128,10 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
 
         share_menu = QMenu(self)
 
-        copyto = QAction('复制', self)
-        copyto.triggered.connect(lambda: QApplication.clipboard().setPixmap(QPixmap.fromImage(self.originalImage)))
-        share_menu.addAction(copyto)
+        self.action_copyto = QAction('复制', self)
+        self.action_copyto.triggered.connect(
+            lambda: QApplication.clipboard().setPixmap(QPixmap.fromImage(self.originalImage)))
+        share_menu.addAction(self.action_copyto)
 
         save = QAction('保存', self)
         save.triggered.connect(self.save_file)
@@ -162,7 +183,11 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
             try:
                 response = requests.get(self.src, headers=request_mgr.header)
                 if response.content:
-                    if self.originalImage.loadFromData(response.content):
+                    if response.headers['content-type'] == 'image/gif':
+                        self.isGif = True
+                        success_flag = True
+                        self.gifLoaded.emit(response.content)
+                    elif self.originalImage.loadFromData(response.content):
                         success_flag = True
             except Exception as e:
                 logging.log_exception(e)
@@ -202,12 +227,22 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
             self.spinBox.setValue(self.spinBox.value() + value)
 
     def save_file(self):
-        path, tpe = QFileDialog.getSaveFileName(self, '保存图片', '',
-                                                'JPG 图片文件 (*.jpg;*.jpeg)')
+        file_type_text = 'GIF 动图文件 (*.gif)' if self.isGif else 'JPG 图片文件 (*.jpg;*.jpeg)'
+
+        path, tpe = QFileDialog.getSaveFileName(self, '保存图片', '', file_type_text)
         if path:
             try:
-                if not self.originalImage.isNull():
-                    self.originalImage.save(path)
+                if self.isGif:
+                    if not self.gif_byte_array.isNull():
+                        with open(path, 'wb') as file:
+                            file.write(self.gif_byte_array.data())
+                    else:
+                        raise EOFError('gif image data is null')
+                else:
+                    if not self.originalImage.isNull():
+                        self.originalImage.save(path)
+                    else:
+                        raise EOFError('static image data is null')
             except Exception as e:
                 self.top_toaster.showToast(
                     top_toast_widget.ToastMessage(str(e), icon_type=top_toast_widget.ToastIconType.ERROR))
@@ -220,12 +255,57 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
         if not f:
             self.reset_title()
             self.label.clear()
-            top_toast_widget.ToastMessage('图片加载失败，请重新加载试试', icon_type=top_toast_widget.ToastIconType.ERROR)
+            self.top_toaster.showToast(top_toast_widget.ToastMessage('图片加载失败，请重新加载试试',
+                                                                     icon_type=top_toast_widget.ToastIconType.ERROR))
         else:
             self.downloadOk = True
             self.pushButton_4.setEnabled(True)
             self.pushButton_2.setEnabled(True)
             self.spinBox.setEnabled(True)
+
+            if self.isGif:
+                self.action_copyto.setEnabled(False)
+            else:
+                self.action_pause_gif.setVisible(False)
+
+    def pause_play_gif(self):
+        if self.isGif:
+            if self.gif_container.state() == QMovie.MovieState.Paused:
+                self.gif_container.setPaused(False)
+                self.action_pause_gif.setText('暂停 GIF 播放')
+            elif self.gif_container.state() == QMovie.MovieState.Running:
+                self.gif_container.setPaused(True)
+                self.action_pause_gif.setText('恢复 GIF 播放')
+
+    def show_gif(self, gif_bytes):
+        def on_frame_changed():
+            self.originalImage = self.gif_container.currentImage()
+            self.resize_image()
+
+        def on_play_failed():
+            self.downloadOk = False
+            self.pushButton_4.setEnabled(False)
+            self.pushButton_2.setEnabled(False)
+            self.spinBox.setEnabled(False)
+            self.label.clear()
+            self.top_toaster.showToast(top_toast_widget.ToastMessage('GIF 播放失败，图片数据可能已损坏',
+                                                                     icon_type=top_toast_widget.ToastIconType.ERROR))
+
+        self.gif_byte_array = QByteArray(gif_bytes)
+        self.gif_buffer = QBuffer(self.gif_byte_array)
+        self.gif_buffer.open(QIODevice.OpenModeFlag.ReadOnly)
+
+        self.gif_container = QMovie(self)
+        self.gif_container.frameChanged.connect(on_frame_changed)
+        self.gif_container.error.connect(on_play_failed)
+        self.gif_container.setDevice(self.gif_buffer)
+        self.gif_container.setCacheMode(QMovie.CacheMode.CacheAll)
+
+        if self.gif_container.isValid():
+            self.gif_container.jumpToFrame(0)
+            self.gif_container.start()
+        else:
+            on_play_failed()
 
     def load_image(self):
         self.setWindowTitle(f'[加载中...] - 图片查看器')

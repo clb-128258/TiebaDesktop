@@ -20,6 +20,7 @@ from publics import aes, profile_mgr, request_mgr, qt_window_mgr, cache_mgr
 import publics.logging as logging
 from ui import loading_amt, user_item
 
+
 def cut_string(text: str, length: int, moretext: str = '...'):
     """裁剪字符串，当长度超过 length 时自动裁断并加上后缀 moretext"""
     if len(text) <= length:
@@ -57,12 +58,13 @@ def load_json_secret(filename):
 def create_data():
     """识别用户的电脑上是否存在用户数据，如不存在则创建"""
     logging.log_INFO('Creating user data')
-    expect_folder = [consts.datapath, f'{consts.datapath}/webview_data', f'{consts.datapath}/logs', f'{consts.datapath}/image_caches',
+    expect_folder = [consts.datapath, f'{consts.datapath}/webview_data', f'{consts.datapath}/logs',
+                     f'{consts.datapath}/image_caches',
                      f'{consts.datapath}/cache_index', f'{consts.datapath}/webview_data/default']  # 欲创建的文件夹
     expect_secret_json = {f'{consts.datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件
     expect_json = {f'{consts.datapath}/config.json': {
         'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1, 'default_sort': 0,
-                                 'enable_lz_only': False},
+                                 'enable_lz_only': False, 'play_gif': True},
         'forum_view_settings': {'default_sort': 0},
         'web_browser_settings': {'url_open_policy': 0}},
         f'{consts.datapath}/cache_index/fidfname_index.json': {},

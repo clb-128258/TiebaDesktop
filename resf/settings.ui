@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>911</width>
-    <height>549</height>
+    <height>553</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -84,7 +84,7 @@ QDialog{background-color: rgb(255, 255, 255);}
         <x>0</x>
         <y>0</y>
         <width>787</width>
-        <height>531</height>
+        <height>535</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -167,7 +167,7 @@ QDialog{background-color: rgb(255, 255, 255);}
             <number>9</number>
            </property>
            <item row="1" column="0">
-            <widget class="QGroupBox" name="">
+            <widget class="QGroupBox" name="groupBox">
              <property name="title">
               <string>看贴设置</string>
              </property>
@@ -175,17 +175,17 @@ QDialog{background-color: rgb(255, 255, 255);}
               <bool>true</bool>
              </property>
              <layout class="QGridLayout" name="gridLayout_6">
-              <item row="2" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBox_2">
+              <item row="1" column="0" colspan="2">
+               <widget class="QCheckBox" name="checkBox">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频贴子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
-                 <string>不显示用户的 IP 属地</string>
+                 <string>首页不推荐视频贴</string>
                 </property>
                </widget>
               </item>
-              <item row="5" column="0" colspan="2">
+              <item row="6" column="0" colspan="2">
                <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0,0">
                 <item>
                  <widget class="QLabel" name="label_14">
@@ -241,17 +241,35 @@ QDialog{background-color: rgb(255, 255, 255);}
                 </item>
                </layout>
               </item>
-              <item row="1" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBox">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频贴子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>首页不推荐视频贴</string>
-                </property>
-               </widget>
-              </item>
               <item row="4" column="0" colspan="2">
+               <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,1">
+                <item>
+                 <widget class="QLabel" name="label_10">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看贴时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>贴吧表情大小：</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton">
+                  <property name="text">
+                   <string>小（与文字一样大）</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_2">
+                  <property name="text">
+                   <string>大（与贴吧网页版上的一样大）</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="5" column="0" colspan="2">
                <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
                 <item>
                  <widget class="QLabel" name="label_13">
@@ -320,33 +338,25 @@ QDialog{background-color: rgb(255, 255, 255);}
                 </item>
                </layout>
               </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QCheckBox" name="checkBox_2">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>不显示用户的 IP 属地</string>
+                </property>
+               </widget>
+              </item>
               <item row="3" column="0" colspan="2">
-               <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,1">
-                <item>
-                 <widget class="QLabel" name="label_10">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看贴时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>贴吧表情大小：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QRadioButton" name="radioButton">
-                  <property name="text">
-                   <string>小（与文字一样大）</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QRadioButton" name="radioButton_2">
-                  <property name="text">
-                   <string>大（与贴吧网页版上的一样大）</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
+               <widget class="QCheckBox" name="checkBox_12">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，贴子回复列表中的 GIF 图片内容将会在预览窗格内自动播放。&lt;/p&gt;&lt;p&gt;在关闭此选项时，GIF 图片仍会被加载，但是不会自动开始播放，需要用户手动开始播放。&lt;/p&gt;&lt;p&gt;如此选项导致程序性能不佳，请尝试关闭此选项。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>在回复列表内播放 GIF 动图</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>

@@ -106,6 +106,8 @@ class SignAllDialog(QDialog, sign.Ui_Dialog):
             signed_count = 0
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    await client.sign_forums()  # 先一键签到
+
                     bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
                     bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
 

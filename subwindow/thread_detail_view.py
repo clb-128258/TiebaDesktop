@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetIte
 
 from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr, top_toast_widget
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
-    timestamp_to_string, cut_string
+    timestamp_to_string, cut_string, large_num_to_string
 import publics.logging as logging
 from ui import tie_detail_view
 
@@ -105,6 +105,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             if isinstance(widget, ThreadVideoItem):
                 if widget.webview:
                     widget.destroy_webview()
+        for i in range(self.listWidget_4.count()):
+            item = self.listWidget_4.item(i)
+            widget = self.listWidget_4.itemWidget(item)
+            widget.deleteLater()
+            del item
 
         qt_window_mgr.del_window(self)
 
@@ -231,7 +236,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         start_async()
 
     def agree_thread_ok_action(self, isok):
-        self.pushButton_4.setText(str(self.agree_num) + ' 个赞')
+        self.pushButton_4.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
         if isok == '[ALREADY_AGREE]':
             if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
@@ -525,7 +530,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             for j in t.contents.imgs:
                                 # width, height, src, view_src
                                 src = j.origin_src
-                                view_src = j.src
+                                view_src = j.big_src
                                 height = j.show_height
                                 width = j.show_width
                                 preview_pixmap.append(
@@ -579,7 +584,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             else:
                 self.setWindowTitle(datas['title'] + ' - 贴吧动态')
                 self.pushButton_2.hide()
-            self.pushButton_4.setText(str(datas['agree_count']) + ' 个赞')
+            self.pushButton_4.setText(large_num_to_string(datas['agree_count'], endspace=True) + '个赞')
             self.label_4.setPixmap(datas['user_portrait_pixmap'])
             self.label_3.setText(datas['user_name'])
             if profile_mgr.local_config['thread_view_settings']['hide_ip']:

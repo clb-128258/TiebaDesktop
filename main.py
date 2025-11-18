@@ -108,6 +108,8 @@ def handle_command_events():
         signed_count = 0
 
         async with aiotieba.Client(bduss, stoken, proxy=True) as client:
+            await client.sign_forums()  # 先一键签到
+
             bars = request_mgr.run_get_api('/mo/q/newmoindex', bduss)['data']['like_forum']
             bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
 
@@ -224,17 +226,24 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton_2.setMenu(menu)
 
     def save_local_config(self):
-        profile_mgr.local_config['thread_view_settings']['hide_video'] = self.checkBox.isChecked()
-        profile_mgr.local_config['thread_view_settings']['hide_ip'] = self.checkBox_2.isChecked()
-        profile_mgr.local_config['thread_view_settings']['tb_emoticon_size'] = 0 if self.radioButton.isChecked() else 1
-        profile_mgr.local_config['thread_view_settings']['default_sort'] = self.comboBox.currentIndex()
-        profile_mgr.local_config['forum_view_settings']['default_sort'] = self.comboBox_2.currentIndex()
-        profile_mgr.local_config['thread_view_settings']['enable_lz_only'] = self.checkBox_3.isChecked()
-        profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
-        profile_mgr.save_local_config()
-
-        toast = top_toast_widget.ToastMessage('设置保存成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
-        self.top_toaster.showToast(toast)
+        try:
+            profile_mgr.local_config['thread_view_settings']['hide_video'] = self.checkBox.isChecked()
+            profile_mgr.local_config['thread_view_settings']['hide_ip'] = self.checkBox_2.isChecked()
+            profile_mgr.local_config['thread_view_settings'][
+                'tb_emoticon_size'] = 0 if self.radioButton.isChecked() else 1
+            profile_mgr.local_config['thread_view_settings']['default_sort'] = self.comboBox.currentIndex()
+            profile_mgr.local_config['forum_view_settings']['default_sort'] = self.comboBox_2.currentIndex()
+            profile_mgr.local_config['thread_view_settings']['enable_lz_only'] = self.checkBox_3.isChecked()
+            profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
+            profile_mgr.local_config['thread_view_settings']['play_gif'] = self.checkBox_12.isChecked()
+            profile_mgr.save_local_config()
+        except Exception as e:
+            logging.log_exception(e)
+            toast = top_toast_widget.ToastMessage('设置保存失败，请重试', icon_type=top_toast_widget.ToastIconType.ERROR)
+            self.top_toaster.showToast(toast)
+        else:
+            toast = top_toast_widget.ToastMessage('设置保存成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.top_toaster.showToast(toast)
 
     def set_debug_info(self):
         self.label_8.setText(f'版本 {consts.APP_VERSION_STR}')
@@ -486,14 +495,19 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.top_toaster.showToast(toast)
 
     def load_local_config(self):
-        self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
-        self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
-        (self.radioButton if profile_mgr.local_config['thread_view_settings'][
-                                 'tb_emoticon_size'] == 0 else self.radioButton_2).setChecked(True)
-        self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
-        self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
-        self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
-        self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
+        try:
+            self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
+            self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
+            self.checkBox_12.setChecked(profile_mgr.local_config['thread_view_settings']['play_gif'])
+            (self.radioButton if profile_mgr.local_config['thread_view_settings'][
+                                     'tb_emoticon_size'] == 0 else self.radioButton_2).setChecked(True)
+            self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
+            self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
+            self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
+        except KeyError:
+            toast = top_toast_widget.ToastMessage(f'设置信息未能完全加载',
+                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
+            self.top_toaster.showToast(toast)
 
     def get_logon_accounts(self):
         # 清空数据

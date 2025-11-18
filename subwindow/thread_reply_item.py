@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 
 from publics import request_mgr, qt_window_mgr, profile_mgr
-from publics.funcs import start_background_thread, open_url_in_browser
+from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string
 import publics.logging as logging
 
 from ui import comment_view
@@ -48,6 +48,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.label_4.installEventFilter(self)  # 重写事件过滤器
         self.pushButton_3.clicked.connect(self.agree_thread_async)
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
+        self.destroyed.connect(self.on_widget_deleted)
 
         self.flash_timer = QTimer(self)
         self.flash_timer.setInterval(200)
@@ -65,8 +66,14 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             self.flash_timer.start()
             self.label_6.setStyleSheet('QWidget{background-color: rgb(71, 71, 255);}')
 
+    def on_widget_deleted(self):
+        if self.replyWindow:
+            self.replyWindow.close()
+            self.replyWindow.deleteLater()
+            del self.replyWindow
+
     def agree_thread_ok_action(self, isok):
-        self.pushButton_3.setText(str(self.agree_num) + ' 个赞')
+        self.pushButton_3.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
         if isok == '[ALREADY_AGREE]':
             if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
@@ -240,7 +247,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                 self.pushButton.setText(f'查看楼中楼 ({reply_count})')
         if agree_count != -1:
             self.agree_num = agree_count
-            self.pushButton_3.setText(f'{agree_count} 个赞')
+            self.pushButton_3.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
         else:
             self.pushButton_3.hide()
         if not text:
