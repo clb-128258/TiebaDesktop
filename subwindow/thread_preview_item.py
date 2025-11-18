@@ -38,7 +38,10 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         forum_window.get_threads_async()
 
     def set_thread_values(self, view, agree, reply, repost, send_time=0):
-        text = f'{large_num_to_string(view, endspace=True)}次浏览，{large_num_to_string(agree, endspace=True)} 人点赞，{large_num_to_string(reply, endspace=True)} 条回复，{large_num_to_string(repost, endspace=True)} 次转发'
+        text = (f'{large_num_to_string(view, endspace=True)}次浏览，'
+                f'{large_num_to_string(agree, endspace=True)}人点赞，'
+                f'{large_num_to_string(reply, endspace=True)}条回复，'
+                f'{large_num_to_string(repost, endspace=True)}次转发')
         if send_time > 0:
             timestr = '发布于 ' + timestamp_to_string(send_time)
             text += '\n' + timestr

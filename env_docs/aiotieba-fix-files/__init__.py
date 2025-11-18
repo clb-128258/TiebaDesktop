@@ -107,10 +107,8 @@ from .api import (
 if os.name == "posix":
     import signal
 
-
     def terminate(signal_number, frame):
         raise KeyboardInterrupt
-
 
     signal.signal(signal.SIGTERM, terminate)
 

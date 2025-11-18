@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import ClassVar
 from ..logging import get_logger as LOG
 import os
 import sys
@@ -89,7 +88,7 @@ class ForumInfoCache:
     """
 
     @classmethod
-    def get_fid(self, fname: str) -> int:
+    def get_fid(cls, fname: str) -> int:
         """
         通过贴吧名获取forum_id
 
@@ -103,7 +102,7 @@ class ForumInfoCache:
         return _fname2fid.get(fname, "")
 
     @classmethod
-    def get_fname(self, fid: int) -> str:
+    def get_fname(cls, fid: int) -> str:
         """
         通过forum_id获取贴吧名
 
@@ -114,10 +113,10 @@ class ForumInfoCache:
             str: 该贴吧的贴吧名
         """
 
-        return _fid2fname.get(fid, "")
+        return _fid2fname.get(str(fid), "")
 
     @classmethod
-    def add_forum(self, fname: str, fid: int) -> None:
+    def add_forum(cls, fname: str, fid: int) -> None:
         """
         将贴吧名与forum_id的映射关系添加到缓存
 
@@ -127,7 +126,7 @@ class ForumInfoCache:
         """
 
         _fname2fid[fname] = fid
-        _fid2fname[fid] = fname
+        _fid2fname[str(fid)] = fname
 
         _sync_queue.put(None)  # 提交一次更新事件
 
