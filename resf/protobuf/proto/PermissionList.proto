@@ -1,4 +1,5 @@
 syntax = "proto3";
+package TiebaDestkop; 
 
 message PermissionList {
     int32 follow = 1;

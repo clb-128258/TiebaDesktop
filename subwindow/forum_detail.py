@@ -15,6 +15,8 @@ from publics.funcs import LoadingFlashWidget, start_background_thread, http_down
     open_url_in_browser, large_num_to_string
 import publics.logging as logging
 
+from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
+
 from ui import forum_detail
 
 
@@ -220,28 +222,40 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
                 if datas['follow_info']['isfollow']:
                     ts = time.time() - datas["follow_info"]["follow_day"] * 86400
-                    follow_date_str = datetime.datetime.fromtimestamp(ts).strftime('(大约是在 %Y年%m月%d日 那天关注的)')
+                    dtobj = datetime.datetime.fromtimestamp(ts)
+                    follow_date_str = f'根据关注天数推算，你大约在 {dtobj.year}年{dtobj.month}月{dtobj.day}日 关注了本吧。'
                 else:
                     follow_date_str = ''
-                self.label_7.setText('等级：' + str(datas['follow_info']['level']))
-                self.label_8.setText('等级头衔：' + datas['follow_info']['level_flag'])
-                self.label_25.setText(
-                    f'关注天数：{datas["follow_info"]["follow_day"]} 天 {follow_date_str}')
-                self.label_26.setText(f'总发贴数：{datas["follow_info"]["total_thread_num"]}')
-                self.label_27.setText(f'今日发贴回贴数：{datas["follow_info"]["today_post_num"]}')
 
-                if datas['follow_info']['isSign']:
-                    self.pushButton_2.setEnabled(False)
-                    self.pushButton_2.setText('已签到')
+                forum_level = datas['follow_info']['level']
+                qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
+                       'solid;border-color: [color]}')
+                if 1 <= forum_level <= 3:  # 绿牌
+                    qss = qss.replace('[color]', 'rgb(101, 211, 171)')
+                elif 4 <= forum_level <= 9:  # 蓝牌
+                    qss = qss.replace('[color]', 'rgb(101, 161, 255)')
+                elif 10 <= forum_level <= 15:  # 黄牌
+                    qss = qss.replace('[color]', 'rgb(255, 172, 29)')
+                elif forum_level >= 16:  # 橙牌老东西
+                    qss = qss.replace('[color]', 'rgb(247, 126, 48)')
+                self.label_16.setStyleSheet(qss)
+                self.label_16.setText(f'Lv.{forum_level} {datas["follow_info"]["level_flag"]}')
                 self.label_9.setText(
                     f'{datas["follow_info"]["exp"]} / {datas["follow_info"]["next_exp"]}，距离下一等级还差 {datas["follow_info"]["next_exp"] - datas["follow_info"]["exp"]} 经验值')
                 self.progressBar.setRange(0, datas["follow_info"]["next_exp"])
                 self.progressBar.setValue(datas["follow_info"]["exp"])
+                if datas['follow_info']['isSign']:
+                    self.pushButton_2.setEnabled(False)
+                    self.pushButton_2.setText('已签到')
 
-                self.label_10.setText(f'共计签到天数：{datas["follow_info"]["total_sign_count"]}')
-                self.label_17.setText(f'连签天数：{datas["follow_info"]["continuous_sign_count"]}')
-                self.label_18.setText(f'漏签天数：{datas["follow_info"]["forget_sign_count"]}')
-                self.label_28.setText(f'今日签到名次：第 {datas["follow_info"]["today_sign_rank"]} 个签到')
+                self.label_25.setToolTip(follow_date_str)
+                self.label_25.setText(f'{datas["follow_info"]["follow_day"]}')
+                self.label_26.setText(f'{datas["follow_info"]["total_thread_num"]}')
+                self.label_27.setText(f'{datas["follow_info"]["today_post_num"]}')
+                self.label_10.setText(f'{datas["follow_info"]["total_sign_count"]}')
+                self.label_17.setText(f'{datas["follow_info"]["continuous_sign_count"]}')
+                self.label_18.setText(f'{datas["follow_info"]["forget_sign_count"]}')
+                self.label_28.setText(f'{datas["follow_info"]["today_sign_rank"]}')
             else:
                 self.pushButton.hide()
                 self.label_6.setText('你还没有登录，登录后即可查看自己的信息。')
@@ -331,9 +345,11 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         if forum_content := ex_forum_info["forum_info"].get("content"):
                             data['forum_desp_ex'] = forum_content[0]['text']
 
-                        data['follow_info']['isfollow'] = bool(int(ex_forum_info['forum_info']['is_like']))
+                        data['follow_info']['isfollow'] = bool(int(
+                            ex_forum_info['forum_info']['is_like'] if ex_forum_info['forum_info']['is_like'] else '0'))
                         data['follow_info']['exp'] = int(ex_forum_info['forum_info']["cur_score"])
-                        data['follow_info']['level'] = int(ex_forum_info['forum_info']["level_id"])
+                        data['follow_info']['level'] = int(ex_forum_info['forum_info']["level_id"]) if \
+                            ex_forum_info['forum_info']["level_id"] else 0
                         data['follow_info']['level_flag'] = ex_forum_info['forum_info']["level_name"]
                         data['follow_info']['next_exp'] = int(ex_forum_info['forum_info']["levelup_score"])
                         self.forum_atavar_link = ex_forum_info['forum_info']["avatar_origin"]
@@ -467,6 +483,32 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                 resp_mytb_info["data"]['user_forum_info']["day_post_num"])
                             data['forum_level_value_index'] = resp_mytb_info["data"]['level_info']["list"]
 
+                    async def get_forum_level_map_proto():
+                        if not self.bduss:
+                            payload = GetLevelInfoReqIdl_pb2.GetLevelInfoReqIdl()
+
+                            payload.data.common._client_type = 2
+                            payload.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+                            payload.data.common.BDUSS = self.bduss
+                            payload.data.common.stoken = self.stoken
+
+                            payload.data.forum_id = self.forum_id
+
+                            resp_binary = request_mgr.run_protobuf_api('/c/f/forum/getLevelInfo',
+                                                                       payloads=payload.SerializeToString(),
+                                                                       cmd_id=301005,
+                                                                       bduss=self.bduss, stoken=self.stoken,
+                                                                       host_type=2)
+
+                            final_response = GetLevelInfoResIdl_pb2.GetLevelInfoResIdl()
+                            final_response.ParseFromString(resp_binary)
+
+                            forum_level_value_index = []
+                            for level in final_response.data.level_info:
+                                level_jsonify = {'name': level.name, 'score': level.score}
+                                forum_level_value_index.append(level_jsonify)
+                            data['forum_level_value_index'] = forum_level_value_index
+
                     async def get_forum_bg():
                         # 获取吧背景图片
                         self.forum_bg_link = url = forum_info.background_image_url
@@ -542,17 +584,21 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         data['thread_c'] = forum_info.post_num
                         data['follow_c'] = forum_info.member_num
                         data['main_thread_c'] = forum_info.thread_num
-                        data['forum_volume'] = f'{forum_info.category} - {forum_info.subcategory}'
+                        data['forum_volume'] = f'{forum_info.category}'
 
-                        await asyncio.gather(get_forum_rule(),
-                                             get_forum_desp_ex(),
-                                             get_sign_info(),
-                                             get_forum_bg(),
-                                             get_forums_heads(),
-                                             get_bawu_infos(),
-                                             get_self_forum_head(),
-                                             get_user_forum_level_info(),
-                                             return_exceptions=True)
+                        result = await asyncio.gather(get_forum_rule(),
+                                                      get_forum_desp_ex(),
+                                                      get_sign_info(),
+                                                      get_forum_bg(),
+                                                      get_forums_heads(),
+                                                      get_bawu_infos(),
+                                                      get_self_forum_head(),
+                                                      get_user_forum_level_info(),
+                                                      get_forum_level_map_proto(),
+                                                      return_exceptions=True)
+                        for i in result:
+                            if isinstance(i, Exception):
+                                logging.log_exception(i)
 
                     self.set_main_info_signal.emit(data)
             except Exception as e:

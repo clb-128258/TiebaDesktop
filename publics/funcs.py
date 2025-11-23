@@ -1,5 +1,6 @@
 import asyncio
 import os
+import pathlib
 import queue
 import subprocess
 import threading
@@ -18,6 +19,7 @@ import json
 
 from publics import aes, profile_mgr, request_mgr, qt_window_mgr, cache_mgr
 import publics.logging as logging
+from publics.toasting import init_AUMID
 from ui import loading_amt, user_item
 
 
@@ -58,15 +60,13 @@ def load_json_secret(filename):
 def create_data():
     """识别用户的电脑上是否存在用户数据，如不存在则创建"""
     logging.log_INFO('Creating user data')
+    init_AUMID(consts.WINDOWS_AUMID, '贴吧桌面', pathlib.Path(f"{os.getcwd()}/ui/tieba_logo_big_single.ico"))
+
     expect_folder = [consts.datapath, f'{consts.datapath}/webview_data', f'{consts.datapath}/logs',
                      f'{consts.datapath}/image_caches',
                      f'{consts.datapath}/cache_index', f'{consts.datapath}/webview_data/default']  # 欲创建的文件夹
     expect_secret_json = {f'{consts.datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件
-    expect_json = {f'{consts.datapath}/config.json': {
-        'thread_view_settings': {'hide_video': False, 'hide_ip': False, 'tb_emoticon_size': 1, 'default_sort': 0,
-                                 'enable_lz_only': False, 'play_gif': True},
-        'forum_view_settings': {'default_sort': 0},
-        'web_browser_settings': {'url_open_policy': 0}},
+    expect_json = {f'{consts.datapath}/config.json': profile_mgr.local_config_model,
         f'{consts.datapath}/cache_index/fidfname_index.json': {},
         f'{consts.datapath}/d2id_flag': {'uid': ''},
         f'{consts.datapath}/view_history': []}  # 欲创建的json文件

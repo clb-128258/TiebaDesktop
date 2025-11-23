@@ -79,7 +79,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                     if self.checkBox_2.isChecked():
                         flag |= aiotieba.enums.BlacklistType.FOLLOW
 
-                    r = await client.set_blacklist(self.user_id_portrait, flag)
+                    r = await client.set_blacklist(self.user_id_portrait, btype=flag)
                     if r:
                         turn_data['success'] = True
                         turn_data['title'] = '拉黑成功'

@@ -7,3 +7,4 @@ beautifulsoup4==4.13.4
 pycryptodome
 pythonnet
 pyaudio
+windows_toasts

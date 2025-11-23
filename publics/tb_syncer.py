@@ -1,9 +1,12 @@
+import os
 import queue
 import time
+import requests
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from publics import request_mgr
+import consts
+from publics import request_mgr, toasting, cache_mgr, profile_mgr
 from publics.funcs import start_background_thread
 import publics.logging as logging
 
@@ -30,7 +33,9 @@ class TiebaMsgSyncer(QObject):
 
     unread_msg_counts: dict = {}
     noticeCountChanged = pyqtSignal()
+    activeWindow = pyqtSignal()
     is_running = False
+    latest_count = -1
 
     def __init__(self, bduss: str = "", stoken: str = ""):
         super().__init__()
@@ -54,16 +59,71 @@ class TiebaMsgSyncer(QObject):
 
     def have_basic_unread_notice(self):
         """当前是否存在未读的点赞、回复、@通知"""
-        return self.get_unread_notice_count(UnreadMessageType.AGREE) + self.get_unread_notice_count(
-            UnreadMessageType.AT) + self.get_unread_notice_count(UnreadMessageType.REPLY) != 0
+        return self.get_basic_unread_notice_count() != 0
 
     def have_unread_notice(self):
         """当前是否存在未读通知"""
         return self.get_unread_notice_count(UnreadMessageType.TOTAL_COUNT) != 0
 
+    def get_basic_unread_notice_count(self):
+        """获取未读的点赞、回复、@通知数"""
+        return (self.get_unread_notice_count(UnreadMessageType.AGREE) +
+                self.get_unread_notice_count(UnreadMessageType.AT) +
+                self.get_unread_notice_count(UnreadMessageType.REPLY))
+
     def get_unread_notice_count(self, msg_type):
         """获取某个类型的未读通知数"""
         return self.unread_msg_counts.get(msg_type, 0)
+
+    def save_toast_settings(self):
+        profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = False
+        profile_mgr.save_local_config()
+
+    def show_toast(self, title, text, icon_path=''):
+        toasting.showMessage(title,
+                             text,
+                             icon=icon_path,
+                             buttons=[toasting.Button('查看详情', self.activeWindow.emit),
+                                      toasting.Button('关闭此类通知', self.save_toast_settings)],
+                             callback=self.activeWindow.emit,
+                             lowerText='新消息通知')
+
+    def get_interactMsgAlter(self):
+        """通过接口 https://tiebac.baidu.com/c/s/interactMsgAlter 获取详细的互动消息信息，并发出通知"""
+        interact_count = self.get_basic_unread_notice_count()
+        if profile_mgr.local_config["notify_settings"]["enable_interact_notify"] and interact_count > 0:
+            payloads = {
+                "BDUSS": self.bduss,
+                "_client_type": "2",
+                "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
+                "need_get_all": "1",
+                "stoken": self.stoken,
+            }
+            resp = request_mgr.run_post_api('/c/s/interactMsgAlter',
+                                            request_mgr.calc_sign(payloads),
+                                            use_mobile_header=True,
+                                            host_type=2)
+            if resp['data'].get('title'):
+                title = resp['data']['title']
+                text = resp['data']['desc']
+
+                if icon_list := resp['data'].get("icon_list"):
+                    link = icon_list[-1]
+
+                    if link.startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
+                        portrait = link.split('/')[-1].replace('.jpg', '')
+                        cache_path = f'{consts.datapath}/image_caches/portrait_{portrait}.jpg'
+                        if not os.path.isfile(cache_path):
+                            cache_mgr.save_portrait(portrait)
+                    else:
+                        timestr = time.strftime("%Y%m%d_%H%M%S", time.localtime(time.time()))
+                        cache_path = f'{consts.datapath}/image_caches/ToastNotifyIconCache_{timestr}.jpg'
+                        icon_response = requests.get(link, headers=request_mgr.header)
+                        if icon_response.content and icon_response.status_code == 200:
+                            with open(cache_path, 'wb') as file:
+                                file.write(icon_response.content)
+
+                    self.show_toast(title, text, cache_path)
 
     def unread_notice_sync_thread(self):
         """未读通知数同步线程"""
@@ -79,12 +139,15 @@ class TiebaMsgSyncer(QObject):
                     if self.bduss and self.stoken:
                         self.load_unread_notice_from_api()
                     else:
-                        time.sleep(5)
+                        time.sleep(1)
                         continue
                 except Exception as e:
                     logging.log_exception(e)
                 else:
-                    self.noticeCountChanged.emit()
+                    if self.latest_count != self.get_basic_unread_notice_count():
+                        self.latest_count = self.get_basic_unread_notice_count()
+                        self.noticeCountChanged.emit()
+                        start_background_thread(self.get_interactMsgAlter)
                 finally:
                     time.sleep(5)
         self.is_running = False

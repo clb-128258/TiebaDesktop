@@ -236,6 +236,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config['thread_view_settings']['enable_lz_only'] = self.checkBox_3.isChecked()
             profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
             profile_mgr.local_config['thread_view_settings']['play_gif'] = self.checkBox_12.isChecked()
+            profile_mgr.local_config["notify_settings"]["enable_interact_notify"]=self.checkBox_13.isChecked()
             profile_mgr.save_local_config()
         except Exception as e:
             logging.log_exception(e)
@@ -499,15 +500,15 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
             self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
             self.checkBox_12.setChecked(profile_mgr.local_config['thread_view_settings']['play_gif'])
+            self.checkBox_13.setChecked(profile_mgr.local_config["notify_settings"]["enable_interact_notify"])
             (self.radioButton if profile_mgr.local_config['thread_view_settings'][
                                      'tb_emoticon_size'] == 0 else self.radioButton_2).setChecked(True)
             self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
             self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
             self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
         except KeyError:
-            toast = top_toast_widget.ToastMessage(f'设置信息未能完全加载',
-                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
-            self.top_toaster.showToast(toast)
+            profile_mgr.fix_local_config()
+            self.load_local_config()
 
     def get_logon_accounts(self):
         # 清空数据
@@ -729,6 +730,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.pushButton_5.clicked.connect(self.open_search_window)
         self.add_info.connect(self._add_uinfo)
         self.notice_syncer.noticeCountChanged.connect(self.set_unread_count)
+        self.notice_syncer.activeWindow.connect(self.switch_interact_page)
 
         self.handle_d2id_flag()
         self.init_profile_menu()
@@ -759,6 +761,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.pushButton_4.setText('消息')
 
     def switch_interact_page(self):
+        if self.isMinimized():
+            self.showNormal()
+        self.raise_()
+        if not self.isActiveWindow():
+            self.activateWindow()
+
         if self.interactionlist.is_first_show:
             self.interactionlist.refresh_list()
             self.interactionlist.is_first_show = False

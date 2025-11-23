@@ -1,8 +1,21 @@
 """本地配置文件管理器"""
 import json
 import time
+import copy
 
 import consts
+
+local_config_model = {
+    'thread_view_settings': {'hide_video': False,
+                             'hide_ip': False,
+                             'tb_emoticon_size': 1,
+                             'default_sort': 0,
+                             'enable_lz_only': False,
+                             'play_gif': True},
+    'forum_view_settings': {'default_sort': 0},
+    'web_browser_settings': {'url_open_policy': 0},
+    "notify_settings": {"enable_interact_notify": True}
+}
 
 video_webview_show_html = ''
 local_config = {}
@@ -26,6 +39,15 @@ def load_local_config() -> dict:
     with open(f'{consts.datapath}/config.json', 'rt') as file:
         local_config = json.loads(file.read())
         return local_config
+
+
+def fix_local_config():
+    global local_config
+    new_cfg = copy.deepcopy(local_config_model)  # 复制出一份新配置
+    new_cfg.update(local_config)  # 把缺少索引的老配置更新到参数齐全的新配置上
+    local_config = new_cfg
+
+    save_local_config()
 
 
 def save_local_config():

@@ -1,7 +1,13 @@
 syntax = "proto3";
+package TiebaDestkop; 
 
-import "GetUserBlackInfo/DataReq.proto";
+import "proto/CommonReq_RequestMgr.proto";
+
+message DataReq_GetUserBlackInfo {
+    CommonReq_RequestMgr common = 1;
+    int64 black_uid = 2;
+}
 
 message GetUserBlackInfoReqIdl {
-    DataReq data = 1;
+    DataReq_GetUserBlackInfo data = 1;
 }

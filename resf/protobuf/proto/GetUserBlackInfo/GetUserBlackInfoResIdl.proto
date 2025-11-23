@@ -1,9 +1,15 @@
 syntax = "proto3";
+package TiebaDestkop; 
 
-import "Error.proto";
-import "GetUserBlackInfo/DataRes.proto";
+import "proto/Error_RequestMgr.proto";
+import "proto/PermissionList.proto";
+
+message DataRes_GetUserBlackInfo {
+    int32 is_black_white = 1;
+    PermissionList perm_list = 2;
+}
 
 message GetUserBlackInfoResIdl {
-    Error error = 1;
-    DataRes data = 2;
+    Error_RequestMgr error = 1;
+    DataRes_GetUserBlackInfo data = 2;
 }

@@ -42,6 +42,7 @@ class Ui_Form(object):
         font.setFamily("微软雅黑")
         font.setPointSize(10)
         self.label_9.setFont(font)
+        self.label_9.setToolTip("")
         self.label_9.setStyleSheet("QLabel{\n"
 "    color: rgb(255, 255, 255);\n"
 "    background-color: rgb(101, 211, 171);\n"
@@ -68,7 +69,6 @@ class Ui_Form(object):
         self.label.setText(_translate("Form", "baicon"))
         self.label_2.setText(_translate("Form", "baname"))
         self.pushButton.setText(_translate("Form", "进吧"))
-        self.label_9.setToolTip(_translate("Form", "<html><head/><body><p><span style=\" font-size:9pt;\">你在本吧的等级</span></p></body></html>"))
         self.label_9.setText(_translate("Form", "Lv.1"))
         self.label_3.setText(_translate("Form", "level,sign"))
         self.pushButton_2.setText(_translate("Form", "签到"))

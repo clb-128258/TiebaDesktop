@@ -1,0 +1,13 @@
+syntax = "proto3";
+package TiebaDestkop; 
+
+import "proto/CommonReq_RequestMgr.proto";
+
+message DataReq_GetLevelInfo {
+    uint64 forum_id = 1;
+    CommonReq_RequestMgr common = 2;
+}
+
+message GetLevelInfoReqIdl {
+    DataReq_GetLevelInfo data = 1;
+}

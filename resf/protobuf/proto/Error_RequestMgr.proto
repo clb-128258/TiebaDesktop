@@ -1,6 +1,7 @@
 syntax = "proto3";
+package TiebaDestkop; 
 
-message Error {
+message Error_RequestMgr {
     int32 errorno = 1;
     string errmsg = 2;
     string usermsg = 3;

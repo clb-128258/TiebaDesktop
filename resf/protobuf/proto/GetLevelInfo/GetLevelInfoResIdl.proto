@@ -1,0 +1,17 @@
+syntax = "proto3";
+package TiebaDestkop; 
+
+import "proto/Error_RequestMgr.proto";
+import "proto/LevelInfo.proto";
+
+message DataRes_GetLevelInfo {
+    repeated LevelInfo level_info = 1;
+    int32 is_like = 2;
+    int32 user_level = 3;
+    string level_name = 4;
+}
+
+message GetLevelInfoResIdl {
+    DataRes_GetLevelInfo data = 1;
+    Error_RequestMgr error = 2;
+}
