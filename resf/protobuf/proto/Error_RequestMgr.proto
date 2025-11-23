@@ -1,5 +1,5 @@
 syntax = "proto3";
-package TiebaDestkop; 
+package TiebaDesktop;
 
 message Error_RequestMgr {
     int32 errorno = 1;

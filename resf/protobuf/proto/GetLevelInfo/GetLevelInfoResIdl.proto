@@ -1,5 +1,5 @@
 syntax = "proto3";
-package TiebaDestkop; 
+package TiebaDesktop;
 
 import "proto/Error_RequestMgr.proto";
 import "proto/LevelInfo.proto";

@@ -1,5 +1,5 @@
 syntax = "proto3";
-package TiebaDestkop; 
+package TiebaDesktop;
 
 // 内外重命名是为了防止与aiotieba所注册的proto定义发生冲突
 message CommonReq_RequestMgr {

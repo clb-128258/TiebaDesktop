@@ -15,7 +15,7 @@ from proto import Error_RequestMgr_pb2 as proto_dot_Error__RequestMgr__pb2
 from proto import LevelInfo_pb2 as proto_dot_LevelInfo__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n+proto/GetLevelInfo/GetLevelInfoResIdl.proto\x12\x0cTiebaDestkop\x1a\x1cproto/Error_RequestMgr.proto\x1a\x15proto/LevelInfo.proto\"|\n\x14\x44\x61taRes_GetLevelInfo\x12+\n\nlevel_info\x18\x01 \x03(\x0b\x32\x17.TiebaDestkop.LevelInfo\x12\x0f\n\x07is_like\x18\x02 \x01(\x05\x12\x12\n\nuser_level\x18\x03 \x01(\x05\x12\x12\n\nlevel_name\x18\x04 \x01(\t\"u\n\x12GetLevelInfoResIdl\x12\x30\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\".TiebaDestkop.DataRes_GetLevelInfo\x12-\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x1e.TiebaDestkop.Error_RequestMgrb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n+proto/GetLevelInfo/GetLevelInfoResIdl.proto\x12\x0cTiebaDesktop\x1a\x1cproto/Error_RequestMgr.proto\x1a\x15proto/LevelInfo.proto\"|\n\x14\x44\x61taRes_GetLevelInfo\x12+\n\nlevel_info\x18\x01 \x03(\x0b\x32\x17.TiebaDesktop.LevelInfo\x12\x0f\n\x07is_like\x18\x02 \x01(\x05\x12\x12\n\nuser_level\x18\x03 \x01(\x05\x12\x12\n\nlevel_name\x18\x04 \x01(\t\"u\n\x12GetLevelInfoResIdl\x12\x30\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\".TiebaDesktop.DataRes_GetLevelInfo\x12-\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x1e.TiebaDesktop.Error_RequestMgrb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.GetLevelInfo.GetLevelInfoResIdl_pb2', globals())

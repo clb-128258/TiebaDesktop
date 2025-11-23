@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from proto import CommonReq_RequestMgr_pb2 as proto_dot_CommonReq__RequestMgr__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3proto/GetUserBlackInfo/GetUserBlackInfoReqIdl.proto\x12\x0cTiebaDestkop\x1a proto/CommonReq_RequestMgr.proto\"a\n\x18\x44\x61taReq_GetUserBlackInfo\x12\x32\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\".TiebaDestkop.CommonReq_RequestMgr\x12\x11\n\tblack_uid\x18\x02 \x01(\x03\"N\n\x16GetUserBlackInfoReqIdl\x12\x34\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32&.TiebaDestkop.DataReq_GetUserBlackInfob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3proto/GetUserBlackInfo/GetUserBlackInfoReqIdl.proto\x12\x0cTiebaDesktop\x1a proto/CommonReq_RequestMgr.proto\"a\n\x18\x44\x61taReq_GetUserBlackInfo\x12\x32\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\".TiebaDesktop.CommonReq_RequestMgr\x12\x11\n\tblack_uid\x18\x02 \x01(\x03\"N\n\x16GetUserBlackInfoReqIdl\x12\x34\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32&.TiebaDesktop.DataReq_GetUserBlackInfob\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.GetUserBlackInfo.GetUserBlackInfoReqIdl_pb2', globals())

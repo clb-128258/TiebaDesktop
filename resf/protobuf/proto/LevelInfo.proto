@@ -1,5 +1,5 @@
 syntax = "proto3";
-package TiebaDestkop; 
+package TiebaDesktop;
 
 message LevelInfo {
     int32 id = 1;

@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aproto/PermissionList.proto\x12\x0cTiebaDestkop\"@\n\x0ePermissionList\x12\x0e\n\x06\x66ollow\x18\x01 \x01(\x05\x12\x10\n\x08interact\x18\x02 \x01(\x05\x12\x0c\n\x04\x63hat\x18\x03 \x01(\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aproto/PermissionList.proto\x12\x0cTiebaDesktop\"@\n\x0ePermissionList\x12\x0e\n\x06\x66ollow\x18\x01 \x01(\x05\x12\x10\n\x08interact\x18\x02 \x01(\x05\x12\x0c\n\x04\x63hat\x18\x03 \x01(\x05\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.PermissionList_pb2', globals())

@@ -15,7 +15,7 @@ from proto import Error_RequestMgr_pb2 as proto_dot_Error__RequestMgr__pb2
 from proto import PermissionList_pb2 as proto_dot_PermissionList__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3proto/GetUserBlackInfo/GetUserBlackInfoResIdl.proto\x12\x0cTiebaDestkop\x1a\x1cproto/Error_RequestMgr.proto\x1a\x1aproto/PermissionList.proto\"c\n\x18\x44\x61taRes_GetUserBlackInfo\x12\x16\n\x0eis_black_white\x18\x01 \x01(\x05\x12/\n\tperm_list\x18\x02 \x01(\x0b\x32\x1c.TiebaDestkop.PermissionList\"}\n\x16GetUserBlackInfoResIdl\x12-\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x1e.TiebaDestkop.Error_RequestMgr\x12\x34\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32&.TiebaDestkop.DataRes_GetUserBlackInfob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3proto/GetUserBlackInfo/GetUserBlackInfoResIdl.proto\x12\x0cTiebaDesktop\x1a\x1cproto/Error_RequestMgr.proto\x1a\x1aproto/PermissionList.proto\"c\n\x18\x44\x61taRes_GetUserBlackInfo\x12\x16\n\x0eis_black_white\x18\x01 \x01(\x05\x12/\n\tperm_list\x18\x02 \x01(\x0b\x32\x1c.TiebaDesktop.PermissionList\"}\n\x16GetUserBlackInfoResIdl\x12-\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x1e.TiebaDesktop.Error_RequestMgr\x12\x34\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32&.TiebaDesktop.DataRes_GetUserBlackInfob\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.GetUserBlackInfo.GetUserBlackInfoResIdl_pb2', globals())
