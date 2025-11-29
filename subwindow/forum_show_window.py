@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
-    make_thread_content, cut_string, large_num_to_string
+    make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets
 import publics.logging as logging
 
 from ui import ba_head
@@ -35,12 +35,15 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
 
         self.page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
         self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
-        for i in self.listwidgets:
-            i.setStyleSheet('QListWidget{outline:0px;}'
-                            'QListWidget::item:hover {color:white; background-color:white;}'
-                            'QListWidget::item:selected {color:white; background-color:white;}')
-            i.verticalScrollBar().setSingleStep(20)
-            i.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
+        for i in range(len(self.listwidgets)):
+            lw = self.listwidgets[i]
+
+            lw.setStyleSheet('QListWidget{outline:0px;}'
+                             'QListWidget::item:hover {color:white; background-color:white;}'
+                             'QListWidget::item:selected {color:white; background-color:white;}')
+            lw.verticalScrollBar().setSingleStep(20)
+            lw.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
+            lw.verticalScrollBar().valueChanged.connect(self.threadList_load_image)
 
         self.init_load_flash()
         self.label_9.hide()
@@ -55,6 +58,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.pushButton.clicked.connect(self.do_follow_forum)
         self.pushButton_3.clicked.connect(self.open_detail_window)
         self.pushButton_5.clicked.connect(self.open_search_window)
+        self.tabWidget.currentChanged.connect(self.threadList_load_image)
         self.pushButton_4.clicked.connect(
             lambda: open_url_in_browser(f'https://tieba.baidu.com/f?kw={self.forum_name}'))
 
@@ -70,6 +74,13 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
     def init_load_flash(self):
         self.flash_shower = LoadingFlashWidget()
         self.flash_shower.cover_widget(self)
+
+    def threadList_load_image(self):
+        for lw in self.listwidgets:
+            if lw.parent() == self.tabWidget.currentWidget():
+                widgets = listWidget_get_visible_widgets(lw)
+                for i in widgets:
+                    i.load_all_AsyncImage()
 
     def open_search_window(self):
         from subwindow.tieba_search_entry import TiebaSearchWindow
@@ -122,12 +133,13 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         # 'reply_count': reply_count,
         # 'repost_count': repost_count
         item = QListWidgetItem()
-        from subwindow.thread_preview_item import ThreadView
+        from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
         widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+        widget.load_by_callback = True
 
         widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['content'],
                          infos['forum_pixmap'], infos['forum_name'])
-        widget.set_picture(infos['view_pixmap'])
+        widget.set_picture(list(AsyncLoadImage(image.src, image.hash) for image in infos['view_pixmap']))
         widget.set_thread_values(infos['view_count'], infos['agree_count'], infos['reply_count'], infos['repost_count'])
         widget.is_treasure = infos['is_treasure']
         widget.is_top = infos['is_top']
@@ -166,6 +178,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.label_5.setText(f'贴子刷新成功，已为你推荐 {self.added_thread_count} 条内容')
         self.text_timer.start()
         self.added_thread_count = 0
+        self.threadList_load_image()
 
     def refresh_all(self):
         if not self.isloading:
@@ -218,7 +231,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 content = cut_string(_text, 50)
                 user_name = thread.user.nick_name_new
                 portrait = thread.user.portrait
-                preview_pixmap = []
+                preview_pixmap = thread.contents.imgs
                 view_count = thread.view_num
                 agree_count = thread.agree
                 reply_count = thread.reply_num
@@ -229,14 +242,6 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 user_head_pixmap = QPixmap()
                 user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                 user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
-                for j in thread.contents.imgs:
-                    hash = j.hash
-                    pixmap = QPixmap()
-                    pixmap.loadFromData(cache_mgr.get_bd_hash_img(hash))
-                    pixmap = pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio,
-                                           Qt.TransformationMode.SmoothTransformation)
-                    preview_pixmap.append(pixmap)
 
                 tdata = {'type': tpe,
                          'thread_id': thread_id,

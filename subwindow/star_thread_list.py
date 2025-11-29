@@ -8,7 +8,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, cache_mgr
-from publics.funcs import start_background_thread
+from publics.funcs import start_background_thread, listWidget_get_visible_widgets
 import publics.logging as logging
 from ui import star_list
 
@@ -45,18 +45,23 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
         qt_window_mgr.del_window(self)
 
     def scroll_load_list_info(self):
+        widgets = listWidget_get_visible_widgets(self.listWidget)  # 获取可见的widget列表
+        for i in widgets:
+            i.load_all_AsyncImage()  # 异步加载里面的图片
+
         if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
-            self.get_star_threads_async()
+            self.get_star_threads_async()  # 加载下一页
 
     def add_star_threads_ui(self, infos):
         item = QListWidgetItem()
-        from subwindow.thread_preview_item import ThreadView
+        from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
         widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+        widget.load_by_callback = True
 
         widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], '', None,
                          infos['forum_name'])
         if infos['picture']:
-            widget.set_picture([infos['picture']])
+            widget.set_picture([AsyncLoadImage(infos['picture'])])
         else:
             widget.set_picture([])
         if infos['is_del']:
@@ -106,12 +111,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
                         data['user_portrait_pixmap'] = user_head_pixmap
 
                         if thread.get("media"):
-                            pixmap = QPixmap()
-                            url = thread['media'][0]["cover_img"]
-                            response = requests.get(url, headers=request_mgr.header)
-                            if response.content:
-                                pixmap.loadFromData(response.content)
-                                data['picture'] = pixmap
+                            data['picture'] = thread['media'][0]["cover_img"]
 
                         self.add_thread.emit(data)
             except Exception as e:

@@ -67,9 +67,9 @@ def create_data():
                      f'{consts.datapath}/cache_index', f'{consts.datapath}/webview_data/default']  # 欲创建的文件夹
     expect_secret_json = {f'{consts.datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件
     expect_json = {f'{consts.datapath}/config.json': profile_mgr.local_config_model,
-        f'{consts.datapath}/cache_index/fidfname_index.json': {},
-        f'{consts.datapath}/d2id_flag': {'uid': ''},
-        f'{consts.datapath}/view_history': []}  # 欲创建的json文件
+                   f'{consts.datapath}/cache_index/fidfname_index.json': {},
+                   f'{consts.datapath}/d2id_flag': {'uid': ''},
+                   f'{consts.datapath}/view_history': []}  # 欲创建的json文件
 
     for i in expect_folder:
         if not os.path.isdir(i):
@@ -100,6 +100,22 @@ def format_second(seconds):
     else:
         second = str(int(seconds % 60))
     return minute + ':' + second
+
+
+def listWidget_get_visible_widgets(listWidget):
+    """获取qlistwidget中所有可见的qwidget条目"""
+
+    # https://stackoverflow.com/questions/63724917/get-current-visible-qlistwidget-items
+    rect = listWidget.viewport().contentsRect()
+    top = listWidget.indexAt(rect.topLeft())
+    result = []
+    if top.isValid():
+        bottom = listWidget.indexAt(rect.bottomLeft())
+        if not bottom.isValid():
+            bottom = listWidget.model().index(listWidget.count() - 1)
+        for index in range(top.row(), bottom.row() + 1):
+            result.append(listWidget.itemWidget(listWidget.item(index)))
+    return result
 
 
 def large_num_to_string(num: int, prespace=False, endspace=False):

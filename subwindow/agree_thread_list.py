@@ -8,7 +8,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, cache_mgr
-from publics.funcs import timestamp_to_string, start_background_thread, cut_string
+from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets
 from ui import star_list
 
 
@@ -48,6 +48,11 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
         qt_window_mgr.del_window(self)
 
     def scroll_load_list_info(self):
+        for thread in listWidget_get_visible_widgets(self.listWidget):
+            from subwindow.thread_preview_item import ThreadView
+            if isinstance(thread, ThreadView):
+                thread.load_all_AsyncImage()
+
         if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
             self.get_agreed_threads_async()
 
@@ -55,15 +60,16 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
         item = QListWidgetItem()
 
         if infos['type'] == 0:
-            from subwindow.thread_preview_item import ThreadView
+            from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
             widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+            widget.load_by_callback = True
 
             widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['text'],
                              infos['forum_head_pixmap'],
                              infos['forum_name'])
             widget.set_thread_values(infos['thread_data']['vn'], infos['thread_data']['ag'],
                                      infos['thread_data']['rpy'], infos['thread_data']['rpt'], infos['timestamp'])
-            widget.set_picture(infos['picture'])
+            widget.set_picture(list(AsyncLoadImage(link) for link in infos['picture']))
             widget.adjustSize()
         else:
             from subwindow.thread_reply_item import ReplyItem
@@ -171,14 +177,8 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                     if thread.get("media") and data['type'] == 0:
                         for m in thread['media']:
                             if m["type"] == 3:  # 是图片
-                                pixmap = QPixmap()
                                 url = m["small_pic"]
-                                response = requests.get(url, headers=request_mgr.header)
-                                if response.content:
-                                    pixmap.loadFromData(response.content)
-                                    pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
-                                                           Qt.SmoothTransformation)
-                                    data['picture'].append(pixmap)
+                                data['picture'].append(url)
 
                     self.add_thread.emit(data)
             except Exception as e:

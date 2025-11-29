@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetIte
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, top_toast_widget
 from publics.funcs import LoadingFlashWidget, ExtListWidgetItem, start_background_thread, cut_string, \
-    make_thread_content, timestamp_to_string, open_url_in_browser
+    make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets
 import publics.logging as logging
 
 from ui import user_home_page
@@ -61,6 +61,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('reply'))
         self.listWidget_3.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('follow'))
         self.listWidget_4.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('thread'))
+        self.listWidget_4.verticalScrollBar().valueChanged.connect(self.load_thread_image)
         self.listWidget_5.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('fans'))
 
         self.listWidget_4.setStyleSheet('QListWidget{outline:0px;}'
@@ -193,6 +194,11 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         menu.addMenu(show_follow_forum_strongly_menu)
 
         self.pushButton.setMenu(menu)
+
+    def load_thread_image(self):
+        widgets = listWidget_get_visible_widgets(self.listWidget_4)
+        for i in widgets:
+            i.load_all_AsyncImage()
 
     def open_user_homepage(self, item):
         if isinstance(item, ExtListWidgetItem):
@@ -450,15 +456,17 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         from subwindow.thread_preview_item import ThreadView
         from subwindow.thread_reply_item import ReplyItem
         from subwindow.forum_item import ForumItem
+        from subwindow.thread_preview_item import AsyncLoadImage
         datas = data[1]
         if data[0] == 'thread':
             item = QListWidgetItem()
             widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken)
+            widget.load_by_callback = True
             widget.set_thread_values(datas['view_count'], datas['agree_count'], datas['reply_count'],
                                      datas['repost_count'], datas['post_time'])
             widget.set_infos(datas['user_portrait_pixmap'], datas['user_name'], datas['title'], datas['content'],
                              None, datas['forum_name'])
-            widget.set_picture(datas['view_pixmap'])
+            widget.set_picture(list(AsyncLoadImage(image.src, image.hash) for image in datas['view_pixmap']))
             widget.label.hide()
             widget.adjustSize()
             item.setSizeHint(widget.size())
@@ -532,25 +540,20 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                 user_head_pixmap.loadFromData(cache_mgr.get_portrait(thread.user.portrait))
                                 user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
                                                                            Qt.SmoothTransformation)
-                            data = {'thread_id': thread.tid, 'forum_id': thread.fid, 'title': thread.title,
+                            data = {'thread_id': thread.tid,
+                                    'forum_id': thread.fid,
+                                    'title': thread.title,
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
-                                    'author_portrait': thread.user.portrait, 'user_name': thread.user.nick_name_new,
+                                    'author_portrait': thread.user.portrait,
+                                    'user_name': thread.user.nick_name_new,
                                     'user_portrait_pixmap': user_head_pixmap,
-                                    'forum_name': thread.fname if thread.fname else "贴吧动态",
-                                    'view_pixmap': [], 'view_count': thread.view_num, 'agree_count': thread.agree,
-                                    'reply_count': thread.reply_num, 'repost_count': thread.share_num,
+                                    'forum_name': thread.fname,
+                                    'view_pixmap': thread.contents.imgs,
+                                    'view_count': thread.view_num,
+                                    'agree_count': thread.agree,
+                                    'reply_count': thread.reply_num,
+                                    'repost_count': thread.share_num,
                                     'post_time': thread.create_time}
-
-                            # 找出所有预览图
-                            preview_pixmap = []
-                            for pic in thread.contents.imgs:
-                                pic_hash = pic.hash
-                                pixmap = QPixmap()
-                                pixmap.loadFromData(cache_mgr.get_bd_hash_img(pic_hash))
-                                pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
-                                                       Qt.SmoothTransformation)
-                                preview_pixmap.append(pixmap)
-                            data['view_pixmap'] = preview_pixmap
 
                             self.set_list_info_signal.emit((type_, data))
                     elif type_ == 'reply':
