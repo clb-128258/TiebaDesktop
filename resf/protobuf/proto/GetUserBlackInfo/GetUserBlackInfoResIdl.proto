@@ -1,7 +1,7 @@
 syntax = "proto3";
 package TiebaDesktop;
 
-import "proto/Error_RequestMgr.proto";
+import "proto/Error.proto";
 import "proto/PermissionList.proto";
 
 message DataRes_GetUserBlackInfo {
@@ -10,6 +10,6 @@ message DataRes_GetUserBlackInfo {
 }
 
 message GetUserBlackInfoResIdl {
-    Error_RequestMgr error = 1;
+    Error error = 1;
     DataRes_GetUserBlackInfo data = 2;
 }

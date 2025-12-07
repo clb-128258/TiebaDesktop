@@ -1,11 +1,11 @@
 syntax = "proto3";
 package TiebaDesktop;
 
-import "proto/CommonReq_RequestMgr.proto";
+import "proto/CommonReq.proto";
 
 message DataReq_GetLevelInfo {
     uint64 forum_id = 1;
-    CommonReq_RequestMgr common = 2;
+    CommonReq common = 2;
 }
 
 message GetLevelInfoReqIdl {

@@ -6,6 +6,7 @@ import subprocess
 import threading
 import time
 import datetime
+import enum
 
 import pyperclip
 import requests

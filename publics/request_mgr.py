@@ -8,7 +8,8 @@ SCHEME_HTTP = 'http://'
 SCHEME_HTTPS = 'https://'
 TIEBA_APP_HOST = 'tiebac.baidu.com'
 TIEBA_WEB_HOST = 'tieba.baidu.com'
-TIEBA_CLIENT_VERSION = '12.91.1.0'
+TIEBA_CLIENT_VERSION = '12.94.1.0'
+
 header = {
     'User-Agent': f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 CLBTiebaDesktop/{consts.APP_VERSION_STR}',
     'sec-ch-ua': "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
@@ -35,7 +36,7 @@ header_android = {
     'Accept-Language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 header_protobuf = {
-    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) tieba/{TIEBA_CLIENT_VERSION} CLBTiebaDesktop/{consts.APP_VERSION_STR}",
+    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/{TIEBA_CLIENT_VERSION} skin/default CLBTiebaDesktop/{consts.APP_VERSION_STR}",
     'Accept': "*/*",
     'Accept-Encoding': "gzip, deflate",
     'Sec-Fetch-Site': "same-origin",

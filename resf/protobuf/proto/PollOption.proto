@@ -1,0 +1,9 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message PollOption {
+    int32 id = 1;
+    int64 num = 2;
+    string text = 3;
+    string image = 4;
+}

@@ -1,0 +1,32 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/Error.proto";
+import "proto/Page.proto";
+import "proto/PbPage/PbSortType.proto";
+import "proto/Post.proto";
+import "proto/SimpleForum.proto";
+import "proto/ThreadInfo.proto";
+import "proto/User.proto";
+
+message DataRes_PbPage {
+    User user = 1;
+    SimpleForum forum = 2;
+    Page page = 3;
+    repeated Post post_list = 6;
+    int32 has_floor = 7;
+    ThreadInfo thread = 8;
+    Post first_floor_post = 38;
+    SimpleForum display_forum = 39;
+    repeated PbSortType pb_sort_info = 49;
+    int32 sort_type = 50;
+    Post top_answer = 73;
+    int64 thread_freq_num = 37;
+    repeated User user_list = 13;
+}
+
+
+message PbPageResIdl {
+    Error error = 1;
+    DataRes_PbPage data = 2;
+}

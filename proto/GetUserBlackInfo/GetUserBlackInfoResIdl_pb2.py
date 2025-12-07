@@ -11,19 +11,19 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from proto import Error_RequestMgr_pb2 as proto_dot_Error__RequestMgr__pb2
+from proto import Error_pb2 as proto_dot_Error__pb2
 from proto import PermissionList_pb2 as proto_dot_PermissionList__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3proto/GetUserBlackInfo/GetUserBlackInfoResIdl.proto\x12\x0cTiebaDesktop\x1a\x1cproto/Error_RequestMgr.proto\x1a\x1aproto/PermissionList.proto\"c\n\x18\x44\x61taRes_GetUserBlackInfo\x12\x16\n\x0eis_black_white\x18\x01 \x01(\x05\x12/\n\tperm_list\x18\x02 \x01(\x0b\x32\x1c.TiebaDesktop.PermissionList\"}\n\x16GetUserBlackInfoResIdl\x12-\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x1e.TiebaDesktop.Error_RequestMgr\x12\x34\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32&.TiebaDesktop.DataRes_GetUserBlackInfob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3proto/GetUserBlackInfo/GetUserBlackInfoResIdl.proto\x12\x0cTiebaDesktop\x1a\x11proto/Error.proto\x1a\x1aproto/PermissionList.proto\"c\n\x18\x44\x61taRes_GetUserBlackInfo\x12\x16\n\x0eis_black_white\x18\x01 \x01(\x05\x12/\n\tperm_list\x18\x02 \x01(\x0b\x32\x1c.TiebaDesktop.PermissionList\"r\n\x16GetUserBlackInfoResIdl\x12\"\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x13.TiebaDesktop.Error\x12\x34\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32&.TiebaDesktop.DataRes_GetUserBlackInfob\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.GetUserBlackInfo.GetUserBlackInfoResIdl_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _DATARES_GETUSERBLACKINFO._serialized_start=127
-  _DATARES_GETUSERBLACKINFO._serialized_end=226
-  _GETUSERBLACKINFORESIDL._serialized_start=228
-  _GETUSERBLACKINFORESIDL._serialized_end=353
+  _DATARES_GETUSERBLACKINFO._serialized_start=116
+  _DATARES_GETUSERBLACKINFO._serialized_end=215
+  _GETUSERBLACKINFORESIDL._serialized_start=217
+  _GETUSERBLACKINFORESIDL._serialized_end=331
 # @@protoc_insertion_point(module_scope)

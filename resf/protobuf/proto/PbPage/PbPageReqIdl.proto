@@ -1,0 +1,22 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/CommonReq.proto";
+
+message DataReq_PbPage {
+    CommonReq common = 25;
+    int64 kz = 4;
+    int32 lz = 5;
+    int32 r = 6;
+    int64 pid = 7;
+    int32 with_floor = 8;
+    int32 floor_rn = 9;
+    int32 rn = 13;
+    int32 pn = 18;
+    int32 floor_sort_type = 74;
+}
+
+
+message PbPageReqIdl {
+    DataReq_PbPage data = 1;
+}

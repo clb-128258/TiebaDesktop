@@ -1,10 +1,8 @@
-import requests
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtWidgets import QWidget
 
-from publics import qt_window_mgr, request_mgr
-from publics.funcs import open_url_in_browser, start_background_thread
+from publics import qt_window_mgr, qt_image
+from publics.funcs import open_url_in_browser
 
 from ui import agreed_item
 
@@ -15,7 +13,6 @@ class AgreedThreadItem(QWidget, agreed_item.Ui_Form):
     thread_id = -1
     post_id = -1
     is_post = False
-    setPicture = pyqtSignal(QPixmap)
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -30,13 +27,23 @@ class AgreedThreadItem(QWidget, agreed_item.Ui_Form):
         self.pushButton.clicked.connect(self.show_subcomment_window)
         self.label_3.installEventFilter(self)  # 重写事件过滤器
         self.label_4.installEventFilter(self)  # 重写事件过滤器
-        self.setPicture.connect(self.label_2.setPixmap)
+
+        self.portrait_image = qt_image.MultipleImage()
+        self.portrait_image.currentImageChanged.connect(
+            lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.left_image = qt_image.MultipleImage()
+        self.left_image.currentImageChanged.connect(lambda: self.label_2.setPixmap(self.left_image.currentPixmap()))
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease and source in (
                 self.label_3, self.label_4):
             self.open_user_homepage(self.portrait)
         return super(AgreedThreadItem, self).eventFilter(source, event)  # 照常处理事件
+
+    def load_images(self):
+        self.portrait_image.loadImage()
+        if self.left_image.isImageInfoValid():
+            self.left_image.loadImage()
 
     def show_subcomment_window(self):
         if self.is_post:
@@ -68,23 +75,17 @@ class AgreedThreadItem(QWidget, agreed_item.Ui_Form):
     def handle_link_event(self, url):
         open_url_in_browser(url)
 
-    def load_picture(self, url):
-        resp = requests.get(url, headers=request_mgr.header)
-        if resp.content:
-            pixmap = QPixmap()
-            pixmap.loadFromData(resp.content)
-            pixmap = pixmap.scaled(100, 100, transformMode=Qt.SmoothTransformation, aspectRatioMode=Qt.KeepAspectRatio)
-            self.setPicture.emit(pixmap)
+    def setdatas(self, uicon: str, uname: str, text: str, pixmap_link: str, timestr: str, toptext: str):
 
-    def setdatas(self, uicon: QPixmap, uname: str, text: str, pixmap_link: str, timestr: str, toptext: str):
-        self.label_4.setPixmap(uicon)
+        self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, uicon,
+                                         qt_image.ImageCoverType.RoundCover, (20, 20))
         self.label_3.setText(uname)
         self.label.setText(timestr)
         self.label_6.setText(text)
         self.label_10.setText(toptext)
         if pixmap_link:
             self.label_2.setFixedHeight(100)
-            start_background_thread(self.load_picture, (pixmap_link,))
+            self.left_image.setImageInfo(qt_image.ImageLoadSource.HttpLink, pixmap_link, expectSize=(100, 100))
         else:
             self.label_2.hide()
 

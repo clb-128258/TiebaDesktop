@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QLabel, QMenu, QAction, QFileDialog
 
 from publics import request_mgr, profile_mgr
 from publics.funcs import start_background_thread, http_downloader
+from publics.qt_image import ImageType
 
 
 class ThreadPictureLabel(QLabel):
@@ -15,7 +16,7 @@ class ThreadPictureLabel(QLabel):
     set_picture_signal = pyqtSignal(QPixmap)
     set_gif_signal = pyqtSignal(bytes)
     opic_view = None
-    isGif = False
+    isGif = ImageType.OtherStatic
 
     def __init__(self, width, height, src, view_src):
         super().__init__()
@@ -35,7 +36,7 @@ class ThreadPictureLabel(QLabel):
         self.load_picture_async()
 
     def on_destroy(self):
-        if self.isGif:
+        if self.isGif is not ImageType.OtherStatic:
             self.gif_container.stop()
             self.gif_buffer.close()
             self.gif_byte_array.clear()
@@ -55,7 +56,7 @@ class ThreadPictureLabel(QLabel):
             self.setPixmap(self.gif_container.currentPixmap())
 
         def on_play_failed():
-            self.setToolTip('无法播放 GIF 动图，你可以尝试查看大图。')
+            self.setToolTip('无法播放动图，你可以尝试查看大图。')
 
         self.gif_byte_array = QByteArray(gif_bytes)
         self.gif_buffer = QBuffer(self.gif_byte_array)
@@ -72,7 +73,7 @@ class ThreadPictureLabel(QLabel):
             self.gif_container.jumpToFrame(0)
             if profile_mgr.local_config['thread_view_settings']['play_gif']:
                 self.gif_container.start()
-            self.setToolTip('GIF 动图，右键可暂停播放')
+            self.setToolTip('Gif 或 Webp 图片，右键可暂停播放')
         else:
             on_play_failed()
 
@@ -84,18 +85,23 @@ class ThreadPictureLabel(QLabel):
         response = requests.get(self.preview_src, headers=request_mgr.header)
         if response.content:
             if response.headers['content-type'] == 'image/gif':
-                self.isGif = True
+                self.isGif = ImageType.Gif
+                self.set_gif_signal.emit(response.content)
+                return
+            elif response.headers['content-type'] == 'image/webp':
+                self.isGif = ImageType.Webp
                 self.set_gif_signal.emit(response.content)
                 return
             else:
                 pixmap.loadFromData(response.content)
                 if pixmap.width() != self.width_n or pixmap.height() != self.height_n:
-                    pixmap = pixmap.scaled(self.width_n, self.height_n, Qt.KeepAspectRatio,
+                    pixmap = pixmap.scaled(self.width_n, self.height_n,
+                                           Qt.KeepAspectRatio,
                                            Qt.SmoothTransformation)
         self.set_picture_signal.emit(pixmap)
 
     def pause_play_gif(self):
-        if self.isGif:
+        if self.isGif is not ImageType.OtherStatic:
             if self.gif_container.state() == QMovie.MovieState.Paused:
                 self.gif_container.setPaused(False)
             elif self.gif_container.state() == QMovie.MovieState.Running:
@@ -108,15 +114,15 @@ class ThreadPictureLabel(QLabel):
 
         action_pause_gif = QAction(self)
         action_pause_gif.triggered.connect(self.pause_play_gif)
-        if not self.isGif:
+        if self.isGif is ImageType.OtherStatic:
             action_pause_gif.setVisible(False)
         else:
             if self.gif_container.state() == QMovie.MovieState.Paused:
-                action_pause_gif.setText('恢复 GIF 播放')
+                action_pause_gif.setText('恢复 GIF/WEBP 播放')
             elif self.gif_container.state() == QMovie.MovieState.Running:
-                action_pause_gif.setText('暂停 GIF 播放')
+                action_pause_gif.setText('暂停 GIF/WEBP 播放')
             elif self.gif_container.state() == QMovie.MovieState.NotRunning:
-                action_pause_gif.setText('开始播放 GIF')
+                action_pause_gif.setText('开始播放 GIF/WEBP')
         menu.addAction(action_pause_gif)
 
         show_o = QAction('显示大图', self)
@@ -152,7 +158,10 @@ class ThreadPictureLabel(QLabel):
             self.opic_view.show()
 
     def save_picture(self):
-        file_type_text = 'GIF 动图文件 (*.gif)' if self.isGif else 'JPG 图片文件 (*.jpg;*.jpeg)'
+        file_type_text_index = {ImageType.Gif: 'GIF 动图文件 (*.gif)',
+                                ImageType.Webp: 'Webp 图片文件 (*.webp)',
+                                ImageType.OtherStatic: 'JPG 图片文件 (*.jpg;*.jpeg)'}
+        file_type_text = file_type_text_index[self.isGif]
 
         path, type_ = QFileDialog.getSaveFileName(self, '选择图片保存位置', '', file_type_text)
         if path:

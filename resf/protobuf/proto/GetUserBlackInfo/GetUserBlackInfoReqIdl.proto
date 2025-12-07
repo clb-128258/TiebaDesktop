@@ -1,10 +1,10 @@
 syntax = "proto3";
 package TiebaDesktop;
 
-import "proto/CommonReq_RequestMgr.proto";
+import "proto/CommonReq.proto";
 
 message DataReq_GetUserBlackInfo {
-    CommonReq_RequestMgr common = 1;
+    CommonReq common = 1;
     int64 black_uid = 2;
 }
 

@@ -1,0 +1,7 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message PbSortType {
+    int32 sort_type = 1;
+    string sort_name = 2;
+}

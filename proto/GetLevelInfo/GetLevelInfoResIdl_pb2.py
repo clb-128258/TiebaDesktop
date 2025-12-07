@@ -11,19 +11,19 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from proto import Error_RequestMgr_pb2 as proto_dot_Error__RequestMgr__pb2
+from proto import Error_pb2 as proto_dot_Error__pb2
 from proto import LevelInfo_pb2 as proto_dot_LevelInfo__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n+proto/GetLevelInfo/GetLevelInfoResIdl.proto\x12\x0cTiebaDesktop\x1a\x1cproto/Error_RequestMgr.proto\x1a\x15proto/LevelInfo.proto\"|\n\x14\x44\x61taRes_GetLevelInfo\x12+\n\nlevel_info\x18\x01 \x03(\x0b\x32\x17.TiebaDesktop.LevelInfo\x12\x0f\n\x07is_like\x18\x02 \x01(\x05\x12\x12\n\nuser_level\x18\x03 \x01(\x05\x12\x12\n\nlevel_name\x18\x04 \x01(\t\"u\n\x12GetLevelInfoResIdl\x12\x30\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\".TiebaDesktop.DataRes_GetLevelInfo\x12-\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x1e.TiebaDesktop.Error_RequestMgrb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n+proto/GetLevelInfo/GetLevelInfoResIdl.proto\x12\x0cTiebaDesktop\x1a\x11proto/Error.proto\x1a\x15proto/LevelInfo.proto\"|\n\x14\x44\x61taRes_GetLevelInfo\x12+\n\nlevel_info\x18\x01 \x03(\x0b\x32\x17.TiebaDesktop.LevelInfo\x12\x0f\n\x07is_like\x18\x02 \x01(\x05\x12\x12\n\nuser_level\x18\x03 \x01(\x05\x12\x12\n\nlevel_name\x18\x04 \x01(\t\"j\n\x12GetLevelInfoResIdl\x12\x30\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\".TiebaDesktop.DataRes_GetLevelInfo\x12\"\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x13.TiebaDesktop.Errorb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.GetLevelInfo.GetLevelInfoResIdl_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _DATARES_GETLEVELINFO._serialized_start=114
-  _DATARES_GETLEVELINFO._serialized_end=238
-  _GETLEVELINFORESIDL._serialized_start=240
-  _GETLEVELINFORESIDL._serialized_end=357
+  _DATARES_GETLEVELINFO._serialized_start=103
+  _DATARES_GETLEVELINFO._serialized_end=227
+  _GETLEVELINFORESIDL._serialized_start=229
+  _GETLEVELINFORESIDL._serialized_end=335
 # @@protoc_insertion_point(module_scope)

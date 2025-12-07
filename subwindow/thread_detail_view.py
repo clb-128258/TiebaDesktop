@@ -8,6 +8,8 @@ from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
+from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
+
 from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr, top_toast_widget
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string
@@ -689,27 +691,44 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         start_background_thread(self.get_thread_head_info)
 
     def get_thread_head_info(self):
-        async def dosign():
+        async def run_async():
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     logging.log_INFO(f'loading thread {self.thread_id} main info')
-                    thread_info = await client.get_posts(self.thread_id)
-                    if thread_info.err:
-                        if isinstance(thread_info.err,
-                                      (aiotieba.exception.TiebaServerError, aiotieba.exception.HTTPStatusError)):
-                            self.head_data_signal.emit(
-                                {'err_info': f'{thread_info.err.msg} (错误代码 {thread_info.err.code})'})
-                        else:
-                            self.head_data_signal.emit(
-                                {'err_info': str(thread_info.err)})
+
+                    proto_request = PbPageReqIdl_pb2.PbPageReqIdl()
+                    proto_request.data.common._client_type = 2
+                    proto_request.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+                    proto_request.data.common.BDUSS = self.bduss
+                    proto_request.data.common.stoken = self.stoken
+                    proto_request.data.kz = int(self.thread_id)  # 贴子id
+                    proto_request.data.pn = 1  # 页数
+                    proto_request.data.rn = 2  # 条目数
+                    proto_request.data.r = 0  # 排序类型 此处为正序
+                    proto_request.data.lz = 0  # 只看楼主
+
+                    byte_response = request_mgr.run_protobuf_api('/c/f/pb/page',
+                                                                 payloads=proto_request.SerializeToString(),
+                                                                 cmd_id=302001,
+                                                                 bduss=self.bduss,
+                                                                 stoken=self.stoken,
+                                                                 host_type=2)
+
+                    proto_response = PbPageResIdl_pb2.PbPageResIdl()
+                    proto_response.ParseFromString(byte_response)
+                    thread_info = aiotieba.get_posts.Posts.from_tbdata(proto_response.data)
+
+                    if proto_response.error.errorno != 0:
+                        raise Exception(f'{proto_response.error.errmsg} (错误代码 {proto_response.error.errorno})')
                     else:
                         self.forum_id = forum_id = thread_info.forum.fid
 
                         if self.forum_id != 0:
-                            forum_info = await client.get_forum_detail(self.forum_id)
-                            forum_name = forum_info.fname
-                            forum_pic_url = forum_info.small_avatar
-                            forum_slogan = forum_info.slogan
+                            forum_proto = proto_response.data.forum
+                            forum_name = forum_proto.name
+                            forum_pic_url = forum_proto.avatar
+                            forum_slogan = (f'{large_num_to_string(forum_proto.member_num, endspace=True)}人关注，'
+                                            f'{large_num_to_string(forum_proto.post_num, endspace=True)}条贴子')
                         else:
                             forum_name = ''
                             forum_pic_url = ''
@@ -746,8 +765,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                 'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={thread_info.thread.contents.voice.md5}&play_from=pb_voice_play'
                             voice_info['length'] = thread_info.thread.contents.voice.duration
 
-                        repost_info = {'have_repost': thread_info.thread.is_share, 'author_portrait_pixmap': None,
-                                       'author_name': '', 'title': '', 'content': '', 'thread_id': -1, 'forum_id': -1,
+                        repost_info = {'have_repost': thread_info.thread.is_share,
+                                       'author_portrait_pixmap': None,
+                                       'author_name': '',
+                                       'title': '',
+                                       'content': '',
+                                       'thread_id': -1,
+                                       'forum_id': -1,
                                        'forum_name': ''}
                         if thread_info.thread.is_share:
                             repost_user_info = await client.get_user_info(thread_info.thread.share_origin.author_id,
@@ -767,6 +791,32 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             repost_info['forum_id'] = thread_info.thread.share_origin.fid
                             repost_info['forum_name'] = thread_info.thread.share_origin.fname
 
+                        vote_info = {'have_vote': bool(thread_info.thread.vote_info),
+                                     'title': '',
+                                     'vote_num': 0,
+                                     'vt_user_num': 0,
+                                     'is_multi': False,
+                                     'chose_option_index': 0,
+                                     'options': []}
+                        if vote_info['have_vote']:
+                            vote_info_proto = proto_response.data.thread.origin_thread_info.poll_info
+                            vote_info['title'] = thread_info.thread.vote_info.title
+                            vote_info['vote_num'] = thread_info.thread.vote_info.total_vote
+                            vote_info['vt_user_num'] = thread_info.thread.vote_info.total_user
+                            vote_info['is_multi'] = thread_info.thread.vote_info.is_multi
+                            vote_info['chose_option_index'] = int(
+                                vote_info_proto.polled_value if vote_info_proto.polled_value else -1)
+
+                            vote_options_proto = vote_info_proto.options
+                            for o in vote_options_proto:
+                                vote_option = {'id': o.id,
+                                               'text': o.text,
+                                               'is_chosen': bool(vote_info_proto.is_polled),
+                                               'is_current_chose': o.id == vote_info['chose_option_index'],
+                                               'total_num': thread_info.thread.vote_info.total_vote,
+                                               'current_num': o.num}
+                                vote_info['options'].append(vote_option)
+
                         user_head_pixmap = QPixmap()
                         user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
                         user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -781,7 +831,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         for j in thread_info.thread.contents.imgs:
                             # width, height, src, view_src
                             src = j.origin_src
-                            view_src = j.src
+                            view_src = j.big_src
                             height = j.show_height
                             width = j.show_width
                             preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
@@ -811,18 +861,20 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                  'is_forum_manager': is_forum_manager,  # 是否为吧务
                                  'post_num': post_num,  # 回贴数
                                  'repost_info': repost_info,  # 转发贴信息
-                                 'forum_slogan': forum_slogan  # 吧标语
+                                 'forum_slogan': forum_slogan,  # 吧标语
+                                 'vote_info': vote_info  # 投票信息
                                  }
 
                         logging.log_INFO(
                             f'load thread {self.thread_id} main info ok, send to qt side')
                         self.head_data_signal.emit(tdata)
             except Exception as e:
+                self.head_data_signal.emit({'err_info': str(e)})
                 logging.log_exception(e)
 
         def start_async():
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)
-            asyncio.run(dosign())
+            asyncio.run(run_async())
 
         start_async()
