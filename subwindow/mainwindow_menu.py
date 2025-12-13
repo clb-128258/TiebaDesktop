@@ -7,7 +7,7 @@ from ui import mw_popup
 from PyQt5.QtWidgets import QWidget, qApp, QMenu
 from PyQt5.QtGui import QIcon, QResizeEvent
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
-from publics import request_mgr, profile_mgr, cache_mgr, funcs, qt_window_mgr
+from publics import request_mgr, profile_mgr, cache_mgr, funcs, qt_window_mgr, qt_image
 import asyncio
 import pyperclip
 
@@ -27,6 +27,10 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
 
         self.infoLoaded.connect(self._ui_set_self_info)
         self.toolButton_3.clicked.connect(self.copy_tieba_id)
+        self.portrait_icon = qt_image.MultipleImage()
+        self.portrait_icon.currentImageChanged.connect(lambda: self.label.setPixmap(self.portrait_icon.currentPixmap()))
+        self.portrait_icon.imageLoadSucceed.connect(self.resize_menu)
+        self.destroyed.connect(self.portrait_icon.destroyImage)
 
         click_areas = [
             self.label,
@@ -89,16 +93,20 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
     def open_star_window(self):
         user_stared_list = StaredThreadsList(profile_mgr.current_bduss, profile_mgr.current_stoken)
         qt_window_mgr.add_window(user_stared_list)
-
+    def resize_menu(self):
+        self.adjustSize()
+        self.resizeEvent(None)
     def _ui_set_self_info(self, data):
         widgets = [self.toolButton_3, self.frame_1, self.frame_2, self.frame_3, self.frame_4, self.frame_6]
 
-        self.label.setPixmap(data['portrait_pixmap'])
         self.label_12.setText(str(data['view_history_num']))
         if profile_mgr.current_bduss:
             for i in widgets:
                 i.show()
 
+            self.portrait_icon.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, data['portrait'],
+                                            qt_image.ImageCoverType.RoundCover, (50, 50))
+            self.portrait_icon.reloadImage()
             self.label_2.setText(data['nickname'])
             self.label_3.setText('贴吧 ID: ' + str(data['tieba_id']))
 
@@ -111,11 +119,11 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
             for i in widgets:
                 i.hide()
 
+            self.label.setPixmap(data['portrait_pixmap'])
             self.label_2.setText('未登录')
             self.label_3.setText('登录后即可使用所有功能')
 
-        self.adjustSize()
-        self.resizeEvent(None)
+        self.resize_menu()
 
     def get_self_info(self):
         async def getinfo():
@@ -144,12 +152,6 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
                                                stoken=profile_mgr.current_stoken, use_mobile_header=True, params=params)
 
                 emit_data['portrait'] = resp['user']['portraith'].split('?')[0]
-                pixmap = QPixmap()
-                pixmap.loadFromData(cache_mgr.get_portrait(emit_data['portrait']))
-                pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
-                                       Qt.SmoothTransformation)
-                emit_data['portrait_pixmap'] = pixmap
-
                 emit_data['nickname'] = resp['user']['name_show']
                 self.tieba_id = emit_data['tieba_id'] = int(resp['user']['tieba_uid'])
                 emit_data['agree_me_num'] = int(resp['user']['total_agree_num'])

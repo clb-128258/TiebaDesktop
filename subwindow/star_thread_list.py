@@ -44,10 +44,13 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
         a0.accept()
         qt_window_mgr.del_window(self)
 
-    def scroll_load_list_info(self):
+    def load_images(self):
         widgets = listWidget_get_visible_widgets(self.listWidget)  # 获取可见的widget列表
         for i in widgets:
             i.load_all_AsyncImage()  # 异步加载里面的图片
+
+    def scroll_load_list_info(self):
+        self.load_images()
 
         if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
             self.get_star_threads_async()  # 加载下一页
@@ -75,6 +78,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
 
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
+        self.load_images()
 
     def refresh_star_threads(self):
         if not self.isloading:

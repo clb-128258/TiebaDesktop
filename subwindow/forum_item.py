@@ -1,9 +1,10 @@
 import asyncio
 
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QMessageBox
 
-from publics import request_mgr, qt_window_mgr
+from publics import request_mgr, qt_window_mgr, qt_image
 from publics.funcs import start_background_thread
 from ui import ba_item
 
@@ -26,6 +27,10 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         self.signok.connect(self.update_sign_ui)
         self.pushButton.clicked.connect(self.open_ba_detail)
         self.pushButton_2.clicked.connect(self.sign_async)
+
+        self.forum_atavar_image = qt_image.MultipleImage()
+        self.forum_atavar_image.currentPixmapChanged.connect(self.label.setPixmap)
+        self.destroyed.connect(self.forum_atavar_image.destroyImage)
 
         if issign:
             self.pushButton_2.setEnabled(False)
@@ -107,7 +112,12 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         forum_window.get_threads_async()
 
     def set_info(self, headpixmap, name, normaldesp='', leveldesp=''):
-        self.label.setPixmap(headpixmap)
+        if isinstance(headpixmap, QPixmap):
+            self.label.setPixmap(headpixmap)
+        elif isinstance(headpixmap, str):
+            self.forum_atavar_image.setImageInfo(qt_image.ImageLoadSource.HttpLink, headpixmap,
+                                                 coverType=qt_image.ImageCoverType.RoundCover, expectSize=(50, 50))
+            self.forum_atavar_image.loadImage()
         self.label_2.setText(name)
         self.label_3.setText(normaldesp)
         if leveldesp:

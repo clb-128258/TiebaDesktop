@@ -10,7 +10,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QDialog, QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
     QTableWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr
+from publics import qt_window_mgr, request_mgr, cache_mgr,qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
     open_url_in_browser, large_num_to_string
 import publics.logging as logging
@@ -531,6 +531,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                     pixmap.loadFromData(response.content)
                                     pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
                                                            Qt.SmoothTransformation)
+                                    pixmap=qt_image.add_cover_for_pixmap(pixmap)
                                     single_ff_info['headpix'] = pixmap
                                 data['friend_forum_list'].append(single_ff_info)
 
@@ -541,6 +542,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         if response.content:
                             forum_pixmap.loadFromData(response.content)
                             forum_pixmap = forum_pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                            forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap)
                             data['forum_pixmap'] = forum_pixmap
 
                     async def get_bawu_infos():

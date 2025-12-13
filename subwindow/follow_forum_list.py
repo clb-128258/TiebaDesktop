@@ -81,16 +81,10 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
                                                 stoken=self.stoken, use_mobile_header=True)['like_forum']
                 for forum in bars:
                     name = forum['forum_name']
-                    pixmap = QPixmap()
-                    response = requests.get(forum['avatar'], headers=request_mgr.header)
-                    if response.content:
-                        pixmap.loadFromData(response.content)
-                        pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
                     level_str = forum['level_name']
                     level_value = forum['level_id']
                     ba_info_str = f'Lv.{level_value} {level_str}'
-                    self.add_ba.emit([pixmap, name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1, level_value])
+                    self.add_ba.emit([forum['avatar'], name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1, level_value])
             except Exception as e:
                 logging.log_exception(e)
             finally:

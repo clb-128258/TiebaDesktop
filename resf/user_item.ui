@@ -66,8 +66,44 @@
      </item>
      <item>
       <widget class="QToolButton" name="toolButton">
+       <property name="toolTip">
+        <string>复制 ID</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QToolButton {
+                background-color: transparent;
+                border: none;
+                border-radius: 6px;
+                padding: 1px;
+				icon-size: 17px;
+                }
+
+                /* 鼠标悬停时：轻微灰色背景 */
+                QToolButton:hover {
+                background-color: rgba(0, 0, 0, 0.08);
+                }
+
+                /* 按下时：更深的背景色，模拟按下效果 */
+                QToolButton:pressed {
+                background-color: rgba(0, 0, 0, 0.15);
+                }
+
+                /* 禁用状态：半透明，显示不可点击 */
+                QToolButton:disabled {
+                background-color: transparent;
+                opacity: 0.4;
+                }
+
+                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */
+                QToolButton::menu-indicator {
+                image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */
+                subcontrol-position: right center;
+                subcontrol-origin: padding;
+                left: -4px;
+                }</string>
+       </property>
        <property name="text">
-        <string>复制</string>
+        <string>c</string>
        </property>
       </widget>
      </item>

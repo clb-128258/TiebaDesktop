@@ -31,8 +31,10 @@ class AgreedThreadItem(QWidget, agreed_item.Ui_Form):
         self.portrait_image = qt_image.MultipleImage()
         self.portrait_image.currentImageChanged.connect(
             lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.destroyed.connect(self.portrait_image.destroyImage)
         self.left_image = qt_image.MultipleImage()
         self.left_image.currentImageChanged.connect(lambda: self.label_2.setPixmap(self.left_image.currentPixmap()))
+        self.destroyed.connect(self.left_image.destroyImage)
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease and source in (

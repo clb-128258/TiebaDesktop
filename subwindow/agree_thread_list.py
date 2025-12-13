@@ -46,12 +46,13 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
     def closeEvent(self, a0):
         a0.accept()
         qt_window_mgr.del_window(self)
-
-    def scroll_load_list_info(self):
+    def load_item_images(self):
         for thread in listWidget_get_visible_widgets(self.listWidget):
             from subwindow.thread_preview_item import ThreadView
             if isinstance(thread, ThreadView):
                 thread.load_all_AsyncImage()
+    def scroll_load_list_info(self):
+        self.load_item_images()
 
         if self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value():
             self.get_agreed_threads_async()
@@ -90,6 +91,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
+        self.load_item_images()
 
     def refresh_agreed_threads(self):
         if not self.isloading:

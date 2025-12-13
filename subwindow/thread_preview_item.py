@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QObject, pyqtSignal, Qt
 
-from publics import qt_window_mgr, request_mgr, logging, cache_mgr
+from publics import qt_window_mgr, request_mgr, logging, cache_mgr, qt_image
 from publics.funcs import timestamp_to_string, large_num_to_string, start_background_thread
 import requests
 
@@ -93,9 +93,15 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.pushButton_3.clicked.connect(self.open_ba_detail)
         self.pushButton_2.clicked.connect(self.open_thread_detail)
 
+        self.portrait_image = qt_image.MultipleImage()
+        self.portrait_image.currentImageChanged.connect(lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.destroyed.connect(self.portrait_image.destroyImage)
+
     def load_all_AsyncImage(self):
         if not self.is_loaded:
             self._load_pictures()
+            if self.portrait_image.isImageInfoValid():
+                self.portrait_image.loadImage()
             self.is_loaded = True
 
     def open_thread_detail(self):
@@ -124,7 +130,12 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.label_11.setText(text)
 
     def set_infos(self, uicon, uname, title, text, baicon, baname):
-        self.label_4.setPixmap(uicon)
+        if isinstance(uicon,QPixmap):
+            self.label_4.setPixmap(uicon)
+        elif isinstance(uicon,str):
+            self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, uicon,
+                                             qt_image.ImageCoverType.RoundCover,
+                                             (20, 20))
         self.label_3.setText(uname)
         self.label_5.setText(title)
         self.label_6.setText(text)

@@ -33,8 +33,6 @@ class ThreadPictureLabel(QLabel):
         self.destroyed.connect(self.on_destroy)
         self.setFixedSize(self.width_n, self.height_n)
 
-        self.load_picture_async()
-
     def on_destroy(self):
         if self.isGif is not ImageType.OtherStatic:
             self.gif_container.stop()

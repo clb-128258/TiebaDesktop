@@ -236,7 +236,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config['thread_view_settings']['enable_lz_only'] = self.checkBox_3.isChecked()
             profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
             profile_mgr.local_config['thread_view_settings']['play_gif'] = self.checkBox_12.isChecked()
-            profile_mgr.local_config["notify_settings"]["enable_interact_notify"]=self.checkBox_13.isChecked()
+            profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = self.checkBox_13.isChecked()
             profile_mgr.save_local_config()
         except Exception as e:
             logging.log_exception(e)
@@ -934,6 +934,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         pixmap = QPixmap()
         pixmap.loadFromData(cache_mgr.get_portrait(self.self_user_portrait))
         pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = qt_image.add_cover_for_pixmap(pixmap)
         self.add_info.emit([pixmap, ''])
 
     def init_user_data(self):

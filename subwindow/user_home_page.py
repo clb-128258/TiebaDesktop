@@ -7,8 +7,8 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, top_toast_widget
-from publics.funcs import LoadingFlashWidget, ExtListWidgetItem, start_background_thread, cut_string, \
+from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, top_toast_widget, qt_image
+from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets
 import publics.logging as logging
 
@@ -78,8 +78,13 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.action_ok_signal.connect(self.action_ok_slot)
         self.set_head_info_signal.connect(self.set_head_info_ui)
         self.set_list_info_signal.connect(self.set_list_info_ui)
-        self.listWidget_3.itemDoubleClicked.connect(self.open_user_homepage)
-        self.listWidget_5.itemDoubleClicked.connect(self.open_user_homepage)
+
+        self.portrait_image = qt_image.MultipleImage()
+        self.portrait_image.currentImageChanged.connect(
+            lambda: self.label.setPixmap(self.portrait_image.currentPixmap()))
+        self.portrait_image.currentImageChanged.connect(
+            lambda: self.setWindowIcon(QIcon(self.portrait_image.currentPixmap())))
+        self.destroyed.connect(self.portrait_image.destroyImage)
 
         self.tabWidget.setCurrentIndex(tab_index)
         self.init_top_toaster()
@@ -200,11 +205,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         for i in widgets:
             i.load_all_AsyncImage()
 
-    def open_user_homepage(self, item):
-        if isinstance(item, ExtListWidgetItem):
-            user_home_page = UserHomeWindow(self.bduss, self.stoken, item.user_portrait_id)
-            qt_window_mgr.add_window(user_home_page)
-
     def open_user_blacklister(self):
         from subwindow.single_blacklist import SingleUserBlacklistWindow
         blacklister = SingleUserBlacklistWindow(self.bduss, self.stoken, self.user_id_portrait)
@@ -290,10 +290,11 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             QMessageBox.critical(self, '用户信息加载失败', data['error'], QMessageBox.Ok)
             self.close()
         else:
+            self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, self.real_portrait,
+                                             qt_image.ImageCoverType.RoundCover, (50, 50))
+            self.portrait_image.loadImage()
             self.setWindowTitle(data['name'] + ' - 个人主页')
-            self.setWindowIcon(QIcon(data['portrait_pixmap']))
 
-            self.label.setPixmap(data['portrait_pixmap'])
             self.label_2.setText(data['name'])
             self.label_2.setToolTip('用户名：' + data['bd_user_name'])
             self.label_9.setText('Lv.' + str(data['level']))
@@ -377,7 +378,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             'name': '',
                             'sex': 0,
                             'level': 0,
-                            'portrait_pixmap': None,
                             'agree_c': 0,
                             'tieba_id': 0,
                             'post_c': 0,
@@ -423,12 +423,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             data['post_c'] = user_info.post_num
                             self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
 
-                            pixmap = QPixmap()
-                            pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
-                            pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
-                                                   Qt.SmoothTransformation)
-                            data['portrait_pixmap'] = pixmap
-
                             profile_mgr.add_view_history(2, {"uid": self.real_user_id, "portrait": self.real_portrait,
                                                              "nickname": self.nick_name})
 
@@ -464,7 +458,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             widget.load_by_callback = True
             widget.set_thread_values(datas['view_count'], datas['agree_count'], datas['reply_count'],
                                      datas['repost_count'], datas['post_time'])
-            widget.set_infos(datas['user_portrait_pixmap'], datas['user_name'], datas['title'], datas['content'],
+            widget.set_infos(datas['author_portrait'], datas['user_name'], datas['title'], datas['content'],
                              None, datas['forum_name'])
             widget.set_picture(list(AsyncLoadImage(image.src, image.hash) for image in datas['view_pixmap']))
             widget.label.hide()
@@ -472,6 +466,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             item.setSizeHint(widget.size())
             self.listWidget_4.addItem(item)
             self.listWidget_4.setItemWidget(item, widget)
+            self.load_thread_image()
         elif data[0] == 'reply':
             item = QListWidgetItem()
             widget = ReplyItem(self.bduss, self.stoken)
@@ -490,7 +485,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     tid=datas['thread_id'],
                     sub_floor='[楼中楼] ' if datas['is_subfloor'] else '[回复贴] ',
                     forum_link=forum_link_html))
-            widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['content'],
+            widget.setdatas(datas['portrait'], datas['user_name'], False, datas['content'],
                             [], -1, datas['post_time_str'], '', -2, -1, -1, False)
 
             item.setSizeHint(widget.size())
@@ -500,7 +495,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             item = QListWidgetItem()
             widget = ForumItem(datas['forum_id'], True, self.bduss, self.stoken, datas['forum_name'])
             widget.pushButton_2.hide()
-            widget.set_info(datas['forum_pixmap'],
+            widget.set_info(datas['forum_avatar'],
                             datas['forum_name'] + '吧',
                             datas['forum_desp'],
                             '{common_follow_flag}Lv.{level} | 经验值 {exp}'.format(
@@ -513,13 +508,20 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             self.listWidget.addItem(item)
             self.listWidget.setItemWidget(item, widget)
         elif data[0] in ('follow', 'fans'):
-            item = ExtListWidgetItem(self.bduss, self.stoken)
+            item = UserItem(self.bduss, self.stoken)
+            item.show_homepage_by_click = True
             item.user_portrait_id = datas['user_id']
-            item.set_show_datas(datas['user_pixmap'], datas['user_name'])
+            item.setdatas(datas['user_portrait'], datas['user_name'], datas['user_id'],custom_desp_str=datas['desp'])
+
+            qt_item = QListWidgetItem()
+            item.adjustSize()
+            qt_item.setSizeHint(item.size())
             if data[0] == 'follow':
-                self.listWidget_3.addItem(item)
+                self.listWidget_3.addItem(qt_item)
+                self.listWidget_3.setItemWidget(qt_item, item)
             else:
-                self.listWidget_5.addItem(item)
+                self.listWidget_5.addItem(qt_item)
+                self.listWidget_5.setItemWidget(qt_item, item)
 
     def get_list_info_async(self, type_):
         if not self.page[type_]['loading'] and self.page[type_]['page'] != -1:
@@ -531,22 +533,14 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     if type_ == 'thread':
-                        # 获取用户头像
-                        user_head_pixmap = QPixmap()
                         thread_datas = await client.get_user_threads(self.user_id_portrait, self.page[type_]['page'])
                         for thread in thread_datas.objs:
-                            # 初始化数据
-                            if user_head_pixmap.isNull():  # 头像为空
-                                user_head_pixmap.loadFromData(cache_mgr.get_portrait(thread.user.portrait))
-                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
                             data = {'thread_id': thread.tid,
                                     'forum_id': thread.fid,
                                     'title': thread.title,
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
                                     'author_portrait': thread.user.portrait,
                                     'user_name': thread.user.nick_name_new,
-                                    'user_portrait_pixmap': user_head_pixmap,
                                     'forum_name': thread.fname,
                                     'view_pixmap': thread.contents.imgs,
                                     'view_count': thread.view_num,
@@ -561,7 +555,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         nick_name = self.nick_name
 
                         # 初始化数据
-                        user_head_pixmap = QPixmap()
                         post_list = []
 
                         post_datas = await client.get_user_posts(self.user_id_portrait, self.page[type_]['page'])
@@ -571,12 +564,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         post_list.sort(key=lambda k: k.create_time, reverse=True)  # 按发贴时间排序
 
                         for thread in post_list:
-                            # 初始化数据
-                            if user_head_pixmap.isNull():  # 头像为空
-                                user_head_pixmap.loadFromData(cache_mgr.get_portrait(thread.user.portrait))
-                                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                           Qt.SmoothTransformation)
-
                             # 获取吧名称
                             if thread.fid != 0:
                                 forum_name = await client.get_fname(thread.fid)
@@ -608,7 +595,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                     'forum_name': forum_name,
                                     'thread_title': thread_title,
                                     'content': cut_string(make_thread_content(thread.contents.objs, True), 50),
-                                    'user_portrait_pixmap': user_head_pixmap,
                                     'portrait': thread.user.portrait,
                                     'user_name': nick_name,
                                     'post_time_str': timestr}
@@ -616,16 +602,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     elif type_ == 'follow_forum':
                         forum_list = await client.get_follow_forums(self.user_id_portrait, self.page[type_]['page'])
                         for f in forum_list.objs:
-                            pixmap = QPixmap()
-                            if f.avatar:
-                                response = requests.get(f.avatar, headers=request_mgr.header)
-                                if response.content:
-                                    pixmap.loadFromData(response.content)
-                                    pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
                             data = {'forum_name': f.fname,
                                     'forum_id': f.fid,
-                                    'forum_pixmap': pixmap,
+                                    'forum_avatar': f.avatar,
                                     'forum_desp': f.slogan,
                                     'level': f.level,
                                     'exp': f.exp,
@@ -635,34 +614,19 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     elif type_ == 'follow':
                         follow_list = await client.get_follows(self.user_id_portrait, pn=self.page[type_]['page'])
                         for user in follow_list:
-                            name = user.nick_name_new
-                            if user.forum_admin_info:
-                                name += f' ({user.forum_admin_info})'
-
-                            data = {'user_name': name,
-                                    'user_pixmap': None,
-                                    'user_id': user.user_id}
-
-                            user_head_pixmap = QPixmap()
-                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(user.portrait))
-                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-
-                            data['user_pixmap'] = user_head_pixmap
+                            data = {'user_name': user.nick_name_new,
+                                    'user_portrait': user.portrait,
+                                    'user_id': user.user_id,
+                                    'desp': user.forum_admin_info if user.forum_admin_info else user.desp}
 
                             self.set_list_info_signal.emit((type_, data))
                     elif type_ == 'fans':
                         fan_list = await client.get_fans(self.user_id_portrait, pn=self.page[type_]['page'])
                         for user in fan_list:
                             data = {'user_name': user.nick_name_new,
-                                    'user_pixmap': None,
-                                    'user_id': user.user_id}
-
-                            user_head_pixmap = QPixmap()
-                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(user.portrait))
-                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-                            data['user_pixmap'] = user_head_pixmap
+                                    'user_portrait': user.portrait,
+                                    'user_id': user.user_id,
+                                    'desp': ''}
 
                             self.set_list_info_signal.emit((type_, data))
             except Exception as e:

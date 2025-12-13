@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr
+from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, qt_image
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets
 import publics.logging as logging
@@ -45,6 +45,12 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             lw.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
             lw.verticalScrollBar().valueChanged.connect(self.threadList_load_image)
 
+        self.forum_avatar = qt_image.MultipleImage()
+        self.forum_avatar.currentPixmapChanged.connect(self.label.setPixmap)
+        self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.setWindowIcon(QIcon(pixmap)))
+        self.forum_admin_portrait = qt_image.MultipleImage()
+        self.forum_admin_portrait.currentPixmapChanged.connect(self.label_6.setPixmap)
+
         self.init_load_flash()
         self.label_9.hide()
         self.pushButton.hide()
@@ -68,6 +74,8 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
 
     def closeEvent(self, a0):
         self.flash_shower.hide()
+        self.forum_avatar.destroyImage()
+        self.forum_admin_portrait.destroyImage()
         a0.accept()
         qt_window_mgr.del_window(self)
 
@@ -137,7 +145,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
         widget.load_by_callback = True
 
-        widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['content'],
+        widget.set_infos(infos['user_portrait'], infos['user_name'], infos['title'], infos['content'],
                          infos['forum_pixmap'], infos['forum_name'])
         widget.set_picture(list(AsyncLoadImage(image.src, image.hash) for image in infos['view_pixmap']))
         widget.set_thread_values(infos['view_count'], infos['agree_count'], infos['reply_count'], infos['repost_count'])
@@ -239,17 +247,13 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 is_treasure = thread.is_good
                 is_top = thread.is_top
 
-                user_head_pixmap = QPixmap()
-                user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
                 tdata = {'type': tpe,
                          'thread_id': thread_id,
                          'forum_id': forum_id,
                          'title': title,
                          'content': content,
                          'user_name': user_name,
-                         'user_portrait_pixmap': user_head_pixmap,
+                         'user_portrait': portrait,
                          'forum_name': '',
                          'forum_pixmap': QPixmap(),
                          'view_pixmap': preview_pixmap,
@@ -359,15 +363,15 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         start_background_thread(self.load_info)
 
     def update_info_ui(self, datas):
-        # tdata = {'name': forum_name, 'pixmap': forum_pixmap, 'slogan': forum_slogan, 'follownum': follow_count,
-        #          'postnum': post_count, 'admin_name': forum_admin_name, 'admin_pixmap': forum_admin_pixmap}
         self.setWindowTitle(datas['name'] + '吧')
-        self.setWindowIcon(QIcon(datas['pixmap']))
-
         self.label_3.setText('{0}人关注，{1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
                                                           large_num_to_string(datas['postnum'], endspace=True)))
-        self.label.setPixmap(datas['pixmap'])
         self.label_2.setText(datas['name'] + '吧')
+        self.forum_avatar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                       datas['avatar'],
+                                       qt_image.ImageCoverType.RoundCover,
+                                       (50, 50))
+        self.forum_avatar.loadImage()
 
         if datas['is_followed'] == 1:
             qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
@@ -386,8 +390,12 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             self.label_9.show()
 
         if datas['admin_name']:
-            self.label_6.setPixmap(datas['admin_pixmap'])
             self.label_7.setText(datas['admin_name'])
+            self.forum_admin_portrait.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
+                                                   datas['admin_portrait'],
+                                                   qt_image.ImageCoverType.RoundCover,
+                                                   (20, 20))
+            self.forum_admin_portrait.loadImage()
         else:
             self.label_6.hide()
             self.gridLayout_5.removeWidget(self.label_6)
@@ -436,22 +444,12 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 post_count = resp["forum"]["post_num"]
                 if admin_info := resp["forum"].get("managers"):
                     forum_admin_name = admin_info[0]["show_name"]
-                    logging.log_INFO(
-                        f'forum (id {self.forum_id}, name {forum_name}) loading bazhu_portrait_bin_info')
-                    forum_admin_pixmap = QPixmap()
-                    forum_admin_pixmap.loadFromData(cache_mgr.get_portrait(admin_info[0]["portrait"].split('?')[0]))
-                    forum_admin_pixmap = forum_admin_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    forum_admin_portrait = admin_info[0]["portrait"].split('?')[0]
                 else:
                     forum_admin_name = ''
-                    forum_admin_pixmap = None
+                    forum_admin_portrait = ''
 
-                logging.log_INFO(
-                    f'forum (id {self.forum_id}, name {forum_name}) loading headimg_bin_info')
-                forum_pixmap = QPixmap()
-                response = requests.get(resp['forum']["avatar"], headers=request_mgr.header)
-                if response.content:
-                    forum_pixmap.loadFromData(response.content)
-                    forum_pixmap = forum_pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                forum_avatar = resp['forum']["avatar"]
 
                 md5v = cache_mgr.save_md5_ico(resp['forum']["avatar"])
                 profile_mgr.add_view_history(3, {"icon_md5": md5v, "forum_id": self.forum_id,
@@ -460,12 +458,12 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 logging.log_INFO(
                     f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
                 tdata = {'name': forum_name,
-                         'pixmap': forum_pixmap,
+                         'avatar': forum_avatar,
                          'slogan': forum_slogan,
                          'follownum': follow_count,
                          'postnum': post_count,
                          'admin_name': forum_admin_name,
-                         'admin_pixmap': forum_admin_pixmap,
+                         'admin_portrait': forum_admin_portrait,
                          'is_followed': isFollowed,
                          'level_info': level_info,
                          'uf_level': level_value}

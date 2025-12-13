@@ -667,6 +667,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     self.listWidget.setItemWidget(item, label)
 
                     self.update_listwidget_size(i['height'] + 35)
+                    label.load_picture_async()
 
                 if datas['repost_info']['have_repost']:
                     from subwindow.thread_preview_item import ThreadView

@@ -2,8 +2,8 @@ import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
-
-from publics import request_mgr, qt_window_mgr, profile_mgr
+from typing import Union
+from publics import request_mgr, qt_window_mgr, profile_mgr, qt_image
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string
 import publics.logging as logging
 
@@ -25,6 +25,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
     agree_num = 0
     is_comment = False
     agree_thread_signal = pyqtSignal(str)
+    load_by_callback = False
 
     show_msg_outside = False
     messageAdded = pyqtSignal(str)
@@ -35,6 +36,8 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
 
         self.bduss = bduss
         self.stoken = stoken
+        self.image_list = []
+        self.__is_loaded = False
 
         self.label_13.hide()
         self.label_10.hide()
@@ -49,6 +52,11 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.pushButton_3.clicked.connect(self.agree_thread_async)
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
         self.destroyed.connect(self.on_widget_deleted)
+
+        self.portrait_image = qt_image.MultipleImage()
+        self.portrait_image.currentImageChanged.connect(
+            lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.destroyed.connect(self.portrait_image.destroyImage)
 
         self.flash_timer = QTimer(self)
         self.flash_timer.setInterval(200)
@@ -66,8 +74,19 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             self.flash_timer.start()
             self.label_6.setStyleSheet('QWidget{background-color: rgb(71, 71, 255);}')
 
+    def load_images(self):
+        if not self.__is_loaded:
+            if self.portrait_image.isImageInfoValid():
+                self.portrait_image.loadImage()
+
+            for i in self.image_list:
+                i.load_picture_async()
+
+            self.__is_loaded = True
+
     def on_widget_deleted(self):
         if self.replyWindow:
+            self.portrait_image.destroyImage()
             self.replyWindow.close()
             self.replyWindow.deleteLater()
             del self.replyWindow
@@ -218,12 +237,19 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.label_10.show()
         self.label_10.setText(t)
 
-    def setdatas(self, uicon: QPixmap, uname: str, islz: bool, text: str, pixmaps: list, floor: int, timestr: str,
+    def setdatas(self, uicon: Union[QPixmap, str], uname: str, islz: bool, text: str, pixmaps: list, floor: int,
+                 timestr: str,
                  ip: str, reply_count: int, agree_count: int, level: int, isbawu: bool, voice_info=None):
         if voice_info is None:
             voice_info = {'have_voice': False}
 
-        self.label_4.setPixmap(uicon)
+        if isinstance(uicon, QPixmap):
+            self.label_4.setPixmap(qt_image.add_cover_for_pixmap(uicon))
+        else:
+            self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
+                                             uicon,
+                                             qt_image.ImageCoverType.RoundCover,
+                                             (25, 25))
         self.label_3.setText(uname)
 
         text_ = ''
@@ -290,6 +316,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                 item.setSizeHint(label.size())
                 self.listWidget.addItem(item)
                 self.listWidget.setItemWidget(item, label)
+                self.image_list.append(label)
 
                 self.update_listwidget_size(i['height'] + 35)
 
@@ -303,4 +330,6 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                 self.listWidget.setItemWidget(item, voice_widget)
                 self.update_listwidget_size(voice_widget.height())
 
+        if not self.load_by_callback:
+            self.load_images()
         self.adjustSize()

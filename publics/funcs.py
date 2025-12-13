@@ -10,7 +10,7 @@ import enum
 
 import pyperclip
 import requests
-from PyQt5.QtCore import QObject, pyqtSignal, Qt, QByteArray, QSize, QEvent
+from PyQt5.QtCore import QObject, pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer
 from PyQt5.QtGui import QMovie, QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem
 
@@ -18,7 +18,7 @@ import consts
 import aiotieba
 import json
 
-from publics import aes, profile_mgr, request_mgr, qt_window_mgr, cache_mgr
+from publics import aes, profile_mgr, request_mgr, qt_window_mgr, cache_mgr, qt_image
 import publics.logging as logging
 from publics.toasting import init_AUMID
 from ui import loading_amt, user_item
@@ -434,16 +434,22 @@ class UserItem(QWidget, user_item.Ui_Form):
     switchRequested = pyqtSignal(tuple)
     deleteRequested = pyqtSignal(tuple)
     doubleClicked = pyqtSignal()
-    setPortrait = pyqtSignal(QPixmap)
 
     def __init__(self, bduss, stoken):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
         self.stoken = stoken
-        self.setPortrait.connect(self.label.setPixmap)
         self.label_3.setToolTip(
             '请注意，贴吧 ID 与用户 ID 不同，贴吧 ID 显示在贴吧 APP 的个人主页上，用户 ID 则主要供 APP 内部使用。')
+
+        self.toolButton.setIcon(QIcon('ui/content_copy.png'))
+        self.toolButton.clicked.connect(self.show_toolbutton_icon)
+
+        self.portrait_image = qt_image.MultipleImage()
+        self.portrait_image.currentImageChanged.connect(
+            lambda: self.label.setPixmap(self.portrait_image.currentPixmap()))
+        self.destroyed.connect(self.portrait_image.destroyImage)
 
     def mouseDoubleClickEvent(self, a0):
         a0.accept()
@@ -451,32 +457,40 @@ class UserItem(QWidget, user_item.Ui_Form):
         if self.show_homepage_by_click:
             self.open_user_homepage(self.user_portrait_id)
 
+    def show_toolbutton_icon(self):
+        self.toolButton.setIcon(QIcon('ui/checked.png'))
+        QTimer.singleShot(2000, lambda: self.toolButton.setIcon(QIcon('ui/content_copy.png')))
+
     def open_user_homepage(self, uid):
         from subwindow.user_home_page import UserHomeWindow
         user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
         qt_window_mgr.add_window(user_home_page)
 
     def get_portrait(self, p):
-        pixmap = QPixmap()
-        pixmap.loadFromData(cache_mgr.get_portrait(p))
-        pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.setPortrait.emit(pixmap)
+        self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, p, qt_image.ImageCoverType.RoundCover,
+                                         (50, 50))
+        self.portrait_image.loadImage()
 
-    def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False, is_tieba_uid=False):
+    def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False, is_tieba_uid=False,custom_desp_str=''):
         if uicon:
             if isinstance(uicon, QPixmap):
                 self.label.setPixmap(uicon)
             elif isinstance(uicon, str):
                 if uicon.startswith('tb.'):
-                    start_background_thread(self.get_portrait, (uicon,))
+                    self.get_portrait(uicon)
         else:
             self.label.hide()
         self.label_2.setText(uname)
-        if uid != -1:
+
+        if custom_desp_str:
+            self.label_3.setText(custom_desp_str)
+            self.toolButton.hide()
+        elif uid != -1:
             self.label_3.setText(f'{"贴吧 ID" if is_tieba_uid else "用户 ID"}: {uid}')
             self.toolButton.clicked.connect(lambda: pyperclip.copy(uid))
         else:
             self.label_3.hide()
+
         if not show_switch:
             self.pushButton.hide()
             self.pushButton_2.hide()

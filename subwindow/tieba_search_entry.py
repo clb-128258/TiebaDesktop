@@ -131,6 +131,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
             item.setSizeHint(widget.size())
             self.listWidget_2.addItem(item)
             self.listWidget_2.setItemWidget(item, widget)
+            self.scroll_load_images(self.listWidget_2)
         elif datas['type'] == 'forum':
             from subwindow.forum_item import ForumItem
             item = QListWidgetItem()
@@ -164,6 +165,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
             item.setSizeHint(widget.size())
             self.listWidget_4.addItem(item)
             self.listWidget_4.setItemWidget(item, widget)
+            self.scroll_load_images(self.listWidget_4)
         elif datas['type'] == 'reply_single_forum':
             from subwindow.thread_reply_item import ReplyItem
             item = QListWidgetItem()

@@ -33,8 +33,8 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         self.stoken = stoken
 
         self.label.hide()
-        listwidgets = [self.listWidget_3, self.listWidget_2, self.listWidget]
-        for lw in listwidgets:
+        self.listwidgets = [self.listWidget_3, self.listWidget_2, self.listWidget]
+        for lw in self.listwidgets:
             lw.verticalScrollBar().setSingleStep(25)
             lw.setStyleSheet('QListWidget{outline:0px;}'
                              'QListWidget::item:hover {color:white; background-color:white;}'
@@ -61,9 +61,12 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         self.load_inter_data_async('all')
 
     def load_item_images(self):
-        widgets = listWidget_get_visible_widgets(self.listWidget_3)
-        for i in widgets:
-            i.load_images()
+        current_widget = self.tabWidget.currentWidget()
+        for lw in self.listwidgets:
+            if lw.parent() == current_widget:
+                visible_lw=listWidget_get_visible_widgets(lw)
+                for i in visible_lw:
+                    i.load_images()
 
     def scroll_load_list_info(self, type_):
         self.load_item_images()

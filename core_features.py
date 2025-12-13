@@ -1,9 +1,8 @@
-"""核心模块，实现了程序内大部分功能，本程序的主要函数和类均封装在此处"""
 from PyQt5.QtCore import QLocale, QTranslator, QTimer, QT_VERSION_STR, QT_VERSION
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, QApplication, QWidgetAction
 
-from publics import profile_mgr, webview2
+from publics import profile_mgr, webview2, qt_image
 from publics import proxytool
 from publics.funcs import *
 from publics.logging import init_log

@@ -1,10 +1,55 @@
 import enum
+import gc
+
 from PyQt5.QtCore import QObject, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize, QRect, Qt
 from PyQt5.QtGui import QImage, QPixmap, QMovie, QBrush, QPainter, QPixmapCache
 import requests
 from publics import request_mgr, cache_mgr, funcs, logging
 from typing import Union, Tuple
 import os
+
+
+def add_cover_for_pixmap(pixmap: QPixmap, size=-1) -> QPixmap:
+    # https://geek-docs.com/pyqt5/pyqt5-tutorials/g_pyqt5-how-to-create-circular-image-from-any-image.html
+
+    # Crop pixmap to a square:
+    imgsize = min(pixmap.width(), pixmap.height())
+    rect = QRect(
+        (pixmap.width() - imgsize) / 2,
+        (pixmap.height() - imgsize) / 2,
+        imgsize,
+        imgsize,
+    )
+
+    pixmap = pixmap.copy(rect)
+
+    # Create the output image with the same dimensions
+    # and an alpha channel and make it completely transparent:
+    out_img = QImage(imgsize, imgsize, QImage.Format_ARGB32)
+    out_img.fill(Qt.transparent)
+
+    # Create a texture brush and paint a circle
+    # with the original image onto the output image:
+    brush = QBrush(pixmap)
+
+    # Paint the output image
+    painter = QPainter(out_img)
+    painter.setBrush(brush)
+
+    # Don't draw an outline
+    painter.setPen(Qt.NoPen)
+
+    # drawing circle
+    painter.drawEllipse(0, 0, imgsize, imgsize)
+
+    # closing painter event
+    painter.end()
+
+    final_size = size if size > 0 else imgsize
+    # return scaled image
+    return QPixmap.fromImage(out_img.scaled(final_size, final_size,
+                                            Qt.KeepAspectRatio,
+                                            Qt.SmoothTransformation))
 
 
 class ImageType(enum.Enum):
@@ -34,6 +79,7 @@ class ImageCoverType(enum.Enum):
 class MultipleImage(QObject):
     """图片抽象类，支持gif/webp显示与网络异步加载"""
     currentImageChanged = pyqtSignal(QImage)
+    currentPixmapChanged = pyqtSignal(QPixmap)
     imageLoadFailed = pyqtSignal(str)
     imageLoadSucceed = pyqtSignal()
     __load_gif_signal = pyqtSignal()
@@ -64,7 +110,18 @@ class MultipleImage(QObject):
             self.__gif_buffer.close()
             self.__gif_byte_array.clear()
 
+            self.__gif_buffer.deleteLater()
+            self.__gif_container.deleteLater()
+            del self.__gif_covered_image
+        else:
+            del self.__static_pixmap
+            del self.__static_image
+
+        QPixmapCache.clear()
+        gc.collect()
+
         self.__image_type = None
+        del self.__image_original_binary
         self.__image_original_binary = None
         self.__gif_byte_array = None
         self.__gif_buffer = None
@@ -85,6 +142,7 @@ class MultipleImage(QObject):
                 self.__gif_covered_image = self.__add_cover(current_image, size)
 
             self.currentImageChanged.emit(current_image)
+            self.currentPixmapChanged.emit(self.currentPixmap())
 
         if not self.__image_original_binary:
             self.imageLoadFailed.emit(f'image binary is null')
@@ -241,6 +299,7 @@ class MultipleImage(QObject):
                 self.__load_qt_image()
                 self.__resize_mask_qt_image()
                 self.currentImageChanged.emit(self.__static_image)
+                self.currentPixmapChanged.emit(self.__static_pixmap)
             else:
                 self.__load_gif_signal.emit()
                 return
@@ -327,9 +386,13 @@ class MultipleImage(QObject):
             else:
                 return self.__gif_container.currentPixmap()
 
+    def destroyImage(self):
+        """释放图像所占用的资源"""
+        self.__on_destroyed()
+
     def reloadImage(self):
         """重新加载图像"""
-        self.__on_destroyed()  # 执行内存清理
+        self.destroyImage()  # 执行内存清理
         self.loadImage()
 
     def loadImage(self):
@@ -365,7 +428,7 @@ class MultipleImage(QObject):
                          and sourceData.startswith((request_mgr.SCHEME_HTTP, request_mgr.SCHEME_HTTPS)))
         flag_TbPortrait = (loadFrom == ImageLoadSource.TiebaPortrait
                            and isinstance(sourceData, str)
-                           and sourceData.startswith('tb.1.'))
+                           and sourceData.startswith(('tb.1.', '0')))
         flag_Bdhash = (loadFrom == ImageLoadSource.BaiduHash
                        and isinstance(sourceData, str))
         flag_bindata = (loadFrom == ImageLoadSource.BinaryData
