@@ -53,7 +53,7 @@ class Ui_Form(object):
         self.pushButton_2.setStyleSheet("QPushButton {\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"
-"    border-radius: 11px;\n"
+"    border-radius: 13px;\n"
 "    text-align: right;\n"
 "    padding-left: 10px;\n"
 "    padding-right: 10px;\n"

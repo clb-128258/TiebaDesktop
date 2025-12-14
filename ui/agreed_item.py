@@ -23,6 +23,7 @@ class Ui_Form(object):
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.label_4 = QtWidgets.QLabel(Form)
         self.label_4.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.label_4.setText("")
         self.label_4.setAlignment(QtCore.Qt.AlignCenter)
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_3.addWidget(self.label_4)
@@ -54,6 +55,7 @@ class Ui_Form(object):
         self.horizontalLayout.setSpacing(11)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.label_2 = QtWidgets.QLabel(Form)
+        self.label_2.setText("")
         self.label_2.setObjectName("label_2")
         self.horizontalLayout.addWidget(self.label_2)
         self.label_6 = QtWidgets.QLabel(Form)
@@ -89,10 +91,8 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "点赞信息"))
-        self.label_4.setText(_translate("Form", "uicon"))
         self.label_3.setText(_translate("Form", "username"))
         self.label_10.setText(_translate("Form", "赞了你的贴子"))
-        self.label_2.setText(_translate("Form", "pic"))
         self.label_6.setText(_translate("Form", "user: comment"))
         self.label.setText(_translate("Form", "time"))
         self.pushButton.setText(_translate("Form", "查看贴子"))

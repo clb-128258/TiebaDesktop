@@ -55,13 +55,13 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             'thread': self.listWidget_4, 'fans': self.listWidget_5}
         for v in self.listwidgets.values():
             v.verticalScrollBar().setSingleStep(20)
+            v.verticalScrollBar().valueChanged.connect(self.load_thread_image)
 
         # 必须手动链接所有信号，在上面的循环里进行会有奇怪的bug
         self.listWidget.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('follow_forum'))
         self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('reply'))
         self.listWidget_3.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('follow'))
         self.listWidget_4.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('thread'))
-        self.listWidget_4.verticalScrollBar().valueChanged.connect(self.load_thread_image)
         self.listWidget_5.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('fans'))
 
         self.listWidget_4.setStyleSheet('QListWidget{outline:0px;}'
@@ -74,10 +74,12 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         # 隐藏ip属地
         if profile_mgr.local_config['thread_view_settings']['hide_ip']:
             self.label_5.hide()
+        self.tabWidget.setCurrentIndex(tab_index)
 
         self.action_ok_signal.connect(self.action_ok_slot)
         self.set_head_info_signal.connect(self.set_head_info_ui)
         self.set_list_info_signal.connect(self.set_list_info_ui)
+        self.tabWidget.currentChanged.connect(self.load_thread_image)
 
         self.portrait_image = qt_image.MultipleImage()
         self.portrait_image.currentImageChanged.connect(
@@ -86,7 +88,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             lambda: self.setWindowIcon(QIcon(self.portrait_image.currentPixmap())))
         self.destroyed.connect(self.portrait_image.destroyImage)
 
-        self.tabWidget.setCurrentIndex(tab_index)
         self.init_top_toaster()
         self.init_load_flash()
         self.get_head_info_async()
@@ -201,9 +202,23 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.pushButton.setMenu(menu)
 
     def load_thread_image(self):
-        widgets = listWidget_get_visible_widgets(self.listWidget_4)
-        for i in widgets:
-            i.load_all_AsyncImage()
+        from subwindow.thread_preview_item import ThreadView
+        from subwindow.thread_reply_item import ReplyItem
+        from subwindow.forum_item import ForumItem
+
+        cwidget = self.tabWidget.currentWidget()
+        for lw in self.listwidgets.values():
+            if lw.parent() == cwidget:
+                widgets = listWidget_get_visible_widgets(lw)
+                for i in widgets:
+                    if isinstance(i, ThreadView):
+                        i.load_all_AsyncImage()
+                    elif isinstance(i, ReplyItem):
+                        i.load_images()
+                    elif isinstance(i, ForumItem):
+                        i.load_avatar()
+                    elif isinstance(i, UserItem):
+                        i.get_portrait()
 
     def open_user_blacklister(self):
         from subwindow.single_blacklist import SingleUserBlacklistWindow
@@ -466,7 +481,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             item.setSizeHint(widget.size())
             self.listWidget_4.addItem(item)
             self.listWidget_4.setItemWidget(item, widget)
-            self.load_thread_image()
         elif data[0] == 'reply':
             item = QListWidgetItem()
             widget = ReplyItem(self.bduss, self.stoken)
@@ -476,6 +490,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             widget.post_id = datas['post_id']
             widget.allow_home_page = False
             widget.subcomment_show_thread_button = True
+            widget.load_by_callback = True
             forum_link_html = '<a href=\"tieba_forum://{fid}\">{fname}吧</a>'.format(fname=datas['forum_name'],
                                                                                      fid=datas['forum_id'])
             forum_link_html = forum_link_html if datas['forum_name'] else '贴吧动态'
@@ -494,6 +509,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         elif data[0] == 'follow_forum':
             item = QListWidgetItem()
             widget = ForumItem(datas['forum_id'], True, self.bduss, self.stoken, datas['forum_name'])
+            widget.load_by_callback = True
             widget.pushButton_2.hide()
             widget.set_info(datas['forum_avatar'],
                             datas['forum_name'] + '吧',
@@ -509,9 +525,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             self.listWidget.setItemWidget(item, widget)
         elif data[0] in ('follow', 'fans'):
             item = UserItem(self.bduss, self.stoken)
+            item.load_by_callback = True
             item.show_homepage_by_click = True
             item.user_portrait_id = datas['user_id']
-            item.setdatas(datas['user_portrait'], datas['user_name'], datas['user_id'],custom_desp_str=datas['desp'])
+            item.setdatas(datas['user_portrait'], datas['user_name'], datas['user_id'], custom_desp_str=datas['desp'])
 
             qt_item = QListWidgetItem()
             item.adjustSize()
@@ -522,6 +539,8 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             else:
                 self.listWidget_5.addItem(qt_item)
                 self.listWidget_5.setItemWidget(qt_item, item)
+
+        self.load_thread_image()
 
     def get_list_info_async(self, type_):
         if not self.page[type_]['loading'] and self.page[type_]['page'] != -1:

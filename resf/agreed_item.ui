@@ -26,7 +26,7 @@
         <cursorShape>PointingHandCursor</cursorShape>
        </property>
        <property name="text">
-        <string>uicon</string>
+        <string/>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -105,7 +105,7 @@
        <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>pic</string>
+          <string/>
          </property>
         </widget>
        </item>

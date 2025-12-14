@@ -12,6 +12,8 @@ from ui import ba_item
 class ForumItem(QWidget, ba_item.Ui_Form):
     """列表内嵌入的吧组件"""
     signok = pyqtSignal(tuple)
+    load_by_callback = False
+    __is_loaded = False
 
     def __init__(self, fid, issign, bduss, stoken, fname):
         super().__init__()
@@ -39,6 +41,11 @@ class ForumItem(QWidget, ba_item.Ui_Form):
     def mouseDoubleClickEvent(self, a0):
         a0.accept()
         self.open_ba_detail()
+
+    def load_avatar(self):
+        if not self.__is_loaded:
+            self.forum_atavar_image.loadImage()
+            self.__is_loaded = True
 
     def update_sign_ui(self, isok):
         if isok[0]:
@@ -117,7 +124,8 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         elif isinstance(headpixmap, str):
             self.forum_atavar_image.setImageInfo(qt_image.ImageLoadSource.HttpLink, headpixmap,
                                                  coverType=qt_image.ImageCoverType.RoundCover, expectSize=(50, 50))
-            self.forum_atavar_image.loadImage()
+            if not self.load_by_callback:
+                self.load_avatar()
         self.label_2.setText(name)
         self.label_3.setText(normaldesp)
         if leveldesp:

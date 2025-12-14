@@ -4,13 +4,13 @@ import gc
 import aiotieba
 import pyperclip
 import requests
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
 
-from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr, top_toast_widget
+from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string
 import publics.logging as logging
@@ -44,6 +44,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.is_treasure = is_treasure
         self.is_top = is_top
 
+        self.lz_portrait = qt_image.MultipleImage()
+        self.forum_avatar = qt_image.MultipleImage()
+
+        self.pushButton_2.setIconSize(QSize(20, 20))
         self.label_2.hide()
         self.label_8.hide()
         self.label_11.hide()
@@ -81,6 +85,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.label_2.linkActivated.connect(self.end_label_link_event)
         self.pushButton_4.clicked.connect(self.agree_thread_async)
         self.pushButton_3.clicked.connect(self.add_post_async)
+        self.lz_portrait.currentPixmapChanged.connect(self.label_4.setPixmap)
+        self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.pushButton_2.setIcon(QIcon(pixmap)))
         self.label_3.installEventFilter(self)  # 重写事件过滤器
         self.label_4.installEventFilter(self)  # 重写事件过滤器
         self.label_9.installEventFilter(self)  # 重写事件过滤器
@@ -102,17 +108,14 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         from subwindow.thread_video_item import ThreadVideoItem
         self.flash_shower.hide()
         a0.accept()
+        self.forum_avatar.destroyImage()
+        self.lz_portrait.destroyImage()
         if self.listWidget.count() == 1:
             widget = self.listWidget.itemWidget(self.listWidget.item(0))
             if isinstance(widget, ThreadVideoItem):
                 if widget.webview:
                     widget.destroy_webview()
-        for i in range(self.listWidget_4.count()):
-            item = self.listWidget_4.item(i)
-            widget = self.listWidget_4.itemWidget(item)
-            widget.deleteLater()
-            del item
-
+        self.listWidget_4.clear()
         qt_window_mgr.del_window(self)
 
     def init_load_flash(self):
@@ -581,14 +584,22 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             if self.forum_id != 0:
                 self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
                 self.pushButton_2.setText(datas['forum_name'] + '吧')
-                self.pushButton_2.setIcon(QIcon(datas['forum_pixmap']))
                 self.pushButton_2.setToolTip(datas['forum_slogan'] if datas['forum_slogan'] else "点击进入此吧")
+                self.forum_avatar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                               datas['forum_avatar'],
+                                               qt_image.ImageCoverType.RoundCover)
+                self.forum_avatar.loadImage()
             else:
                 self.setWindowTitle(datas['title'] + ' - 贴吧动态')
                 self.pushButton_2.hide()
             self.pushButton_4.setText(large_num_to_string(datas['agree_count'], endspace=True) + '个赞')
-            self.label_4.setPixmap(datas['user_portrait_pixmap'])
             self.label_3.setText(datas['user_name'])
+            self.lz_portrait.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
+                                          datas['author_portrait'],
+                                          qt_image.ImageCoverType.RoundCover,
+                                          (40, 40))
+            self.lz_portrait.loadImage()
+
             if profile_mgr.local_config['thread_view_settings']['hide_ip']:
                 self.label.setText(datas['create_time_str'])
             else:
@@ -818,17 +829,6 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                                'current_num': o.num}
                                 vote_info['options'].append(vote_option)
 
-                        user_head_pixmap = QPixmap()
-                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                        user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
-                        forum_pixmap = QPixmap()
-                        if forum_pic_url:
-                            response = requests.get(forum_pic_url, headers=request_mgr.header)
-                            if response.content:
-                                forum_pixmap.loadFromData(response.content)
-                                forum_pixmap = forum_pixmap.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
                         for j in thread_info.thread.contents.imgs:
                             # width, height, src, view_src
                             src = j.origin_src
@@ -846,9 +846,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                  'content': content,  # 正内容
                                  'author_portrait': portrait,  # 作者portrait
                                  'user_name': user_name,  # 作者昵称
-                                 'user_portrait_pixmap': user_head_pixmap,  # 作者头像QPixmap
                                  'forum_name': forum_name,  # 吧名称
-                                 'forum_pixmap': forum_pixmap,  # 吧头像QPixmap
+                                 'forum_avatar': forum_pic_url,  # 吧头像链接
                                  'view_pixmap': preview_pixmap,  # 主题内图片列表
                                  'agree_count': agree_num,  # 点赞数
                                  'create_time_str': time_str,  # 发布时间字符串

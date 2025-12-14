@@ -3,11 +3,12 @@ import gc
 
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
-from PyQt5.QtWidgets import QDialog, QMessageBox, QListWidgetItem
+from PyQt5.QtGui import QIcon, QPixmapCache
+from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
-from publics import qt_window_mgr, cache_mgr, top_toast_widget
-from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string
+from publics import qt_window_mgr, top_toast_widget
+from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
+    listWidget_get_visible_widgets
 import publics.logging as logging
 
 from ui import reply_comments
@@ -65,6 +66,11 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id))
         qt_window_mgr.add_window(thread_window)
 
+    def load_item_images(self):
+        lws = listWidget_get_visible_widgets(self.listWidget)
+        for i in lws:
+            i.load_images()
+
     def refresh_comments(self):
         if not self.isLoading:
             # 清理内存
@@ -76,6 +82,8 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
             self.load_comments_async()
 
     def load_from_scroll(self):
+        self.load_item_images()
+
         if self.listWidget.verticalScrollBar().value() == self.listWidget.verticalScrollBar().maximum():
             self.load_comments_async()
 
@@ -90,6 +98,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         from subwindow.thread_reply_item import ReplyItem
         widget = ReplyItem(self.bduss, self.stoken)
         widget.show_msg_outside = True
+        widget.load_by_callback = True
         widget.messageAdded.connect(lambda text: self.top_toaster.showToast(
             top_toast_widget.ToastMessage(text, 2000, top_toast_widget.ToastIconType.INFORMATION)))
         widget.portrait = datas['portrait']
@@ -100,14 +109,14 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
             if datas['replyobj']:
                 widget.set_reply_text(
                     '回复用户 <a href=\"user://{uid}\">{u}</a>: '.format(uid=datas['reply_uid'], u=datas['replyobj']))
-            widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'], [],
+            widget.setdatas(datas['portrait'], datas['user_name'], datas['is_author'], datas['content'], [],
                             -1,
                             datas['create_time_str'], '', -1,
                             datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
         else:
             widget.is_comment = False
             widget.set_reply_text(f'当前楼层信息')
-            widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], False, datas['content'],
+            widget.setdatas(datas['portrait'], datas['user_name'], False, datas['content'],
                             datas['pictures'],
                             datas['floor'],
                             datas['create_time_str'], '', -1, -1, datas['ulevel'], datas['is_bawu'],
@@ -117,6 +126,8 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
+
+        self.load_item_images()
 
     def load_comments_async(self):
         if not self.isLoading and self.page != -1:
@@ -158,10 +169,6 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                                 'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={floor_thread.contents.voice.md5}&play_from=pb_voice_play'
                             voice_info['length'] = floor_thread.contents.voice.duration
 
-                        user_head_pixmap = QPixmap()
-                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                        user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
                         preview_pixmap = []
                         for j in floor_thread.contents.imgs:
                             # width, height, src, view_src
@@ -173,7 +180,6 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                                 {'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
                         tdata = {'is_floor': True, 'content': content, 'portrait': portrait, 'user_name': user_name,
-                                 'user_portrait_pixmap': user_head_pixmap,
                                  'create_time_str': time_str, 'ulevel': user_level, 'is_bawu': is_bawu,
                                  'thread_id': thread_id, 'post_id': post_id, 'voice_info': voice_info,
                                  'pictures': preview_pixmap, 'floor': floor, 'reply_num': reply_num}
@@ -205,12 +211,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                                 'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}&play_from=pb_voice_play'
                             voice_info['length'] = t.contents.voice.duration
 
-                        user_head_pixmap = QPixmap()
-                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                        user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
                         tdata = {'is_floor': False, 'content': content, 'portrait': portrait, 'user_name': user_name,
-                                 'user_portrait_pixmap': user_head_pixmap,
                                  'agree_count': agree_num,
                                  'create_time_str': time_str, 'is_author': is_author, 'ulevel': user_level,
                                  'replyobj': be_replied_user, 'reply_uid': replyer_uid, 'is_bawu': is_bawu,

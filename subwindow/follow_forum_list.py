@@ -2,13 +2,12 @@ import asyncio
 import gc
 
 import publics.logging as logging
-import requests
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QPixmapCache, QPixmap
+from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 
 from publics import request_mgr
-from publics.funcs import start_background_thread
+from publics.funcs import start_background_thread, listWidget_get_visible_widgets
 from ui import follow_ba
 
 
@@ -27,11 +26,17 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
         self.pushButton_2.clicked.connect(self.get_bars_async)
         self.pushButton.clicked.connect(self.show_onekey_sign)
         self.listWidget.verticalScrollBar().setSingleStep(25)
+        self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_images)
 
     def keyPressEvent(self, a0):
         a0.accept()
         if a0.key() == Qt.Key.Key_F5:
             self.get_bars_async()
+
+    def scroll_load_images(self):
+        items = listWidget_get_visible_widgets(self.listWidget)
+        for i in items:
+            i.load_avatar()
 
     def show_onekey_sign(self):
         if self.bduss and self.stoken:
@@ -45,11 +50,14 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
         from subwindow.forum_item import ForumItem
         item = QListWidgetItem()
         widget = ForumItem(data[3], data[4], self.bduss, self.stoken, data[1])
+        widget.load_by_callback = True
         widget.set_info(data[0], data[1] + '吧', leveldesp=data[2])
         widget.set_level_color(data[5])
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
+
+        self.scroll_load_images()
 
     def get_bars_async(self):
         if self.bduss:
@@ -84,7 +92,8 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
                     level_str = forum['level_name']
                     level_value = forum['level_id']
                     ba_info_str = f'Lv.{level_value} {level_str}'
-                    self.add_ba.emit([forum['avatar'], name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1, level_value])
+                    self.add_ba.emit(
+                        [forum['avatar'], name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1, level_value])
             except Exception as e:
                 logging.log_exception(e)
             finally:

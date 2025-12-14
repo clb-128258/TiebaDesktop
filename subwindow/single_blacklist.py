@@ -9,7 +9,7 @@ from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoR
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QWidget, QMessageBox
 
-from publics import qt_window_mgr, profile_mgr, cache_mgr, request_mgr
+from publics import qt_window_mgr, profile_mgr, cache_mgr, request_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread
 import publics.logging as logging
 from ui import user_blacklist_setter
@@ -138,8 +138,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                     else:
                         user_head_pixmap = QPixmap()
                         user_head_pixmap.loadFromData(cache_mgr.get_portrait(user_info.portrait))
-                        user_head_pixmap = user_head_pixmap.scaled(40, 40, Qt.KeepAspectRatio,
-                                                                   Qt.SmoothTransformation)
+                        user_head_pixmap = qt_image.add_cover_for_pixmap(user_head_pixmap, 40)
                         turn_data['head'] = user_head_pixmap
                         turn_data['name'] = user_info.nick_name_new
 

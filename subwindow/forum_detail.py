@@ -10,7 +10,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QDialog, QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
     QTableWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr,qt_image
+from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
     open_url_in_browser, large_num_to_string
 import publics.logging as logging
@@ -55,12 +55,17 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         self.pushButton_8.clicked.connect(self.refresh_main_data)
         self.label_15.linkActivated.connect(open_url_in_browser)
 
+        self.forum_atavar = qt_image.MultipleImage()
+        self.forum_atavar.currentPixmapChanged.connect(self.label.setPixmap)
+        self.forum_atavar.currentPixmapChanged.connect(lambda pm: self.setWindowIcon(QIcon(pm)))
+
         self.listWidget_2.setCurrentRow(default_index)
         self.loading_widget.show()
         self.get_main_info_async()
 
     def closeEvent(self, a0):
         self.loading_widget.hide()
+        self.forum_atavar.destroyImage()
         a0.accept()
         qt_window_mgr.del_window(self)
 
@@ -187,8 +192,8 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
         if not datas['err_info']:
             self.loading_widget.hide()
             self.forum_name = datas['forum_name']
+            self.setWindowTitle(f'{self.forum_name}吧 - 吧详情')
             self.label_2.setText(datas['forum_name'] + '吧')
-            self.label.setPixmap(datas['forum_pixmap'])
             self.label_11.setText(f'吧 ID：{self.forum_id}')
             self.label_3.setText(large_num_to_string(datas['follow_c']))
             self.label_4.setText(large_num_to_string(datas['thread_c']))
@@ -200,6 +205,12 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                   f'你可以到 <a href="https://tieba.baidu.com/f/like/furank?kw={self.forum_name}&ie=utf-8">牛人排行榜</a> '
                                   f'中查看{self.forum_name}吧的等级排行榜。</p>'
                                   f'</body></html>')
+
+            self.forum_atavar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                           datas['avatar'],
+                                           qt_image.ImageCoverType.RoundCover,
+                                           (100,100))
+            self.forum_atavar.loadImage()
 
             forum_desp_text = ''
             if datas['forum_desp']:
@@ -319,15 +330,35 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     # 初始化数据
-                    data = {'forum_name': '', 'has_bawu': False, 'bawu_info': [], 'forum_pixmap': None,
-                            'forum_desp': '', 'thread_c': 0, 'follow_c': 0, 'main_thread_c': 0,
-                            'follow_info': {'isfollow': False, 'level': 0, 'exp': 0, 'level_flag': '', 'isSign': False,
-                                            'next_exp': 0, 'total_sign_count': 0, 'continuous_sign_count': 0,
-                                            'forget_sign_count': 0, 'follow_day': 0, 'today_sign_rank': 0,
-                                            'total_thread_num': 0, 'today_post_num': 0},
-                            'forum_volume': '', 'err_info': '', 'friend_forum_list': [],
-                            'bg_pic_info': {'url': '', 'pixmap': None}, 'forum_desp_ex': '', 'forum_rule_html': '',
-                            'forum_level_value_index': []}
+                    data = {'forum_name': '',
+                            'has_bawu': False,
+                            'bawu_info': [],
+                            'avatar': '',
+                            'forum_desp': '',
+                            'thread_c': 0,
+                            'follow_c': 0,
+                            'main_thread_c': 0,
+                            'follow_info': {'isfollow': False,
+                                            'level': 0,
+                                            'exp': 0,
+                                            'level_flag': '',
+                                            'isSign': False,
+                                            'next_exp': 0,
+                                            'total_sign_count': 0,
+                                            'continuous_sign_count': 0,
+                                            'forget_sign_count': 0,
+                                            'follow_day': 0,
+                                            'today_sign_rank': 0,
+                                            'total_thread_num': 0,
+                                            'today_post_num': 0},
+                            'forum_volume': '',
+                            'err_info': '',
+                            'friend_forum_list': [],
+                            'bg_pic_info': {'url': '', 'pixmap': None},
+                            'forum_desp_ex': '',
+                            'forum_rule_html': '',
+                            'forum_level_value_index': []
+                            }
 
                     async def get_forum_desp_ex():
                         payload = {
@@ -531,19 +562,9 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                     pixmap.loadFromData(response.content)
                                     pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
                                                            Qt.SmoothTransformation)
-                                    pixmap=qt_image.add_cover_for_pixmap(pixmap)
+                                    pixmap = qt_image.add_cover_for_pixmap(pixmap)
                                     single_ff_info['headpix'] = pixmap
                                 data['friend_forum_list'].append(single_ff_info)
-
-                    async def get_self_forum_head():
-                        # 获取吧头像
-                        forum_pixmap = QPixmap()
-                        response = requests.get(forum_info.small_avatar, headers=request_mgr.header)
-                        if response.content:
-                            forum_pixmap.loadFromData(response.content)
-                            forum_pixmap = forum_pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                            forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap)
-                            data['forum_pixmap'] = forum_pixmap
 
                     async def get_bawu_infos():
                         # 有吧务获取吧务信息
@@ -587,6 +608,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                         data['follow_c'] = forum_info.member_num
                         data['main_thread_c'] = forum_info.thread_num
                         data['forum_volume'] = f'{forum_info.category}'
+                        data['avatar'] = forum_info.small_avatar
 
                         result = await asyncio.gather(get_forum_rule(),
                                                       get_forum_desp_ex(),
@@ -594,7 +616,6 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                                       get_forum_bg(),
                                                       get_forums_heads(),
                                                       get_bawu_infos(),
-                                                      get_self_forum_head(),
                                                       get_user_forum_level_info(),
                                                       get_forum_level_map_proto(),
                                                       return_exceptions=True)

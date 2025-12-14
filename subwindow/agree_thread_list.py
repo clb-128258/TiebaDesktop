@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr
+from publics import qt_window_mgr, request_mgr, qt_image
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets
 from ui import star_list
 
@@ -46,11 +46,16 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
     def closeEvent(self, a0):
         a0.accept()
         qt_window_mgr.del_window(self)
+
     def load_item_images(self):
         for thread in listWidget_get_visible_widgets(self.listWidget):
             from subwindow.thread_preview_item import ThreadView
+            from subwindow.thread_reply_item import ReplyItem
             if isinstance(thread, ThreadView):
                 thread.load_all_AsyncImage()
+            elif isinstance(thread, ReplyItem):
+                thread.load_images()
+
     def scroll_load_list_info(self):
         self.load_item_images()
 
@@ -65,7 +70,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
             widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
             widget.load_by_callback = True
 
-            widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['text'],
+            widget.set_infos(infos['portrait'], infos['user_name'], infos['title'], infos['text'],
                              infos['forum_head_pixmap'],
                              infos['forum_name'])
             widget.set_thread_values(infos['thread_data']['vn'], infos['thread_data']['ag'],
@@ -81,11 +86,12 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
             widget.post_id = infos['post_id']
             widget.allow_home_page = True
             widget.subcomment_show_thread_button = True
+            widget.load_by_callback = True
             widget.set_reply_text(
                 '<a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下的回复：'.format(
                     fname=infos['forum_name'], tname=infos['title'], tid=infos['thread_id'],
                     fid=infos['forum_id']))
-            widget.setdatas(infos['user_portrait_pixmap'], infos['user_name'], False, infos['text'],
+            widget.setdatas(infos['portrait'], infos['user_name'], False, infos['text'],
                             infos['picture'], -1, timestr, '', -2, -1, -1, False)
 
         item.setSizeHint(widget.size())
@@ -125,8 +131,6 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                     # 贴子类型0为主题，1为回复
                     data = {'type': 1 if thread.get('top_agree_post') else 0,
                             'user_name': thread['author']['name_show'],
-                            'user_portrait_pixmap': None,
-                            'forum_head_pixmap': None,
                             'thread_id': thread['tid'],
                             'post_id': 0,
                             'forum_id': thread['forum_info']['id'],
@@ -164,16 +168,8 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                         headers=request_mgr.header)
                     if response.content:
                         forum_head_pixmap.loadFromData(response.content)
-                        forum_head_pixmap = forum_head_pixmap.scaled(15, 15, Qt.KeepAspectRatio,
-                                                                     Qt.SmoothTransformation)
+                        forum_head_pixmap = qt_image.add_cover_for_pixmap(forum_head_pixmap, 17)
                         data['forum_head_pixmap'] = forum_head_pixmap
-
-                    # 获取用户头像
-                    portrait = data['portrait']
-                    user_head_pixmap = QPixmap()
-                    user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                    user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    data['user_portrait_pixmap'] = user_head_pixmap
 
                     # 获取主题贴图片
                     if thread.get("media") and data['type'] == 0:

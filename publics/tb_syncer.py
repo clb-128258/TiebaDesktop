@@ -149,7 +149,7 @@ class TiebaMsgSyncer(QObject):
                         self.noticeCountChanged.emit()
                         start_background_thread(self.get_interactMsgAlter)
                 finally:
-                    time.sleep(30)
+                    time.sleep(50)
         self.is_running = False
         logging.log_INFO('notice syncer stopped')
 

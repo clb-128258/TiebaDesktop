@@ -61,7 +61,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
         widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
         widget.load_by_callback = True
 
-        widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], '', None,
+        widget.set_infos(infos['user_portrait'], infos['user_name'], infos['title'], '', None,
                          infos['forum_name'])
         if infos['picture']:
             widget.set_picture([AsyncLoadImage(infos['picture'])])
@@ -109,10 +109,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
                                 'is_del': bool(thread['is_deleted'])}
 
                         portrait = thread["author"]["portrait"].split('?')[0]
-                        user_head_pixmap = QPixmap()
-                        user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                        user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                        data['user_portrait_pixmap'] = user_head_pixmap
+                        data['user_portrait'] = portrait
 
                         if thread.get("media"):
                             data['picture'] = thread['media'][0]["cover_img"]
@@ -136,7 +133,3 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
             asyncio.run(run_func())
 
         start_async()
-
-
-def import_circularly():
-    from subwindow.thread_preview_item import ThreadView

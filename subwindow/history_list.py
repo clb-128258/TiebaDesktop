@@ -3,7 +3,7 @@ from datetime import datetime
 from PyQt5.QtCore import Qt
 
 from ui import view_history, view_history_item, view_history_single_item
-from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, top_toast_widget
+from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, top_toast_widget, qt_image
 
 from PyQt5.QtWidgets import QWidget, QListWidgetItem, QMessageBox, QGraphicsDropShadowEffect
 from PyQt5.QtGui import QIcon, QPixmap, QColor
@@ -73,7 +73,7 @@ class SingleHistoryItem(QWidget, view_history_single_item.Ui_Form):
 
         if pixmap.isNull():
             pixmap.load('ui/tieba_logo_small.png')
-        pixmap = pixmap.scaled(20, 20, transformMode=Qt.SmoothTransformation)
+        pixmap = qt_image.add_cover_for_pixmap(pixmap, 20)
 
         self.setIconAsync.emit(pixmap)
 

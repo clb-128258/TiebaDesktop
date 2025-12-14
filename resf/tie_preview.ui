@@ -23,7 +23,7 @@
      <item>
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>uicon</string>
+        <string/>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -207,7 +207,7 @@
         <item>
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>baicon</string>
+           <string/>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>

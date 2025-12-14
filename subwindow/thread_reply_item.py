@@ -249,7 +249,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
                                              uicon,
                                              qt_image.ImageCoverType.RoundCover,
-                                             (25, 25))
+                                             (23, 23))
         self.label_3.setText(uname)
 
         text_ = ''

@@ -22,6 +22,7 @@ class Ui_Form(object):
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.label_4 = QtWidgets.QLabel(Form)
+        self.label_4.setText("")
         self.label_4.setAlignment(QtCore.Qt.AlignCenter)
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_3.addWidget(self.label_4)
@@ -100,6 +101,7 @@ class Ui_Form(object):
         self.label_10.setObjectName("label_10")
         self.horizontalLayout.addWidget(self.label_10)
         self.label = QtWidgets.QLabel(self.frame)
+        self.label.setText("")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName("label")
         self.horizontalLayout.addWidget(self.label)
@@ -137,7 +139,6 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "贴子预览"))
-        self.label_4.setText(_translate("Form", "uicon"))
         self.label_3.setText(_translate("Form", "username"))
         self.label_6.setText(_translate("Form", "text"))
         self.label_5.setText(_translate("Form", "title"))
@@ -146,7 +147,6 @@ class Ui_Form(object):
         self.label_9.setText(_translate("Form", "image3"))
         self.label_11.setText(_translate("Form", "x 人看过，x 人点赞，x 条回复，x 次转发"))
         self.label_10.setText(_translate("Form", "来自"))
-        self.label.setText(_translate("Form", "baicon"))
         self.label_2.setText(_translate("Form", "baname"))
         self.pushButton_2.setText(_translate("Form", "进贴"))
         self.pushButton_3.setText(_translate("Form", "进吧"))

@@ -430,10 +430,13 @@ class ExtTreeWidgetItem(QTreeWidgetItem):
 class UserItem(QWidget, user_item.Ui_Form):
     """嵌入在列表内的用户组件"""
     user_portrait_id = ''
+    __user_real_portrait = ''
+    __user_avatar_loaded = False
     show_homepage_by_click = False
     switchRequested = pyqtSignal(tuple)
     deleteRequested = pyqtSignal(tuple)
     doubleClicked = pyqtSignal()
+    load_by_callback = False
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -466,24 +469,31 @@ class UserItem(QWidget, user_item.Ui_Form):
         user_home_page = UserHomeWindow(self.bduss, self.stoken, uid)
         qt_window_mgr.add_window(user_home_page)
 
-    def get_portrait(self, p):
-        self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, p, qt_image.ImageCoverType.RoundCover,
-                                         (50, 50))
-        self.portrait_image.loadImage()
+    def get_portrait(self):
+        if not self.__user_avatar_loaded:
+            self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
+                                             self.__user_real_portrait,
+                                             qt_image.ImageCoverType.RoundCover,
+                                             (50, 50))
+            self.portrait_image.loadImage()
+            self.__user_avatar_loaded = True
 
-    def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False, is_tieba_uid=False,custom_desp_str=''):
+    def setdatas(self, uicon, uname, uid=-1, show_switch=False, is_current_user=False, is_tieba_uid=False,
+                 custom_desp_str=''):
         if uicon:
             if isinstance(uicon, QPixmap):
                 self.label.setPixmap(uicon)
             elif isinstance(uicon, str):
-                if uicon.startswith('tb.'):
-                    self.get_portrait(uicon)
+                self.__user_real_portrait = uicon
+                if not self.load_by_callback:
+                    self.get_portrait()
         else:
             self.label.hide()
         self.label_2.setText(uname)
 
         if custom_desp_str:
             self.label_3.setText(custom_desp_str)
+            self.label_3.setToolTip('')
             self.toolButton.hide()
         elif uid != -1:
             self.label_3.setText(f'{"贴吧 ID" if is_tieba_uid else "用户 ID"}: {uid}')

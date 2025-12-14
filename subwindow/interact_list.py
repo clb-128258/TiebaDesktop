@@ -43,6 +43,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('at'))
         self.listWidget_3.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('agree'))
         self.pushButton.clicked.connect(self.refresh_list)
+        self.tabWidget.currentChanged.connect(self.load_item_images)
 
         self.add_post_data.connect(self.set_inter_data_ui)
 
@@ -64,7 +65,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         current_widget = self.tabWidget.currentWidget()
         for lw in self.listwidgets:
             if lw.parent() == current_widget:
-                visible_lw=listWidget_get_visible_widgets(lw)
+                visible_lw = listWidget_get_visible_widgets(lw)
                 for i in visible_lw:
                     i.load_images()
 
@@ -86,6 +87,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
             from subwindow.thread_reply_item import ReplyItem
             widget = ReplyItem(self.bduss, self.stoken)
 
+            widget.load_by_callback = True
             widget.is_comment = data['is_subfloor']
             widget.portrait = data['portrait']
             widget.thread_id = data['thread_id']
@@ -93,10 +95,14 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
             widget.subcomment_show_thread_button = True
             widget.set_reply_text(
                 '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下{ptype}了你：'.format(
-                    fname=data['forum_name'], tname=data['thread_title'], tid=data['thread_id'],
-                    fid=data['forum_id'], sub_floor='[楼中楼] ' if data['is_subfloor'] else '[回复贴] ',
-                    ptype='回复' if data['type'] == 'reply' else '@'))
-            widget.setdatas(data['user_portrait_pixmap'], data['user_name'], False, data['content'],
+                    fname=data['forum_name'],
+                    tname=data['thread_title'],
+                    tid=data['thread_id'],
+                    fid=data['forum_id'],
+                    sub_floor='[楼中楼] ' if data['is_subfloor'] else '[回复贴] ',
+                    ptype='回复' if data['type'] == 'reply' else '@')
+            )
+            widget.setdatas(data['portrait'], data['user_name'], False, data['content'],
                             [], -1, data['post_time_str'], '', -2, -1, -1, False)
         else:
             from subwindow.thread_agreed_item import AgreedThreadItem
@@ -109,8 +115,11 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
             widget.setdatas(data['portrait'], data['user_name'], data['content'],
                             data['pic_link'], data['post_time_str'],
                             '在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 内为你发布的以下内容点了赞：'.format(
-                                fname=data['forum_name'], tname=data['thread_title'], tid=data['thread_id'],
-                                fid=data['forum_id']))
+                                fname=data['forum_name'],
+                                tname=data['thread_title'],
+                                tid=data['thread_id'],
+                                fid=data['forum_id'])
+                            )
         item.setSizeHint(widget.size())
 
         if data['type'] == 'reply':
@@ -161,10 +170,6 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                         for thread in datas['reply_list']:
                             # 用户头像
                             portrait = thread["replyer"]["portrait"].split("?")[0]
-                            user_head_pixmap = QPixmap()
-                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
 
                             # 用户昵称
                             nick_name = thread["replyer"]["name_show"]
@@ -196,7 +201,6 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                                     'forum_name': thread["fname"],
                                     'thread_title': thread_title,
                                     'content': thread["content"],
-                                    'user_portrait_pixmap': user_head_pixmap,
                                     'portrait': portrait,
                                     'user_name': nick_name,
                                     'post_time_str': timestr}
@@ -206,12 +210,6 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                         datas = await client.get_ats(self.at_page)
 
                         for thread in datas.objs:
-                            # 用户头像
-                            user_head_pixmap = QPixmap()
-                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(thread.user.portrait))
-                            user_head_pixmap = user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-
                             # 用户昵称
                             nick_name = thread.user.nick_name_new
 
@@ -243,7 +241,6 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                                     'forum_name': thread.fname,
                                     'thread_title': thread_title,
                                     'content': thread.text,
-                                    'user_portrait_pixmap': user_head_pixmap,
                                     'portrait': thread.user.portrait,
                                     'user_name': nick_name,
                                     'post_time_str': timestr}

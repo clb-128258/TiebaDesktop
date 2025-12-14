@@ -45,11 +45,14 @@ def add_cover_for_pixmap(pixmap: QPixmap, size=-1) -> QPixmap:
     # closing painter event
     painter.end()
 
-    final_size = size if size > 0 else imgsize
-    # return scaled image
-    return QPixmap.fromImage(out_img.scaled(final_size, final_size,
-                                            Qt.KeepAspectRatio,
-                                            Qt.SmoothTransformation))
+    if size == -1:
+        # return original image directly
+        return QPixmap.fromImage(out_img)
+    else:
+        # return scaled image
+        return QPixmap.fromImage(out_img.scaled(size, size,
+                                                Qt.KeepAspectRatio,
+                                                Qt.SmoothTransformation))
 
 
 class ImageType(enum.Enum):
@@ -118,7 +121,6 @@ class MultipleImage(QObject):
             del self.__static_image
 
         QPixmapCache.clear()
-        gc.collect()
 
         self.__image_type = None
         del self.__image_original_binary
