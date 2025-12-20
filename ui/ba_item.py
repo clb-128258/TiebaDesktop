@@ -20,6 +20,7 @@ class Ui_Form(object):
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setObjectName("gridLayout")
         self.label = QtWidgets.QLabel(Form)
+        self.label.setText("")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 0, 0, 2, 1)
@@ -66,7 +67,6 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.label.setText(_translate("Form", "baicon"))
         self.label_2.setText(_translate("Form", "baname"))
         self.pushButton.setText(_translate("Form", "进吧"))
         self.label_9.setText(_translate("Form", "Lv.1"))

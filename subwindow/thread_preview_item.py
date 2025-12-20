@@ -9,7 +9,7 @@ import requests
 from ui import tie_preview
 
 
-class AsyncLoadImage(QObject):
+class AsyncLoadImage(qt_image.MultipleImage):
     """
     将被异步加载的图片内容
 
@@ -17,60 +17,29 @@ class AsyncLoadImage(QObject):
         src_link (str): 图片链接
         baidu_hash (str): 百度图床hash
     """
-    _imageLoaded = pyqtSignal(bool)
 
     def __init__(self, src_link: str, baidu_hash: str = ''):
         super().__init__()
-        self._image_binary = None
-        self._image_pixmap = None
         self.isLoaded = False
 
         self.src_link = src_link
         self.baidu_hash = baidu_hash
 
+        img_type = qt_image.ImageLoadSource.BaiduHash if baidu_hash else qt_image.ImageLoadSource.HttpLink
+        img_src = baidu_hash if baidu_hash else src_link
+        self.setImageInfo(img_type,
+                          img_src,
+                          expectSize=(200, 200))
+
     def load_image_on_qtLabel(self, label: QLabel):
-        def on_img_loaded(success):
-            if success and not label.isHidden():
-                label.setToolTip('贴子图片')
-                label.setPixmap(self._image_pixmap)
-            else:
-                label.setToolTip('此图片加载失败')
-                self.isLoaded = False
+        def on_img_loaded(pixmap):
+            label.setToolTip('贴子图片')
+            label.setPixmap(pixmap)
 
         if not self.isLoaded:
-            self._imageLoaded.connect(on_img_loaded, Qt.QueuedConnection)
-            self.load_image_async()
+            self.currentPixmapChanged.connect(on_img_loaded, Qt.QueuedConnection)
+            self.loadImage()
             self.isLoaded = True
-
-    def load_image_async(self):
-        start_background_thread(self.load_image)
-
-    def load_qtPixmap(self):
-        self._image_pixmap = QPixmap()
-        self._image_pixmap.loadFromData(self._image_binary)
-        if self._image_pixmap.isNull():
-            raise AttributeError('QPixmap.loadFromData failed')
-        self._image_pixmap = self._image_pixmap.scaled(200, 200,
-                                                       Qt.KeepAspectRatio,
-                                                       Qt.SmoothTransformation)
-
-    def load_image(self):
-        try:
-            if not self.baidu_hash:
-                resp = requests.get(self.src_link, headers=request_mgr.header)
-                resp.raise_for_status()
-                self._image_binary = resp.content
-            else:
-                self._image_binary = cache_mgr.get_bd_hash_img(self.baidu_hash)
-
-            if not self._image_binary:
-                raise AttributeError('image binary data is null')
-            self.load_qtPixmap()
-        except Exception as e:
-            logging.log_exception(e)
-            self._imageLoaded.emit(False)
-        else:
-            self._imageLoaded.emit(True)
 
 
 class ThreadView(QWidget, tie_preview.Ui_Form):
@@ -94,7 +63,8 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.pushButton_2.clicked.connect(self.open_thread_detail)
 
         self.portrait_image = qt_image.MultipleImage()
-        self.portrait_image.currentImageChanged.connect(lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.portrait_image.currentImageChanged.connect(
+            lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
         self.destroyed.connect(self.portrait_image.destroyImage)
 
     def load_all_AsyncImage(self):
@@ -130,12 +100,14 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.label_11.setText(text)
 
     def set_infos(self, uicon, uname, title, text, baicon, baname):
-        if isinstance(uicon,QPixmap):
+        if isinstance(uicon, QPixmap):
             self.label_4.setPixmap(uicon)
-        elif isinstance(uicon,str):
+        elif isinstance(uicon, str):
             self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, uicon,
                                              qt_image.ImageCoverType.RoundCover,
                                              (20, 20))
+            if not self.load_by_callback and not self.is_loaded:
+                self.portrait_image.loadImage()
         self.label_3.setText(uname)
         self.label_5.setText(title)
         self.label_6.setText(text)

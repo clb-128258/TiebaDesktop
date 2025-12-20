@@ -1,20 +1,57 @@
 import asyncio
 import gc
+import sys
 
 import aiotieba
 import pyperclip
-import requests
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize
-from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect
+from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
 
-from publics import profile_mgr, qt_window_mgr, request_mgr, cache_mgr, top_toast_widget, qt_image
+from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string
 import publics.logging as logging
 from ui import tie_detail_view
+
+
+def get_item_top(list_widget, index):
+    """获取某个条目的顶部纵坐标"""
+    if index < 0:
+        return -sys.maxsize
+    if index >= list_widget.count():
+        return sys.maxsize
+    return list_widget.visualItemRect(list_widget.item(index)).top()
+
+
+def find_first_at_or_below(list_widget, y):
+    """找到第一个可见的条目"""
+    low, high = 0, list_widget.count()
+
+    # 二分查找
+    while low < high:
+        mid = (low + high) // 2
+        if get_item_top(list_widget, mid) < y:
+            low = mid + 1
+        else:
+            high = mid
+    return low
+
+
+def find_last_at_or_above(list_widget, y):
+    """找到最后一个可见的条目"""
+    low, high = -1, list_widget.count() - 1
+
+    # 二分查找
+    while low < high:
+        mid = (low + high + 1) // 2
+        if get_item_top(list_widget, mid) <= y:
+            low = mid
+        else:
+            high = mid - 1
+    return low
 
 
 class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
@@ -410,8 +447,43 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.get_sub_thread_async()
 
     def load_sub_threads_from_scroll(self):
+        widgets = self.get_visible_replies()
+        for w in widgets:
+            w.load_images()
+
         if self.scrollArea.verticalScrollBar().value() == self.scrollArea.verticalScrollBar().maximum():
             self.get_sub_thread_async()
+
+    def get_visible_replies(self):
+        reply_widgets = []
+        scroll_area = self.scrollArea
+        list_widget = self.listWidget_4
+
+        if list_widget.count() == 0:
+            return reply_widgets
+
+        scroll_y = scroll_area.verticalScrollBar().value()
+        viewport_rect = QRect(0, scroll_y,
+                              scroll_area.viewport().width(),
+                              scroll_area.viewport().height())
+
+        list_pos = list_widget.mapTo(scroll_area.widget(), QPoint(0, 0))
+        visible_top = viewport_rect.top() - list_pos.y()
+        visible_bottom = viewport_rect.bottom() - list_pos.y()
+
+        visible_top = max(visible_top, 0)
+        visible_bottom = min(visible_bottom, list_widget.height() - 1)
+
+        first = find_first_at_or_below(list_widget, visible_top)
+        last = find_last_at_or_above(list_widget, visible_bottom)
+
+        if first >= list_widget.count() or last < 0 or first > last:  # 在数值不合法时
+            return reply_widgets
+
+        for i in range(first, last + 1):
+            reply_widgets.append(list_widget.itemWidget(list_widget.item(i)))
+
+        return reply_widgets
 
     def open_ba_detail(self):
         from subwindow.forum_show_window import ForumShowWindow
@@ -446,9 +518,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         widget = ReplyItem(self.bduss, self.stoken)
         widget.portrait = datas['portrait']
         widget.is_comment = False
+        widget.load_by_callback = True
         widget.thread_id = self.thread_id
         widget.post_id = datas['post_id']
-        widget.setdatas(datas['user_portrait_pixmap'], datas['user_name'], datas['is_author'], datas['content'],
+        widget.setdatas(datas['portrait'], datas['user_name'], datas['is_author'], datas['content'],
                         datas['view_pixmap'],
                         datas['floor'], datas['create_time_str'], datas['user_ip'], datas['reply_num'],
                         datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
@@ -526,11 +599,6 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                     'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}&play_from=pb_voice_play'
                                 voice_info['length'] = t.contents.voice.duration
 
-                            user_head_pixmap = QPixmap()
-                            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                            user_head_pixmap = user_head_pixmap.scaled(25, 25, Qt.KeepAspectRatio,
-                                                                       Qt.SmoothTransformation)
-
                             preview_pixmap = []
                             for j in t.contents.imgs:
                                 # width, height, src, view_src
@@ -541,12 +609,21 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                 preview_pixmap.append(
                                     {'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
-                            tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
-                                     'user_portrait_pixmap': user_head_pixmap, 'view_pixmap': preview_pixmap,
+                            tdata = {'content': content,
+                                     'portrait': portrait,
+                                     'user_name': user_name,
+                                     'view_pixmap': preview_pixmap,
                                      'agree_count': agree_num,
-                                     'create_time_str': time_str, 'user_ip': user_ip, 'is_author': is_author,
-                                     'floor': floor, 'reply_num': reply_num, 'ulevel': user_level, 'post_id': post_id,
-                                     'is_bawu': is_bawu, 'grow_level': grow_level, 'voice_info': voice_info}
+                                     'create_time_str': time_str,
+                                     'user_ip': user_ip,
+                                     'is_author': is_author,
+                                     'floor': floor,
+                                     'reply_num': reply_num,
+                                     'ulevel': user_level,
+                                     'post_id': post_id,
+                                     'is_bawu': is_bawu,
+                                     'grow_level': grow_level,
+                                     'voice_info': voice_info}
 
                             self.add_reply.emit(tdata)
 
@@ -685,9 +762,12 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
                     repost_widget = ThreadView(self.bduss, datas['repost_info']['thread_id'],
                                                datas['repost_info']['forum_id'], self.stoken)
-                    repost_widget.set_infos(datas['repost_info']['author_portrait_pixmap'],
-                                            datas['repost_info']['author_name'], datas['repost_info']['title'],
-                                            datas['repost_info']['content'], None, datas['repost_info']['forum_name'])
+                    repost_widget.set_infos(datas['repost_info']['author_portrait'],
+                                            datas['repost_info']['author_name'],
+                                            datas['repost_info']['title'],
+                                            datas['repost_info']['content'],
+                                            None,
+                                            datas['repost_info']['forum_name'])
                     repost_widget.set_picture([])
                     repost_widget.label_11.show()
                     repost_widget.label_11.setText('这是被转发的贴子。')
@@ -788,12 +868,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         if thread_info.thread.is_share:
                             repost_user_info = await client.get_user_info(thread_info.thread.share_origin.author_id,
                                                                           aiotieba.enums.ReqUInfo.PORTRAIT | aiotieba.enums.ReqUInfo.NICK_NAME)
-
-                            repost_user_head_pixmap = QPixmap()
-                            repost_user_head_pixmap.loadFromData(cache_mgr.get_portrait(repost_user_info.portrait))
-                            repost_user_head_pixmap = repost_user_head_pixmap.scaled(20, 20, Qt.KeepAspectRatio,
-                                                                                     Qt.SmoothTransformation)
-                            repost_info['author_portrait_pixmap'] = repost_user_head_pixmap
+                            repost_info['author_portrait'] = repost_user_info.portrait
                             repost_info['author_name'] = repost_user_info.nick_name_new
 
                             repost_info['title'] = thread_info.thread.share_origin.title

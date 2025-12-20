@@ -21,7 +21,7 @@
    <item row="0" column="0" rowspan="2">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>baicon</string>
+      <string/>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

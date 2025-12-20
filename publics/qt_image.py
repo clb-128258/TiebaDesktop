@@ -136,12 +136,7 @@ class MultipleImage(QObject):
         def on_frame_changed():
             current_image = self.__gif_container.currentImage()
             if self.__cover_type == ImageCoverType.RoundCover:
-                if self.__expect_size[0] and self.__expect_size[1]:
-                    size = min(self.__expect_size[0], self.__expect_size[1])
-                else:
-                    size = min(current_image.width(), current_image.height())  # 遵循原大小
-
-                self.__gif_covered_image = self.__add_cover(current_image, size)
+                self.__gif_covered_image = self.__add_cover(current_image)
 
             self.currentImageChanged.emit(current_image)
             self.currentPixmapChanged.emit(self.currentPixmap())
@@ -211,7 +206,7 @@ class MultipleImage(QObject):
         self.__image_original_binary = image_binary
         self.__judge_image_type()
 
-    def __add_cover(self, image: QImage, size=64) -> QImage:
+    def __add_cover(self, image: QImage, size=-1) -> QImage:
         # https://geek-docs.com/pyqt5/pyqt5-tutorials/g_pyqt5-how-to-create-circular-image-from-any-image.html
 
         image.convertToFormat(QImage.Format_ARGB32)
@@ -248,10 +243,14 @@ class MultipleImage(QObject):
         # closing painter event
         painter.end()
 
-        # return scaled image
-        return out_img.scaled(size, size,
-                              Qt.KeepAspectRatio,
-                              Qt.SmoothTransformation)
+        if size == -1:
+            # return original image
+            return out_img
+        else:
+            # return scaled image
+            return out_img.scaled(size, size,
+                                  Qt.KeepAspectRatio,
+                                  Qt.SmoothTransformation)
 
     def __load_qt_image(self):
         if not self.__image_original_binary:
