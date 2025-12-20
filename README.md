@@ -41,3 +41,7 @@
 友情链接：  
 [TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)  
 [NeoTieBa - 一个基于 Tauri2.0 + Vue3 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)
+
+# 许可声明
+本软件遵循 MIT License 协议发布，请在遵守 MIT License 的前提下使用本软件。  
+本软件仅供学习交流使用，请勿用于违法犯罪用途，使用本软件所产生的任何后果都与作者无关。
