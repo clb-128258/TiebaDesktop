@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(880, 485)
+        Dialog.resize(874, 483)
         Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "QDialog{background-color: rgb(255, 255, 255);}\n"
 "")
@@ -46,7 +46,7 @@ class Ui_Dialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 739, 619))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 733, 619))
         self.scrollAreaWidgetContents.setStyleSheet("QWidget#scrollAreaWidgetContents{background-color: rgb(255, 255, 255);}\n"
 "")
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
@@ -431,8 +431,10 @@ class Ui_Dialog(object):
         self.gridLayout_8.setContentsMargins(0, 0, -1, -1)
         self.gridLayout_8.setObjectName("gridLayout_8")
         self.label_15 = QtWidgets.QLabel(self.page_3)
+        self.label_15.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.label_15.setWordWrap(True)
         self.label_15.setOpenExternalLinks(True)
+        self.label_15.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
         self.label_15.setObjectName("label_15")
         self.gridLayout_8.addWidget(self.label_15, 0, 0, 1, 1)
         self.gridLayout_5.addLayout(self.gridLayout_8, 1, 0, 1, 1)
@@ -534,4 +536,4 @@ class Ui_Dialog(object):
         self.label_7.setText(_translate("Dialog", "贴吧桌面"))
         self.label_8.setText(_translate("Dialog", "版本 version"))
         self.label_6.setText(_translate("Dialog", "icon"))
-        self.label_15.setText(_translate("Dialog", "<html><head/><body><p>贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。<a href=\"https://github.com/clb-128258/TiebaDesktop\"><span style=\" text-decoration: underline; color:#0000ff;\">访问 Github 仓库</span></a></p></body></html>"))
+        self.label_15.setText(_translate("Dialog", "<html><head/><body><p>贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。</p><p>可以访问 Github 仓库，以便与作者取得联系。<a href=\"https://github.com/clb-128258/TiebaDesktop\"><span style=\" text-decoration: underline; color:#0000ff;\">访问本项目的 Github 仓库</span></a></p><p>本软件遵循 MIT License 协议发布，请在遵守 MIT License 的前提下使用本软件。</p><p>本软件仅供学习交流使用，请勿用于违法犯罪用途，使用本软件所产生的任何后果都与作者无关。</p></body></html>"))

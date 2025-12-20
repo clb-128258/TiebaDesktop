@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>880</width>
-    <height>485</height>
+    <width>874</width>
+    <height>483</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -83,7 +83,7 @@ QDialog{background-color: rgb(255, 255, 255);}
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>739</width>
+        <width>733</width>
         <height>619</height>
        </rect>
       </property>
@@ -1062,13 +1062,19 @@ QDialog{background-color: rgb(255, 255, 255);}
              <item row="0" column="0">
               <widget class="QLabel" name="label_15">
                <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。&lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;访问 Github 仓库&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。&lt;/p&gt;&lt;p&gt;可以访问 Github 仓库，以便与作者取得联系。&lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;访问本项目的 Github 仓库&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;本软件遵循 MIT License 协议发布，请在遵守 MIT License 的前提下使用本软件。&lt;/p&gt;&lt;p&gt;本软件仅供学习交流使用，请勿用于违法犯罪用途，使用本软件所产生的任何后果都与作者无关。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                </property>
                <property name="wordWrap">
                 <bool>true</bool>
                </property>
                <property name="openExternalLinks">
                 <bool>true</bool>
+               </property>
+               <property name="textInteractionFlags">
+                <set>Qt::TextBrowserInteraction</set>
                </property>
               </widget>
              </item>
