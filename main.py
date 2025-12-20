@@ -933,8 +933,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     def load_user_portrait(self):
         pixmap = QPixmap()
         pixmap.loadFromData(cache_mgr.get_portrait(self.self_user_portrait))
-        pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        pixmap = qt_image.add_cover_for_pixmap(pixmap)
+        pixmap = qt_image.add_cover_for_pixmap(pixmap, 30)
         self.add_info.emit([pixmap, ''])
 
     def init_user_data(self):

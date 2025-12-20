@@ -1,0 +1,26 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/Error.proto";
+import "proto/Anti.proto";
+import "proto/User.proto";
+import "proto/Profile/UserGodInfo.proto";
+import "proto/Profile/UserAgreeInfo.proto";
+import "proto/Profile/NicknameInfo.proto";
+import "proto/Profile/MemberBlockInfo.proto";
+import "proto/Profile/VipBanner.proto";
+
+message DataRes_Profile {
+    User user = 1;
+    Anti anti_stat = 2;
+    UserGodInfo user_god_info = 5;
+    UserAgreeInfo user_agree_info = 14;
+    NicknameInfo nickname_info = 17;
+    int32 is_black_white = 29;
+    MemberBlockInfo block_info = 36;
+    VipBanner vip_banner = 39;
+}
+message ProfileResIdl {
+    Error error = 1;
+    DataRes_Profile data = 2;
+}

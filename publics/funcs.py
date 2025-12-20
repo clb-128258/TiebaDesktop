@@ -129,7 +129,7 @@ def large_num_to_string(num: int, prespace=False, endspace=False):
         endspace (bool): 在结果数值没有单位后缀时 是否在后面添加空格字符
     """
     if num < 10 ** 4:
-        return ' ' if prespace else "" + str(num) + ' ' if endspace else ""
+        return (' ' if prespace else "") + str(num) + (' ' if endspace else "")
     elif 10 ** 4 <= num < 10 ** 8:
         return str(round(num / 10 ** 4, 2)) + ' 万'
     elif num >= 10 ** 8:

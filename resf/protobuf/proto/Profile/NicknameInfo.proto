@@ -1,0 +1,6 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message NicknameInfo {
+    int32 left_days = 2;
+}

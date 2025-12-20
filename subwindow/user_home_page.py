@@ -1,16 +1,17 @@
 import asyncio
 
 import aiotieba
-import requests
 import pyperclip
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, top_toast_widget, qt_image
+from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
-    make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets
+    make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string
 import publics.logging as logging
+
+from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
 from ui import user_home_page
 
@@ -313,19 +314,27 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             self.label_2.setText(data['name'])
             self.label_2.setToolTip('用户名：' + data['bd_user_name'])
             self.label_9.setText('Lv.' + str(data['level']))
-            self.label_8.setText('获赞数 ' + str(data['agree_c']))
-            self.label_3.setText('贴吧 ID：' + str(data['tieba_id']))
+            self.label_8.setText('获赞数 ' + large_num_to_string(data['agree_c']))
             self.label_4.setText('吧龄 {age} 年'.format(age=data['account_age']))
-            self.label_5.setText('IP 属地：' + data['ip'])
-            self.label_14.setText('发贴数 ' + str(data['post_c']))
+            self.label_14.setText('发贴数 ' + large_num_to_string(data['post_c']))
             self.tabWidget.setTabText(2, '关注的吧 ({c})'.format(c=data['follow_forum_count']))
-            self.tabWidget.setTabText(3, '关注的人 ({c})'.format(c=data['follow']))
-            self.tabWidget.setTabText(4, '粉丝列表 ({c})'.format(c=data['fans']))
+            self.tabWidget.setTabText(3, '关注的人 ({c})'.format(c=large_num_to_string(data['follow'])))
+            self.tabWidget.setTabText(4, '粉丝列表 ({c})'.format(c=large_num_to_string(data['fans'])))
 
             if not data['desp']:
                 self.frame_6.hide()
             else:
                 self.label_6.setText(cut_string(data['desp'], 50))
+
+            if not data['tieba_id']:
+                self.label_3.hide()
+            else:
+                self.label_3.setText('贴吧 ID：' + str(data['tieba_id']))
+
+            if not data['ip']:
+                self.label_5.hide()
+            else:
+                self.label_5.setText('IP 属地：' + data['ip'])
 
             sex_icon_path = ''
             sex_icon_desp = ''
@@ -344,6 +353,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             have_flag_showed = False
             if data['is_banned']:
                 self.frame_3.show()
+                self.label_12.setText(
+                    f'该用户被全吧 {("封禁" + data["unban_days"] + " 天") if data["unban_days"] != 36500 else "永久封禁"}，'
+                    f'在封禁期间贴子和回复将不可见。')
                 have_flag_showed = True
             if data['is_dashen']:
                 self.frame_2.show()
@@ -403,6 +415,8 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             'fans': 0,
                             'is_dashen': False,
                             'is_banned': False,
+                            'unban_days': 0,
+                            'has_chance_to_unban': False,
                             'thread_reply_permission': 0,
                             'follow_forums_show_permission': 0,
                             'desp': '',
@@ -411,12 +425,34 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     if self.user_id_portrait in ('00000000', 0):
                         data['error'] = '无法加载匿名用户的个人主页信息。'
                     else:
-                        # 获取用户信息
-                        user_info = await client.get_user_info(self.user_id_portrait, aiotieba.ReqUInfo.ALL)
+                        request_body_proto = ProfileReqIdl_pb2.ProfileReqIdl()
+
+                        request_body_proto.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+                        request_body_proto.data.common._client_type = 2
+                        request_body_proto.data.common.BDUSS = self.bduss
+                        request_body_proto.data.common.stoken = self.stoken
+
+                        request_body_proto.data.need_post_count = 1
+                        request_body_proto.data.page = 1
+                        if isinstance(self.user_id_portrait, int):
+                            request_body_proto.data.uid = self.user_id_portrait
+                        else:
+                            request_body_proto.data.friend_uid_portrait = self.user_id_portrait
+
+                        response_origin = request_mgr.run_protobuf_api('/c/u/user/profile',
+                                                                       payloads=request_body_proto.SerializeToString(),
+                                                                       cmd_id=303012,
+                                                                       host_type=2)
+
+                        response_proto = ProfileResIdl_pb2.ProfileResIdl()
+                        response_proto.ParseFromString(response_origin)
+
+                        user_info = aiotieba.profile.UserInfo_pf.from_tbdata(response_proto.data)  # 向下兼容
 
                         # 判断是否出错
-                        if user_info.err:
-                            data['error'] = str(user_info.err)
+                        if response_proto.error.errorno not in (0, 220012):  # 被封号了也显示信息
+                            data['error'] = str(
+                                f'{response_proto.error.errmsg} (错误代码 {response_proto.error.errorno})')
                         else:
                             self.real_user_id = user_info.user_id
                             self.nick_name = data['name'] = user_info.nick_name_new
@@ -431,7 +467,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             data['follow'] = user_info.follow_num
                             data['fans'] = user_info.fan_num
                             data['is_dashen'] = bool(user_info.is_god)
-                            data['is_banned'] = bool(user_info.is_blocked)
+                            data['is_banned'] = bool(response_proto.data.anti_stat.block_stat)
+                            if data['is_banned']:
+                                data['unban_days'] = response_proto.data.anti_stat.days_tofree
+                                data['has_chance_to_unban'] = bool(response_proto.data.anti_stat.has_chance)
                             data['thread_reply_permission'] = user_info.priv_reply
                             data['follow_forums_show_permission'] = user_info.priv_like
                             data['desp'] = user_info.sign
