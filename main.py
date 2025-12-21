@@ -219,6 +219,10 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         webview_login.triggered.connect(self.add_account)
         menu.addAction(webview_login)
 
+        qr_login = QAction('扫码登录', self)
+        qr_login.triggered.connect(self.add_account_qrcode)
+        menu.addAction(qr_login)
+
         bduss_directly_login = QAction('高级登录', self)
         bduss_directly_login.triggered.connect(self.add_account_senior)
         menu.addAction(bduss_directly_login)
@@ -258,6 +262,11 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
     def add_account(self):
         d = LoginWebView()
         d.resize(1065, 680)
+        d.exec()
+        self.get_logon_accounts()
+
+    def add_account_qrcode(self):
+        d = QRLoginDialog()
         d.exec()
         self.get_logon_accounts()
 
@@ -534,6 +543,338 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.listWidget_2.setItemWidget(item, widget)
 
 
+class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
+    """扫码登录对话框"""
+    BAIDU_PASSPORT_HOST = 'passport.baidu.com'
+    qr_code_loaded = pyqtSignal(dict)
+    qr_status_changed = pyqtSignal(dict)
+
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.toolButton.setIcon(QIcon('ui/refresh.png'))
+
+        self.qr_sign = ''
+        self.tangram_guid = ''
+        self.is_qr_loading = False
+        self.is_window_using = True
+        self.session = requests.Session()
+        self.session.trust_env = True
+
+        self.loading_widget = LoadingFlashWidget(caption='二维码加载中...')
+        self.loading_widget.cover_widget(self.label_3)
+        self.loading_widget.hide()
+        self.qr_code_image = qt_image.MultipleImage()
+        self.qr_code_image.currentPixmapChanged.connect(self.label_3.setPixmap)
+        self.qr_code_image.imageLoadSucceed.connect(lambda: self.on_qrimg_loaded(True))
+        self.qr_code_image.imageLoadFailed.connect(lambda: self.on_qrimg_loaded(False))
+
+        self.qr_code_loaded.connect(self.load_qrcode_img)
+        self.qr_status_changed.connect(self.on_login_state_changed)
+        self.toolButton.clicked.connect(self.get_new_qr_code_async)
+
+        self.start_looper()
+        self.get_new_qr_code_async()
+
+    def closeEvent(self, a0):
+        self.is_window_using = False
+        a0.accept()
+
+    def keyPressEvent(self, a0):
+        if a0.key() == Qt.Key.Key_Escape:
+            a0.ignore()
+            self.close()
+
+    def parse_response(self, text):
+        text = text.replace(f'{self.tangram_guid}(', '')[0:-1]
+        if text.endswith(')'):
+            text = text[0:-1]
+        return text
+
+    def parse_response_qrbdusslogin(self, text):
+        final_text = text.replace(f'bd__cbs__iou0dl(', '')[0:-1].replace(' ', '').replace(r'\&', '').replace('\'', '\"')
+        return final_text
+
+    def on_login_state_changed(self, data):
+        if data['type'] == 1:
+            self.label_3.setText('二维码已过期，\n请重新加载')
+        elif data['type'] == 2:
+            self.label_3.setText('扫码成功，\n请在手机上确认')
+        elif data['type'] == 3:
+            self.label_3.setText('你已取消扫码，\n二维码已失效，\n请重新加载')
+        elif data['type'] == 4:
+            self.label_3.setText('百度服务器要求短信验证，\n请使用网页登录')
+        elif data['type'] == 5:
+            QMessageBox.information(self, '登录成功', '恭喜你，已经成功扫码登录账号。', QMessageBox.Ok)
+            self.close()
+
+    def get_bduss_by_token(self, token):
+        header = {
+            'User-Agent': request_mgr.header['User-Agent'],
+            'Accept-Encoding': "gzip, deflate, br, zstd",
+            'sec-ch-ua-platform': "\"Windows\"",
+            'sec-ch-ua': "\"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            'sec-ch-ua-mobile': "?0",
+            'Sec-Fetch-Site': "same-site",
+            'Sec-Fetch-Mode': "no-cors",
+            'Sec-Fetch-Dest': "script",
+            'Referer': "https://tieba.baidu.com/",
+            'Accept-Language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+            "Connection": "keep-alive",
+        }
+
+        timestamp = time.time()
+        timestamp_second = int(timestamp)
+        timestamp_ms = int(timestamp * 1000)
+        params = {
+            "v": str(timestamp_ms),
+            "bduss": token,
+            "u": "",
+            "loginVersion": "v5",
+            "qrcode": "1",
+            "tpl": "tb",
+            "maskId": "",
+            "fileId": "",
+            "apiver": "v3",
+            "tt": str(timestamp_ms),
+            "traceid": "",
+            "time": str(timestamp_second),
+            "alg": "v3",
+            "elapsed": "10",
+            "callback": "bd__cbs__iou0dl"
+        }
+
+        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{self.BAIDU_PASSPORT_HOST}/v3/login/main/qrbdusslogin',
+                                    headers=header, params=params)
+        response.raise_for_status()
+        json_text = self.parse_response_qrbdusslogin(response.text)
+        jsonify_data = json.loads(json_text)
+        response.close()
+
+        return jsonify_data
+
+    def query_qr_status(self):
+        header = {
+            'User-Agent': request_mgr.header['User-Agent'],
+            'Accept-Encoding': "gzip, deflate, br, zstd",
+            'sec-ch-ua-platform': "\"Windows\"",
+            'sec-ch-ua': "\"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            'sec-ch-ua-mobile': "?0",
+            'Sec-Fetch-Site': "same-site",
+            'Sec-Fetch-Mode': "no-cors",
+            'Sec-Fetch-Dest': "script",
+            'Referer': "https://tieba.baidu.com/",
+            'Accept-Language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+            "Connection": "keep-alive",
+        }
+
+        timestamp = time.time()
+        timestamp_ms = int(timestamp * 1000)
+        params = {
+            "channel_id": self.qr_sign,
+            "tpl": "tb",
+            "_sdkFrom": "1",
+            "callback": self.tangram_guid,
+            "apiver": "v3",
+            "tt": str(timestamp_ms),
+            '_': str(timestamp_ms),
+        }
+
+        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{self.BAIDU_PASSPORT_HOST}/channel/unicast',
+                                    headers=header, params=params)
+        response.raise_for_status()
+        json_text = self.parse_response(response.text)
+        jsonify_data = json.loads(json_text)
+        response.close()
+
+        return jsonify_data
+
+    def write_user_info(self, bduss, stoken):
+        async def get_self_info(bduss, stoken):
+            try:
+                async with aiotieba.Client(bduss, stoken, proxy=True) as client:
+                    user_info = await client.get_self_info()
+                    return user_info.portrait, user_info.nick_name_new, user_info.user_id
+            except:
+                return '', '', 0
+
+        try:
+            # 获取用户信息
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            portrait, name, uid = asyncio.run(get_self_info(bduss, stoken))
+
+            if (portrait and name and uid):
+                pf = load_json_secret(f'{datapath}/user_bduss')
+
+                if not pf['login_list']:  # 在没有账号登上去的情况下，把这个账号设置为当前账号
+                    pf['current_bduss'] = bduss
+                else:
+                    # 找一下有没有旧的登录信息，有就删除
+                    for i in tuple(pf['login_list']):
+                        if i['portrait'] == portrait:
+                            # 如果旧信息是当前账号，把当前账号也更新一次
+                            if pf['current_bduss'] == i['bduss']:
+                                pf['current_bduss'] = bduss
+                            pf['login_list'].remove(i)
+                            break
+                # 添加新的登录信息
+                pf['login_list'].append(
+                    {'bduss': bduss, 'stoken': stoken, 'portrait': portrait, 'name': name,
+                     'uid': uid})
+
+                save_json_secret(pf, f'{datapath}/user_bduss')
+                mainw.refresh_all_datas()  # 更新主页面信息
+                if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
+                    shutil.rmtree(f'{datapath}/webview_data/{uid}')
+                os.mkdir(f'{datapath}/webview_data/{uid}')
+            else:
+                raise Exception('user info is null')
+        except Exception as e:
+            logging.log_exception(e)
+            return False
+        else:
+            return True
+
+    def start_looper(self):
+        self.loop_thread = start_background_thread(self.status_looper)
+
+    def status_looper(self):
+        """二维码状态轮询器"""
+        loop_count = 0
+        current_sign = self.qr_sign
+
+        while self.is_window_using:
+            if current_sign != self.qr_sign:
+                # 在二维码发生更改时，重新初始化数据
+                loop_count = 0
+                current_sign = self.qr_sign
+                logging.log_INFO(f'looping qr code {current_sign}')
+            elif self.is_qr_loading or not current_sign:
+                # 二维码在加载或没有初始化时不操作
+                pass
+            else:
+                if loop_count >= 20:  # 在循环次数到上限时，通知二维码过期，重新初始化数据
+                    self.qr_status_changed.emit({'type': 1})
+                    loop_count = 0
+                    current_sign = ''
+
+                try:
+                    resp = self.query_qr_status()
+                    logging.log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
+
+                    if resp['errno'] == 1:
+                        # 没扫码，不操作
+                        pass
+                    elif resp['errno'] == 0:
+                        channel_v = resp['channel_v']
+                        channel_v_json = json.loads(channel_v)
+                        if channel_v_json['status'] == 1:
+                            # 已经扫码，等待手机确认
+                            self.qr_status_changed.emit({'type': 2})
+                        elif channel_v_json['status'] == 2:
+                            # 用户取消扫码登录
+                            self.qr_status_changed.emit({'type': 3})
+                        elif channel_v_json['status'] == 0:
+                            # 用户点击确定登录，登录成功
+                            login_token = channel_v_json['v']
+                            login_data = self.get_bduss_by_token(login_token)
+                            if int(login_data['data']['session']['needvcode']):
+                                # 需要验证码
+                                self.qr_status_changed.emit({'type': 4})
+                            else:
+                                # 正常上号
+                                bduss = login_data['data']['session']['bduss']
+                                stoken = login_data['data']['session']['stoken']
+                                result = self.write_user_info(bduss, stoken)
+                                if result:
+                                    self.qr_status_changed.emit({'type': 5})
+                                else:
+                                    self.qr_status_changed.emit({'type': 6})
+                    else:
+                        raise Exception(f'errno is {resp["errno"]}')
+
+                except Exception as e:
+                    logging.log_exception(e)
+                else:
+                    loop_count += 1
+
+            time.sleep(1)  # 休眠
+        else:
+            logging.log_INFO(f'qr code loop thread will exit')
+
+    def on_qrimg_loaded(self, success):
+        if not success:
+            self.label_3.setText('二维码图片加载失败')
+        self.loading_widget.hide()
+        self.is_qr_loading = False
+
+    def load_qrcode_img(self, data):
+        """已获取到token, 开始异步加载二维码图片"""
+        if not data['success']:
+            self.label_3.setText(data['info'])
+            self.loading_widget.hide()
+        else:
+            self.qr_code_image.destroyImage()
+            self.qr_code_image.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                            data['qr_code_url'])
+            self.qr_code_image.loadImage()
+
+    def get_new_qr_code_async(self):
+        if not self.is_qr_loading:
+            self.is_qr_loading = True
+            self.loading_widget.show()
+            start_background_thread(self.get_new_qr_code)
+
+    def get_new_qr_code(self):
+        emit_data = {'success': False, 'info': '', 'qr_code_url': ''}
+
+        try:
+            header = copy.deepcopy(request_mgr.header)
+            del header['x-requested-with']
+            header['Referer'] = 'https://tieba.baidu.com/'
+
+            timestamp = time.time()
+            timestamp_second = int(timestamp)
+            timestamp_ms = int(timestamp * 1000)
+            self.tangram_guid = f'tangram_guid_{timestamp_ms}'
+            params = {
+                "lp": "pc",
+                "qrloginfrom": "pc",
+                "apiver": "v3",
+                "tt": str(timestamp_ms),
+                "tpl": "tb",
+                "logPage": f"traceId:pc_loginv5_{timestamp_second},logPage:loginv5",
+                "callback": self.tangram_guid
+            }
+
+            response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{self.BAIDU_PASSPORT_HOST}/v2/api/getqrcode',
+                                        headers=header, params=params)
+            response.raise_for_status()
+            json_text = self.parse_response(response.text)
+            jsonify_data = json.loads(json_text)
+            response.close()
+
+            if jsonify_data['errno'] != 0:
+                raise ValueError(f'Response status code is {jsonify_data["errno"]}')
+            else:
+                emit_data['qr_code_url'] = request_mgr.SCHEME_HTTP + jsonify_data['imgurl']
+                self.qr_sign = jsonify_data['sign']
+        except Exception as e:
+            logging.log_exception(e)
+            emit_data['success'] = False
+            emit_data['info'] = str(e)
+            self.is_qr_loading = False
+        else:
+            emit_data['success'] = True
+            emit_data['info'] = '获取成功'
+        finally:
+            self.qr_code_loaded.emit(emit_data)
+
+
 class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
     """高级登录对话框"""
 
@@ -592,7 +933,7 @@ class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
                 mainw.refresh_all_datas()  # 更新主页面信息
                 if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
                     shutil.rmtree(f'{datapath}/webview_data/{uid}')
-                os.mkdir(f'{datapath}/webview_data/{profile_mgr.current_uid}')
+                os.mkdir(f'{datapath}/webview_data/{uid}')
 
                 QMessageBox.information(self, '登录成功', f'账号 {name} 已经登录成功，登录信息已保存至本地。',
                                         QMessageBox.Ok)

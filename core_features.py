@@ -20,7 +20,7 @@ from subwindow.user_home_page import UserHomeWindow
 from subwindow.history_list import HistoryViewWindow
 from subwindow.mainwindow_menu import MainPopupMenu
 
-from ui import mainwindow, settings, login_by_bduss
+from ui import mainwindow, settings, login_by_bduss, qr_login
 
 import sys
 import os
@@ -34,6 +34,7 @@ import shutil
 import locale
 import platform
 import time
+import copy
 
 if os.name == 'nt':
     import win32api

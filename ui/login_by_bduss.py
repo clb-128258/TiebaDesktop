@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(535, 158)
+        Dialog.resize(543, 142)
         Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "QDialog{background-color: rgb(255, 255, 255);}\n"
 "")
@@ -28,6 +28,7 @@ class Ui_Dialog(object):
         self.gridLayout.addWidget(self.lineEdit_2, 3, 0, 1, 3)
         self.label = QtWidgets.QLabel(Dialog)
         self.label.setWordWrap(True)
+        self.label.setOpenExternalLinks(True)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 0, 0, 1, 3)
         spacerItem = QtWidgets.QSpacerItem(339, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -49,8 +50,6 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "高级登录"))
         self.lineEdit.setPlaceholderText(_translate("Dialog", "请输入 BDUSS"))
         self.lineEdit_2.setPlaceholderText(_translate("Dialog", "请输入 STOKEN"))
-        self.label.setText(_translate("Dialog", "高级登录功能允许你通过现有的 BDUSS 和 STOKEN 进行登录。\n"
-"仅在网页登录功能出现问题或是在你的平台上不可用时，才推荐使用此功能。\n"
-"注：随着版本更新，本功能可能会出现各种问题，因此不推荐使用。"))
+        self.label.setText(_translate("Dialog", "<html><head/><body><p>高级登录功能允许你通过现有的 BDUSS 和 STOKEN 进行登录。<br>请在下方输入 BDUSS 或 STOKEN（<a href=\"https://aiotieba.cc/tutorial/start/#bduss\"><span style=\" text-decoration: underline; color:#0000ff;\">如何从浏览器中获取 BDUSS</span></a>）：</p></body></html>"))
         self.pushButton.setText(_translate("Dialog", "登录"))
         self.pushButton_2.setText(_translate("Dialog", "取消"))
