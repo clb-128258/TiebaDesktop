@@ -446,10 +446,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             # 启动刷新
             self.get_sub_thread_async()
 
-    def load_sub_threads_from_scroll(self):
+    def load_sub_thread_images(self):
         widgets = self.get_visible_replies()
         for w in widgets:
             w.load_images()
+
+    def load_sub_threads_from_scroll(self):
+        self.load_sub_thread_images()
 
         if self.scrollArea.verticalScrollBar().value() == self.scrollArea.verticalScrollBar().maximum():
             self.get_sub_thread_async()
@@ -539,6 +542,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         if widget.width() > self.width_count_replies:
             self.width_count_replies = widget.width()
             self.listWidget_4.setMinimumWidth(self.width_count_replies)
+
+        self.load_sub_thread_images()
 
     def get_sub_thread_async(self):
         if not self.is_getting_replys and self.reply_page != -1:

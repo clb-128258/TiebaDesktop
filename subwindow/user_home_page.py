@@ -354,7 +354,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             if data['is_banned']:
                 self.frame_3.show()
                 self.label_12.setText(
-                    f'该用户被全吧 {("封禁" + data["unban_days"] + " 天") if data["unban_days"] != 36500 else "永久封禁"}，'
+                    f'该用户被全吧 {("封禁 " + str(data["unban_days"]) + " 天") if data["unban_days"] != 36500 else "永久封禁"}，'
                     f'在封禁期间贴子和回复将不可见。')
                 have_flag_showed = True
             if data['is_dashen']:
