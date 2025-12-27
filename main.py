@@ -561,6 +561,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
         self.tangram_guid = ''
         self.is_qr_loading = False
         self.is_window_using = True
+        self.is_login_succeed = False
         self.session = requests.Session()
         self.session.trust_env = True
 
@@ -580,8 +581,21 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
         self.get_new_qr_code_async()
 
     def closeEvent(self, a0):
-        self.is_window_using = False
-        a0.accept()
+        def do_close():
+            self.is_window_using = False
+            self.session.close()
+            a0.accept()
+
+        if self.is_login_succeed:
+            do_close()
+        else:
+            if QMessageBox.information(self,
+                                       '提示',
+                                       '你确实要中止登录流程吗？',
+                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                do_close()
+            else:
+                a0.ignore()
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_Escape:
@@ -600,15 +614,18 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
 
     def on_login_state_changed(self, data):
         if data['type'] == 1:
-            self.label_3.setText('二维码已过期，\n请重新加载')
+            self.label_3.setText('二维码已过期，请重新加载')
         elif data['type'] == 2:
-            self.label_3.setText('扫码成功，\n请在手机上确认')
+            self.label_3.setText('扫码成功，请在手机上确认')
         elif data['type'] == 3:
-            self.label_3.setText('你已取消扫码，\n二维码已失效，\n请重新加载')
+            self.label_3.setText('你已取消扫码，二维码已失效，请重新加载')
         elif data['type'] == 4:
-            self.label_3.setText('百度服务器要求短信验证，\n请使用网页登录')
+            self.label_3.setText('百度服务器要求短信验证，请使用网页登录')
         elif data['type'] == 5:
-            QMessageBox.information(self, '登录成功', '恭喜你，已经成功扫码登录账号。', QMessageBox.Ok)
+            QMessageBox.information(self, '登录成功',
+                                    f'你已成功登录账号 {data["user"]}。\n可以在 设置-账号管理 中找到你的账号。',
+                                    QMessageBox.Ok)
+            mainw.refresh_all_datas()  # 更新主页面信息
             self.close()
 
     def get_bduss_by_token(self, token):
@@ -656,6 +673,40 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
 
         return jsonify_data
 
+    def handle_qr_status(self, resp):
+        """处理扫码轮询逻辑"""
+        if resp['errno'] == 1:
+            # 没扫码，不操作
+            pass
+        elif resp['errno'] == 0:
+            channel_v = resp['channel_v']
+            channel_v_json = json.loads(channel_v)
+            if channel_v_json['status'] == 1:
+                # 已经扫码，等待手机确认
+                self.qr_status_changed.emit({'type': 2})
+            elif channel_v_json['status'] == 2:
+                # 用户取消扫码登录
+                self.qr_status_changed.emit({'type': 3})
+            elif channel_v_json['status'] == 0:
+                # 用户点击确定登录，登录成功
+                login_token = channel_v_json['v']
+                login_data = self.get_bduss_by_token(login_token)
+                if int(login_data['data']['session']['needvcode']):
+                    # 需要验证码
+                    self.qr_status_changed.emit({'type': 4})
+                else:
+                    # 正常上号
+                    bduss = login_data['data']['session']['bduss']
+                    stoken = login_data['data']['session']['stoken']
+                    result = self.write_user_info(bduss, stoken)
+                    if result:
+                        self.is_login_succeed = True
+                        self.qr_status_changed.emit({'type': 5, 'user': result})
+                    else:
+                        self.qr_status_changed.emit({'type': 6})
+        else:
+            raise Exception(f'errno is {resp["errno"]}')
+
     def query_qr_status(self):
         header = {
             'User-Agent': request_mgr.header['User-Agent'],
@@ -693,6 +744,8 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
         return jsonify_data
 
     def write_user_info(self, bduss, stoken):
+        """向本地写入登录信息"""
+
         async def get_self_info(bduss, stoken):
             try:
                 async with aiotieba.Client(bduss, stoken, proxy=True) as client:
@@ -727,17 +780,16 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
                      'uid': uid})
 
                 save_json_secret(pf, f'{datapath}/user_bduss')
-                mainw.refresh_all_datas()  # 更新主页面信息
                 if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
                     shutil.rmtree(f'{datapath}/webview_data/{uid}')
                 os.mkdir(f'{datapath}/webview_data/{uid}')
+
+                return f'{name} (用户 ID: {uid})'
             else:
                 raise Exception('user info is null')
         except Exception as e:
             logging.log_exception(e)
-            return False
-        else:
-            return True
+            return ''
 
     def start_looper(self):
         self.loop_thread = start_background_thread(self.status_looper)
@@ -757,50 +809,21 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
                 # 二维码在加载或没有初始化时不操作
                 pass
             else:
-                if loop_count >= 20:  # 在循环次数到上限时，通知二维码过期，重新初始化数据
+                if loop_count >= 20:
+                    # 在循环次数到上限时，通知二维码过期，重新初始化数据
                     self.qr_status_changed.emit({'type': 1})
                     loop_count = 0
                     current_sign = ''
-
-                try:
-                    resp = self.query_qr_status()
-                    logging.log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
-
-                    if resp['errno'] == 1:
-                        # 没扫码，不操作
-                        pass
-                    elif resp['errno'] == 0:
-                        channel_v = resp['channel_v']
-                        channel_v_json = json.loads(channel_v)
-                        if channel_v_json['status'] == 1:
-                            # 已经扫码，等待手机确认
-                            self.qr_status_changed.emit({'type': 2})
-                        elif channel_v_json['status'] == 2:
-                            # 用户取消扫码登录
-                            self.qr_status_changed.emit({'type': 3})
-                        elif channel_v_json['status'] == 0:
-                            # 用户点击确定登录，登录成功
-                            login_token = channel_v_json['v']
-                            login_data = self.get_bduss_by_token(login_token)
-                            if int(login_data['data']['session']['needvcode']):
-                                # 需要验证码
-                                self.qr_status_changed.emit({'type': 4})
-                            else:
-                                # 正常上号
-                                bduss = login_data['data']['session']['bduss']
-                                stoken = login_data['data']['session']['stoken']
-                                result = self.write_user_info(bduss, stoken)
-                                if result:
-                                    self.qr_status_changed.emit({'type': 5})
-                                else:
-                                    self.qr_status_changed.emit({'type': 6})
-                    else:
-                        raise Exception(f'errno is {resp["errno"]}')
-
-                except Exception as e:
-                    logging.log_exception(e)
                 else:
-                    loop_count += 1
+                    # 执行轮询逻辑
+                    try:
+                        resp = self.query_qr_status()
+                        logging.log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
+                        self.handle_qr_status(resp)
+                    except Exception as e:
+                        logging.log_exception(e)
+                    else:
+                        loop_count += 1
 
             time.sleep(1)  # 休眠
         else:
