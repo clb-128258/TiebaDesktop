@@ -316,6 +316,24 @@ class Ui_Form(object):
         self.gridLayout_2.addWidget(self.label_10, 0, 1, 1, 1)
         self.gridLayout_2.setColumnStretch(1, 1)
         self.verticalLayout_2.addWidget(self.frame_2)
+        self.frame_7 = QtWidgets.QFrame(self.frame_8)
+        self.frame_7.setStyleSheet("QFrame{\n"
+"    background-color: rgb(154, 154, 154);\n"
+"}")
+        self.frame_7.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_7.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_7.setObjectName("frame_7")
+        self.gridLayout_12 = QtWidgets.QGridLayout(self.frame_7)
+        self.gridLayout_12.setContentsMargins(-1, 4, -1, 4)
+        self.gridLayout_12.setObjectName("gridLayout_12")
+        self.label_17 = QtWidgets.QLabel(self.frame_7)
+        self.label_17.setObjectName("label_17")
+        self.gridLayout_12.addWidget(self.label_17, 0, 1, 1, 1)
+        self.label_18 = QtWidgets.QLabel(self.frame_7)
+        self.label_18.setObjectName("label_18")
+        self.gridLayout_12.addWidget(self.label_18, 0, 0, 1, 1)
+        self.gridLayout_12.setColumnStretch(1, 1)
+        self.verticalLayout_2.addWidget(self.frame_7)
         self.frame_5 = QtWidgets.QFrame(self.frame_8)
         self.frame_5.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
@@ -334,7 +352,7 @@ class Ui_Form(object):
         self.gridLayout_9.setRowStretch(2, 1)
 
         self.retranslateUi(Form)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(3)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
@@ -362,4 +380,6 @@ class Ui_Form(object):
         self.label_12.setText(_translate("Form", "该用户被全吧封禁，贴子和回复将不可见。"))
         self.label_7.setText(_translate("Form", "icon"))
         self.label_10.setText(_translate("Form", "该用户是贴吧大神"))
+        self.label_17.setText(_translate("Form", "你已拉黑该用户，具体拉黑类型请到拉黑功能中查看。"))
+        self.label_18.setText(_translate("Form", "icon"))
         self.label_16.setText(_translate("Form", "该用户设置了贴子评论权限。"))

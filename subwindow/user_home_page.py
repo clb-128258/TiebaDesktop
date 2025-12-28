@@ -37,6 +37,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_11.setPixmap(QPixmap('ui/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
+        self.label_18.setPixmap(QPixmap('ui/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
         self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
 
         # 隐藏组件
@@ -45,6 +46,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.frame_3.hide()
         self.frame_5.hide()
         self.frame_4.hide()
+        self.frame_7.hide()
 
         self.page = {'thread': {'loading': False, 'page': 1},
                      'reply': {'loading': False, 'page': 1},
@@ -332,6 +334,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             self.label_8.setText('获赞数 ' + large_num_to_string(data['agree_c']))
             self.label_4.setText('吧龄 {age} 年'.format(age=data['account_age']))
             self.label_14.setText('发贴数 ' + large_num_to_string(data['post_c']))
+            self.tabWidget.setTabText(0, '主题贴 ({c})'.format(c=large_num_to_string(data['thread_c'])))
+            self.tabWidget.setTabText(1,
+                                      '回复贴 ({c})'.format(c=large_num_to_string(data['post_c'] - data['thread_c'])))
             self.tabWidget.setTabText(2, '关注的吧 ({c})'.format(c=data['follow_forum_count']))
             self.tabWidget.setTabText(3, '关注的人 ({c})'.format(c=large_num_to_string(data['follow'])))
             self.tabWidget.setTabText(4, '粉丝列表 ({c})'.format(c=large_num_to_string(data['fans'])))
@@ -372,8 +377,12 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     f'该用户被全吧 {("封禁 " + str(data["unban_days"]) + " 天") if data["unban_days"] != 36500 else "永久封禁"}，'
                     f'在封禁期间贴子和回复将不可见。')
                 have_flag_showed = True
-            if data['is_dashen']:
+            if data['is_blacked']:
+                self.frame_7.show()
+                have_flag_showed = True
+            if data['god_info']:
                 self.frame_2.show()
+                self.label_10.setText(data['god_info'])
                 have_flag_showed = True
             if data['thread_reply_permission'] != 1:
                 self.frame_5.show()
@@ -411,88 +420,99 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
     def get_head_info(self):
         async def run_func():
             try:
-                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    # 初始化数据
-                    data = {'error': '',
-                            'name': '',
-                            'sex': 0,
-                            'level': 0,
-                            'agree_c': 0,
-                            'tieba_id': 0,
-                            'post_c': 0,
-                            'account_age': 0.0,
-                            'ip': '',
-                            'follow_forum_count': 0,
-                            'follow': 0,
-                            'fans': 0,
-                            'is_dashen': False,
-                            'is_banned': False,
-                            'unban_days': 0,
-                            'has_chance_to_unban': False,
-                            'thread_reply_permission': 0,
-                            'follow_forums_show_permission': 0,
-                            'desp': '',
-                            'bd_user_name': ''}
+                # 初始化数据
+                data = {'error': '',
+                        'name': '',
+                        'sex': 0,
+                        'level': 0,
+                        'agree_c': 0,
+                        'tieba_id': 0,
+                        'post_c': 0,
+                        'thread_c': 0,
+                        'account_age': 0.0,
+                        'ip': '',
+                        'follow_forum_count': 0,
+                        'follow': 0,
+                        'fans': 0,
+                        'god_info': '',
+                        'is_banned': False,
+                        'unban_days': 0,
+                        'has_chance_to_unban': False,
+                        'thread_reply_permission': 0,
+                        'follow_forums_show_permission': 0,
+                        'desp': '',
+                        'bd_user_name': '',
+                        'is_blacked': False}
 
-                    if self.user_id_portrait in ('00000000', 0):
-                        data['error'] = '无法加载匿名用户的个人主页信息。'
+                if self.user_id_portrait in ('00000000', 0):
+                    data['error'] = '无法加载匿名用户的个人主页信息。'
+                else:
+                    request_body_proto = ProfileReqIdl_pb2.ProfileReqIdl()
+
+                    request_body_proto.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+                    request_body_proto.data.common._client_type = 2
+                    request_body_proto.data.common.BDUSS = self.bduss
+                    request_body_proto.data.common.stoken = self.stoken
+
+                    request_body_proto.data.need_post_count = 1
+                    request_body_proto.data.page = 1
+                    request_body_proto.data.is_from_usercenter = 1
+                    if isinstance(self.user_id_portrait, int):
+                        request_body_proto.data.uid = self.user_id_portrait
                     else:
-                        request_body_proto = ProfileReqIdl_pb2.ProfileReqIdl()
+                        request_body_proto.data.friend_uid_portrait = self.user_id_portrait
 
-                        request_body_proto.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
-                        request_body_proto.data.common._client_type = 2
-                        request_body_proto.data.common.BDUSS = self.bduss
-                        request_body_proto.data.common.stoken = self.stoken
+                    response_origin = request_mgr.run_protobuf_api('/c/u/user/profile',
+                                                                   payloads=request_body_proto.SerializeToString(),
+                                                                   cmd_id=303012,
+                                                                   host_type=2)
 
-                        request_body_proto.data.need_post_count = 1
-                        request_body_proto.data.page = 1
-                        if isinstance(self.user_id_portrait, int):
-                            request_body_proto.data.uid = self.user_id_portrait
-                        else:
-                            request_body_proto.data.friend_uid_portrait = self.user_id_portrait
+                    response_proto = ProfileResIdl_pb2.ProfileResIdl()
+                    response_proto.ParseFromString(response_origin)
 
-                        response_origin = request_mgr.run_protobuf_api('/c/u/user/profile',
-                                                                       payloads=request_body_proto.SerializeToString(),
-                                                                       cmd_id=303012,
-                                                                       host_type=2)
+                    user_info = aiotieba.profile.UserInfo_pf.from_tbdata(response_proto.data)  # 向下兼容
 
-                        response_proto = ProfileResIdl_pb2.ProfileResIdl()
-                        response_proto.ParseFromString(response_origin)
+                    # 判断是否出错
+                    if response_proto.error.errorno not in (0, 220012):  # 被封号了也显示信息
+                        data['error'] = str(
+                            f'{response_proto.error.errmsg} (错误代码 {response_proto.error.errorno})')
+                    else:
+                        self.real_user_id = user_info.user_id
+                        self.nick_name = data['name'] = user_info.nick_name_new
+                        self.real_portrait = user_info.portrait
+                        data['sex'] = user_info.gender
+                        data['level'] = user_info.glevel
+                        data['agree_c'] = user_info.agree_num
+                        data['thread_c'] = response_proto.data.user.thread_num
+                        self.real_tieba_id = data['tieba_id'] = user_info.tieba_uid
+                        data['account_age'] = user_info.age
+                        data['ip'] = user_info.ip
+                        data['follow_forum_count'] = user_info.forum_num
+                        data['follow'] = user_info.follow_num
+                        data['fans'] = user_info.fan_num
+                        data['is_banned'] = bool(response_proto.data.anti_stat.block_stat)
+                        if data['is_banned']:
+                            data['unban_days'] = response_proto.data.anti_stat.days_tofree
+                            data['has_chance_to_unban'] = bool(response_proto.data.anti_stat.has_chance)
+                        data['thread_reply_permission'] = user_info.priv_reply
+                        data['follow_forums_show_permission'] = user_info.priv_like
+                        data['desp'] = user_info.sign
+                        data['post_c'] = user_info.post_num
+                        data['is_blacked'] = not response_proto.data.is_black_white
+                        self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
 
-                        user_info = aiotieba.profile.UserInfo_pf.from_tbdata(response_proto.data)  # 向下兼容
+                        god_info = ''
+                        if response_proto.data.user.new_god_data.field_name:
+                            god_info += f'{response_proto.data.user.new_god_data.field_name}领域大神'
+                        if response_proto.data.user.bazhu_grade.desc:
+                            if god_info: god_info += ' | '
+                            god_info += response_proto.data.user.bazhu_grade.desc
+                        data['god_info'] = god_info
 
-                        # 判断是否出错
-                        if response_proto.error.errorno not in (0, 220012):  # 被封号了也显示信息
-                            data['error'] = str(
-                                f'{response_proto.error.errmsg} (错误代码 {response_proto.error.errorno})')
-                        else:
-                            self.real_user_id = user_info.user_id
-                            self.nick_name = data['name'] = user_info.nick_name_new
-                            self.real_portrait = user_info.portrait
-                            data['sex'] = user_info.gender
-                            data['level'] = user_info.glevel
-                            data['agree_c'] = user_info.agree_num
-                            self.real_tieba_id = data['tieba_id'] = user_info.tieba_uid
-                            data['account_age'] = user_info.age
-                            data['ip'] = user_info.ip
-                            data['follow_forum_count'] = user_info.forum_num
-                            data['follow'] = user_info.follow_num
-                            data['fans'] = user_info.fan_num
-                            data['is_dashen'] = bool(user_info.is_god)
-                            data['is_banned'] = bool(response_proto.data.anti_stat.block_stat)
-                            if data['is_banned']:
-                                data['unban_days'] = response_proto.data.anti_stat.days_tofree
-                                data['has_chance_to_unban'] = bool(response_proto.data.anti_stat.has_chance)
-                            data['thread_reply_permission'] = user_info.priv_reply
-                            data['follow_forums_show_permission'] = user_info.priv_like
-                            data['desp'] = user_info.sign
-                            data['post_c'] = user_info.post_num
-                            self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
+                        profile_mgr.add_view_history(2, {"uid": self.real_user_id, "portrait": self.real_portrait,
+                                                         "nickname": self.nick_name})
 
-                            profile_mgr.add_view_history(2, {"uid": self.real_user_id, "portrait": self.real_portrait,
-                                                             "nickname": self.nick_name})
-
-                    self.set_head_info_signal.emit(data)
+                self.set_head_info_signal.emit(data)
 
             except Exception as e:
                 logging.log_exception(e)
@@ -641,8 +661,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                                 forum_name = ''
 
                             # 获取贴子标题
-                            thread_info = await client.get_posts(thread.tid, pn=1, rn=0, comment_rn=0)
-                            thread_title = thread_info.thread.title if thread_info.thread.title else "无法获取贴子标题，可能已被删除"
+                            thread_title = f'贴子 ID: {thread.tid}'
 
                             # 发布时间字符串
                             timestr = timestamp_to_string(thread.create_time)

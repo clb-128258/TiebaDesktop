@@ -209,7 +209,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
             self.forum_atavar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
                                            datas['avatar'],
                                            qt_image.ImageCoverType.RoundCover,
-                                           (100,100))
+                                           (100, 100))
             self.forum_atavar.loadImage()
 
             forum_desp_text = ''
@@ -560,9 +560,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                 response = requests.get(i.small_avatar, headers=request_mgr.header)
                                 if response.content:
                                     pixmap.loadFromData(response.content)
-                                    pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
-                                                           Qt.SmoothTransformation)
-                                    pixmap = qt_image.add_cover_for_pixmap(pixmap)
+                                    pixmap = qt_image.add_cover_for_pixmap(pixmap, 50)
                                     single_ff_info['headpix'] = pixmap
                                 data['friend_forum_list'].append(single_ff_info)
 
@@ -585,7 +583,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                 for bawu in v:
                                     pixmap = QPixmap()
                                     pixmap.loadFromData(cache_mgr.get_portrait(bawu.portrait))
-                                    pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                                    pixmap = qt_image.add_cover_for_pixmap(pixmap, 40)
 
                                     data['bawu_info'].append(
                                         {'name': bawu.nick_name_new, 'level': bawu.level, 'type': k,

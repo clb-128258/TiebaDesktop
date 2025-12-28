@@ -1,0 +1,8 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message Terminal {
+    int32 pc = 1;
+    int32 wap = 2;
+    int32 client = 3;
+}

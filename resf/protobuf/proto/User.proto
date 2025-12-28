@@ -2,14 +2,13 @@
 syntax = "proto3";
 package TiebaDesktop;
 
+import "proto/Icon.proto";
+
 message User {
     int64 id = 2;
     string name = 3;
     string name_show = 4;
     string portrait = 5;
-    message Icon {
-        string name = 1;
-    }
     repeated Icon iconinfo = 17;
     int32 is_coreuser = 20;
     int32 level_id = 23;
@@ -22,6 +21,7 @@ message User {
     int32 my_like_num = 33;
     string intro = 34;
     int32 post_num = 37;
+    int32 thread_num = 87;
     string tb_age = 38;
     int32 gender = 42;
     message PrivSets {
@@ -37,11 +37,6 @@ message User {
     }
     PrivSets priv_sets = 45;
     int32 is_friend = 46;
-    message LikeForumInfo {
-        string forum_name = 1;
-        uint64 forum_id = 2;
-    }
-    repeated LikeForumInfo likeForum = 47;
     int32 is_guanfang = 52;
     message UserVipInfo {
         uint32 v_status = 1;
@@ -57,6 +52,8 @@ message User {
         int32 status = 1;
         uint32 field_id = 2;
         string field_name = 3;
+        uint32 type = 4;
+        string type_name = 5;
     }
     NewGodInfo new_god_data = 101;
     int32 is_default_avatar = 106;
@@ -66,4 +63,10 @@ message User {
         uint32 level_id = 1;
     }
     UserGrowth user_growth = 137;
+    message BazhuSign {
+        string desc = 1;
+        string level = 2;
+    }
+    BazhuSign bazhu_grade = 105;
+    int32 is_like = 24;
 }
