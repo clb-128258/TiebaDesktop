@@ -54,6 +54,18 @@ def find_last_at_or_above(list_widget, y):
     return low
 
 
+class ThreadPreview:
+    """要预填充的贴子信息"""
+    forum_name = ''  # 最后须带吧字
+    user_name = ''
+    send_time = 0
+    agree_num = 0
+    reply_num = ''
+
+    title = ''
+    text = ''
+
+
 class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     """主题贴详情窗口，可以浏览主题贴详细内容和回复"""
     first_floor_pid = -1
@@ -72,7 +84,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     agree_thread_signal = pyqtSignal(str)
     add_post_signal = pyqtSignal(str)
 
-    def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False):
+    def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False, preview_info=None):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
@@ -128,7 +140,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.label_4.installEventFilter(self)  # 重写事件过滤器
         self.label_9.installEventFilter(self)  # 重写事件过滤器
 
-        self.flash_shower.show()
+        if preview_info:
+            self.flash_shower.hide()
+            self.set_ui_head_preview(preview_info)
+        else:
+            self.flash_shower.show()
         self.get_thread_head_info_async()
         self.get_sub_thread_async()
 
@@ -662,6 +678,29 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             asyncio.run(dosign())
 
         start_async()
+
+    def set_ui_head_preview(self, datas: ThreadPreview):
+        if datas.forum_name.startswith(('最近回复于', '发布于')):
+            datas.forum_name = '未知贴吧'
+
+        self.setWindowTitle(datas.title + ' - ' + datas.forum_name)
+        self.pushButton_2.setText(datas.forum_name)
+        self.pushButton_2.setToolTip("点击进入此吧")
+        self.pushButton_4.setText(large_num_to_string(datas.agree_num, endspace=True) + '个赞')
+        self.label_3.setText(datas.user_name)
+        if datas.send_time:
+            self.label.setText(timestamp_to_string(datas.send_time))
+        self.label_5.setText(datas.title)
+        self.label_6.setText(datas.text)
+        self.label_7.setText('共 {n} 条回复'.format(n=str(datas.reply_num)))
+        if self.is_treasure:
+            self.label_13.show()
+        else:
+            self.horizontalLayout_2.removeWidget(self.label_13)
+        if self.is_top:
+            self.label_12.show()
+        else:
+            self.horizontalLayout_2.removeWidget(self.label_12)
 
     def update_ui_head_info(self, datas):
         if datas['err_info']:

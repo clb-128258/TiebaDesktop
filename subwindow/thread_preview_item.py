@@ -53,6 +53,9 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.thread_id = tid
         self.forum_id = fid
         self.piclist = None
+        self.agree_num = 0
+        self.reply_num = 0
+        self.send_time = 0
 
         self.label_11.hide()
         self.pushButton_3.clicked.connect(self.open_ba_detail)
@@ -75,9 +78,18 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
             self.is_loaded = True
 
     def open_thread_detail(self):
-        from subwindow.thread_detail_view import ThreadDetailView
+        from subwindow.thread_detail_view import ThreadDetailView, ThreadPreview
+
+        preview_info = ThreadPreview()
+        preview_info.title = self.label_5.text()
+        preview_info.text = self.label_6.text()
+        preview_info.user_name = self.label_3.text()
+        preview_info.forum_name = self.label_2.text()
+        preview_info.agree_num = self.agree_num
+        preview_info.reply_num = self.reply_num
+        preview_info.send_time = self.send_time
         thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id), self.is_treasure,
-                                         self.is_top)
+                                         self.is_top, preview_info)
         qt_window_mgr.add_window(thread_window)
 
     def open_ba_detail(self):
@@ -89,6 +101,10 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         forum_window.get_threads_async()
 
     def set_thread_values(self, view, agree, reply, repost, send_time=0):
+        self.agree_num = agree
+        self.reply_num = reply
+        self.send_time = send_time
+
         text = (f'{large_num_to_string(view, endspace=True)}次浏览，'
                 f'{large_num_to_string(agree, endspace=True)}人点赞，'
                 f'{large_num_to_string(reply, endspace=True)}条回复，'
