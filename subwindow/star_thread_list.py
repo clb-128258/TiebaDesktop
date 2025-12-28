@@ -2,12 +2,11 @@ import asyncio
 import gc
 
 import aiotieba
-import requests
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
+from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr
+from publics import qt_window_mgr, request_mgr
 from publics.funcs import start_background_thread, listWidget_get_visible_widgets
 import publics.logging as logging
 from ui import star_list
@@ -26,7 +25,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
         self.page = 1
         self.isloading = False
 
-        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
 
         self.listWidget.setStyleSheet('QListWidget{outline:0px;}'

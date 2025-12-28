@@ -129,7 +129,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
             widget.load_by_callback = True
 
             widget.set_infos(datas['portrait'], datas['user_name'], datas['title'], datas['text'],
-                             datas['forum_head_pixmap'],
+                             datas['forum_head_avatar'],
                              datas['forum_name'])
             widget.set_picture(list(AsyncLoadImage(i) for i in datas['picture']))
             widget.adjustSize()
@@ -163,7 +163,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
             widget.load_by_callback = True
 
             widget.set_infos(datas['portrait'], datas['user_name'], datas['title'], datas['text'],
-                             datas['forum_head_pixmap'],
+                             datas['forum_head_avatar'],
                              datas['forum_name'])
             widget.set_picture(list(AsyncLoadImage(i) for i in datas['picture']))
             widget.adjustSize()
@@ -233,7 +233,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                     for thread in response['data']['post_list']:
                         data = {'type': search_area,
                                 'user_name': thread['user']['show_nickname'],
-                                'forum_head_pixmap': None,
+                                'forum_head_avatar': '',
                                 'thread_id': int(thread['tid']),
                                 'forum_id': thread['forum_id'],
                                 'forum_name': thread['forum_info']['forum_name'],
@@ -255,15 +255,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                             data['portrait'] = thread["user"]["portrait"]
 
                         # 获取吧头像
-                        forum_head_pixmap = QPixmap()
-                        url = thread["forum_info"]["avatar"]
-                        response_ = requests.get(
-                            url,
-                            headers=request_mgr.header)
-                        if response_.content:
-                            forum_head_pixmap.loadFromData(response_.content)
-                            forum_head_pixmap = qt_image.add_cover_for_pixmap(forum_head_pixmap, 17)
-                            data['forum_head_pixmap'] = forum_head_pixmap
+                        data['forum_head_avatar'] = thread["forum_info"]["avatar"]
 
                         # 获取主图片
                         if thread.get("media"):
@@ -350,7 +342,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                     for thread in response['data']['post_list']:
                         data = {'type': search_area,
                                 'user_name': thread['user']['show_nickname'],
-                                'forum_head_pixmap': None,
+                                'forum_head_avatar': '',
                                 'thread_id': int(thread['tid']),
                                 'forum_id': thread['forum_id'],
                                 'forum_name': thread['forum_info']['forum_name'],
@@ -372,15 +364,7 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
                             data['portrait'] = thread["user"]["portrait"]
 
                         # 获取吧头像
-                        forum_head_pixmap = QPixmap()
-                        url = thread["forum_info"]["avatar"]
-                        response_ = requests.get(
-                            url,
-                            headers=request_mgr.header)
-                        if response_.content:
-                            forum_head_pixmap.loadFromData(response_.content)
-                            forum_head_pixmap = qt_image.add_cover_for_pixmap(forum_head_pixmap, 17)
-                            data['forum_head_pixmap'] = forum_head_pixmap
+                        data['forum_head_avatar'] = thread["forum_info"]["avatar"]
 
                         # 获取主图片
                         if thread.get("media"):

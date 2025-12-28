@@ -163,6 +163,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
 
+    def show_copy_success_toast(self):
+        toast_msg = top_toast_widget.ToastMessage('复制成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+        self.top_toaster.showToast(toast_msg)
+
     def end_label_link_event(self, url):
         if url == 'reload_replies':
             self.load_sub_threads_refreshly()
@@ -174,10 +178,12 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
         copy_id = QAction('复制贴子 ID', self)
         copy_id.triggered.connect(lambda: pyperclip.copy(str(self.thread_id)))
+        copy_id.triggered.connect(self.show_copy_success_toast)
         menu.addAction(copy_id)
 
         copy_link = QAction('复制贴子链接', self)
         copy_link.triggered.connect(lambda: pyperclip.copy(url))
+        copy_link.triggered.connect(self.show_copy_success_toast)
         menu.addAction(copy_link)
 
         open_link = QAction('在浏览器中打开贴子', self)

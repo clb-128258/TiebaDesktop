@@ -1,10 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import QObject, pyqtSignal, Qt
+from PyQt5.QtCore import Qt
 
-from publics import qt_window_mgr, request_mgr, logging, cache_mgr, qt_image
-from publics.funcs import timestamp_to_string, large_num_to_string, start_background_thread
-import requests
+from publics import qt_window_mgr, qt_image
+from publics.funcs import timestamp_to_string, large_num_to_string
 
 from ui import tie_preview
 
@@ -32,12 +31,9 @@ class AsyncLoadImage(qt_image.MultipleImage):
                           expectSize=(200, 200))
 
     def load_image_on_qtLabel(self, label: QLabel):
-        def on_img_loaded(pixmap):
-            label.setToolTip('贴子图片')
-            label.setPixmap(pixmap)
-
         if not self.isLoaded:
-            self.currentPixmapChanged.connect(on_img_loaded, Qt.QueuedConnection)
+            self.currentPixmapChanged.connect(label.setPixmap, Qt.QueuedConnection)
+            label.destroyed.connect(self.destroyImage)
             self.loadImage()
             self.isLoaded = True
 
@@ -63,15 +59,19 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.pushButton_2.clicked.connect(self.open_thread_detail)
 
         self.portrait_image = qt_image.MultipleImage()
-        self.portrait_image.currentImageChanged.connect(
-            lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.forum_image = qt_image.MultipleImage()
+        self.portrait_image.currentPixmapChanged.connect(self.label_4.setPixmap)
+        self.forum_image.currentPixmapChanged.connect(self.label.setPixmap)
         self.destroyed.connect(self.portrait_image.destroyImage)
+        self.destroyed.connect(self.forum_image.destroyImage)
 
     def load_all_AsyncImage(self):
         if not self.is_loaded:
             self._load_pictures()
             if self.portrait_image.isImageInfoValid():
                 self.portrait_image.loadImage()
+            if self.forum_image.isImageInfoValid():
+                self.forum_image.loadImage()
             self.is_loaded = True
 
     def open_thread_detail(self):
@@ -113,8 +113,15 @@ class ThreadView(QWidget, tie_preview.Ui_Form):
         self.label_6.setText(text)
         self.label_2.setText((baname + '吧') if baname else "贴吧动态")
 
-        if baicon:
+        if isinstance(baicon, QPixmap):
             self.label.setPixmap(baicon)
+        elif isinstance(baicon, str):
+            self.forum_image.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                          baicon,
+                                          qt_image.ImageCoverType.RoundCover,
+                                          (17, 17))
+            if not self.load_by_callback and not self.is_loaded:
+                self.forum_image.loadImage()
         else:
             self.label.hide()
 

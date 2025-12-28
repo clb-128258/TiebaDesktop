@@ -27,9 +27,19 @@ class ToastIconType(enum.Enum):
 
 
 class ToastMessage:
-    """一个顶部通知消息"""
+    """
+    一个顶部通知消息
 
-    def __init__(self, title: str = '', appear_duration: int = 2000, icon_type: ToastIconType = ToastIconType.NO_ICON):
+    Args:
+        title (str): 通知标题
+        appear_duration (int): 显示时间 以毫秒为单位
+        icon_type (ToastIconType): 左侧显示的图标类型
+    """
+
+    def __init__(self,
+                 title: str = '',
+                 appear_duration: int = 2000,
+                 icon_type: ToastIconType = ToastIconType.NO_ICON):
         self.icon_type = icon_type
         self.title = title
         self.appear_duration = appear_duration

@@ -26,7 +26,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
         self.page = 1
         self.isloading = False
 
-        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowTitle('点赞列表')
         self.label.setText('这里可以查看你点过赞的贴子。')
@@ -71,7 +71,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
             widget.load_by_callback = True
 
             widget.set_infos(infos['portrait'], infos['user_name'], infos['title'], infos['text'],
-                             infos['forum_head_pixmap'],
+                             infos['forum_head_avatar'],
                              infos['forum_name'])
             widget.set_thread_values(infos['thread_data']['vn'], infos['thread_data']['ag'],
                                      infos['thread_data']['rpy'], infos['thread_data']['rpt'], infos['timestamp'])
@@ -141,7 +141,8 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                             'timestamp': thread['create_time'],
                             'thread_data': {'vn': thread["view_num"], 'ag': thread["agree_num"],
                                             'rpy': thread["reply_num"], 'rpt': thread["share_num"]},
-                            'portrait': thread["author"]["portrait"].split('?')[0]}
+                            'portrait': thread["author"]["portrait"].split('?')[0],
+                            'forum_head_avatar': ''}
 
                     # 获取回复贴数据
                     if postinfo := thread.get('top_agree_post'):
@@ -161,15 +162,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
                         data['text'] = cut_string(text, 50)
 
                     # 获取吧头像
-                    forum_head_pixmap = QPixmap()
-                    url = thread["forum_info"]["avatar"]
-                    response = requests.get(
-                        url,
-                        headers=request_mgr.header)
-                    if response.content:
-                        forum_head_pixmap.loadFromData(response.content)
-                        forum_head_pixmap = qt_image.add_cover_for_pixmap(forum_head_pixmap, 17)
-                        data['forum_head_pixmap'] = forum_head_pixmap
+                    data['forum_head_avatar'] = thread["forum_info"]["avatar"]
 
                     # 获取主题贴图片
                     if thread.get("media") and data['type'] == 0:

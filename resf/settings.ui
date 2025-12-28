@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>874</width>
-    <height>483</height>
+    <width>818</width>
+    <height>484</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -75,6 +75,9 @@ QDialog{background-color: rgb(255, 255, 255);}
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>
      </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustToContents</enum>
+     </property>
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -83,8 +86,8 @@ QDialog{background-color: rgb(255, 255, 255);}
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>733</width>
-        <height>619</height>
+        <width>694</width>
+        <height>466</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -166,279 +169,354 @@ QDialog{background-color: rgb(255, 255, 255);}
            <property name="bottomMargin">
             <number>9</number>
            </property>
-           <item row="4" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_14">
-             <item>
-              <spacer name="horizontalSpacer_12">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_5">
-               <property name="text">
-                <string>保存设置</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="1" column="0">
-            <widget class="QGroupBox" name="groupBox">
-             <property name="title">
-              <string>看贴设置</string>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_6">
-              <item row="1" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBox">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频贴子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>首页不推荐视频贴</string>
-                </property>
-               </widget>
-              </item>
-              <item row="6" column="0" colspan="2">
-               <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0,0">
-                <item>
-                 <widget class="QLabel" name="label_14">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
-                  <property name="text">
-                   <string>进吧看贴默认板块：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="comboBox_2">
-                  <item>
-                   <property name="text">
-                    <string>置顶</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>精华</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>最新回复</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>最新发布</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>热门</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_5">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="4" column="0" colspan="2">
-               <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,1">
-                <item>
-                 <widget class="QLabel" name="label_10">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看贴时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>贴吧表情大小：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QRadioButton" name="radioButton">
-                  <property name="text">
-                   <string>小（与文字一样大）</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QRadioButton" name="radioButton_2">
-                  <property name="text">
-                   <string>大（与贴吧网页版上的一样大）</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item row="5" column="0" colspan="2">
-               <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
-                <item>
-                 <widget class="QLabel" name="label_13">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
-                  <property name="text">
-                   <string>看贴回复默认排序：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="comboBox">
-                  <item>
-                   <property name="text">
-                    <string>正序</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>倒序</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>热门排序</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_6">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="checkBox_3">
-                  <property name="text">
-                   <string>默认启用只看楼主</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_4">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="2" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBox_2">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>不显示用户的 IP 属地</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBox_12">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，贴子回复列表中的 GIF 图片内容将会在预览窗格内自动播放。&lt;/p&gt;&lt;p&gt;在关闭此选项时，GIF 图片仍会被加载，但是不会自动开始播放，需要用户手动开始播放。&lt;/p&gt;&lt;p&gt;如此选项导致程序性能不佳，请尝试关闭此选项。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>在回复列表内播放 GIF 动图</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QGroupBox" name="groupBox_4">
-             <property name="title">
-              <string>浏览器设置</string>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_3">
+           <item row="0" column="0">
+            <widget class="QWidget" name="widget" native="true">
+             <layout class="QGridLayout" name="gridLayout_10">
               <property name="leftMargin">
-               <number>9</number>
+               <number>0</number>
               </property>
               <property name="topMargin">
-               <number>9</number>
+               <number>0</number>
               </property>
               <property name="rightMargin">
-               <number>9</number>
+               <number>0</number>
               </property>
               <property name="bottomMargin">
-               <number>9</number>
+               <number>0</number>
               </property>
               <item row="0" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0">
-                <item>
-                 <widget class="QLabel" name="label_18">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择在内置浏览器内打开什么链接。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>内置浏览器使用策略：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="comboBox_3">
-                  <item>
-                   <property name="text">
-                    <string>所有链接</string>
+               <widget class="QLabel" name="label_9">
+                <property name="styleSheet">
+                 <string notr="true">QLabel{color: rgb(255, 0, 0);}</string>
+                </property>
+                <property name="text">
+                 <string>在调整好设置后，请点击下方的“保存设置”按钮以使设置生效。</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QGroupBox" name="groupBox_4">
+                <property name="title">
+                 <string>浏览器设置</string>
+                </property>
+                <property name="flat">
+                 <bool>true</bool>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_3">
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>9</number>
+                 </property>
+                 <item row="0" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0">
+                   <item>
+                    <widget class="QLabel" name="label_18">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择在内置浏览器内打开什么链接。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>内置浏览器使用策略：</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox_3">
+                     <item>
+                      <property name="text">
+                       <string>所有链接</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>仅贴吧链接</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>不使用内置浏览器</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_9">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QGroupBox" name="groupBox_5">
+                <property name="title">
+                 <string>通知设置</string>
+                </property>
+                <property name="flat">
+                 <bool>true</bool>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_9">
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>9</number>
+                 </property>
+                 <item row="0" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0">
+                   <item>
+                    <widget class="QCheckBox" name="checkBox_13">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在你有新互动消息时，程序将会自动向你推送一个通知。该功能支持 Windows 8.1 及以上系统。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>互动消息通知推送</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_10">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QGroupBox" name="groupBox">
+                <property name="title">
+                 <string>看贴设置</string>
+                </property>
+                <property name="flat">
+                 <bool>true</bool>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_6">
+                 <item row="1" column="0" colspan="2">
+                  <widget class="QCheckBox" name="checkBox">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，主窗口的“推荐”板块中将不会出现视频贴子。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
-                  </item>
-                  <item>
                    <property name="text">
-                    <string>仅贴吧链接</string>
+                    <string>首页不推荐视频贴</string>
                    </property>
-                  </item>
-                  <item>
+                  </widget>
+                 </item>
+                 <item row="6" column="0" colspan="2">
+                  <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0,0">
+                   <item>
+                    <widget class="QLabel" name="label_14">
+                     <property name="toolTip">
+                      <string/>
+                     </property>
+                     <property name="text">
+                      <string>进吧看贴默认板块：</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox_2">
+                     <item>
+                      <property name="text">
+                       <string>置顶</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>精华</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>最新回复</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>最新发布</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>热门</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_5">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="4" column="0" colspan="2">
+                  <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,1">
+                   <item>
+                    <widget class="QLabel" name="label_10">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择看贴时文字内容中贴吧表情的大小。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>贴吧表情大小：</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QRadioButton" name="radioButton">
+                     <property name="text">
+                      <string>小（与文字一样大）</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QRadioButton" name="radioButton_2">
+                     <property name="text">
+                      <string>大（与贴吧网页版上的一样大）</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="5" column="0" colspan="2">
+                  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
+                   <item>
+                    <widget class="QLabel" name="label_13">
+                     <property name="toolTip">
+                      <string/>
+                     </property>
+                     <property name="text">
+                      <string>看贴回复默认排序：</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox">
+                     <item>
+                      <property name="text">
+                       <string>正序</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>倒序</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>热门排序</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_6">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="checkBox_3">
+                     <property name="text">
+                      <string>默认启用只看楼主</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_4">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="2" column="0" colspan="2">
+                  <widget class="QCheckBox" name="checkBox_2">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="text">
-                    <string>不使用内置浏览器</string>
+                    <string>不显示用户的 IP 属地</string>
                    </property>
-                  </item>
-                 </widget>
-                </item>
+                  </widget>
+                 </item>
+                 <item row="3" column="0" colspan="2">
+                  <widget class="QCheckBox" name="checkBox_12">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，贴子回复列表中的 GIF 图片内容将会在预览窗格内自动播放。&lt;/p&gt;&lt;p&gt;在关闭此选项时，GIF 图片仍会被加载，但是不会自动开始播放，需要用户手动开始播放。&lt;/p&gt;&lt;p&gt;如此选项导致程序性能不佳，请尝试关闭此选项。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string>在回复列表内播放 GIF 动图</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_14">
                 <item>
-                 <spacer name="horizontalSpacer_9">
+                 <spacer name="horizontalSpacer_12">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -450,87 +528,30 @@ QDialog{background-color: rgb(255, 255, 255);}
                   </property>
                  </spacer>
                 </item>
+                <item>
+                 <widget class="QPushButton" name="pushButton_5">
+                  <property name="text">
+                   <string>保存设置</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </item>
              </layout>
             </widget>
            </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_9">
-             <property name="styleSheet">
-              <string notr="true">QLabel{color: rgb(255, 0, 0);}</string>
-             </property>
-             <property name="text">
-              <string>在调整好设置后，请点击下方的“保存设置”按钮以使设置生效。</string>
-             </property>
-             <property name="wordWrap">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
+           <item row="1" column="0">
             <spacer name="verticalSpacer_3">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>478</width>
-               <height>221</height>
+               <width>0</width>
+               <height>0</height>
               </size>
              </property>
             </spacer>
-           </item>
-           <item row="3" column="0">
-            <widget class="QGroupBox" name="groupBox_5">
-             <property name="title">
-              <string>通知设置</string>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_9">
-              <property name="leftMargin">
-               <number>9</number>
-              </property>
-              <property name="topMargin">
-               <number>9</number>
-              </property>
-              <property name="rightMargin">
-               <number>9</number>
-              </property>
-              <property name="bottomMargin">
-               <number>9</number>
-              </property>
-              <item row="0" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0">
-                <item>
-                 <widget class="QCheckBox" name="checkBox_13">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;勾选后，在你有新互动消息时，程序将会自动向你推送一个通知。该功能支持 Windows 8.1 及以上系统。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>互动消息通知推送</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_10">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </widget>
            </item>
           </layout>
          </widget>
@@ -805,8 +826,8 @@ QDialog{background-color: rgb(255, 255, 255);}
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>20</width>
-               <height>40</height>
+               <width>0</width>
+               <height>0</height>
               </size>
              </property>
             </spacer>
@@ -988,8 +1009,8 @@ QDialog{background-color: rgb(255, 255, 255);}
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>548</width>
-               <height>168</height>
+               <width>0</width>
+               <height>0</height>
               </size>
              </property>
             </spacer>
@@ -997,7 +1018,36 @@ QDialog{background-color: rgb(255, 255, 255);}
           </layout>
          </widget>
          <widget class="QWidget" name="page_3">
-          <layout class="QGridLayout" name="gridLayout_5">
+          <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,1">
+           <item row="1" column="0">
+            <layout class="QGridLayout" name="gridLayout_8">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_15">
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。&lt;/p&gt;&lt;p&gt;可以访问 Github 仓库，以便与作者取得联系。&lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;访问本项目的 Github 仓库&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;本软件遵循 MIT License 协议发布，请在遵守 MIT License 的前提下使用本软件。&lt;/p&gt;&lt;p&gt;本软件仅供学习交流使用，请勿用于违法犯罪用途，使用本软件所产生的任何后果都与作者无关。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+               <property name="openExternalLinks">
+                <bool>true</bool>
+               </property>
+               <property name="textInteractionFlags">
+                <set>Qt::TextBrowserInteraction</set>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
            <item row="0" column="0">
             <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,1">
              <item row="0" column="1">
@@ -1033,48 +1083,6 @@ QDialog{background-color: rgb(255, 255, 255);}
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="2" column="0">
-            <spacer name="verticalSpacer_2">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="1" column="0">
-            <layout class="QGridLayout" name="gridLayout_8">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_15">
-               <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。&lt;/p&gt;&lt;p&gt;可以访问 Github 仓库，以便与作者取得联系。&lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;访问本项目的 Github 仓库&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;本软件遵循 MIT License 协议发布，请在遵守 MIT License 的前提下使用本软件。&lt;/p&gt;&lt;p&gt;本软件仅供学习交流使用，请勿用于违法犯罪用途，使用本软件所产生的任何后果都与作者无关。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-               </property>
-               <property name="wordWrap">
-                <bool>true</bool>
-               </property>
-               <property name="openExternalLinks">
-                <bool>true</bool>
-               </property>
-               <property name="textInteractionFlags">
-                <set>Qt::TextBrowserInteraction</set>
                </property>
               </widget>
              </item>

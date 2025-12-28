@@ -38,7 +38,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_11.setPixmap(QPixmap('ui/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
         self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
-        self.init_user_action_menu()
 
         # 隐藏组件
         self.frame_8.hide()
@@ -107,6 +106,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
 
+    def show_copy_success_toast(self):
+        toast_msg = top_toast_widget.ToastMessage('复制成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+        self.top_toaster.showToast(toast_msg)
+
     def init_user_action_menu(self):
         menu = QMenu(self)
         menu.setToolTipsVisible(True)
@@ -144,6 +147,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
         copy_nickname = QAction('复制昵称', self)
         copy_nickname.setToolTip('复制该用户的昵称。')
+        copy_nickname.triggered.connect(self.show_copy_success_toast)
         copy_nickname.triggered.connect(lambda: pyperclip.copy(self.nick_name))
         copy_datas.addAction(copy_nickname)
 
@@ -151,11 +155,13 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         copy_user_name.setToolTip(
             '复制该用户使用的用户名。\n'
             '用户名在所有百度系产品是通用的，不同于昵称，具有唯一性。该字段可能为空。')
+        copy_user_name.triggered.connect(self.show_copy_success_toast)
         copy_user_name.triggered.connect(lambda: pyperclip.copy(self.real_baidu_user_name))
         copy_datas.addAction(copy_user_name)
 
         copy_tieba_id = QAction('复制贴吧 ID', self)
         copy_tieba_id.setToolTip('复制贴吧 APP 个人主页内显示的贴吧 ID。该字段可能为空。')
+        copy_tieba_id.triggered.connect(self.show_copy_success_toast)
         copy_tieba_id.triggered.connect(lambda: pyperclip.copy(self.real_tieba_id))
         copy_datas.addAction(copy_tieba_id)
 
@@ -164,6 +170,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             '复制贴吧内部使用的用户 ID。\n'
             '请注意，用户 ID 不是贴吧 ID，两者是有区别的。\n'
             '该字段一定不为空，且具有唯一性，可用于标识用户身份。')
+        copy_user_id.triggered.connect(self.show_copy_success_toast)
         copy_user_id.triggered.connect(lambda: pyperclip.copy(self.real_user_id))
         copy_datas.addAction(copy_user_id)
 
@@ -171,6 +178,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         copy_portrait.setToolTip(
             '复制贴吧内部使用的 Portrait。\n'
             '该字段一定不为空，且具有唯一性，可用于标识用户身份，或直接用于获取用户头像图片。')
+        copy_portrait.triggered.connect(self.show_copy_success_toast)
         copy_portrait.triggered.connect(lambda: pyperclip.copy(self.real_portrait))
         copy_datas.addAction(copy_portrait)
 
@@ -199,6 +207,13 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         show_follow_forum_strongly_menu.addAction(ouotool)
 
         menu.addMenu(show_follow_forum_strongly_menu)
+
+        if self.real_user_id == profile_mgr.current_uid or not self.bduss:
+            follow.setEnabled(False)
+            unfollow.setEnabled(False)
+            blacklist.setEnabled(False)
+            old_mute.setEnabled(False)
+            cancel_old_mute.setEnabled(False)
 
         self.pushButton.setMenu(menu)
 
@@ -384,10 +399,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
             self.tabWidget.show()
             self.frame_8.show()
             self.flash_shower.hide()
-
-            # 查看当前用户主页或未登录时不显示操作按钮
-            if profile_mgr.current_uid == self.real_user_id or not self.bduss:
-                self.pushButton.hide()
+            self.init_user_action_menu()
 
             # 主信息加载完之后再加载
             for i in self.page.keys():

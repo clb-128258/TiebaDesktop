@@ -1,7 +1,4 @@
 from datetime import datetime
-
-from PyQt5.QtCore import Qt
-
 from ui import view_history, view_history_item, view_history_single_item
 from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, top_toast_widget, qt_image
 
@@ -95,7 +92,7 @@ class SingleHistoryItem(QWidget, view_history_single_item.Ui_Form):
 
         self.label_2.setText(funcs.cut_string(title, 30))
         self.label_3.setText(funcs.timestamp_to_string(info['time']))
-        self.load_icon_async()
+        self.label.clear()
 
         self.adjustSize()
 
@@ -107,6 +104,7 @@ class DayHistoryItem(QWidget, view_history_item.Ui_Form):
 
         self.list_height = 0
         self.parent_listwidget = parent_listwidget
+        self.is_icon_loaded = False
         self.init_shadow_effect()
         self.label.setText(date_str)
 
@@ -118,6 +116,14 @@ class DayHistoryItem(QWidget, view_history_item.Ui_Form):
 
         # 将阴影效果应用到 QFrame
         self.frame.setGraphicsEffect(shadow_effect)
+
+    def load_items_icon(self):
+        if not self.is_icon_loaded:
+            lw = self.listWidget
+            for i in range(lw.count()):
+                single_w = lw.itemWidget(lw.item(i))
+                single_w.load_icon_async()
+            self.is_icon_loaded = True
 
     def sizeHint(self):
         """
@@ -142,6 +148,7 @@ class DayHistoryItem(QWidget, view_history_item.Ui_Form):
         self.list_height += widget.height()
         self.listWidget.setFixedHeight(self.list_height)
         self.setFixedHeight(self.sizeHint().height())
+        widget.resize(widget.sizeHint())
 
 
 class HistoryViewWindow(QWidget, view_history.Ui_Form):
@@ -152,66 +159,114 @@ class HistoryViewWindow(QWidget, view_history.Ui_Form):
         self.setupUi(self)
 
         self.widget_list = {}
+        self.read_index = 0
+        self.widget_total_height = 0
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label.hide()
         self.listWidget_2.setStyleSheet('QListWidget#listWidget_2{outline:0px;}'
                                         'QListWidget#listWidget_2::item:hover {color:white; background-color:white;}'
                                         'QListWidget#listWidget_2::item:selected {color:white; background-color:white;}')
         self.listWidget_2.verticalScrollBar().setSingleStep(20)
+        self.listWidget_2.verticalScrollBar().valueChanged.connect(self.scroll_load)
         self.init_top_toaster()
 
-        self.listWidget.currentRowChanged.connect(self.load_history)
+        self.listWidget.currentRowChanged.connect(self.reload_history)
         self.pushButton.clicked.connect(self.clear_history)
-        self.pushButton_2.clicked.connect(lambda: self.load_history())
+        self.pushButton_2.clicked.connect(lambda: self.reload_history())
 
         self.listWidget.setCurrentRow(0)
 
     def closeEvent(self, a0):
         a0.accept()
+
+        for i in range(self.listWidget_2.count()):
+            self.listWidget_2.itemWidget(self.listWidget_2.item(i)).listWidget.clear()
+        self.listWidget_2.clear()
+        self.widget_list.clear()
         qt_window_mgr.del_window(self)
 
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
 
+    def scroll_load(self):
+        self.load_visible_image()
+        if self.listWidget_2.verticalScrollBar().maximum() == self.listWidget_2.verticalScrollBar().value():
+            self.load_history()
+
+    def load_visible_image(self):
+        widgets = funcs.listWidget_get_visible_widgets(self.listWidget_2)
+        for w in widgets:
+            w.load_items_icon()
+
     def clear_history(self):
         if QMessageBox.warning(self, '警告', '确认要清空浏览记录吗？',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             profile_mgr.view_history.clear()
             profile_mgr.save_view_history()
-            self.load_history()
+            self.reload_history()
             self.top_toaster.showToast(
                 top_toast_widget.ToastMessage('浏览记录清空成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
 
-    def load_history(self, index: int = -1):
+    def reload_history(self, index: int = -1):
         if index == -1:
             index = self.listWidget.currentRow()
 
+        # 清理内存
         for i in range(self.listWidget_2.count()):
             self.listWidget_2.itemWidget(self.listWidget_2.item(i)).listWidget.clear()
         self.listWidget_2.clear()
         self.widget_list.clear()
+        self.read_index = 0
+        self.widget_total_height = 0
 
-        for history_item in profile_mgr.view_history:
-            if index in (history_item['type'], 0):
-                day_str = get_day_str(history_item['time'])
-                day_widget = self.widget_list.get(day_str)
-                if not day_widget:
-                    day_widget = DayHistoryItem(day_str, self.listWidget_2)
-                    self.widget_list[day_str] = day_widget
+        # 在 所有条目高度大小 小于 listwidget高度 且 数据未读完 时，循环加载记录
+        while (self.widget_total_height < self.listWidget_2.height() and
+               self.read_index < len(profile_mgr.view_history)):
+            self.load_history(index)
 
-                single_item = SingleHistoryItem(day_widget.listWidget, history_item)
-                day_widget.add_single_item(single_item)
+    def load_history(self, index: int = -1):
+        if index == -1:
+            index = self.listWidget.currentRow()
+        self.listWidget_2.verticalScrollBar().blockSignals(True)  # 阻塞滚动信号，提高性能
 
-        if self.widget_list.values():
-            self.label.hide()
-            self.listWidget_2.show()
+        if self.read_index < len(profile_mgr.view_history):  # 当前下标在列表范围内时，防止越界
+            read_end_pos = self.read_index  # 本次的最后读取位置
+            current_date = ''  # 本次加载读取到的日期
+            for history_item in profile_mgr.view_history[self.read_index:]:
+                if index in (history_item['type'], 0):
+                    day_str = get_day_str(history_item['time'])
+                    day_widget = self.widget_list.get(day_str)
+                    if not day_widget:
+                        if not current_date:  # 在没有读取任何一个日期时
+                            day_widget = DayHistoryItem(day_str, self.listWidget_2)
+                            self.widget_list[day_str] = day_widget
+                            current_date = day_str
+                        else:
+                            # 已读取过的情况下不再继续加载
+                            break
 
-            for widget in self.widget_list.values():
+                    # 加载条目
+                    single_item = SingleHistoryItem(day_widget.listWidget, history_item)
+                    day_widget.add_single_item(single_item)
+
+                read_end_pos += 1
+            self.read_index = read_end_pos + 1  # 下一次要开始读取的位置
+
+            widget = self.widget_list.get(current_date)  # 把单个日期添加进总条目
+            if widget:
                 item = QListWidgetItem()
                 item.setSizeHint(widget.size())
                 self.listWidget_2.addItem(item)
                 self.listWidget_2.setItemWidget(item, widget)
-        else:
+                self.widget_total_height += widget.height()
+
+        if self.widget_list.values():  # 有列表显示时
+            self.label.hide()
+            self.listWidget_2.show()
+            self.load_visible_image()
+        else:  # 无列表显示时
             self.label.show()
             self.listWidget_2.hide()
+
+        self.listWidget_2.verticalScrollBar().blockSignals(False)
