@@ -17,21 +17,12 @@ local_config_model = {
     "notify_settings": {"enable_interact_notify": True}
 }
 
-video_webview_show_html = ''
 local_config = {}
 view_history = []
 
 current_uid = 'default'
 current_bduss = ''
 current_stoken = ''
-
-
-def load_show_html() -> str:
-    """加载视频播放器所用的html框架"""
-    global video_webview_show_html
-    with open('ui/tb_video_webview.html', 'rt', encoding='utf-8') as f:
-        video_webview_show_html = f.read()
-        return video_webview_show_html
 
 
 def load_local_config() -> dict:
@@ -157,6 +148,5 @@ def save_view_history():
 
 def init_all_datas():
     """从本地磁盘加载所有配置数据"""
-    load_show_html()
     load_local_config()
     load_view_history()

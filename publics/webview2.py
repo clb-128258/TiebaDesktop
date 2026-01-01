@@ -4,9 +4,7 @@ import os
 from PyQt5.QtWidgets import QWidget, QMessageBox
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal
-import requests
 from platform import machine
-import threading
 
 # 判断一下是不是windows
 if os.name == 'nt':
@@ -17,14 +15,12 @@ else:
     print('Warning: Your system is not Windows, so WebView2 can not work at this time')
 
 isload = False
-CoreWebView2PermissionState = CoreWebView2HostResourceAccessKind = CoreWebView2BrowsingDataKinds = CoreWebView2WebResourceContext = WebView2 = CoreWebView2CreationProperties = Uri = Object = Action = Thread = ApartmentState = ThreadStart = SendOrPostCallback = Task = Color = Point = Size = AnchorStyles = DockStyle = FormsApplication = None
 
 
 def loadLibs():
     """加载webview2相关的依赖文件"""
     global isload
     if not isload and os.name == 'nt':
-        global CoreWebView2PermissionState, CoreWebView2HostResourceAccessKind, CoreWebView2BrowsingDataKinds, CoreWebView2WebResourceContext, WebView2, CoreWebView2CreationProperties, Uri, Object, Action, Thread, ApartmentState, ThreadStart, SendOrPostCallback, Task, Color, Point, Size, AnchorStyles, DockStyle, FormsApplication
         isload = True
         self_path = os.getcwd() + '\\dlls'
         if not os.path.exists(self_path):
@@ -46,6 +42,27 @@ def loadLibs():
             AnchorStyles, DockStyle,
             Application as FormsApplication,
         )
+
+        globals()['CoreWebView2PermissionState'] = CoreWebView2PermissionState
+        globals()['CoreWebView2HostResourceAccessKind'] = CoreWebView2HostResourceAccessKind
+        globals()['CoreWebView2BrowsingDataKinds'] = CoreWebView2BrowsingDataKinds
+        globals()['CoreWebView2WebResourceContext'] = CoreWebView2WebResourceContext
+        globals()['WebView2'] = WebView2
+        globals()['CoreWebView2CreationProperties'] = CoreWebView2CreationProperties
+        globals()['Uri'] = Uri
+        globals()['Object'] = Object
+        globals()['Action'] = Action
+        globals()['Thread'] = Thread
+        globals()['ApartmentState'] = ApartmentState
+        globals()['ThreadStart'] = ThreadStart
+        globals()['SendOrPostCallback'] = SendOrPostCallback
+        globals()['Task'] = Task
+        globals()['Color'] = Color
+        globals()['Point'] = Point
+        globals()['Size'] = Size
+        globals()['AnchorStyles'] = AnchorStyles
+        globals()['DockStyle'] = DockStyle
+        globals()['FormsApplication'] = FormsApplication
 
 
 def _is_new_version(current_version: str, new_version: str) -> bool:
@@ -190,9 +207,6 @@ class WebViewProfile:
                  data_folder: str = os.getenv("TEMP", '.') + "/Microsoft WebView",
                  private_mode=False,
                  user_agent: str = None,
-                 vhost_path: str = None,
-                 vhost_name: str = "webview",
-                 vhost_cors: bool = True,
                  enable_error_page: bool = True,
                  enable_zoom_factor: bool = True,
                  handle_newtab_byuser: bool = False,
@@ -208,9 +222,6 @@ class WebViewProfile:
         self.data_folder = data_folder
         self.private_mode = private_mode
         self.user_agent = user_agent
-        self.vhost_path = vhost_path
-        self.vhost_name = vhost_name
-        self.vhost_cors = vhost_cors
         self.enable_error_page = enable_error_page
         self.enable_zoom_factor = enable_zoom_factor
         self.handle_newtab_byuser = handle_newtab_byuser
@@ -712,6 +723,12 @@ class QWebView2View(QWidget):
         ua = configuration.user_agent
         if ua:
             settings.UserAgent = ua.replace('[default_ua]', settings.UserAgent)
+
+        # set virtual host path
+        local_path = os.getcwd() + '\\ui\\js_player'
+        core.SetVirtualHostNameToFolderMapping("clb.tiebadesktop.localpage.jsplayer",
+                                               local_path,
+                                               CoreWebView2HostResourceAccessKind.Allow)
 
         # cookies persist even if UserDataFolder is in memory. We have to delete cookies manually.
         if configuration.private_mode:

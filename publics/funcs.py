@@ -298,6 +298,8 @@ def open_url_in_browser(url, always_os_browser=False):
         open_ba_detail(url.replace('tieba_forum_namely://', ''))
     elif url.startswith('tieba_forum://'):
         open_ba_detail(int(url.replace('tieba_forum://', '')))
+    elif url.startswith(('http://clb.tiebadesktop.localpage', 'https://clb.tiebadesktop.localpage')):  # 内部链接
+        open_in_webview()
     else:
         if always_os_browser or not is_http:  # 手动指定强制使用系统浏览器，或是非http协议时
             open_in_system()  # 在系统内打开

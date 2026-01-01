@@ -29,7 +29,7 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
                                                        enable_link_hover_text=False,
                                                        enable_zoom_factor=True, enable_error_page=True,
                                                        enable_context_menu=True, enable_keyboard_keys=True,
-                                                       handle_newtab_byuser=True)
+                                                       handle_newtab_byuser=True, disable_web_safe=True)
 
         self.tabWidget.tabCloseRequested.connect(self.remove_widget)
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
@@ -203,7 +203,8 @@ class ExtWebView2(webview2.QWebView2View):
 
     def record_history(self, icon_url, title, url):
         if url:
-            if icon_url:
+            if icon_url and not icon_url.startswith(
+                    ('http://clb.tiebadesktop.localpage', 'https://clb.tiebadesktop.localpage')):
                 md5 = cache_mgr.save_md5_ico(icon_url)
             else:
                 md5 = ''

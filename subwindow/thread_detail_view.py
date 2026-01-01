@@ -158,16 +158,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         return super(ThreadDetailView, self).eventFilter(source, event)  # 照常处理事件
 
     def closeEvent(self, a0):
-        from subwindow.thread_video_item import ThreadVideoItem
         self.flash_shower.hide()
         a0.accept()
         self.forum_avatar.destroyImage()
         self.lz_portrait.destroyImage()
-        if self.listWidget.count() == 1:
-            widget = self.listWidget.itemWidget(self.listWidget.item(0))
-            if isinstance(widget, ThreadVideoItem):
-                if widget.webview:
-                    widget.destroy_webview()
+        self.listWidget.clear()
         self.listWidget_4.clear()
         qt_window_mgr.del_window(self)
 

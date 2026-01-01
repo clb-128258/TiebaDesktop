@@ -206,6 +206,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                                   f'中查看{self.forum_name}吧的等级排行榜。</p>'
                                   f'</body></html>')
 
+            self.forum_atavar.destroyImage()
             self.forum_atavar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
                                            datas['avatar'],
                                            qt_image.ImageCoverType.RoundCover,

@@ -363,111 +363,127 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         start_background_thread(self.load_info)
 
     def update_info_ui(self, datas):
-        self.setWindowTitle(datas['name'] + '吧')
-        self.label_3.setText('{0}人关注，{1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
-                                                          large_num_to_string(datas['postnum'], endspace=True)))
-        self.label_2.setText(datas['name'] + '吧')
-        self.forum_avatar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
-                                       datas['avatar'],
-                                       qt_image.ImageCoverType.RoundCover,
-                                       (50, 50))
-        self.forum_avatar.loadImage()
-
-        if datas['is_followed'] == 1:
-            qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
-                   'solid;border-color: [color]}')
-            if 1 <= datas['uf_level'] <= 3:  # 绿牌
-                qss = qss.replace('[color]', 'rgb(101, 211, 171)')
-            elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
-                qss = qss.replace('[color]', 'rgb(101, 161, 255)')
-            elif 10 <= datas['uf_level'] <= 15:  # 黄牌
-                qss = qss.replace('[color]', 'rgb(255, 172, 29)')
-            elif datas['uf_level'] >= 16:  # 橙牌老东西
-                qss = qss.replace('[color]', 'rgb(247, 126, 48)')
-
-            self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
-            self.label_9.setText(datas['level_info'])
-            self.label_9.show()
-
-        if datas['admin_name']:
-            self.label_7.setText(datas['admin_name'])
-            self.forum_admin_portrait.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
-                                                   datas['admin_portrait'],
-                                                   qt_image.ImageCoverType.RoundCover,
-                                                   (20, 20))
-            self.forum_admin_portrait.loadImage()
+        if datas['error']:
+            QMessageBox.critical(self, '进吧失败', datas['error'], QMessageBox.Ok)
+            self.close()
         else:
-            self.label_6.hide()
-            self.gridLayout_5.removeWidget(self.label_6)
-            self.label_7.setText('本吧暂时没有吧主。')
+            self.setWindowTitle(datas['name'] + '吧')
+            self.label_3.setText('{0}人关注，{1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
+                                                              large_num_to_string(datas['postnum'], endspace=True)))
+            self.label_2.setText(datas['name'] + '吧')
+            self.forum_avatar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                           datas['avatar'],
+                                           qt_image.ImageCoverType.RoundCover,
+                                           (50, 50))
+            self.forum_avatar.loadImage()
 
-        if datas['is_followed'] == 1:
-            self.pushButton.setText('已关注')
-            self.pushButton.setEnabled(False)
-            self.pushButton.setToolTip('已关注此吧')
-        elif datas['is_followed'] == 2:
-            self.pushButton.setText('登录后即可关注')
-            self.pushButton.setEnabled(False)
-        self.pushButton.show()
-        self.flash_shower.hide()
+            if datas['is_followed'] == 1:
+                qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
+                       'solid;border-color: [color]}')
+                if 1 <= datas['uf_level'] <= 3:  # 绿牌
+                    qss = qss.replace('[color]', 'rgb(101, 211, 171)')
+                elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
+                    qss = qss.replace('[color]', 'rgb(101, 161, 255)')
+                elif 10 <= datas['uf_level'] <= 15:  # 黄牌
+                    qss = qss.replace('[color]', 'rgb(255, 172, 29)')
+                elif datas['uf_level'] >= 16:  # 橙牌老东西
+                    qss = qss.replace('[color]', 'rgb(247, 126, 48)')
+
+                self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
+                self.label_9.setText(datas['level_info'])
+                self.label_9.show()
+
+            if datas['admin_name']:
+                self.label_7.setText(datas['admin_name'])
+                self.forum_admin_portrait.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
+                                                       datas['admin_portrait'],
+                                                       qt_image.ImageCoverType.RoundCover,
+                                                       (20, 20))
+                self.forum_admin_portrait.loadImage()
+            else:
+                self.label_6.hide()
+                self.gridLayout_5.removeWidget(self.label_6)
+                self.label_7.setText('本吧暂时没有吧主。')
+
+            if datas['is_followed'] == 1:
+                self.pushButton.setText('已关注')
+                self.pushButton.setEnabled(False)
+                self.pushButton.setToolTip('已关注此吧')
+            elif datas['is_followed'] == 2:
+                self.pushButton.setText('登录后即可关注')
+                self.pushButton.setEnabled(False)
+            self.pushButton.show()
+            self.flash_shower.hide()
 
     def load_info(self):
         async def get_detail():
             async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                # 获取吧信息
-                logging.log_INFO(f'forum (id {self.forum_id}) loading head_info')
-                forum_name = await client.get_fname(self.forum_id)
+                try:
+                    # 获取吧信息
+                    logging.log_INFO(f'forum (id {self.forum_id}) loading head_info')
+                    forum_name = await client.get_fname(self.forum_id)
+                    if not forum_name:
+                        raise NameError(f'forum name is empty (id {self.forum_id})')
+                    else:
+                        payload = {
+                            'BDUSS': self.bduss,
+                            '_client_type': "2",
+                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                            'kw': forum_name,
+                            'stoken': self.stoken
+                        }
 
-                payload = {
-                    'BDUSS': self.bduss,
-                    '_client_type': "2",
-                    '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                    'kw': forum_name,
-                    'stoken': self.stoken
-                }
+                        resp = request_mgr.run_post_api('/c/f/frs/frsBottom', request_mgr.calc_sign(payload),
+                                                        bduss=self.bduss,
+                                                        stoken=self.stoken, host_type=2, use_mobile_header=True)
+                        if resp['error_code'] != 0:
+                            raise Exception(f'{resp["error_msg"]} (错误代码 {resp["error_code"]})')
 
-                resp = request_mgr.run_post_api('/c/f/frs/frsBottom', request_mgr.calc_sign(payload), bduss=self.bduss,
-                                                stoken=self.stoken, host_type=2, use_mobile_header=True)
+                        level_info = ''
+                        level_value = 1
+                        if self.bduss:
+                            isFollowed = 1 if resp["forum"]["is_like"] else 0
+                            if resp["forum"]["is_like"]:
+                                level_info = f'Lv.{resp["forum"]["user_level"]} {resp["forum"]["level_name"]}'
+                                level_value = resp["forum"]["user_level"]
+                        else:
+                            isFollowed = 2
+                        self.forum_name = forum_name = resp["forum"]["name"]
+                        forum_slogan = resp["forum"]["slogan"]
+                        follow_count = resp["forum"]["member_num"]
+                        post_count = resp["forum"]["post_num"]
+                        if admin_info := resp["forum"].get("managers"):
+                            forum_admin_name = admin_info[0]["show_name"]
+                            forum_admin_portrait = admin_info[0]["portrait"].split('?')[0]
+                        else:
+                            forum_admin_name = ''
+                            forum_admin_portrait = ''
 
-                level_info = ''
-                level_value = 1
-                if self.bduss:
-                    isFollowed = 1 if resp["forum"]["is_like"] else 0
-                    if resp["forum"]["is_like"]:
-                        level_info = f'Lv.{resp["forum"]["user_level"]} {resp["forum"]["level_name"]}'
-                        level_value = resp["forum"]["user_level"]
+                        forum_avatar = resp['forum']["avatar"]
+
+                        md5v = cache_mgr.save_md5_ico(resp['forum']["avatar"])
+                        profile_mgr.add_view_history(3, {"icon_md5": md5v, "forum_id": self.forum_id,
+                                                         "forum_name": self.forum_name})
+
+                        logging.log_INFO(
+                            f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
+                except Exception as e:
+                    logging.log_exception(e)
+                    tdata = {'error': str(e)}
                 else:
-                    isFollowed = 2
-                self.forum_name = forum_name = resp["forum"]["name"]
-                forum_slogan = resp["forum"]["slogan"]
-                follow_count = resp["forum"]["member_num"]
-                post_count = resp["forum"]["post_num"]
-                if admin_info := resp["forum"].get("managers"):
-                    forum_admin_name = admin_info[0]["show_name"]
-                    forum_admin_portrait = admin_info[0]["portrait"].split('?')[0]
-                else:
-                    forum_admin_name = ''
-                    forum_admin_portrait = ''
-
-                forum_avatar = resp['forum']["avatar"]
-
-                md5v = cache_mgr.save_md5_ico(resp['forum']["avatar"])
-                profile_mgr.add_view_history(3, {"icon_md5": md5v, "forum_id": self.forum_id,
-                                                 "forum_name": self.forum_name})
-
-                logging.log_INFO(
-                    f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
-                tdata = {'name': forum_name,
-                         'avatar': forum_avatar,
-                         'slogan': forum_slogan,
-                         'follownum': follow_count,
-                         'postnum': post_count,
-                         'admin_name': forum_admin_name,
-                         'admin_portrait': forum_admin_portrait,
-                         'is_followed': isFollowed,
-                         'level_info': level_info,
-                         'uf_level': level_value}
-                self.update_signal.emit(tdata)
+                    tdata = {"error": '',
+                             'name': forum_name,
+                             'avatar': forum_avatar,
+                             'slogan': forum_slogan,
+                             'follownum': follow_count,
+                             'postnum': post_count,
+                             'admin_name': forum_admin_name,
+                             'admin_portrait': forum_admin_portrait,
+                             'is_followed': isFollowed,
+                             'level_info': level_info,
+                             'uf_level': level_value}
+                finally:
+                    self.update_signal.emit(tdata)
 
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
