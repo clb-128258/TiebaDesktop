@@ -1,6 +1,7 @@
 """webview2模块，实现了webview2与pyqt的绑定"""
 # 先引入跨平台库
 import os
+import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal
@@ -32,11 +33,12 @@ def loadLibs():
         clr.AddReference(os.path.join(self_path, "Microsoft.Web.WebView2.WinForms.dll"))
 
         from Microsoft.Web.WebView2.Core import CoreWebView2PermissionState, CoreWebView2HostResourceAccessKind, \
-            CoreWebView2BrowsingDataKinds, CoreWebView2WebResourceContext
+            CoreWebView2BrowsingDataKinds, CoreWebView2WebResourceContext, CoreWebView2FaviconImageFormat
         from Microsoft.Web.WebView2.WinForms import WebView2, CoreWebView2CreationProperties
         from System import Uri, Object, Action
         from System.Threading import Thread, ApartmentState, ThreadStart, SendOrPostCallback
         from System.Threading.Tasks import Task
+        from System.IO import MemoryStream
         from System.Drawing import Color, Point, Size
         from System.Windows.Forms import (
             AnchorStyles, DockStyle,
@@ -63,6 +65,8 @@ def loadLibs():
         globals()['AnchorStyles'] = AnchorStyles
         globals()['DockStyle'] = DockStyle
         globals()['FormsApplication'] = FormsApplication
+        globals()['MemoryStream'] = MemoryStream
+        globals()['CoreWebView2FaviconImageFormat'] = CoreWebView2FaviconImageFormat
 
 
 def _is_new_version(current_version: str, new_version: str) -> bool:
@@ -249,6 +253,7 @@ class QWebView2View(QWidget):
     iconUrlChanged = pyqtSignal(str)
     fullScreenRequested = pyqtSignal(bool)
     iconChanged = pyqtSignal(QIcon)
+    jsBridgeReceived = pyqtSignal(str)
 
     newtabSignal = pyqtSignal(str)
     __setparentsignal = pyqtSignal()
@@ -610,16 +615,27 @@ class QWebView2View(QWidget):
             _set_parent()
 
     def __remake_qicon(self):
-        r = requests.get(self.iconUrl(), headers={'User-Agent': self.__webview.CoreWebView2.Settings.UserAgent})
-        r.close()
-        if r.status_code != 200:
-            raise Warning(f'Get icon binary data failed, status code: {r.status_code}')
+        try:
+            if self.iconUrl().startswith(('http://', 'https://')) and not self.iconUrl().startswith(
+                    ('http://clb.tiebadesktop.localpage', 'https://clb.tiebadesktop.localpage')):
+                requests.session().trust_env = True
+                r = requests.get(self.iconUrl(), headers={'User-Agent': self.__webview.CoreWebView2.Settings.UserAgent})
+                r.close()
+                if r.status_code != 200:
+                    raise Warning(f'Get icon binary data failed, status code: {r.status_code}')
 
-        if self.__current_icon is not None:
-            del self.__current_icon
-        pixmap = QPixmap()
-        pixmap.loadFromData(r.content)
-        self.__current_icon = QIcon(pixmap)
+                if self.__current_icon:
+                    del self.__current_icon
+                pixmap = QPixmap()
+                pixmap.loadFromData(r.content)
+                self.__current_icon = QIcon(pixmap)
+            else:
+                if self.__current_icon:
+                    del self.__current_icon
+                self.__current_icon = QIcon('ui/tieba_logo_small.png')
+        except Exception as e:
+            print(type(e))
+            print(e)
 
     def __on_fullscreen_requested(self, _, args):
         self.fullScreenRequested.emit(self.isHtmlInFullScreenState())
@@ -627,7 +643,7 @@ class QWebView2View(QWidget):
     def __on_icon_changed(self, _, args):
         self.__remake_qicon()
         self.iconUrlChanged.emit(self.iconUrl())
-        self.iconChanged.emit(self.__current_icon)
+        self.iconChanged.emit(self.icon())
 
     def __on_audio_mute_changed(self, _, args):
         self.audioMutedChanged.emit(self.isAudioMuted())
@@ -681,7 +697,7 @@ class QWebView2View(QWidget):
 
     def __on_js_msg_received(self, _, args):
         message = args.TryGetWebMessageAsString()
-        print(message)
+        self.jsBridgeReceived.emit(message)
 
     def __on_webview_ready(self, webview_instance, args):
         if not args.IsSuccess:

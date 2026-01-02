@@ -4,8 +4,10 @@ console.info("Video play engine made by xgplayer.js, website: https://v2.h5playe
 
 function getUrlFromParams() {
     let searchParams = new URLSearchParams(window.location.search);
-    return searchParams.get('url');
+    let value = searchParams.get('url');
+    return value == null ? "" : value;
 }
+
 
 function initPlayer(video_url) {
     const player = new Player({
@@ -28,10 +30,16 @@ function initPlayer(video_url) {
         "fitVideoSize": 'fill',
         "fluid": true,
     });
-
-
-    window.addEventListener('resize', () => {
-        //player.resize(); // 通知播放器重新计算尺寸
-    });
 }
 
+function runMain() {
+    let url = getUrlFromParams();
+    if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+        showToastInPythonClient("你的视频链接不合法，请提供一个有效的视频链接", ToastIconType.ERROR);
+        setTimeout(() => {closeCurrentPage();}, 2400);
+    }
+    else {
+        initPlayer(url);
+    }
+
+}

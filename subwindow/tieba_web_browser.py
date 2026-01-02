@@ -1,9 +1,10 @@
 import yarl
+import json
 from PyQt5.QtCore import Qt, QSize, QByteArray
 from PyQt5.QtGui import QIcon, QMovie
 from PyQt5.QtWidgets import QWidget
 from consts import datapath
-from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr
+from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, logging
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread
 
 from ui import tb_browser
@@ -30,6 +31,9 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
                                                        enable_zoom_factor=True, enable_error_page=True,
                                                        enable_context_menu=True, enable_keyboard_keys=True,
                                                        handle_newtab_byuser=True, disable_web_safe=True)
+
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
 
         self.tabWidget.tabCloseRequested.connect(self.remove_widget)
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
@@ -184,6 +188,8 @@ class ExtWebView2(webview2.QWebView2View):
     def __init__(self, profile: webview2.WebViewProfile, url: str):
         super().__init__()
 
+        self.tab_container = None
+
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowTitle('正在加载...')
 
@@ -197,9 +203,26 @@ class ExtWebView2(webview2.QWebView2View):
 
         self.loadStarted.connect(self.start_ani)
         self.loadFinished.connect(self.stop_ani)
+        self.jsBridgeReceived.connect(self.parse_js_msg)
 
         self.setProfile(profile)
         self.loadAfterRender(url)
+
+    def parse_js_msg(self, jsonify_text):
+        logging.log_INFO(f'received text from jsbridge: {jsonify_text}')
+
+        json_data = json.loads(jsonify_text)
+        if json_data['type'] == 'topToast':
+            toast_msg = top_toast_widget.ToastMessage(json_data['argDatas']['text'], json_data['argDatas']['duration'],
+                                                      json_data['argDatas']['iconType'])
+            self.show_toast_to_parent(toast_msg)
+        elif json_data['type'] == 'closePage':
+            if self.tab_container:
+                self.tab_container.remove_widget(self.tab_container.tabWidget.indexOf(self))
+
+    def show_toast_to_parent(self, msg):
+        if self.tab_container:
+            self.tab_container.top_toaster.showToast(msg)
 
     def record_history(self, icon_url, title, url):
         if url:
@@ -238,3 +261,4 @@ class ExtWebView2(webview2.QWebView2View):
         self.newtabSignal.connect(tc.add_new_page)
         self.urlChanged.connect(tc.reset_url_text)
         self.urlChanged.connect(tc.reset_client_button_visitable)
+        self.tab_container = tc

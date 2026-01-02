@@ -10,7 +10,7 @@ ANIMATION_TIME = 200  # 动画显示时间
 ICON_SIZE = 20  # 提示图标大小
 
 
-class ToastIconType(enum.Enum):
+class ToastIconType(enum.IntEnum):
     """
     顶部通知消息的图标类型
 
@@ -20,10 +20,10 @@ class ToastIconType(enum.Enum):
         ERROR 错误图标\n
         SUCCESS 成功图标
     """
-    NO_ICON = enum.auto()
-    INFORMATION = enum.auto()
-    ERROR = enum.auto()
-    SUCCESS = enum.auto()
+    NO_ICON = 1
+    INFORMATION = 2
+    ERROR = 3
+    SUCCESS = 4
 
 
 class ToastMessage:
@@ -51,6 +51,8 @@ class TopToaster(QWidget, top_toast.Ui_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)  # 始终置顶
+        self.setAttribute(Qt.WA_TranslucentBackground, True)  # 背景透明
         self.setFixedHeight(32)
         self.init_pixmap_cache()
 
