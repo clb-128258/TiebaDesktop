@@ -824,6 +824,30 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     self.listWidget.setItemWidget(item, repost_widget)
                     self.update_listwidget_size(repost_widget.height())
 
+                if datas['vote_info']['have_vote']:
+                    from subwindow.thread_vote_item import ThreadVoteItem, VoteItem
+
+                    option_list = []
+                    for o in datas['vote_info']['options']:
+                        item = VoteItem(o['id'])
+                        item.set_info(o['text'], o['total_num'], o['current_num'], o['is_chosen'],
+                                      o['is_current_chose'])
+                        option_list.append(item)
+
+                    vote_widget = ThreadVoteItem(datas['vote_info']['is_multi'], self.thread_id, self.forum_id)
+                    vote_widget.set_info(datas['vote_info']['title'],
+                                         datas['vote_info']['vote_num'],
+                                         datas['vote_info']['vt_user_num'],
+                                         option_list)
+                    vote_widget.msgPopped.connect(self.top_toaster.showToast)
+                    vote_widget.adjustSize()
+
+                    item = QListWidgetItem()
+                    item.setSizeHint(vote_widget.size())
+                    self.listWidget.addItem(item)
+                    self.listWidget.setItemWidget(item, vote_widget)
+                    self.update_listwidget_size(vote_widget.height())
+
     def get_thread_head_info_async(self):
         start_background_thread(self.get_thread_head_info)
 
@@ -923,7 +947,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             repost_info['forum_id'] = thread_info.thread.share_origin.fid
                             repost_info['forum_name'] = thread_info.thread.share_origin.fname
 
-                        vote_info = {'have_vote': bool(thread_info.thread.vote_info),
+                        vote_info = {'have_vote': bool(thread_info.thread.vote_info.title),
                                      'title': '',
                                      'vote_num': 0,
                                      'vt_user_num': 0,

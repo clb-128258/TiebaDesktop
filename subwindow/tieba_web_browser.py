@@ -70,10 +70,11 @@ class ExtTabBar(QTabBar):
         self.drag_preview_label = ExtPreviewLabel(self)
         self.drag_pixmap = None
 
-    def create_new_browser(self, widget, window_pos):
+    def create_new_browser(self, widget, window_pos, window_size):
         browser = TiebaWebBrowser()
         browser.add_new_widget(widget)
         qt_window_mgr.add_window(browser)
+        browser.resize(window_size)
         browser.move(window_pos)
 
     def dragEnterEvent(self, a0):
@@ -167,13 +168,20 @@ class ExtTabBar(QTabBar):
             drag.setMimeData(mimeData)
             drag_result = drag.exec_(Qt.DropAction.MoveAction)
 
-            if drag_result == Qt.DropAction.IgnoreAction:
-                # 在拖出窗口但是没有被处理时，直接新建独立窗口并容纳标签页
-                widget = self.parent_tabwidget.widget(self.draggedTabIdx)
-                self.parent_window.remove_widget(self.draggedTabIdx, False)
+            if drag_result == Qt.DropAction.IgnoreAction:  # 在拖出窗口但是没有被处理时
                 cursor_pos = QCursor.pos()
-                self.create_new_browser(widget, QPoint(cursor_pos.x() - self.moved_value_x,
-                                                       cursor_pos.y() - self.moved_value_y))
+                if self.count() > 1:  # 有多个标签页
+                    # 直接新建独立窗口并容纳标签页
+                    widget = self.parent_tabwidget.widget(self.draggedTabIdx)
+                    self.parent_window.remove_widget(self.draggedTabIdx, False)  # 从旧的里面删除
+                    self.create_new_browser(widget,
+                                            QPoint(cursor_pos.x() - self.moved_value_x,
+                                                   cursor_pos.y() - self.moved_value_y),
+                                            self.parent_window.size())
+                else:  # 只有一个标签页
+                    # 直接移动当前窗口的位置
+                    self.parent_window.move(cursor_pos.x() - self.moved_value_x,
+                                            cursor_pos.y() - self.moved_value_y)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         self.drag_preview_label.hide_pixmap()  # 先隐藏预览图

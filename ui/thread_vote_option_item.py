@@ -14,10 +14,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(412, 44)
+        Form.resize(197, 38)
         Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "")
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
+        self.gridLayout_2.setContentsMargins(0, 6, 0, 6)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName("gridLayout")
