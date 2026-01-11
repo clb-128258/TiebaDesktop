@@ -135,34 +135,44 @@
     <widget class="QTabWidget" name="tabWidget">
      <property name="styleSheet">
       <string notr="true">/* 设置整个 QTabWidget 背景透明 */
-                            QTabWidget {
-                            background: transparent;
-                            }
-                            QTabWidget::pane {
-                            border: none;
-                            }
-                            QTabWidget::tab-bar {
-                            alignment: left;
-                            }
-                            QTabBar::tab {
-                            padding: 6px;
-                            padding-left: 10px;
-                            padding-right: 10px;
-                            border-radius: 14px;
-                            }
-                            QTabBar::QToolButton{
-                            alignment: left;
-                            }
-                            QTabBar::tab:hover {
-                            font: 9pt &quot;微软雅黑&quot;;
-                            background: rgb(232, 232, 232);
-                            }
-                            QTabBar::tab:selected{
-                            font: 9pt &quot;微软雅黑&quot;;
-                            background: rgb(202, 202, 202);
-                            }
+QTabWidget {
+    background: transparent;
+    border: none;
+    /* 关键：整体无边框 */
+}
 
-                        </string>
+QTabWidget::pane {
+    border: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+QTabWidget::tab-bar {
+	border: none;
+	background: transparent;
+    alignment: left;
+}
+
+QTabBar::tab {
+    padding: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 14px;
+}
+
+QTabBar::QToolButton {
+    alignment: left;
+}
+
+QTabBar::tab:hover {
+    font: 9pt &quot;微软雅黑&quot;;
+    background: rgb(232, 232, 232);
+}
+
+QTabBar::tab:selected {
+    font: 9pt &quot;微软雅黑&quot;;
+    background: rgb(202, 202, 202);
+}</string>
      </property>
      <property name="currentIndex">
       <number>-1</number>
