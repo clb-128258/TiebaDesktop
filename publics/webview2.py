@@ -604,6 +604,17 @@ class QWebView2View(QWidget):
             if self.__webview.IsHandleCreated:
                 self.__webview.BeginInvoke(SendOrPostCallback(lambda _: func()), '')
 
+    def __wait_task_give_callback(self, task, callback):
+        """异步等待 C# 协程 task 执行完毕，并在完成执行时以 callback(result) 的形式调用回调函数"""
+
+        def wait_thread():
+            task.Wait()
+            callback(task.Result)
+
+        thread = Thread(ThreadStart(wait_thread))
+        thread.ApartmentState = ApartmentState.STA
+        thread.Start()
+
     def __set_parent(self):
         if self.__webview is not None:
             def _set_parent():
@@ -615,27 +626,21 @@ class QWebView2View(QWidget):
             _set_parent()
 
     def __remake_qicon(self):
-        try:
-            if self.iconUrl().startswith(('http://', 'https://')) and not self.iconUrl().startswith(
-                    ('http://clb.tiebadesktop.localpage', 'https://clb.tiebadesktop.localpage')):
-                requests.session().trust_env = True
-                r = requests.get(self.iconUrl(), headers={'User-Agent': self.__webview.CoreWebView2.Settings.UserAgent})
-                r.close()
-                if r.status_code != 200:
-                    raise Warning(f'Get icon binary data failed, status code: {r.status_code}')
-
-                if self.__current_icon:
-                    del self.__current_icon
-                pixmap = QPixmap()
-                pixmap.loadFromData(r.content)
+        def on_stream_copied(memoryStream):
+            iconBytes = bytes(memoryStream.ToArray())  # 复制完后，转为python的字节数据
+            pixmap = QPixmap()
+            pixmap.loadFromData(iconBytes)
+            if not pixmap.isNull():  # 图像不为空，加载成功
                 self.__current_icon = QIcon(pixmap)
-            else:
-                if self.__current_icon:
-                    del self.__current_icon
-                self.__current_icon = QIcon('ui/tieba_logo_small.png')
-        except Exception as e:
-            print(type(e))
-            print(e)
+                self.iconChanged.emit(self.__current_icon)
+
+        def on_icon_got(faviconStream):
+            memoryStream = MemoryStream()
+            task = faviconStream.CopyToAsync(memoryStream)  # 异步复制到内存缓冲区
+            self.__wait_task_give_callback(task, lambda r: on_stream_copied(memoryStream))
+
+        task = self.__webview_core.GetFaviconAsync(CoreWebView2FaviconImageFormat.Png)  # 异步获取icon流
+        self.__wait_task_give_callback(task, on_icon_got)
 
     def __on_fullscreen_requested(self, _, args):
         self.fullScreenRequested.emit(self.isHtmlInFullScreenState())
@@ -643,7 +648,6 @@ class QWebView2View(QWidget):
     def __on_icon_changed(self, _, args):
         self.__remake_qicon()
         self.iconUrlChanged.emit(self.iconUrl())
-        self.iconChanged.emit(self.icon())
 
     def __on_audio_mute_changed(self, _, args):
         self.audioMutedChanged.emit(self.isAudioMuted())
