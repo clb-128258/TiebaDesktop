@@ -105,7 +105,3 @@ def save_portrait(portrait: str):
             file.write(bytes_data)
         return bytes_data
 
-
-def init_all_datas():
-    """从本地磁盘加载所有配置数据"""
-    pass

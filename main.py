@@ -192,6 +192,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
         self.pushButton_12.clicked.connect(self.scan_use_detail_async)
         self.pushButton_4.clicked.connect(self.clear_caches_async)
+        self.pushButton_6.clicked.connect(self.open_proxy_settings)
         self.scanFinish.connect(self._set_use_detail_ui)
         self.clearFinish.connect(self._on_caches_cleared)
 
@@ -241,7 +242,26 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
             profile_mgr.local_config['thread_view_settings']['play_gif'] = self.checkBox_12.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = self.checkBox_13.isChecked()
+
+            try:
+                rdbtn_check_index = [self.radioButton_3.isChecked(),
+                                     self.radioButton_4.isChecked(),
+                                     self.radioButton_5.isChecked()]
+                proxy_switch = rdbtn_check_index.index(True)
+            except ValueError:
+                proxy_switch = 0
+            port_num = int(self.lineEdit_2.text()) if self.lineEdit_2.text() else -1
+            if not 0 <= port_num <= 65535 and self.lineEdit_2.text():
+                raise IndexError(f'invalid port number {port_num}')
+            profile_mgr.local_config["proxy_settings"]["proxy_switch"] = proxy_switch
+            profile_mgr.local_config['proxy_settings']['custom_proxy_server']['ip'] = self.lineEdit.text()
+            profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port'] = port_num
+            profile_mgr.local_config['proxy_settings']['enabled_scheme']['http'] = self.checkBox_14.isChecked()
+            profile_mgr.local_config['proxy_settings']['enabled_scheme']['https'] = self.checkBox_15.isChecked()
             profile_mgr.save_local_config()
+        except KeyError:
+            profile_mgr.fix_local_config()
+            self.save_local_config()
         except Exception as e:
             logging.log_exception(e)
             toast = top_toast_widget.ToastMessage('设置保存失败，请重试', icon_type=top_toast_widget.ToastIconType.ERROR)
@@ -249,6 +269,16 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         else:
             toast = top_toast_widget.ToastMessage('设置保存成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
             self.top_toaster.showToast(toast)
+
+    def open_proxy_settings(self):
+        if platform.system() == 'Windows':  # windows 系统
+            if int(platform.version().split('.')[-1]) < 10240:  # win10以下系统
+                open_url_in_browser('inetcpl.cpl ,4')  # 调用控制面板的老设置
+            else:
+                # win10 以后系统调用 UWP 设置
+                open_url_in_browser('ms-settings:network-proxy')
+        else:
+            QMessageBox.information(self, '提示', '该功能暂不支持你的系统，请手动调整系统的代理设置。', QMessageBox.Ok)
 
     def set_debug_info(self):
         self.label_8.setText(f'版本 {consts.APP_VERSION_STR}')
@@ -515,9 +545,24 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
             self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
             self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
+
+            rdbtn_index = [self.radioButton_3, self.radioButton_4, self.radioButton_5]
+            port = profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port']
+            rdbtn_index[profile_mgr.local_config['proxy_settings']['proxy_switch']].setChecked(True)
+            self.lineEdit.setText(profile_mgr.local_config['proxy_settings']['custom_proxy_server']['ip'])
+            self.lineEdit_2.setText(str(port) if port != -1 else '')
+            self.checkBox_14.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['http'])
+            self.checkBox_15.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['https'])
         except KeyError:
-            profile_mgr.fix_local_config()
-            self.load_local_config()
+            if QMessageBox.critical(self, '本地设置加载失败',
+                                    '本地存储的设置文件缺少某些关键字段，设置项无法被加载。\n'
+                                    '一些设置项不会被正确显示。\n'
+                                    '将设置文件恢复到默认状态可解决该问题，是否要重置为默认设置？\n\n'
+                                    '注意：如果你最近更新了本软件，那么本问题是因为旧版本的配置文件没有新版本所需的字段所导致的。'
+                                    '此时请点击“否”按钮，并在“通用设置”中保存设置即可使配置文件恢复正常。',
+                                    QMessageBox.No | QMessageBox.Yes) == QMessageBox.Yes:
+                profile_mgr.fix_local_config()
+                self.load_local_config()
 
     def get_logon_accounts(self):
         # 清空数据
@@ -541,6 +586,14 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             item.setSizeHint(widget.size())
             self.listWidget_2.addItem(item)
             self.listWidget_2.setItemWidget(item, widget)
+
+        account_num = len(account_list['login_list'])
+        if not account_num:
+            self.listWidget_2.hide()
+            self.label.setText('你目前还没有登录任何账号，点击右侧的“添加账号”可立即登录新账号。')
+        else:
+            self.listWidget_2.show()
+            self.label.setText(f'你目前已登录 {account_num} 个账号。')
 
 
 class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
@@ -994,6 +1047,11 @@ class LoginWebView(QDialog):
         self.webview.loadAfterRender('https://passport.baidu.com/v2/?login&u=https%3A%2F%2Ftieba.baidu.com')
         self.webview.initRender()
 
+    def keyPressEvent(self, a0):
+        if a0.key() == Qt.Key.Key_Escape:
+            a0.ignore()
+            self.close()
+
     def closeEvent(self, a0):
         if not self.islogin:
             if QMessageBox.information(self, '提示', '你确实要中止登录流程吗？',
@@ -1347,9 +1405,8 @@ if __name__ == "__main__":
     reset_udf()
     create_data()
     init_log()
-    proxytool.set_proxy()
     profile_mgr.init_all_datas()
-    cache_mgr.init_all_datas()
+    proxytool.set_proxy()
     handle_command_events()
 
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)

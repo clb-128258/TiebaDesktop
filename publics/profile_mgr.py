@@ -2,7 +2,7 @@
 import json
 import time
 import copy
-
+from publics import proxytool
 import consts
 
 local_config_model = {
@@ -14,7 +14,11 @@ local_config_model = {
                              'play_gif': True},
     'forum_view_settings': {'default_sort': 0},
     'web_browser_settings': {'url_open_policy': 0},
-    "notify_settings": {"enable_interact_notify": True}
+    "notify_settings": {"enable_interact_notify": True},
+    "proxy_settings": {"proxy_switch": 0,
+                       "custom_proxy_server": {"ip": '', "port": -1},
+                       "enabled_scheme": {"http": True, "https": True}
+                       }
 }
 
 local_config = {}
@@ -34,10 +38,7 @@ def load_local_config() -> dict:
 
 def fix_local_config():
     global local_config
-    new_cfg = copy.deepcopy(local_config_model)  # 复制出一份新配置
-    new_cfg.update(local_config)  # 把缺少索引的老配置更新到参数齐全的新配置上
-    local_config = new_cfg
-
+    local_config = copy.deepcopy(local_config_model)  # 复制出一份新配置
     save_local_config()
 
 
@@ -45,6 +46,7 @@ def save_local_config():
     global local_config
     with open(f'{consts.datapath}/config.json', 'wt') as file:
         file.write(json.dumps(local_config, indent=4))
+    proxytool.set_proxy()  # 保存配置后重设代理
 
 
 def load_view_history() -> dict:
