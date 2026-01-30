@@ -6,7 +6,7 @@ import enum
 import queue
 
 Y_POS_MOVE_VALUE = 30  # y坐标偏移量
-ANIMATION_TIME = 200  # 动画显示时间
+ANIMATION_TIME = 150  # 动画显示时间
 ICON_SIZE = 20  # 提示图标大小
 
 

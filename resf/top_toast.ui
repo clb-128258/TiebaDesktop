@@ -35,7 +35,7 @@
     <widget class="QFrame" name="frame">
      <property name="styleSheet">
       <string notr="true">QFrame#frame{
-            background-color: rgba(91, 68, 200,0.9);
+            background-color: rgba(91, 68, 200,0.85);
             color: white;
             border-radius: 15px;
 }

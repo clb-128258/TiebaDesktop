@@ -23,7 +23,7 @@ class Ui_Form(object):
         self.gridLayout.setObjectName("gridLayout")
         self.frame = QtWidgets.QFrame(Form)
         self.frame.setStyleSheet("QFrame#frame{\n"
-"            background-color: rgba(91, 68, 200,0.9);\n"
+"            background-color: rgba(91, 68, 200,0.85);\n"
 "            color: white;\n"
 "            border-radius: 15px;\n"
 "}\n"
