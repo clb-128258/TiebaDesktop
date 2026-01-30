@@ -539,7 +539,7 @@ class Ui_Dialog(object):
         self.label_23.setText(_translate("Dialog", "Qt 版本："))
         self.pushButton_11.setText(_translate("Dialog", "关于 Qt..."))
         self.label_25.setText(_translate("Dialog", "如果使用本程序时遇到了问题，也请把这些诊断信息一并提供给开发者。"))
-        self.label_15.setText(_translate("Dialog", "<html><head/><body><p>贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。</p><p>可以访问 Github 仓库，以便与作者取得联系。<a href=\"https://github.com/clb-128258/TiebaDesktop\"><span style=\" text-decoration: underline; color:#0000ff;\">访问本项目的 Github 仓库</span></a></p><p>本软件遵循 MIT License 协议发布，请在遵守 MIT License 的前提下使用本软件。</p><p>本软件仅供学习交流使用，请勿用于违法犯罪用途，使用本软件所产生的任何后果都与作者无关。</p></body></html>"))
+        self.label_15.setText(_translate("Dialog", "<html><head/><body><p>贴吧桌面是一个非官方的、开源的百度贴吧电脑客户端。</p><p>可以访问 Github 仓库，以便与作者取得联系。<a href=\"https://github.com/clb-128258/TiebaDesktop\"><span style=\" text-decoration: underline; color:#0000ff;\">访问本项目的 Github 仓库</span></a></p><p>本软件遵循 MIT License 发布，请在遵守 MIT License 的前提下使用本软件。</p><p>本软件仅供学习交流使用，请勿用于任何商业或非法用途，使用本软件所产生的任何后果都与作者无关。</p></body></html>"))
         self.label_7.setText(_translate("Dialog", "贴吧桌面"))
         self.label_8.setText(_translate("Dialog", "版本 version"))
         self.label_6.setText(_translate("Dialog", "icon"))
