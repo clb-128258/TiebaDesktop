@@ -444,4 +444,4 @@ class MultipleImage(QObject):
             self.__image_source = None
             self.__cover_type = None
             self.__expect_size = None
-            raise TypeError(f'sourceData \"{sourceData}\"is not compatible for source \"{loadFrom}\"')
+            raise TypeError(f'sourceData \"{sourceData}\" is not compatible for source \"{loadFrom}\"')

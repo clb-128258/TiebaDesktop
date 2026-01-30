@@ -1354,6 +1354,7 @@ if __name__ == "__main__":
 
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication(sys.argv)
     translates = set_qt_languages()
     logging.log_INFO('Qt init complete')

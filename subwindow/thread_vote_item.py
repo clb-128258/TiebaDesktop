@@ -93,7 +93,7 @@ class ThreadVoteItem(QWidget, thread_vote_info.Ui_Form):
                     msg.title = f'投票失败，发生错误 {response["error_msg"]} ({response[{"error_code"}]})'
                     msg.icon_type = top_toast_widget.ToastIconType.ERROR
             else:
-                msg.title = '登录账号后即可进行签到'
+                msg.title = '登录账号后即可进行投票'
                 msg.icon_type = top_toast_widget.ToastIconType.INFORMATION
         except Exception as e:
             logging.log_exception(e)

@@ -141,10 +141,12 @@ class ExtTabBar(QTabBar):
         if (event.pos() - self.dragStartPos).manhattanLength() < QApplication.startDragDistance():
             return
 
-        mouse_pos = event.windowPos()
+        mouse_pos = self.parent_window.mapFromGlobal(event.globalPos())
         parent_rect = self.parent_window.rect()
-        if parent_rect.left() <= mouse_pos.x() <= parent_rect.right() and parent_rect.top() <= mouse_pos.y() <= parent_rect.bottom():
-            # 如果移动范围在窗口内，就不拖出窗口，只是显示预览图
+        top_area_height = self.parent_window.frame.height() + self.height()
+        if (parent_rect.left() - 5 <= mouse_pos.x() <= parent_rect.right() + 5
+                and self.parent_window.frame.height() - 5 <= mouse_pos.y() <= top_area_height + 5):
+            # 如果移动范围在tab区域内，就不拖出窗口，只是显示预览图
             self.drag_preview_label.move(event.pos().x() - self.current_drag_distance, 0)
             self.drag_preview_label.show()
         else:
@@ -175,7 +177,7 @@ class ExtTabBar(QTabBar):
                     widget = self.parent_tabwidget.widget(self.draggedTabIdx)
                     self.parent_window.remove_widget(self.draggedTabIdx, False)  # 从旧的里面删除
                     self.create_new_browser(widget,
-                                            QPoint(cursor_pos.x() - self.moved_value_x,
+                                            QPoint(cursor_pos.x() - self.current_drag_distance,
                                                    cursor_pos.y() - self.moved_value_y),
                                             self.parent_window.size())
                 else:  # 只有一个标签页
@@ -449,6 +451,15 @@ class ExtWebView2(webview2.QWebView2View):
         self.loadStarted.connect(self.start_ani)
         self.loadFinished.connect(self.stop_ani)
         self.jsBridgeReceived.connect(self.parse_js_msg)
+        self.renderProcessTerminated.connect(lambda errcode:
+                                             self.show_toast_to_parent(
+                                                 top_toast_widget.ToastMessage(
+                                                     f'底层 WebView2 进程 {self.renderProcessID()} 异常退出，'
+                                                     f'进程退出码为 {errcode}。'
+                                                     f'网页内容将会无法显示，请尝试刷新页面',
+                                                     icon_type=top_toast_widget.ToastIconType.ERROR)
+                                             )
+                                             )
 
         self.setProfile(profile)
         self.loadAfterRender(url)
@@ -497,8 +508,6 @@ class ExtWebView2(webview2.QWebView2View):
             self.windowCloseRequested.disconnect()
             self.newtabSignal.disconnect()
             self.urlChanged.disconnect()
-            self.windowTitleChanged.disconnect()
-            self.windowIconChanged.disconnect()
         except TypeError:
             pass
 
