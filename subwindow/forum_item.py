@@ -134,7 +134,7 @@ class ForumItem(QWidget, ba_item.Ui_Form):
 
     def set_level_color(self, level):
         qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 2px 4px;border-style: '
-               'solid;border-color: [color]}')
+               'solid;border-color: [color]; border-radius: 7px;}')
         if 1 <= level <= 3:  # 绿牌
             qss = qss.replace('[color]', 'rgb(101, 211, 171)')
         elif 4 <= level <= 9:  # 蓝牌

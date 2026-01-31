@@ -37,7 +37,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_11.setPixmap(QPixmap('ui/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
-        self.label_18.setPixmap(QPixmap('ui/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
         self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
 
         # 隐藏组件
@@ -46,7 +45,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.frame_3.hide()
         self.frame_5.hide()
         self.frame_4.hide()
-        self.frame_7.hide()
 
         self.page = {'thread': {'loading': False, 'page': 1},
                      'reply': {'loading': False, 'page': 1},
@@ -377,9 +375,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                     f'该用户被全吧 {("封禁 " + str(data["unban_days"]) + " 天") if data["unban_days"] != 36500 else "永久封禁"}，'
                     f'在封禁期间贴子和回复将不可见。')
                 have_flag_showed = True
-            if data['is_blacked']:
-                self.frame_7.show()
-                have_flag_showed = True
             if data['god_info']:
                 self.frame_2.show()
                 self.label_10.setText(data['god_info'])
@@ -441,8 +436,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         'thread_reply_permission': 0,
                         'follow_forums_show_permission': 0,
                         'desp': '',
-                        'bd_user_name': '',
-                        'is_blacked': False}
+                        'bd_user_name': ''}
 
                 if self.user_id_portrait in ('00000000', 0):
                     data['error'] = '无法加载匿名用户的个人主页信息。'
@@ -498,7 +492,6 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         data['follow_forums_show_permission'] = user_info.priv_like
                         data['desp'] = user_info.sign
                         data['post_c'] = user_info.post_num
-                        data['is_blacked'] = not response_proto.data.is_black_white
                         self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
 
                         god_info = ''

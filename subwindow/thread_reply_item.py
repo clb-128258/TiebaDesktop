@@ -237,9 +237,20 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.label_10.show()
         self.label_10.setText(t)
 
-    def setdatas(self, uicon: Union[QPixmap, str], uname: str, islz: bool, text: str, pixmaps: list, floor: int,
+    def setdatas(self,
+                 uicon: Union[QPixmap, str],
+                 uname: str,
+                 islz: bool,
+                 text: str,
+                 pixmaps: list,
+                 floor: int,
                  timestr: str,
-                 ip: str, reply_count: int, agree_count: int, level: int, isbawu: bool, voice_info=None):
+                 ip: str,
+                 reply_count: int,
+                 agree_count: int,
+                 level: int,
+                 isbawu: bool,
+                 voice_info=None):
         if voice_info is None:
             voice_info = {'have_voice': False}
 
@@ -295,13 +306,13 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
             self.label_9.setText(f'Lv.{level}')
             qss = ''
             if 0 <= level <= 3:  # 绿牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 211, 171);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 211, 171); border-radius: 7px;}'
             elif 4 <= level <= 9:  # 蓝牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255); border-radius: 7px;}'
             elif 10 <= level <= 15:  # 黄牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(255, 172, 29);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(255, 172, 29); border-radius: 7px;}'
             elif level >= 16:  # 橙牌老东西
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48); border-radius: 7px;}'
 
             self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
 

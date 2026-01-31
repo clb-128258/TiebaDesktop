@@ -188,11 +188,12 @@ class Ui_Form(object):
         self.pushButton_3.setObjectName("pushButton_3")
         self.gridLayout_5.addWidget(self.pushButton_3, 0, 7, 1, 1)
         self.label_8 = QtWidgets.QLabel(Form)
-        self.label_8.setMinimumSize(QtCore.QSize(60, 25))
-        self.label_8.setMaximumSize(QtCore.QSize(60, 25))
+        self.label_8.setMinimumSize(QtCore.QSize(63, 25))
+        self.label_8.setMaximumSize(QtCore.QSize(63, 25))
         self.label_8.setStyleSheet("QLabel{\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"
+"    border-radius: 7px;\n"
 "}\n"
 "")
         self.label_8.setAlignment(QtCore.Qt.AlignCenter)

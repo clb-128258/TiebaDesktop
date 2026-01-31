@@ -241,7 +241,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
 
                 forum_level = datas['follow_info']['level']
                 qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
-                       'solid;border-color: [color]}')
+                       'solid;border-color: [color]; border-radius: 7px;}')
                 if 1 <= forum_level <= 3:  # 绿牌
                     qss = qss.replace('[color]', 'rgb(101, 211, 171)')
                 elif 4 <= forum_level <= 9:  # 蓝牌

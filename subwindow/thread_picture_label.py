@@ -21,10 +21,11 @@ class ThreadPictureLabel(QLabel):
     def __init__(self, width, height, src, view_src):
         super().__init__()
         self.src_addr = src
-        self.width_n = width + 20
-        self.height_n = height + 35
+        self.width_n = width
+        self.height_n = height + 5
         self.preview_src = view_src
 
+        self.setAlignment(Qt.AlignmentFlag.AlignTop|Qt.AlignmentFlag.AlignLeft)
         self.setToolTip('图片正在加载...')
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.set_picture_signal.connect(self.set_picture)

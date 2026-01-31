@@ -65,29 +65,31 @@ class Ui_Form(object):
         self.label_3.setObjectName("label_3")
         self.horizontalLayout_3.addWidget(self.label_3)
         self.label_11 = QtWidgets.QLabel(Form)
-        self.label_11.setMinimumSize(QtCore.QSize(40, 20))
+        self.label_11.setMinimumSize(QtCore.QSize(41, 21))
         self.label_11.setMaximumSize(QtCore.QSize(40, 25))
         self.label_11.setStyleSheet("QLabel{\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"
+"    border-radius: 7px;\n"
 "}\n"
 "")
         self.label_11.setAlignment(QtCore.Qt.AlignCenter)
         self.label_11.setObjectName("label_11")
         self.horizontalLayout_3.addWidget(self.label_11)
         self.label_8 = QtWidgets.QLabel(Form)
-        self.label_8.setMinimumSize(QtCore.QSize(40, 20))
+        self.label_8.setMinimumSize(QtCore.QSize(41, 21))
         self.label_8.setMaximumSize(QtCore.QSize(40, 25))
         self.label_8.setStyleSheet("QLabel{\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"
+"    border-radius: 7px;\n"
 "}\n"
 "")
         self.label_8.setAlignment(QtCore.Qt.AlignCenter)
         self.label_8.setObjectName("label_8")
         self.horizontalLayout_3.addWidget(self.label_8)
         self.label_13 = QtWidgets.QLabel(Form)
-        self.label_13.setMinimumSize(QtCore.QSize(43, 20))
+        self.label_13.setMinimumSize(QtCore.QSize(45, 21))
         self.label_13.setMaximumSize(QtCore.QSize(40, 25))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
@@ -96,13 +98,14 @@ class Ui_Form(object):
         self.label_13.setStyleSheet("QLabel{\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"
+"    border-radius: 7px;\n"
 "}\n"
 "")
         self.label_13.setAlignment(QtCore.Qt.AlignCenter)
         self.label_13.setObjectName("label_13")
         self.horizontalLayout_3.addWidget(self.label_13)
         self.label_9 = QtWidgets.QLabel(Form)
-        self.label_9.setMinimumSize(QtCore.QSize(43, 20))
+        self.label_9.setMinimumSize(QtCore.QSize(45, 21))
         self.label_9.setMaximumSize(QtCore.QSize(40, 25))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
@@ -111,6 +114,7 @@ class Ui_Form(object):
         self.label_9.setStyleSheet("QLabel{\n"
 "    color: rgb(255, 255, 255);\n"
 "    background-color: rgb(101, 211, 171);\n"
+"    border-radius: 7px;\n"
 "}\n"
 "")
         self.label_9.setAlignment(QtCore.Qt.AlignCenter)

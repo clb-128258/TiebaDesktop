@@ -5,7 +5,7 @@ import sys
 import aiotieba
 import pyperclip
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect
-from PyQt5.QtGui import QIcon, QPixmapCache
+from PyQt5.QtGui import QIcon, QPixmapCache, QFont
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
@@ -68,21 +68,25 @@ class ThreadPreview:
 
 class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     """主题贴详情窗口，可以浏览主题贴详细内容和回复"""
-    first_floor_pid = -1
-    forum_id = -1
-    user_id = -1
-    height_count = 0
-    height_count_replies = 0
-    width_count_replies = 0
-    reply_page = 1
-    agree_num = 0
-    is_getting_replys = False
+    first_floor_pid = -1  # 首楼回复id
+    forum_id = -1  # 吧id
+    user_id = -1  # 楼主用户id
+    height_count = 0  # 首楼展示部分所有碎片组件的高度
+    height_count_replies = 0  # 回复列表内所有组件的高度
+    width_count_replies = 0  # 回复列表内所有组件的宽度
+    reply_page = 1  # 当前回复页数
+    reply_total_pages = 0  # 回复列表总页数
+    agree_num = 0  # 点赞数
+    reply_num = 0  # 回贴数
+    is_getting_replys = False  # 是否正在加载回复列表
+    is_textedit_menu_poping = False  # 是否在发贴textedit上右键
     head_data_signal = pyqtSignal(dict)
     add_reply = pyqtSignal(dict)
     show_reply_end_text = pyqtSignal(int)
     store_thread_signal = pyqtSignal(str)
     agree_thread_signal = pyqtSignal(str)
     add_post_signal = pyqtSignal(str)
+    reply_loaded_signal = pyqtSignal()
 
     def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False, preview_info=None):
         super().__init__()
@@ -97,12 +101,15 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.forum_avatar = qt_image.MultipleImage()
 
         self.pushButton_2.setIconSize(QSize(20, 20))
+        self.verticalFrame.hide()
         self.label_2.hide()
         self.label_8.hide()
         self.label_11.hide()
         self.label_12.hide()
         self.label_13.hide()
+        self.collapse_text_area()
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.toolButton.setIcon(QIcon('ui/close_white.png'))
         self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
                                       'QListWidget::item:hover {color:white; background-color:white;}'
                                       'QListWidget::item:selected {color:white; background-color:white;}')
@@ -127,18 +134,29 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.show_reply_end_text.connect(self.show_end_reply_ui)
         self.store_thread_signal.connect(self.store_thread_ok_action)
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
+        self.reply_loaded_signal.connect(self.on_reply_loaded)
         self.add_post_signal.connect(self.add_post_ok_action)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self.load_sub_threads_from_scroll)
-        self.comboBox.currentIndexChanged.connect(self.load_sub_threads_refreshly)
-        self.checkBox.stateChanged.connect(self.load_sub_threads_refreshly)
+        self.comboBox.currentIndexChanged.connect(lambda: self.load_sub_threads_refreshly())
+        self.checkBox.stateChanged.connect(lambda: self.load_sub_threads_refreshly())
         self.label_2.linkActivated.connect(self.end_label_link_event)
         self.pushButton_4.clicked.connect(self.agree_thread_async)
         self.pushButton_3.clicked.connect(self.add_post_async)
+        self.pushButton_7.clicked.connect(self.submit_pagejump)
+        self.pushButton_9.clicked.connect(self.jump_prev_page)
+        self.pushButton_8.clicked.connect(self.jump_first_page)
+        self.toolButton.clicked.connect(self.verticalFrame.hide)
         self.lz_portrait.currentPixmapChanged.connect(self.label_4.setPixmap)
         self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.pushButton_2.setIcon(QIcon(pixmap)))
-        self.label_3.installEventFilter(self)  # 重写事件过滤器
-        self.label_4.installEventFilter(self)  # 重写事件过滤器
-        self.label_9.installEventFilter(self)  # 重写事件过滤器
+
+        # 重写事件过滤器
+        self.label_3.installEventFilter(self)
+        self.label_4.installEventFilter(self)
+        self.label_9.installEventFilter(self)
+        self.textEdit.installEventFilter(self)
+        self.textEdit.viewport().installEventFilter(self)
+        self.textEdit.horizontalScrollBar().installEventFilter(self)
+        self.textEdit.verticalScrollBar().installEventFilter(self)
 
         if preview_info:
             self.flash_shower.hide()
@@ -154,6 +172,26 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                 self.open_user_homepage(self.user_id)
             elif source == self.label_9:
                 self.open_forum_detail_page()
+        elif event.type() == QEvent.Type.FocusIn:
+            if source == self.textEdit:
+                self.is_textedit_menu_poping = False
+                self.lay_text_area()
+        elif event.type() == QEvent.Type.FocusOut:
+            if source == self.textEdit and not self.is_textedit_menu_poping:
+                self.collapse_text_area()
+        elif event.type() == QEvent.Type.ContextMenu:
+            if source in (
+                    self.textEdit.viewport(),
+                    self.textEdit.verticalScrollBar(),
+                    self.textEdit.horizontalScrollBar()):
+                self.is_textedit_menu_poping = True
+        elif event.type() == QEvent.Type.KeyPress:
+            if (
+                    source == self.textEdit
+                    and event.modifiers() == Qt.KeyboardModifier.ControlModifier
+                    and event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return)
+            ):
+                self.add_post_async()
 
         return super(ThreadDetailView, self).eventFilter(source, event)  # 照常处理事件
 
@@ -186,6 +224,12 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         url = f'https://tieba.baidu.com/p/{self.thread_id}'
 
         menu = QMenu()
+
+        jump_page = QAction('跳页', self)
+        jump_page.triggered.connect(self.show_pagejump_bar)
+        menu.addAction(jump_page)
+
+        menu.addSeparator()
 
         copy_id = QAction('复制贴子 ID', self)
         copy_id.triggered.connect(lambda: pyperclip.copy(str(self.thread_id)))
@@ -235,11 +279,72 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def handle_link_event(self, url):
         open_url_in_browser(url)
 
+    def update_pagejump_num(self):
+        if self.reply_page == -1:  # 最后1页
+            final_current_page = 1 if self.comboBox.currentIndex() == 1 else self.reply_total_pages
+        elif self.reply_num == 0 or self.reply_page == -2:  # 没有回复，倒序未加载
+            final_current_page = -1
+        else:
+            # 加载线程会把页数加一，方便下次加载，真正的当前页数为 self.reply_page-1，倒序则反之
+            final_current_page = self.reply_page + (1 if self.comboBox.currentIndex() == 1 else -1)
+
+        if final_current_page != -1:
+            self.spinBox.setRange(1, self.reply_total_pages)
+            self.spinBox.setValue(final_current_page)
+            self.label_17.setText(f'页，共有 {self.reply_total_pages} 页')
+
+    def show_pagejump_bar(self):
+        if self.reply_num == 0:
+            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='该主题还没有任何回复，没有页面可以跳转',
+                                                                     icon_type=top_toast_widget.ToastIconType.INFORMATION))
+        elif self.reply_page == -2:  # 请求倒序加载，但最后页面还未获取
+            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='倒序查看模式下，必须先加载出总页数才可跳页',
+                                                                     icon_type=top_toast_widget.ToastIconType.INFORMATION))
+        else:
+            self.update_pagejump_num()
+            self.verticalFrame.show()
+
+    def jump_prev_page(self):
+        self.spinBox.setValue(self.spinBox.value() - 1)
+        self.submit_pagejump()
+
+    def jump_first_page(self):
+        self.spinBox.setValue(1)
+        self.submit_pagejump()
+
+    def submit_pagejump(self):
+        final_current_page = self.reply_page + (1 if self.comboBox.currentIndex() == 1 else -1)
+        if final_current_page == self.spinBox.value():
+            self.top_toaster.showToast(top_toast_widget.ToastMessage(title=f'现在已经在第 {final_current_page} 页',
+                                                                     icon_type=top_toast_widget.ToastIconType.INFORMATION))
+        else:
+            self.reply_page = self.spinBox.value()
+            self.load_sub_threads_refreshly(reset_page=False)
+            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='已发起跳页操作',
+                                                                     icon_type=top_toast_widget.ToastIconType.SUCCESS))
+
+    def lay_text_area(self):
+        self.textEdit.setPlaceholderText('来都来了，说两句吧\n'
+                                         '提示：按 Enter 可换行，按 Ctrl+Enter 键可发送回复')
+        self.textEdit.setFont(QFont('微软雅黑', 10))
+        self.textEdit.setFixedHeight(100)
+        self.textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+    def collapse_text_area(self):
+        self.textEdit.setPlaceholderText('来都来了，说两句吧')
+        self.textEdit.setFont(QFont('微软雅黑', 9))
+        self.textEdit.setFixedHeight(28)
+        self.textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
     def add_post_ok_action(self, isok):
         toast = top_toast_widget.ToastMessage()
 
         if not isok:
-            self.lineEdit.setText('')
+            self.textEdit.setText('')
+            self.is_textedit_menu_poping = False
+            self.collapse_text_area()
             self.comboBox.setCurrentIndex(1)
             toast.title = '回贴成功'
             toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
@@ -249,7 +354,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.top_toaster.showToast(toast)
 
     def add_post_async(self):
-        if not self.lineEdit.text():
+        if not self.textEdit.toPlainText():
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title='请输入内容后再回贴',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
         elif not self.bduss:
@@ -261,12 +366,12 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                            '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
             msgbox = QMessageBox(QMessageBox.Warning, '回贴风险提示', show_string, parent=self)
             msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
-            msgbox.button(QMessageBox.Help).setText("去网页发贴")
+            msgbox.button(QMessageBox.Help).setText("取消发贴")
             msgbox.button(QMessageBox.Yes).setText("无视风险，继续发贴")
-            msgbox.button(QMessageBox.No).setText("取消发贴")
+            msgbox.button(QMessageBox.No).setText("去网页发贴")
             r = msgbox.exec()
             flag = r == QMessageBox.Yes
-            if r == QMessageBox.Help:
+            if r == QMessageBox.No:
                 url = f'https://tieba.baidu.com/p/{self.thread_id}'
                 open_url_in_browser(url)
 
@@ -278,7 +383,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             try:
                 logging.log_INFO(f'post thread {self.thread_id}')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    result = await client.add_post(self.forum_id, self.thread_id, self.lineEdit.text())
+                    result = await client.add_post(self.forum_id, self.thread_id, self.textEdit.toPlainText())
                     if result:
                         self.add_post_signal.emit('')
                     else:
@@ -445,20 +550,21 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
         start_async()
 
-    def load_sub_threads_refreshly(self):
+    def load_sub_threads_refreshly(self, reset_page=True):
         if not self.is_getting_replys:
             # 清理内存
             self.listWidget_4.clear()
             QPixmapCache.clear()
             gc.collect()
-
-            # 初始化值
-            if self.comboBox.currentIndex() == 1:
-                self.reply_page = -2
-            else:
-                self.reply_page = 1
             self.height_count_replies = 0
             self.width_count_replies = 0
+
+            # 初始化页数
+            if reset_page:
+                if self.comboBox.currentIndex() == 1:
+                    self.reply_page = -2
+                else:
+                    self.reply_page = 1
 
             # 启动刷新
             self.get_sub_thread_async()
@@ -527,6 +633,11 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         elif v == 2:
             self.label_2.setText('服务器开小差了，请试试 <a href="reload_replies">重新加载</a>')
 
+    def on_reply_loaded(self):
+        self.label_7.setText(f'共 {self.reply_num} 条回复')
+        self.update_pagejump_num()
+        self.load_sub_thread_images()
+
     def add_reply_ui(self, datas):
         # tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
         #          'user_portrait_pixmap': user_head_pixmap, 'view_pixmap': preview_pixmap,
@@ -560,8 +671,6 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.width_count_replies = widget.width()
             self.listWidget_4.setMinimumWidth(self.width_count_replies)
 
-        self.load_sub_thread_images()
-
     def get_sub_thread_async(self):
         if not self.is_getting_replys and self.reply_page != -1:
             self.label_2.hide()
@@ -576,19 +685,32 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     sort_type = aiotieba.PostSortType.ASC if self.comboBox.currentIndex() == 0 else (
                         aiotieba.PostSortType.DESC if self.comboBox.currentIndex() == 1 else aiotieba.PostSortType.HOT)
+
                     if self.reply_page == -2:
                         # 倒序查看时要从总页数开始
-                        page_thread_info = await client.get_posts(self.thread_id, pn=1, sort=sort_type,
+                        page_thread_info = await client.get_posts(self.thread_id,
+                                                                  pn=1,
+                                                                  sort=sort_type,
                                                                   only_thread_author=self.checkBox.isChecked(),
                                                                   comment_rn=0)
                         if page_thread_info.err:
                             raise Exception(page_thread_info.err)
-                        self.reply_page = page_thread_info.page.total_page
+                        else:
+                            self.reply_page = page_thread_info.page.total_page
+                            self.reply_total_pages = page_thread_info.page.total_page
 
-                    thread_info = await client.get_posts(self.thread_id, pn=self.reply_page, sort=sort_type,
-                                                         only_thread_author=self.checkBox.isChecked(), comment_rn=0)
+                    thread_info = await client.get_posts(self.thread_id,
+                                                         pn=self.reply_page,
+                                                         sort=sort_type,
+                                                         only_thread_author=self.checkBox.isChecked(),
+                                                         comment_rn=0)
                     if thread_info.err:
                         raise Exception(thread_info.err)
+                    else:
+                        # 更新回复数量
+                        self.reply_total_pages = thread_info.page.total_page
+                        self.reply_num = thread_info.thread.reply_num - 1
+
                     if thread_info.thread.reply_num == 1:
                         self.reply_page = -1
                         self.show_reply_end_text.emit(1)
@@ -660,6 +782,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             self.reply_page = -1
                             self.show_reply_end_text.emit(0)
 
+                        self.reply_loaded_signal.emit()
             except Exception as e:
                 logging.log_exception(e)
                 if not isinstance(e, RuntimeError):
@@ -755,13 +878,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.label_9.setText('Lv.{0}'.format(datas['uf_level']))
             qss = ''
             if 0 <= datas['uf_level'] <= 3:  # 绿牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 211, 171);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 211, 171); border-radius: 7px;}'
             elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(101, 161, 255); border-radius: 7px;}'
             elif 10 <= datas['uf_level'] <= 15:  # 黄牌
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(255, 172, 29);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(255, 172, 29); border-radius: 7px;}'
             elif datas['uf_level'] >= 16:  # 橙牌老东西
-                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48);}'
+                qss = 'QLabel{color: rgb(255, 255, 255);background-color: rgb(247, 126, 48); border-radius: 7px;}'
 
             self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
 
@@ -910,7 +1033,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         user_forum_level = thread_info.thread.user.level
                         user_grow_level = thread_info.thread.user.glevel
                         is_forum_manager = bool(thread_info.thread.user.is_bawu)
-                        post_num = thread_info.thread.reply_num - 1
+                        self.reply_num = post_num = thread_info.thread.reply_num - 1
+                        self.reply_total_pages = thread_info.page.total_page
 
                         video_info = {'have_video': False, 'src': '', 'length': 0, 'view': 0}
                         if thread_info.thread.contents.video:

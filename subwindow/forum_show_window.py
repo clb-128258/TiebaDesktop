@@ -379,7 +379,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
 
             if datas['is_followed'] == 1:
                 qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
-                       'solid;border-color: [color]}')
+                       'solid;border-color: [color]; border-radius: 5px;}')
                 if 1 <= datas['uf_level'] <= 3:  # 绿牌
                     qss = qss.replace('[color]', 'rgb(101, 211, 171)')
                 elif 4 <= datas['uf_level'] <= 9:  # 蓝牌

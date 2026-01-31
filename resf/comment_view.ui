@@ -119,8 +119,8 @@
       <widget class="QLabel" name="label_11">
        <property name="minimumSize">
         <size>
-         <width>40</width>
-         <height>20</height>
+         <width>41</width>
+         <height>21</height>
         </size>
        </property>
        <property name="maximumSize">
@@ -133,6 +133,7 @@
         <string notr="true">QLabel{
 	background-color: rgb(91, 68, 200);
 	color: rgb(255, 255, 255);
+	border-radius: 7px;
 }
 </string>
        </property>
@@ -148,8 +149,8 @@
       <widget class="QLabel" name="label_8">
        <property name="minimumSize">
         <size>
-         <width>40</width>
-         <height>20</height>
+         <width>41</width>
+         <height>21</height>
         </size>
        </property>
        <property name="maximumSize">
@@ -162,6 +163,7 @@
         <string notr="true">QLabel{
 	background-color: rgb(91, 68, 200);
 	color: rgb(255, 255, 255);
+	border-radius: 7px;
 }
 </string>
        </property>
@@ -177,8 +179,8 @@
       <widget class="QLabel" name="label_13">
        <property name="minimumSize">
         <size>
-         <width>43</width>
-         <height>20</height>
+         <width>45</width>
+         <height>21</height>
         </size>
        </property>
        <property name="maximumSize">
@@ -200,6 +202,7 @@
         <string notr="true">QLabel{
 	background-color: rgb(91, 68, 200);
 	color: rgb(255, 255, 255);
+	border-radius: 7px;
 }
 </string>
        </property>
@@ -215,8 +218,8 @@
       <widget class="QLabel" name="label_9">
        <property name="minimumSize">
         <size>
-         <width>43</width>
-         <height>20</height>
+         <width>45</width>
+         <height>21</height>
         </size>
        </property>
        <property name="maximumSize">
@@ -238,6 +241,7 @@
         <string notr="true">QLabel{
 	color: rgb(255, 255, 255);
 	background-color: rgb(101, 211, 171);
+	border-radius: 7px;
 }
 </string>
        </property>
