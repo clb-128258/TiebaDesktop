@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>931</width>
-    <height>566</height>
+    <width>950</width>
+    <height>561</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,8 +86,8 @@ QDialog{background-color: rgb(255, 255, 255);}
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>807</width>
-        <height>548</height>
+        <width>809</width>
+        <height>610</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -110,7 +110,7 @@ QDialog{background-color: rgb(255, 255, 255);}
        <item row="0" column="0">
         <widget class="QStackedWidget" name="stackedWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="page">
           <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0,1" columnstretch="1,0,0">
@@ -460,90 +460,7 @@ QDialog{background-color: rgb(255, 255, 255);}
                 </layout>
                </widget>
               </item>
-              <item row="2" column="0">
-               <widget class="QGroupBox" name="groupBox_4">
-                <property name="title">
-                 <string>浏览器设置</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-                <layout class="QGridLayout" name="gridLayout_3">
-                 <property name="leftMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>9</number>
-                 </property>
-                 <item row="0" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0">
-                   <item>
-                    <widget class="QLabel" name="label_18">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择在内置浏览器内打开什么链接。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string>内置浏览器使用策略：</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QComboBox" name="comboBox_3">
-                     <item>
-                      <property name="text">
-                       <string>所有链接</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>仅贴吧链接</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>不使用内置浏览器</string>
-                      </property>
-                     </item>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_9">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_9">
-                <property name="styleSheet">
-                 <string notr="true">QLabel{color: rgb(255, 0, 0);}</string>
-                </property>
-                <property name="text">
-                 <string>在调整好设置后，请点击下方的“保存设置”按钮以使设置生效。</string>
-                </property>
-                <property name="wordWrap">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="0">
+              <item row="6" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_14">
                 <item>
                  <spacer name="horizontalSpacer_12">
@@ -566,6 +483,19 @@ QDialog{background-color: rgb(255, 255, 255);}
                  </widget>
                 </item>
                </layout>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_9">
+                <property name="styleSheet">
+                 <string notr="true">QLabel{color: rgb(255, 0, 0);}</string>
+                </property>
+                <property name="text">
+                 <string>在调整好设置后，请点击下方的“保存设置”按钮以使设置生效。</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
               </item>
               <item row="4" column="0">
                <widget class="QGroupBox" name="groupBox_6">
@@ -717,6 +647,127 @@ QDialog{background-color: rgb(255, 255, 255);}
                    </item>
                    <item>
                     <spacer name="horizontalSpacer_16">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QGroupBox" name="groupBox_4">
+                <property name="title">
+                 <string>浏览器设置</string>
+                </property>
+                <property name="flat">
+                 <bool>true</bool>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_3">
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>9</number>
+                 </property>
+                 <item row="0" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0">
+                   <item>
+                    <widget class="QLabel" name="label_18">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;选择在内置浏览器内打开什么链接。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>内置浏览器使用策略：</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox_3">
+                     <item>
+                      <property name="text">
+                       <string>所有链接</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>仅贴吧链接</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>不使用内置浏览器</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_9">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QGroupBox" name="groupBox_7">
+                <property name="title">
+                 <string>其它设置</string>
+                </property>
+                <property name="flat">
+                 <bool>true</bool>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_19">
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>9</number>
+                 </property>
+                 <item row="0" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="0,0">
+                   <item>
+                    <widget class="QCheckBox" name="checkBox_16">
+                     <property name="toolTip">
+                      <string/>
+                     </property>
+                     <property name="text">
+                      <string>退出软件时要求用户确认</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_15">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>

@@ -185,7 +185,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     self.textEdit.verticalScrollBar(),
                     self.textEdit.horizontalScrollBar()):
                 self.is_textedit_menu_poping = True
-        elif event.type() == QEvent.Type.KeyPress:
+        elif event.type() == QEvent.Type.KeyRelease:
             if (
                     source == self.textEdit
                     and event.modifiers() == Qt.KeyboardModifier.ControlModifier

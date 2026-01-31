@@ -18,7 +18,8 @@ local_config_model = {
     "proxy_settings": {"proxy_switch": 0,
                        "custom_proxy_server": {"ip": '', "port": -1},
                        "enabled_scheme": {"http": True, "https": True}
-                       }
+                       },
+    "other_settings": {"show_msgbox_before_close": True}
 }
 
 local_config = {}

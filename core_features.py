@@ -1,6 +1,7 @@
+"""该文件已无实际意义，保留其仅是为了向下兼容"""
 from PyQt5.QtCore import QLocale, QTranslator, QTimer, QT_VERSION_STR, QT_VERSION
 from PyQt5.QtGui import QPixmapCache
-from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, QApplication, QWidgetAction
+from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, QApplication, QWidgetAction, QCheckBox
 
 from publics import profile_mgr, webview2, qt_image
 from publics import proxytool

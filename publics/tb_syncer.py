@@ -57,6 +57,11 @@ class TiebaMsgSyncer(QObject):
         if self.is_running:
             self.event_queue.put('stop')
 
+    def run_msg_sync_immedently(self):
+        """立刻执行一次消息同步"""
+        if self.is_running:
+            self.event_queue.put('query_msg')
+
     def have_basic_unread_notice(self):
         """当前是否存在未读的点赞、回复、@通知"""
         return self.get_basic_unread_notice_count() != 0
@@ -125,31 +130,36 @@ class TiebaMsgSyncer(QObject):
 
                     self.show_toast(title, text, cache_path)
 
+    def run_sleeper(self):
+        sleeper_time = 60
+
+        for i in range(sleeper_time):
+            time.sleep(1)
+            if not self.event_queue.empty():
+                return self.event_queue.get()
+
+        return ''
+
     def unread_notice_sync_thread(self):
         """未读通知数同步线程"""
         self.is_running = True
         logging.log_INFO('notice syncer started')
         while True:
-            if not self.event_queue.empty():
-                e = self.event_queue.get()
-                if e == 'stop':
-                    break
-            else:
-                try:
-                    if self.bduss and self.stoken:
-                        self.load_unread_notice_from_api()
-                    else:
-                        time.sleep(1)
-                        continue
-                except Exception as e:
-                    logging.log_exception(e)
-                else:
+            try:
+                if self.bduss and self.stoken:
+                    self.load_unread_notice_from_api()
                     if self.latest_count != self.get_basic_unread_notice_count():
                         self.latest_count = self.get_basic_unread_notice_count()
                         self.noticeCountChanged.emit()
                         start_background_thread(self.get_interactMsgAlter)
-                finally:
-                    time.sleep(50)
+            except Exception as e:
+                logging.log_exception(e)
+            finally:
+                e = self.run_sleeper()
+                if e == 'stop':
+                    break
+                elif e == 'query_msg':
+                    continue
         self.is_running = False
         logging.log_INFO('notice syncer stopped')
 

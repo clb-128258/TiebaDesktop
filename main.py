@@ -242,6 +242,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
             profile_mgr.local_config['thread_view_settings']['play_gif'] = self.checkBox_12.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = self.checkBox_13.isChecked()
+            profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = self.checkBox_16.isChecked()
 
             try:
                 rdbtn_check_index = [self.radioButton_3.isChecked(),
@@ -545,6 +546,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
             self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
             self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
+            self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
 
             rdbtn_index = [self.radioButton_3, self.radioButton_4, self.radioButton_5]
             port = profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port']
@@ -1161,13 +1163,47 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.refresh_all_datas()
 
     def closeEvent(self, a0):
-        if QMessageBox.information(self, '提示', '确认要退出软件吗？',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+        def whether_show_question():
+            try:
+                show_question = profile_mgr.local_config['other_settings']['show_msgbox_before_close']
+            except KeyError:
+                show_question = True
+
+            return show_question
+
+        def save_not_show_profile():
+            try:
+                profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = False
+                profile_mgr.save_local_config()
+            except Exception as e:
+                logging.log_exception(e)
+
+        def do_exit():
             a0.accept()
             app.closeAllWindows()
             app.quit()
+
+        if whether_show_question():
+            windows_num = len(qt_window_mgr.distributed_window)
+            show_text = (f'你还有 {windows_num} 个打开的窗口没有被关闭，' if windows_num > 0 else '') + '确认要退出软件吗？'
+            msgbox = QMessageBox(QMessageBox.Information,
+                                 '提示',
+                                 show_text,
+                                 parent=self)
+            msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            cb = QCheckBox()
+            cb.setText('以后不再提示')
+            cb.setToolTip('勾选后，以后关闭主窗口时将直接关闭程序，不再提示用户。你随时可以到软件设置中调整此选项。')
+            msgbox.setCheckBox(cb)
+
+            if msgbox.exec() == QMessageBox.Yes:
+                if cb.isChecked():
+                    save_not_show_profile()
+                do_exit()
+            else:
+                a0.ignore()
         else:
-            a0.ignore()
+            do_exit()
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5 and self.stackedWidget.currentIndex() == 0:
@@ -1193,6 +1229,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.interactionlist.refresh_list()
             self.interactionlist.is_first_show = False
         self.stackedWidget.setCurrentIndex(2)
+        self.notice_syncer.run_msg_sync_immedently()
 
     def refresh_recommand(self):
         if self.stackedWidget.currentIndex() == 0:
@@ -1236,6 +1273,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.recommend.get_recommand_async()
         self.flist.get_bars_async()
         self.user_info_widget.get_self_info_async()
+        self.notice_syncer.run_msg_sync_immedently()
         if self.stackedWidget.currentIndex() == 2:
             self.switch_interact_page()
 
