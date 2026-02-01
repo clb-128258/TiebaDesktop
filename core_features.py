@@ -15,10 +15,7 @@ from subwindow.agree_thread_list import AgreedThreadsList
 from subwindow.firstpage_recommend import RecommandWindow
 from subwindow.follow_forum_list import FollowForumList
 from subwindow.interact_list import UserInteractionsList
-from subwindow.star_thread_list import StaredThreadsList
 from subwindow.tieba_search_entry import TiebaSearchWindow
-from subwindow.user_home_page import UserHomeWindow
-from subwindow.history_list import HistoryViewWindow
 from subwindow.mainwindow_menu import MainPopupMenu
 
 from ui import mainwindow, settings, login_by_bduss, qr_login
@@ -32,7 +29,6 @@ import asyncio
 import gc
 import consts
 import shutil
-import locale
 import platform
 import time
 import copy

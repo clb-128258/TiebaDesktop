@@ -177,6 +177,11 @@ def save_view_history():
 
 def init_all_datas():
     """从本地磁盘加载所有配置数据"""
-    load_local_config()
-    load_view_history()
-    load_post_drafts()
+    from publics.funcs import start_background_thread
+
+    thread_list = [start_background_thread(load_local_config),
+                   start_background_thread(load_view_history),
+                   start_background_thread(load_post_drafts)]
+
+    for i in thread_list:
+        i.join()

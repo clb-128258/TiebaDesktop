@@ -1139,6 +1139,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     user_data = {'bduss': '', 'stoken': ''}
     self_user_portrait = ''
     add_info = pyqtSignal(list)
+    user_info_loaded = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -1152,11 +1153,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.pushButton_4.clicked.connect(self.switch_interact_page)
         self.pushButton_2.clicked.connect(self.refresh_recommand)
         self.pushButton_5.clicked.connect(self.open_search_window)
+
         self.add_info.connect(self._add_uinfo)
+        self.user_info_loaded.connect(self.__refresh_ui_datas)
         self.notice_syncer.noticeCountChanged.connect(self.set_unread_count)
         self.notice_syncer.activeWindow.connect(self.switch_interact_page)
 
-        self.handle_d2id_flag()
         self.init_profile_menu()
         self.init_pages()
         self.notice_syncer.start_sync()
@@ -1253,14 +1255,20 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.stackedWidget.setCurrentIndex(0)
 
     def refresh_all_datas(self):
-        # 清理内存
         qt_window_mgr.clear_windows()
         self.recommend.clear()
         QPixmapCache.clear()
         gc.collect()
 
-        self.init_user_data()
+        self.label_9.clear()
+        self.label_10.setText('加载中...')
+        self.pushButton.setEnabled(False)
+        start_background_thread(self.init_user_data)
+
+    def __refresh_ui_datas(self):
+        # 清理内存
         self.set_profile_menu()
+        self.pushButton.setEnabled(True)
         self.recommend.bduss = self.user_data['bduss']
         self.recommend.stoken = self.user_data['stoken']
         self.flist.bduss = self.user_data['bduss']
@@ -1373,32 +1381,26 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                     shutil.rmtree(f'{datapath}/webview_data/{uid}')
                 os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
                 os.mkdir(f'{datapath}/webview_data/default')
-            except:
-                QMessageBox.critical(self, '错误', '用户数据应用失败！', QMessageBox.Ok)
+            except Exception as e:
+                logging.log_WARN('handle_d2id_flag method failed')
+                logging.log_exception(e)
             else:
                 save_json({'uid': ''}, f'{datapath}/d2id_flag')
 
     def _add_uinfo(self, datas):
         if not datas:
             QMessageBox.critical(self, '错误', '用户信息加载失败！', QMessageBox.Ok)
+            self.label_10.setText('[用户加载失败]')
         else:
             if datas[0]:
                 self.label_9.setPixmap(datas[0])
             if datas[1]:
                 self.label_10.setText(datas[1])
 
-    def init_user_data_async(self):
-        start_background_thread(self.init_user_data)
-
-    def load_user_portrait(self):
-        pixmap = QPixmap()
-        pixmap.loadFromData(cache_mgr.get_portrait(self.self_user_portrait))
-        pixmap = qt_image.add_cover_for_pixmap(pixmap, 30)
-        self.add_info.emit([pixmap, ''])
-
     def init_user_data(self):
         try:
-            # {'bduss': , 'stoken': , 'portrait':,'name': }
+            self.handle_d2id_flag()  # 先处理d2id
+
             self.user_data = {'bduss': '', 'stoken': ''}
             real_user_data = load_json_secret(f'{datapath}/user_bduss')
             if not real_user_data['current_bduss'] and real_user_data['login_list']:  # 没选账号但是有已登录用户
@@ -1418,7 +1420,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 profile_mgr.current_stoken = ''
                 profile_mgr.current_bduss = ''
                 pixmap = QPixmap('ui/default_user_image.png')
-                pixmap = pixmap.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pixmap = qt_image.add_cover_for_pixmap(pixmap, 30)
                 self.add_info.emit([pixmap, '未登录'])
             else:
                 # 获取用户信息
@@ -1428,17 +1430,20 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 name = self.user_data['name']
                 self.self_user_portrait = self.user_data['portrait']
 
-                start_background_thread(self.load_user_portrait)
-                self.add_info.emit([None, name])
+                pixmap = QPixmap()
+                pixmap.loadFromData(cache_mgr.get_portrait(self.self_user_portrait))
+                pixmap = qt_image.add_cover_for_pixmap(pixmap, 30)
+                self.add_info.emit([pixmap, name])
         except Exception as e:
             self.add_info.emit([])
+            logging.log_exception(e)
+        else:
+            logging.log_INFO(f'switched account {profile_mgr.current_uid}')
+            self.user_info_loaded.emit()
 
 
 if __name__ == "__main__":
     sys.excepthook = excepthook
-
-    if os.name == 'nt':
-        locale.setlocale(locale.LC_CTYPE, 'chinese')
 
     reset_udf()
     create_data()

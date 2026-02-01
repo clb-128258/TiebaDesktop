@@ -62,6 +62,8 @@ def save_caches():
 
 
 def __handle_add_event():
+    load_caches()  # 在子线程加载，提高性能
+
     has_event = False
     while True:
         if not _sync_queue.empty():  # 队列非空说明有更改
@@ -77,7 +79,6 @@ def __handle_add_event():
 
 
 def init_local_cache():
-    load_caches()
     threading.Thread(target=__handle_add_event, daemon=True).start()
 
 
