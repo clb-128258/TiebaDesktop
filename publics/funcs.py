@@ -1,16 +1,14 @@
 import asyncio
 import os
 import pathlib
-import queue
 import subprocess
 import threading
 import time
 import datetime
-import enum
 
 import pyperclip
 import requests
-from PyQt5.QtCore import QObject, pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer
+from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer
 from PyQt5.QtGui import QMovie, QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem
 
@@ -18,7 +16,7 @@ import consts
 import aiotieba
 import json
 
-from publics import aes, profile_mgr, request_mgr, qt_window_mgr, cache_mgr, qt_image
+from publics import aes, profile_mgr, request_mgr, qt_window_mgr, qt_image
 import publics.logging as logging
 from publics.toasting import init_AUMID
 from ui import loading_amt, user_item
@@ -63,14 +61,18 @@ def create_data():
     logging.log_INFO('Creating user data')
     init_AUMID(consts.WINDOWS_AUMID, '贴吧桌面', pathlib.Path(f"{os.getcwd()}/ui/tieba_logo_big_single.ico"))
 
-    expect_folder = [consts.datapath, f'{consts.datapath}/webview_data', f'{consts.datapath}/logs',
+    expect_folder = [consts.datapath,
+                     f'{consts.datapath}/webview_data',
+                     f'{consts.datapath}/logs',
                      f'{consts.datapath}/image_caches',
-                     f'{consts.datapath}/cache_index', f'{consts.datapath}/webview_data/default']  # 欲创建的文件夹
+                     f'{consts.datapath}/cache_index',
+                     f'{consts.datapath}/webview_data/default']  # 欲创建的文件夹
     expect_secret_json = {f'{consts.datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件
     expect_json = {f'{consts.datapath}/config.json': profile_mgr.local_config_model,
                    f'{consts.datapath}/cache_index/fidfname_index.json': {},
                    f'{consts.datapath}/d2id_flag': {'uid': ''},
-                   f'{consts.datapath}/view_history': []}  # 欲创建的json文件
+                   f'{consts.datapath}/view_history': [],
+                   f'{consts.datapath}/post_drafts': {}}  # 欲创建的json文件
 
     for i in expect_folder:
         if not os.path.isdir(i):

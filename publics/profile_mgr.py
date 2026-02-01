@@ -24,10 +24,36 @@ local_config_model = {
 
 local_config = {}
 view_history = []
+post_drafts = {}
 
 current_uid = 'default'
 current_bduss = ''
 current_stoken = ''
+
+
+def add_post_draft(thread_id: int, text: str):
+    """添加草稿信息"""
+    global post_drafts
+    post_drafts[str(thread_id)] = text
+    save_post_drafts()
+
+
+def get_post_draft(thread_id: int) -> str:
+    """获取已有的草稿信息"""
+    return post_drafts.get(str(thread_id), '')
+
+
+def load_post_drafts() -> dict:
+    global post_drafts
+    with open(f'{consts.datapath}/post_drafts', 'rt') as file:
+        post_drafts = json.loads(file.read())
+        return post_drafts
+
+
+def save_post_drafts():
+    global post_drafts
+    with open(f'{consts.datapath}/post_drafts', 'wt') as file:
+        file.write(json.dumps(post_drafts, indent=4))
 
 
 def load_local_config() -> dict:
@@ -153,3 +179,4 @@ def init_all_datas():
     """从本地磁盘加载所有配置数据"""
     load_local_config()
     load_view_history()
+    load_post_drafts()

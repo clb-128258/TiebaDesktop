@@ -236,12 +236,13 @@ class Ui_Form(object):
         self.frame_4 = QtWidgets.QFrame(self.tab)
         self.frame_4.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
+"    border-radius: 7px;\n"
 "}")
         self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_4.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_4.setObjectName("frame_4")
         self.gridLayout_6 = QtWidgets.QGridLayout(self.frame_4)
-        self.gridLayout_6.setContentsMargins(-1, 4, -1, 4)
+        self.gridLayout_6.setContentsMargins(-1, 6, -1, 6)
         self.gridLayout_6.setObjectName("gridLayout_6")
         self.label_15 = QtWidgets.QLabel(self.frame_4)
         self.label_15.setObjectName("label_15")
@@ -284,12 +285,13 @@ class Ui_Form(object):
         self.frame_3 = QtWidgets.QFrame(self.frame_8)
         self.frame_3.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
+"    border-radius: 7px;\n"
 "}")
         self.frame_3.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_3.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_3.setObjectName("frame_3")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.frame_3)
-        self.gridLayout_5.setContentsMargins(-1, 4, -1, 4)
+        self.gridLayout_5.setContentsMargins(-1, 6, -1, 6)
         self.gridLayout_5.setObjectName("gridLayout_5")
         self.label_11 = QtWidgets.QLabel(self.frame_3)
         self.label_11.setObjectName("label_11")
@@ -302,12 +304,13 @@ class Ui_Form(object):
         self.frame_2 = QtWidgets.QFrame(self.frame_8)
         self.frame_2.setStyleSheet("QFrame{\n"
 "    background-color: rgb(199, 188, 255);\n"
+"    border-radius: 7px;\n"
 "}")
         self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_2.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_2.setObjectName("frame_2")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.frame_2)
-        self.gridLayout_2.setContentsMargins(-1, 4, -1, 4)
+        self.gridLayout_2.setContentsMargins(-1, 6, -1, 6)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.label_7 = QtWidgets.QLabel(self.frame_2)
         self.label_7.setObjectName("label_7")
@@ -320,12 +323,13 @@ class Ui_Form(object):
         self.frame_5 = QtWidgets.QFrame(self.frame_8)
         self.frame_5.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
+"    border-radius: 7px;\n"
 "}")
         self.frame_5.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_5.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_5.setObjectName("frame_5")
         self.gridLayout_8 = QtWidgets.QGridLayout(self.frame_5)
-        self.gridLayout_8.setContentsMargins(-1, 4, -1, 4)
+        self.gridLayout_8.setContentsMargins(-1, 6, -1, 6)
         self.gridLayout_8.setObjectName("gridLayout_8")
         self.label_16 = QtWidgets.QLabel(self.frame_5)
         self.label_16.setObjectName("label_16")
@@ -335,7 +339,7 @@ class Ui_Form(object):
         self.gridLayout_9.setRowStretch(2, 1)
 
         self.retranslateUi(Form)
-        self.tabWidget.setCurrentIndex(3)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):

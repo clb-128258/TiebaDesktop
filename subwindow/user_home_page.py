@@ -499,7 +499,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             god_info += f'{response_proto.data.user.new_god_data.field_name}领域大神'
                         if response_proto.data.user.bazhu_grade.desc:
                             if god_info: god_info += ' | '
-                            god_info += response_proto.data.user.bazhu_grade.desc
+                            god_info += response_proto.data.user.bazhu_grade.desc.replace('/', '、')
                         data['god_info'] = god_info
 
                         profile_mgr.add_view_history(2, {"uid": self.real_user_id, "portrait": self.real_portrait,
@@ -699,7 +699,8 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             data = {'user_name': user.nick_name_new,
                                     'user_portrait': user.portrait,
                                     'user_id': user.user_id,
-                                    'desp': user.forum_admin_info if user.forum_admin_info else user.desp}
+                                    'desp': cut_string(user.forum_admin_info if user.forum_admin_info else user.desp,
+                                                       20)}
 
                             self.set_list_info_signal.emit((type_, data))
                     elif type_ == 'fans':

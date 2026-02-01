@@ -4,7 +4,7 @@ import sys
 
 import aiotieba
 import pyperclip
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
@@ -196,6 +196,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         return super(ThreadDetailView, self).eventFilter(source, event)  # 照常处理事件
 
     def closeEvent(self, a0):
+        inputted_text = self.textEdit.toPlainText()
+        if inputted_text:
+            profile_mgr.add_post_draft(self.thread_id, inputted_text)
+
         self.flash_shower.hide()
         a0.accept()
         self.forum_avatar.destroyImage()
@@ -292,6 +296,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.spinBox.setRange(1, self.reply_total_pages)
             self.spinBox.setValue(final_current_page)
             self.label_17.setText(f'页，共有 {self.reply_total_pages} 页')
+        else:
+            self.verticalFrame.hide()
 
     def show_pagejump_bar(self):
         if self.reply_num == 0:
@@ -313,7 +319,12 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.submit_pagejump()
 
     def submit_pagejump(self):
-        final_current_page = self.reply_page + (1 if self.comboBox.currentIndex() == 1 else -1)
+        if self.reply_page == -1:  # 最后1页
+            final_current_page = 1 if self.comboBox.currentIndex() == 1 else self.reply_total_pages
+        else:
+            # 加载线程会把页数加一，方便下次加载，真正的当前页数为 self.reply_page-1，倒序则反之
+            final_current_page = self.reply_page + (1 if self.comboBox.currentIndex() == 1 else -1)
+
         if final_current_page == self.spinBox.value():
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title=f'现在已经在第 {final_current_page} 页',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
@@ -345,13 +356,20 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.textEdit.setText('')
             self.is_textedit_menu_poping = False
             self.collapse_text_area()
-            self.comboBox.setCurrentIndex(1)
+
             toast.title = '回贴成功'
             toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
+
+            # 异步跳转到最后一页
+            self.reply_page = self.reply_total_pages
+            QTimer.singleShot(2500, lambda: self.load_sub_threads_refreshly(reset_page=False))
         else:
             toast.title = isok
             toast.icon_type = top_toast_widget.ToastIconType.ERROR
+
         self.top_toaster.showToast(toast)
+        self.frame1.setEnabled(True)
+        self.pushButton_3.setText('发贴')
 
     def add_post_async(self):
         if not self.textEdit.toPlainText():
@@ -366,16 +384,18 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                            '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
             msgbox = QMessageBox(QMessageBox.Warning, '回贴风险提示', show_string, parent=self)
             msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
-            msgbox.button(QMessageBox.Help).setText("取消发贴")
+            msgbox.button(QMessageBox.Help).setText("去网页发贴")
             msgbox.button(QMessageBox.Yes).setText("无视风险，继续发贴")
-            msgbox.button(QMessageBox.No).setText("去网页发贴")
+            msgbox.button(QMessageBox.No).setText("取消发贴")
             r = msgbox.exec()
             flag = r == QMessageBox.Yes
-            if r == QMessageBox.No:
+            if r == QMessageBox.Help:
                 url = f'https://tieba.baidu.com/p/{self.thread_id}'
                 open_url_in_browser(url)
 
             if flag:
+                self.frame1.setEnabled(False)
+                self.pushButton_3.setText('发送中...')
                 start_background_thread(self.add_post)
 
     def add_post(self):
@@ -853,6 +873,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.label_6.setText(datas['content'])
             self.label_10.setText('Lv.' + str(datas['user_grow_level']))
             self.label_7.setText('共 {n} 条回复'.format(n=str(datas['post_num'])))
+            self.textEdit.setText(datas['draft_text'])
             if datas['is_forum_manager']:
                 self.label_11.show()
             if not datas['title']:
@@ -1105,6 +1126,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             width = j.show_width
                             preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
+                        draft_text = profile_mgr.get_post_draft(self.thread_id)
                         profile_mgr.add_view_history(1,
                                                      {"thread_id": self.thread_id,
                                                       "title": f'{title} - {forum_name}吧'})
@@ -1130,7 +1152,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                  'post_num': post_num,  # 回贴数
                                  'repost_info': repost_info,  # 转发贴信息
                                  'forum_slogan': forum_slogan,  # 吧标语
-                                 'vote_info': vote_info  # 投票信息
+                                 'vote_info': vote_info,  # 投票信息
+                                 'draft_text': draft_text  # 草稿文本
                                  }
 
                         logging.log_INFO(
