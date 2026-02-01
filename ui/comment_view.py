@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(434, 199)
+        Form.resize(325, 199)
         Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "")
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
@@ -146,10 +146,15 @@ class Ui_Form(object):
         self.label_6.setObjectName("label_6")
         self.gridLayout.addWidget(self.label_6, 1, 0, 1, 2)
         self.label_10 = QtWidgets.QLabel(Form)
-        self.label_10.setMinimumSize(QtCore.QSize(0, 20))
-        self.label_10.setMaximumSize(QtCore.QSize(16777215, 20))
+        self.label_10.setMinimumSize(QtCore.QSize(0, 0))
+        self.label_10.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.label_10.setStyleSheet("QLabel{\n"
 "    background-color: rgb(188, 188, 188);\n"
+"    border-radius: 8px;\n"
+"    padding-top: 4px;\n"
+"    padding-right: 5px; \n"
+"    padding-bottom: 4px;\n"
+"    padding-left: 5px;\n"
 "}\n"
 "")
         self.label_10.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)

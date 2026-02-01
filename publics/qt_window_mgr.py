@@ -18,7 +18,6 @@ def del_window(widget: QWidget):
 
         # 清理内存
         distributed_window.remove(widget)
-        widget.destroy()
         widget.deleteLater()
         del widget
         QPixmapCache.clear()

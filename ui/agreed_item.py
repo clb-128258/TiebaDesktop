@@ -42,10 +42,15 @@ class Ui_Form(object):
         self.gridLayout.setHorizontalSpacing(30)
         self.gridLayout.setObjectName("gridLayout")
         self.label_10 = QtWidgets.QLabel(Form)
-        self.label_10.setMinimumSize(QtCore.QSize(0, 20))
-        self.label_10.setMaximumSize(QtCore.QSize(16777215, 20))
+        self.label_10.setMinimumSize(QtCore.QSize(0, 0))
+        self.label_10.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.label_10.setStyleSheet("QLabel{\n"
 "    background-color: rgb(188, 188, 188);\n"
+"    border-radius: 8px;\n"
+"    padding-top: 4px;\n"
+"    padding-right: 5px; \n"
+"    padding-bottom: 4px;\n"
+"    padding-left: 5px;\n"
 "}\n"
 "")
         self.label_10.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
@@ -70,6 +75,7 @@ class Ui_Form(object):
         self.horizontalLayout.addWidget(self.label_6)
         self.horizontalLayout.setStretch(1, 1)
         self.gridLayout.addLayout(self.horizontalLayout, 1, 0, 1, 4)
+        self.gridLayout.setRowStretch(1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 1, 0, 1, 1)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")

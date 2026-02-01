@@ -30,6 +30,7 @@ class ThreadPictureLabel(QLabel):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.init_picture_contextmenu)
         self.set_picture_signal.connect(self.set_picture)
+        self.set_gif_signal.connect(self.set_gif_picture)
         self.destroyed.connect(self.on_destroy)
         self.setFixedSize(self.width_n, self.height_n)
 

@@ -5,7 +5,7 @@ import sys
 import aiotieba
 import pyperclip
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
-from PyQt5.QtGui import QIcon, QPixmapCache, QFont
+from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
@@ -14,6 +14,7 @@ from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, q
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string
 import publics.logging as logging
+from subwindow import base_ui
 from ui import tie_detail_view
 
 
@@ -128,6 +129,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
         self.pushButton.clicked.connect(self.init_more_menu)
         self.label_6.linkActivated.connect(self.handle_link_event)
+        self.label_6.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_6.customContextMenuRequested.connect(lambda: self.show_content_menu(self.label_6))
+        self.label_5.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_5.customContextMenuRequested.connect(lambda: self.show_content_menu(self.label_5))
         self.head_data_signal.connect(self.update_ui_head_info)
         self.pushButton_2.clicked.connect(self.open_ba_detail)
         self.add_reply.connect(self.add_reply_ui)
@@ -222,6 +227,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     def end_label_link_event(self, url):
         if url == 'reload_replies':
             self.load_sub_threads_refreshly()
+
+    def show_content_menu(self, plabel):
+        menu = base_ui.create_thread_content_menu(plabel)
+        menu.exec(QCursor.pos())
 
     def init_more_menu(self):
         url = f'https://tieba.baidu.com/p/{self.thread_id}'

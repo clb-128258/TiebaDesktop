@@ -12,7 +12,7 @@ def add_cover_radius_angle(image: QImage,
                            height: int = -1,
                            cover_in_center: bool = False) -> QImage:
     resize_rate = round((width / image.width() + height / image.height()) / 2, 2)
-    round_diameter_original = 7
+    round_diameter_original = 9
     round_diameter_actually = int(round_diameter_original * (1 / resize_rate))
 
     image = image.convertToFormat(QImage.Format_ARGB32)
@@ -205,7 +205,7 @@ class MultipleImage(QObject):
             if self.__cover_type == ImageCoverType.RoundCover:
                 self.__gif_covered_image = add_round_cover(current_image)
             elif self.__cover_type in (ImageCoverType.RadiusAngleCover, ImageCoverType.RadiusAngleCoverCentrally):
-                self.__gif_covered_image = add_cover_radius_angle(self.__static_image,
+                self.__gif_covered_image = add_cover_radius_angle(current_image,
                                                                   cover_in_center=self.__cover_type == ImageCoverType.RadiusAngleCoverCentrally)
 
             self.currentImageChanged.emit(current_image)

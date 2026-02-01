@@ -1,11 +1,12 @@
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QCursor
 from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 from typing import Union
 from publics import request_mgr, qt_window_mgr, profile_mgr, qt_image
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string
 import publics.logging as logging
+from subwindow import base_ui
 
 from ui import comment_view
 
@@ -66,6 +67,8 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.label_10.setContextMenuPolicy(Qt.NoContextMenu)
         self.label_6.linkActivated.connect(self.handle_link_event)
+        self.label_6.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_6.customContextMenuRequested.connect(self.show_content_menu)
         self.label_10.linkActivated.connect(self.handle_link_event)
         self.pushButton.clicked.connect(self.show_subcomment_window)
         self.label_3.installEventFilter(self)  # 重写事件过滤器
@@ -92,7 +95,11 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         if not self.flash_timer_count:
             self.flash_timer_count = 1
             self.flash_timer.start()
-            self.label_6.setStyleSheet('QWidget{background-color: rgb(71, 71, 255);}')
+            self.label_6.setStyleSheet('QLabel{background-color: rgb(71, 71, 255);}')
+
+    def show_content_menu(self):
+        menu = base_ui.create_thread_content_menu(self.label_6)
+        menu.exec(QCursor.pos())
 
     def load_images(self):
         if not self.__is_loaded:
