@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QBuffer, QIODevice, QSize
 from PyQt5.QtGui import QPixmap, QCursor, QMovie
 from PyQt5.QtWidgets import QLabel, QMenu, QAction, QFileDialog
 
-from publics import request_mgr, profile_mgr
+from publics import request_mgr, profile_mgr, logging, qt_image
 from publics.funcs import start_background_thread, http_downloader
 from publics.qt_image import ImageType
 
@@ -25,12 +25,11 @@ class ThreadPictureLabel(QLabel):
         self.height_n = height + 5
         self.preview_src = view_src
 
-        self.setAlignment(Qt.AlignmentFlag.AlignTop|Qt.AlignmentFlag.AlignLeft)
+        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.setToolTip('图片正在加载...')
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.set_picture_signal.connect(self.set_picture)
-        self.set_gif_signal.connect(self.set_gif_picture)
         self.customContextMenuRequested.connect(self.init_picture_contextmenu)
+        self.set_picture_signal.connect(self.set_picture)
         self.destroyed.connect(self.on_destroy)
         self.setFixedSize(self.width_n, self.height_n)
 
@@ -81,23 +80,24 @@ class ThreadPictureLabel(QLabel):
 
     def load_picture(self):
         pixmap = QPixmap()
-        response = requests.get(self.preview_src, headers=request_mgr.header)
-        if response.content:
-            if response.headers['content-type'] == 'image/gif':
-                self.isGif = ImageType.Gif
-                self.set_gif_signal.emit(response.content)
-                return
-            elif response.headers['content-type'] == 'image/webp':
-                self.isGif = ImageType.Webp
-                self.set_gif_signal.emit(response.content)
-                return
-            else:
-                pixmap.loadFromData(response.content)
-                if pixmap.width() != self.width_n or pixmap.height() != self.height_n:
-                    pixmap = pixmap.scaled(self.width_n, self.height_n,
-                                           Qt.KeepAspectRatio,
-                                           Qt.SmoothTransformation)
-        self.set_picture_signal.emit(pixmap)
+        try:
+            response = requests.get(self.preview_src, headers=request_mgr.header)
+            if response.content:
+                if response.headers['content-type'] == 'image/gif':
+                    self.isGif = ImageType.Gif
+                    self.set_gif_signal.emit(response.content)
+                    return
+                elif response.headers['content-type'] == 'image/webp':
+                    self.isGif = ImageType.Webp
+                    self.set_gif_signal.emit(response.content)
+                    return
+                else:
+                    pixmap.loadFromData(response.content)
+                    pixmap = qt_image.add_cover_radius_angle_for_pixmap(pixmap, self.width_n, self.height_n)
+        except Exception as e:
+            logging.log_exception(e)
+        finally:
+            self.set_picture_signal.emit(pixmap)
 
     def pause_play_gif(self):
         if self.isGif is not ImageType.OtherStatic:

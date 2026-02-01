@@ -1,27 +1,80 @@
-import enum
-import gc
-
 from PyQt5.QtCore import QObject, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize, QRect, Qt
 from PyQt5.QtGui import QImage, QPixmap, QMovie, QBrush, QPainter, QPixmapCache
 import requests
 from publics import request_mgr, cache_mgr, funcs, logging
 from typing import Union, Tuple
 import os
+import enum
 
 
-def add_cover_for_pixmap(pixmap: QPixmap, size=-1) -> QPixmap:
+def add_cover_radius_angle(image: QImage,
+                           width: int = -1,
+                           height: int = -1,
+                           cover_in_center: bool = False) -> QImage:
+    resize_rate = round((width / image.width() + height / image.height()) / 2, 2)
+    round_diameter_original = 7
+    round_diameter_actually = int(round_diameter_original * (1 / resize_rate))
+
+    image = image.convertToFormat(QImage.Format_ARGB32)
+    if cover_in_center:
+        imgsize = min(image.width(), image.height())
+        width = height = min(width, height)
+        rect = QRect(
+            (image.width() - imgsize) / 2,
+            (image.height() - imgsize) / 2,
+            imgsize,
+            imgsize,
+        )
+        image = image.copy(rect)
+
+    # Create the output image with the same dimensions
+    # and an alpha channel and make it completely transparent:
+    out_img = QImage(image.size(), QImage.Format_ARGB32)
+    out_img.fill(Qt.transparent)
+
+    # Create a texture brush and paint a circle
+    # with the original image onto the output image:
+    brush = QBrush(image)
+
+    # Paint the output image
+    painter = QPainter(out_img)
+    painter.setRenderHint(QPainter.Antialiasing, True)
+    painter.setBrush(brush)
+
+    # Don't draw an outline
+    painter.setPen(Qt.NoPen)
+
+    # drawing radius rect
+    painter.drawRoundedRect(QRect(0, 0, image.width(), image.height()), round_diameter_actually,
+                            round_diameter_actually)
+
+    # closing painter event
+    painter.end()
+
+    if width == height == -1:
+        # return original image
+        return out_img
+    else:
+        # return scaled image
+        return out_img.scaled(width, height,
+                              Qt.KeepAspectRatio,
+                              Qt.SmoothTransformation)
+
+
+def add_round_cover(image: QImage, size=-1) -> QImage:
     # https://geek-docs.com/pyqt5/pyqt5-tutorials/g_pyqt5-how-to-create-circular-image-from-any-image.html
 
-    # Crop pixmap to a square:
-    imgsize = min(pixmap.width(), pixmap.height())
+    image.convertToFormat(QImage.Format_ARGB32)
+    # Crop image to a square:
+    imgsize = min(image.width(), image.height())
     rect = QRect(
-        (pixmap.width() - imgsize) / 2,
-        (pixmap.height() - imgsize) / 2,
+        (image.width() - imgsize) / 2,
+        (image.height() - imgsize) / 2,
         imgsize,
         imgsize,
     )
 
-    pixmap = pixmap.copy(rect)
+    image = image.copy(rect)
 
     # Create the output image with the same dimensions
     # and an alpha channel and make it completely transparent:
@@ -30,10 +83,11 @@ def add_cover_for_pixmap(pixmap: QPixmap, size=-1) -> QPixmap:
 
     # Create a texture brush and paint a circle
     # with the original image onto the output image:
-    brush = QBrush(pixmap)
+    brush = QBrush(image)
 
     # Paint the output image
     painter = QPainter(out_img)
+    painter.setRenderHint(QPainter.Antialiasing, True)
     painter.setBrush(brush)
 
     # Don't draw an outline
@@ -46,13 +100,24 @@ def add_cover_for_pixmap(pixmap: QPixmap, size=-1) -> QPixmap:
     painter.end()
 
     if size == -1:
-        # return original image directly
-        return QPixmap.fromImage(out_img)
+        # return original image
+        return out_img
     else:
         # return scaled image
-        return QPixmap.fromImage(out_img.scaled(size, size,
-                                                Qt.KeepAspectRatio,
-                                                Qt.SmoothTransformation))
+        return out_img.scaled(size, size,
+                              Qt.KeepAspectRatio,
+                              Qt.SmoothTransformation)
+
+
+def add_cover_for_pixmap(pixmap: QPixmap, size=-1) -> QPixmap:
+    return QPixmap.fromImage(add_round_cover(pixmap.toImage(), size))
+
+
+def add_cover_radius_angle_for_pixmap(pixmap: QPixmap,
+                                      width: int = -1,
+                                      height: int = -1,
+                                      cover_in_center: bool = False) -> QPixmap:
+    return QPixmap.fromImage(add_cover_radius_angle(pixmap.toImage(), width, height, cover_in_center))
 
 
 class ImageType(enum.Enum):
@@ -76,6 +141,8 @@ class ImageCoverType(enum.Enum):
     """图片蒙版类型"""
 
     RoundCover = enum.auto()  # 圆形蒙版
+    RadiusAngleCover = enum.auto()  # 圆角蒙版
+    RadiusAngleCoverCentrally = enum.auto()  # 圆角蒙版，取图片中心部分
     NoCover = enum.auto()  # 不使用蒙版
 
 
@@ -136,7 +203,10 @@ class MultipleImage(QObject):
         def on_frame_changed():
             current_image = self.__gif_container.currentImage()
             if self.__cover_type == ImageCoverType.RoundCover:
-                self.__gif_covered_image = self.__add_cover(current_image)
+                self.__gif_covered_image = add_round_cover(current_image)
+            elif self.__cover_type in (ImageCoverType.RadiusAngleCover, ImageCoverType.RadiusAngleCoverCentrally):
+                self.__gif_covered_image = add_cover_radius_angle(self.__static_image,
+                                                                  cover_in_center=self.__cover_type == ImageCoverType.RadiusAngleCoverCentrally)
 
             self.currentImageChanged.emit(current_image)
             self.currentPixmapChanged.emit(self.currentPixmap())
@@ -206,52 +276,6 @@ class MultipleImage(QObject):
         self.__image_original_binary = image_binary
         self.__judge_image_type()
 
-    def __add_cover(self, image: QImage, size=-1) -> QImage:
-        # https://geek-docs.com/pyqt5/pyqt5-tutorials/g_pyqt5-how-to-create-circular-image-from-any-image.html
-
-        image.convertToFormat(QImage.Format_ARGB32)
-        # Crop image to a square:
-        imgsize = min(image.width(), image.height())
-        rect = QRect(
-            (image.width() - imgsize) / 2,
-            (image.height() - imgsize) / 2,
-            imgsize,
-            imgsize,
-        )
-
-        image = image.copy(rect)
-
-        # Create the output image with the same dimensions
-        # and an alpha channel and make it completely transparent:
-        out_img = QImage(imgsize, imgsize, QImage.Format_ARGB32)
-        out_img.fill(Qt.transparent)
-
-        # Create a texture brush and paint a circle
-        # with the original image onto the output image:
-        brush = QBrush(image)
-
-        # Paint the output image
-        painter = QPainter(out_img)
-        painter.setBrush(brush)
-
-        # Don't draw an outline
-        painter.setPen(Qt.NoPen)
-
-        # drawing circle
-        painter.drawEllipse(0, 0, imgsize, imgsize)
-
-        # closing painter event
-        painter.end()
-
-        if size == -1:
-            # return original image
-            return out_img
-        else:
-            # return scaled image
-            return out_img.scaled(size, size,
-                                  Qt.KeepAspectRatio,
-                                  Qt.SmoothTransformation)
-
     def __load_qt_image(self):
         if not self.__image_original_binary:
             raise Exception('image binary data is null')
@@ -268,7 +292,7 @@ class MultipleImage(QObject):
             else:
                 size = min(self.__static_image.width(), self.__static_image.height())  # 遵循原大小
 
-            self.__static_image = self.__add_cover(self.__static_image, size)
+            self.__static_image = add_round_cover(self.__static_image, size)
             self.__static_pixmap = QPixmap.fromImage(self.__static_image)
         elif self.__cover_type == ImageCoverType.NoCover:
             width = self.__expect_size[0] if self.__expect_size[0] else self.__static_image.width()
@@ -276,6 +300,13 @@ class MultipleImage(QObject):
             self.__static_image = self.__static_image.scaled(width, height,
                                                              Qt.KeepAspectRatio,
                                                              Qt.SmoothTransformation)
+            self.__static_pixmap = QPixmap.fromImage(self.__static_image)
+        elif self.__cover_type in (ImageCoverType.RadiusAngleCover, ImageCoverType.RadiusAngleCoverCentrally):
+            width = self.__expect_size[0] if self.__expect_size[0] else self.__static_image.width()
+            height = self.__expect_size[1] if self.__expect_size[1] else self.__static_image.height()
+
+            self.__static_image = add_cover_radius_angle(self.__static_image, width, height,
+                                                         cover_in_center=self.__cover_type == ImageCoverType.RadiusAngleCoverCentrally)
             self.__static_pixmap = QPixmap.fromImage(self.__static_image)
         else:
             raise Exception('cover type is invalid')

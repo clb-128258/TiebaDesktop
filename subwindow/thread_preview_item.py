@@ -28,7 +28,8 @@ class AsyncLoadImage(qt_image.MultipleImage):
         img_src = baidu_hash if baidu_hash else src_link
         self.setImageInfo(img_type,
                           img_src,
-                          expectSize=(200, 200))
+                          expectSize=(200, 200),
+                          coverType=qt_image.ImageCoverType.RadiusAngleCoverCentrally)
 
     def load_image_on_qtLabel(self, label: QLabel):
         if not self.isLoaded:

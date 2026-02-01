@@ -197,8 +197,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
     def closeEvent(self, a0):
         inputted_text = self.textEdit.toPlainText()
-        if inputted_text:
-            profile_mgr.add_post_draft(self.thread_id, inputted_text)
+        profile_mgr.add_post_draft(self.thread_id, inputted_text)
 
         self.flash_shower.hide()
         a0.accept()
@@ -943,7 +942,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     self.listWidget.addItem(item)
                     self.listWidget.setItemWidget(item, label)
 
-                    self.update_listwidget_size(i['height'] + 35)
+                    self.update_listwidget_size(i['height'] + 5)
                     label.load_picture_async()
 
                 if datas['repost_info']['have_repost']:

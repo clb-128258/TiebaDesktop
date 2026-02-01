@@ -94,6 +94,10 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
     def closeEvent(self, a0):
         self.flash_shower.hide()
+        self.portrait_image.destroyImage()
+        for i in self.listwidgets.values():
+            i.clear()
+
         a0.accept()
         qt_window_mgr.del_window(self)
 

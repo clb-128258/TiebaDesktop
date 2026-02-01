@@ -82,8 +82,7 @@ class RecommandWindow(QListWidget):
                     if response.content:
                         pixmap = QPixmap()
                         pixmap.loadFromData(response.content)
-                        pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
-                                               Qt.SmoothTransformation)
+                        pixmap = qt_image.add_cover_radius_angle_for_pixmap(pixmap, 200, 200, cover_in_center=True)
                         preview_pixmap.append(pixmap)
 
                 # 进一步获取用户信息
@@ -91,7 +90,7 @@ class RecommandWindow(QListWidget):
                 user_name = userinfo.nick_name_new
                 user_head_pixmap = QPixmap()
                 user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                user_head_pixmap = qt_image.add_cover_for_pixmap(user_head_pixmap,21)
+                user_head_pixmap = qt_image.add_cover_for_pixmap(user_head_pixmap, 21)
 
                 # 进一步获取吧信息
                 forum = await client.get_forum_detail(int(forum_id))
@@ -100,7 +99,7 @@ class RecommandWindow(QListWidget):
                 response = requests.get(forum.origin_avatar, headers=request_mgr.header)
                 if response.content:
                     forum_pixmap.loadFromData(response.content)
-                    forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap,size=17)
+                    forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap, size=17)
 
                 tdata = {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
                          'content': content, 'author_portrait': portrait, 'user_name': user_name,
@@ -176,8 +175,7 @@ class RecommandWindow(QListWidget):
                         if response.content:
                             pixmap = QPixmap()
                             pixmap.loadFromData(response.content)
-                            pixmap = pixmap.scaled(200, 200, Qt.KeepAspectRatio,
-                                                   Qt.SmoothTransformation)
+                            pixmap = qt_image.add_cover_radius_angle_for_pixmap(pixmap, 200, 200, cover_in_center=True)
                             preview_pixmap.append(pixmap)
 
             # 进一步获取用户信息
@@ -185,7 +183,7 @@ class RecommandWindow(QListWidget):
                                               element['author']['display_name'])  # 优先获取新版昵称，如果没有则使用旧版昵称或者用户名
             user_head_pixmap = QPixmap()
             user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-            user_head_pixmap = qt_image.add_cover_for_pixmap(user_head_pixmap,21)
+            user_head_pixmap = qt_image.add_cover_for_pixmap(user_head_pixmap, 21)
 
             # 进一步获取吧信息
             forum_name = element['forum']['forum_name']
@@ -193,7 +191,7 @@ class RecommandWindow(QListWidget):
             response = requests.get(element['forum']['forum_avatar'], headers=request_mgr.header)
             if response.content:
                 forum_pixmap.loadFromData(response.content)
-                forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap,size=17)
+                forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap, size=17)
 
             tdata = {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
                      'content': content, 'author_portrait': portrait, 'user_name': user_name,

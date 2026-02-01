@@ -87,7 +87,10 @@ class AgreedThreadItem(QWidget, agreed_item.Ui_Form):
         self.label_10.setText(toptext)
         if pixmap_link:
             self.label_2.setFixedHeight(100)
-            self.left_image.setImageInfo(qt_image.ImageLoadSource.HttpLink, pixmap_link, expectSize=(100, 100))
+            self.left_image.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                         pixmap_link,
+                                         expectSize=(100, 100),
+                                         coverType=qt_image.ImageCoverType.RadiusAngleCover)
         else:
             self.label_2.hide()
 

@@ -10,6 +10,28 @@ import publics.logging as logging
 from ui import comment_view
 
 
+def find_first_reply_window(post_id, show_thread_button) -> bool:
+    """
+    寻找并调起第一个与传参相匹的楼中楼窗口
+
+    Return:
+        找到了返回True，没找到返回False
+    """
+
+    from subwindow.reply_sub_comments import ReplySubComments
+    for w in qt_window_mgr.distributed_window:
+        if isinstance(w, ReplySubComments) and w.pushButton.isVisible() == show_thread_button and w.post_id == post_id:
+            w.show()
+            w.raise_()
+            if w.isMinimized():
+                w.showNormal()
+            if not w.isActiveWindow():
+                w.activateWindow()
+            return True
+
+    return False
+
+
 class ReplyItem(QWidget, comment_view.Ui_Form):
     """嵌入在列表里的回复贴内容"""
     height_count = 0
@@ -19,7 +41,6 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
     thread_id = -1
     post_id = -1
     flash_timer_count = 0
-    replyWindow = None
     allow_home_page = True
     subcomment_show_thread_button = False
     agree_num = 0
@@ -51,7 +72,6 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
         self.label_4.installEventFilter(self)  # 重写事件过滤器
         self.pushButton_3.clicked.connect(self.agree_thread_async)
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
-        self.destroyed.connect(self.on_widget_deleted)
 
         self.portrait_image = qt_image.MultipleImage()
         self.portrait_image.currentImageChanged.connect(
@@ -83,13 +103,6 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                 i.load_picture_async()
 
             self.__is_loaded = True
-
-    def on_widget_deleted(self):
-        if self.replyWindow:
-            self.portrait_image.destroyImage()
-            self.replyWindow.close()
-            self.replyWindow.deleteLater()
-            del self.replyWindow
 
     def agree_thread_ok_action(self, isok):
         self.pushButton_3.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
@@ -188,16 +201,16 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
 
     def show_subcomment_window(self):
         if self.c_count != 0:
-            if not self.replyWindow:
+            if not find_first_reply_window(self.post_id, self.subcomment_show_thread_button):
                 from subwindow.reply_sub_comments import ReplySubComments
-                self.replyWindow = ReplySubComments(self.bduss, self.stoken, self.thread_id, self.post_id, self.floor,
-                                                    self.c_count, show_thread_button=self.subcomment_show_thread_button)
-            self.replyWindow.show()
-            self.replyWindow.raise_()
-            if self.replyWindow.isMinimized():
-                self.replyWindow.showNormal()
-            if not self.replyWindow.isActiveWindow():
-                self.replyWindow.activateWindow()
+                replyWindow = ReplySubComments(self.bduss,
+                                               self.stoken,
+                                               self.thread_id,
+                                               self.post_id,
+                                               self.floor,
+                                               self.c_count,
+                                               show_thread_button=self.subcomment_show_thread_button)
+                qt_window_mgr.add_window(replyWindow)
         else:
             if self.show_msg_outside:
                 self.messageAdded.emit(f'第 {self.floor} 楼还没有任何回复')
@@ -329,7 +342,7 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                 self.listWidget.setItemWidget(item, label)
                 self.image_list.append(label)
 
-                self.update_listwidget_size(i['height'] + 35)
+                self.update_listwidget_size(i['height'] + 5)
 
             if voice_info['have_voice']:
                 from subwindow.thread_voice_item import ThreadVoiceItem
