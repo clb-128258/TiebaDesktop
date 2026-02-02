@@ -1,11 +1,19 @@
 """程序内的全局常量"""
 import os
 
+
+def get_default_datapath():
+    if os.name == 'nt':
+        datapath = os.getenv('userprofile').replace('\\', '/') + '/AppData/Local/TiebaDesktop'
+    else:
+        datapath = './TiebaDesktop_UserData'
+
+    return datapath
+
+
 enable_log_file = True
-APP_VERSION_STR = '1.2.1-beta'
-APP_VERSION_NUM = 6
+APP_VERSION_STR = '1.2.2-beta'
+APP_VERSION_NUM = 7
 WINDOWS_AUMID = 'CLB.TiebaDesktop'
 encrypt_key = 'G6WxHyBcliRT5KqcaLkskO5SKB3JJ9dX'
-datapath = './tiebadesktop_userdata'
-if os.name == 'nt':
-    datapath = os.getenv('userprofile').replace('\\', '/') + '/AppData/Local/TiebaDesktop'
+datapath = get_default_datapath()
