@@ -233,9 +233,12 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
 
         self.default_profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
                                                        enable_link_hover_text=False,
-                                                       enable_zoom_factor=True, enable_error_page=True,
-                                                       enable_context_menu=True, enable_keyboard_keys=True,
-                                                       handle_newtab_byuser=True, disable_web_safe=True)
+                                                       enable_zoom_factor=True,
+                                                       enable_error_page=True,
+                                                       enable_context_menu=True,
+                                                       enable_keyboard_keys=True,
+                                                       handle_newtab_byuser=True,
+                                                       disable_web_safe=False)
 
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
@@ -436,6 +439,10 @@ class ExtWebView2(webview2.QWebView2View):
         super().__init__()
 
         self.tab_container = None
+
+        profile = profile.clone()
+        if url.startswith(('http://clb.tiebadesktop.localpage', 'https://clb.tiebadesktop.localpage')):
+            profile.disable_web_safe = True
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowTitle('正在加载...')

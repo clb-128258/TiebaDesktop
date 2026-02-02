@@ -925,7 +925,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                     from subwindow.thread_video_item import ThreadVideoItem
                     video_widget = ThreadVideoItem()
                     video_widget.setdatas(datas['video_info']['src'], datas['video_info']['length'],
-                                          datas['video_info']['view'])
+                                          datas['video_info']['view'], datas['video_info']['cover_src'])
                     item = QListWidgetItem()
                     item.setSizeHint(video_widget.size())
                     self.listWidget.addItem(item)
@@ -1065,12 +1065,13 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         self.reply_num = post_num = thread_info.thread.reply_num - 1
                         self.reply_total_pages = thread_info.page.total_page
 
-                        video_info = {'have_video': False, 'src': '', 'length': 0, 'view': 0}
+                        video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0}
                         if thread_info.thread.contents.video:
                             video_info['have_video'] = True
                             video_info['src'] = thread_info.thread.contents.video.src
                             video_info['length'] = thread_info.thread.contents.video.duration
                             video_info['view'] = thread_info.thread.contents.video.view_num
+                            video_info['cover_src'] = thread_info.thread.contents.video.cover_src
 
                         voice_info = {'have_voice': False, 'src': '', 'length': 0}
                         if thread_info.thread.contents.voice:

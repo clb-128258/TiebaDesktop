@@ -1,11 +1,11 @@
 """webview2模块，实现了webview2与pyqt的绑定"""
 # 先引入跨平台库
 import os
-import requests
 from PyQt5.QtWidgets import QWidget, QMessageBox
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal
 from platform import machine
+from publics import logging
 
 # 判断一下是不是windows
 if os.name == 'nt':
@@ -13,7 +13,7 @@ if os.name == 'nt':
     import clr
     from win32gui import SetParent, MoveWindow
 else:
-    print('Warning: Your system is not Windows, so WebView2 can not work at this time')
+    logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
 
 isload = False
 
@@ -208,7 +208,7 @@ class WebViewProfile:
     """QWebView2View中使用的配置类"""
 
     def __init__(self,
-                 data_folder: str = os.getenv("TEMP", '.') + "/Microsoft WebView",
+                 data_folder: str = os.getenv("TEMP", '.') + "/TiebaDesktopWebviewCache",
                  private_mode=False,
                  user_agent: str = None,
                  enable_error_page: bool = True,
@@ -237,6 +237,22 @@ class WebViewProfile:
         self.enable_link_hover_text = enable_link_hover_text
         self.ignore_all_render_argvs = ignore_all_render_argvs
         self.disable_web_safe = disable_web_safe
+
+    def clone(self):
+        return WebViewProfile(data_folder=self.data_folder,
+                              private_mode=self.private_mode,
+                              user_agent=self.user_agent,
+                              enable_error_page=self.enable_error_page,
+                              enable_zoom_factor=self.enable_zoom_factor,
+                              handle_newtab_byuser=self.handle_newtab_byuser,
+                              enable_context_menu=self.enable_context_menu,
+                              enable_keyboard_keys=self.enable_keyboard_keys,
+                              try_to_stop_thread_when_destroy=self.try_to_stop_thread_when_destroy,
+                              proxy_addr=self.proxy_addr,
+                              enable_gpu_boost=self.enable_gpu_boost,
+                              enable_link_hover_text=self.enable_link_hover_text,
+                              ignore_all_render_argvs=self.ignore_all_render_argvs,
+                              disable_web_safe=self.disable_web_safe)
 
 
 class QWebView2View(QWidget):
@@ -322,7 +338,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def clearCookies(self):
         """清除 Cookie、自动填充和 H5 本地存储数据。"""
@@ -336,7 +352,7 @@ class QWebView2View(QWidget):
 
             self.__get_value_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def setProfile(self, profile: WebViewProfile):
         """设置配置文件对象。"""
@@ -382,7 +398,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def isHtmlInFullScreenState(self):
         """获取网页是否处于全屏状态。
@@ -403,7 +419,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def back(self):
         """使 Webview 执行后退一页的操作。"""
@@ -413,7 +429,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def reload(self):
         """使 Webview 执行刷新页面的操作。"""
@@ -423,7 +439,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def url(self):
         """获取当前页面的 URL 字符串。"""
@@ -438,7 +454,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def zoomFactor(self):
         """获取网页缩放比。"""
@@ -453,7 +469,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def load(self, url: str):
         """加载一个特定的 URL。"""
@@ -465,7 +481,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def loadAfterRender(self, url: str):
         """设置在初始化完成后，加载一个特定的 URL。"""
@@ -481,7 +497,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def openChromiumTaskmgrWindow(self):
         """打开浏览器任务管理器窗口。"""
@@ -493,7 +509,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def openDefaultDownloadDialog(self):
         """打开默认的下载内容悬浮窗。"""
@@ -505,7 +521,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def openPrintDialog(self):
         """打开打印页面。"""
@@ -517,7 +533,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def openSaveHtmlDialog(self):
         """打开另存网页的对话框。"""
@@ -529,7 +545,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            raise Warning('WebView has not inited')
+            logging.log_WARN('WebView has not inited')
 
     def initRender(self):
         """初始化 render。"""
@@ -539,9 +555,7 @@ class QWebView2View(QWidget):
                 self.__webview_thread.ApartmentState = ApartmentState.STA
                 self.__webview_thread.Start()
         else:
-            QMessageBox.critical(self, '当前平台不支持', '你当前使用的系统不是 Windows，不支持执行 WebView2。',
-                                 QMessageBox.Ok)
-            print('Warning: Your system is not Windows, so WebView2 can not work at this time')
+            logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
 
     def __set_background(self):
         self.setStyleSheet("QWidget{background-color: white;}")
