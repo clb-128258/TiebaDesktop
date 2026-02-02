@@ -3,13 +3,13 @@ import asyncio
 import publics.logging as logging
 import aiotieba
 import requests
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 from bs4 import BeautifulSoup
 
 from publics import request_mgr, cache_mgr, profile_mgr, qt_image
-from publics.funcs import start_background_thread, format_second
+from publics.funcs import start_background_thread, format_second, cut_string
 
 
 class RecommandWindow(QListWidget):
@@ -66,6 +66,7 @@ class RecommandWindow(QListWidget):
             async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                 title = element.find_all(class_='title feed-item-link')[0].text  # 找出标题
                 content = element.find_all(class_='n_txt')[0].text[0:-1]  # 找出正文
+                content = cut_string(content, 50)
                 portrait = \
                     element.find_all(class_='post_author')[0]['href'].split('/home/main?id=')[1].split(
                         '&fr=index')[
@@ -160,6 +161,7 @@ class RecommandWindow(QListWidget):
                 content = '[这是一条视频贴，时长 {vlen}，{view_num} 次浏览，进贴即可查看]'.format(
                     vlen=format_second(element['video_info']['video_duration']),
                     view_num=element['video_info']['play_count'])
+            content = cut_string(content, 50)
             portrait = element['author']['portrait'].split('?')[0]
             thread_id = element['tid']  # 贴子id
             forum_id = element['forum']['forum_id']  # 吧id
