@@ -12,7 +12,7 @@ from publics.tb_syncer import *
 from publics import top_toast_widget
 
 from subwindow.agree_thread_list import AgreedThreadsList
-from subwindow.firstpage_recommend import RecommandWindow
+from subwindow.firstpage_recommend import RecommendWindow
 from subwindow.follow_forum_list import FollowForumList
 from subwindow.interact_list import UserInteractionsList
 from subwindow.tieba_search_entry import TiebaSearchWindow

@@ -41,7 +41,7 @@ class RecommendWindow(QListWidget):
     def init_cover_widgets(self):
         self.toast_widget = top_toast_widget.TopToaster()
         self.toast_widget.setCoverWidget(self)
-        self.loading_widget = LoadingFlashWidget()
+        self.loading_widget = LoadingFlashWidget(caption='贴子正在赶来的路上...')
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()
 
@@ -166,7 +166,7 @@ class RecommendWindow(QListWidget):
                     t.join()
 
                 toast_msg.title = f'已为你刷新 {len(elements)} 条贴子'
-                toast_msg.icon_type = top_toast_widget.ToastIconType.NO_ICON
+                toast_msg.icon_type = top_toast_widget.ToastIconType.SUCCESS
                 self.offset += 20
                 logging.log_INFO('loading recommands from api /f/index/feedlist finished')
             except Exception as e:
@@ -271,7 +271,7 @@ class RecommendWindow(QListWidget):
 
                     logging.log_INFO('loading recommands from api /mg/o/getRecommPage finished')
                     toast_msg.title = f'已为你刷新 {len(tlist)} 条贴子'
-                    toast_msg.icon_type = top_toast_widget.ToastIconType.NO_ICON
+                    toast_msg.icon_type = top_toast_widget.ToastIconType.SUCCESS
             except Exception as e:
                 logging.log_exception(e)
                 toast_msg.title = str(e)
