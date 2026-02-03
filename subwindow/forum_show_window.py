@@ -76,6 +76,9 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.flash_shower.hide()
         self.forum_avatar.destroyImage()
         self.forum_admin_portrait.destroyImage()
+        for i in self.listwidgets:
+            i.clear()
+
         a0.accept()
         qt_window_mgr.del_window(self)
 

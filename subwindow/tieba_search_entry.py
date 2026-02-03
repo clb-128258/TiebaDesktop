@@ -59,6 +59,11 @@ class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
         self.pushButton.clicked.connect(self.start_search)
 
     def closeEvent(self, a0):
+        for i in self.listwidgets:
+            i.clear()
+        QPixmapCache.clear()
+        gc.collect()
+
         a0.accept()
         qt_window_mgr.del_window(self)
 

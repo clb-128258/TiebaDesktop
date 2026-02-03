@@ -7,7 +7,7 @@ from ui import mw_popup
 from PyQt5.QtWidgets import QWidget, qApp, QMenu
 from PyQt5.QtGui import QIcon, QResizeEvent
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
-from publics import request_mgr, profile_mgr, cache_mgr, funcs, qt_window_mgr, qt_image
+from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image
 import asyncio
 import pyperclip
 
@@ -93,9 +93,11 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
     def open_star_window(self):
         user_stared_list = StaredThreadsList(profile_mgr.current_bduss, profile_mgr.current_stoken)
         qt_window_mgr.add_window(user_stared_list)
+
     def resize_menu(self):
         self.adjustSize()
         self.resizeEvent(None)
+
     def _ui_set_self_info(self, data):
         widgets = [self.toolButton_3, self.frame_1, self.frame_2, self.frame_3, self.frame_4, self.frame_6]
 

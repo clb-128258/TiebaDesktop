@@ -47,6 +47,7 @@ class ThreadVoteItem(QWidget, thread_vote_info.Ui_Form):
 
         self.label.setPixmap(QPixmap('ui/vote.png').scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.voteok.connect(self._on_poll_finish)
+        self.destroyed.connect(self.listWidget.clear)
 
     def _on_poll_finish(self, datas):
         for widget in self.vote_item:

@@ -2,12 +2,11 @@ import asyncio
 import gc
 
 import publics.logging as logging
-import requests
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
+from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, qt_image
+from publics import qt_window_mgr, request_mgr
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets
 from ui import star_list
 
@@ -44,6 +43,7 @@ class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
         self.get_agreed_threads_async()
 
     def closeEvent(self, a0):
+        self.listWidget.clear()
         a0.accept()
         qt_window_mgr.del_window(self)
 

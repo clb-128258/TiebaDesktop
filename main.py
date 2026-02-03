@@ -202,7 +202,15 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             i.stateChanged.connect(self.calc_willfree_size)
 
     def closeEvent(self, a0):
+        self.listWidget_2.clear()
+        QPixmapCache.clear()
+        gc.collect()
         a0.accept()
+
+    def keyPressEvent(self, a0):
+        if a0.key() == Qt.Key.Key_Escape:
+            a0.ignore()
+            self.close()
 
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
@@ -1149,7 +1157,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.pushButton.setStyleSheet("QPushButton::menu-indicator{image:none;}")
         self.notice_syncer = TiebaMsgSyncer()
 
-        self.pushButton_3.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
+        self.pushButton_3.clicked.connect(self.switch_follow_forum_page)
         self.pushButton_4.clicked.connect(self.switch_interact_page)
         self.pushButton_2.clicked.connect(self.refresh_recommand)
         self.pushButton_5.clicked.connect(self.open_search_window)
@@ -1220,6 +1228,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.pushButton_4.setStyleSheet('')
             self.pushButton_4.setText('消息')
 
+    def switch_follow_forum_page(self):
+        if self.flist.is_first_show:
+            self.flist.get_bars_async()
+            self.flist.is_first_show = False
+        self.stackedWidget.setCurrentIndex(1)
+
     def switch_interact_page(self):
         if self.isMinimized():
             self.showNormal()
@@ -1235,24 +1249,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
     def refresh_recommand(self):
         if self.stackedWidget.currentIndex() == 0:
-            if not self.recommend.isloading:
-                # 初始化计时器
-                self.text_timer = QTimer(self)
-                self.text_timer.setSingleShot(True)
-                self.text_timer.setInterval(1600)
-                self.text_timer.timeout.connect(lambda: self.pushButton_2.setText('推荐'))
-
-                # 清理内存
-                self.recommend.clear()
-                QPixmapCache.clear()
-                gc.collect()
-
-                # 启动刷新
-                self.recommend.get_recommand_async()
-                self.pushButton_2.setText('刷新中...')
-                self.text_timer.start()
+            # 启动刷新
+            self.recommend.get_recommand_async(True)
         else:
             self.stackedWidget.setCurrentIndex(0)
+            if self.recommend.is_first_load:
+                self.recommend.get_recommand_async()
 
     def refresh_all_datas(self):
         qt_window_mgr.clear_windows()
@@ -1271,18 +1273,22 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.pushButton.setEnabled(True)
         self.recommend.bduss = self.user_data['bduss']
         self.recommend.stoken = self.user_data['stoken']
+        self.recommend.is_first_load = True
         self.flist.bduss = self.user_data['bduss']
         self.flist.stoken = self.user_data['stoken']
+        self.flist.is_first_show = True
         self.interactionlist.bduss = self.user_data['bduss']
         self.interactionlist.stoken = self.user_data['stoken']
         self.interactionlist.is_first_show = True
         self.notice_syncer.set_account(self.user_data['bduss'], self.user_data['stoken'])
 
-        self.recommend.get_recommand_async()
-        self.flist.get_bars_async()
         self.user_info_widget.get_self_info_async()
         self.notice_syncer.run_msg_sync_immedently()
-        if self.stackedWidget.currentIndex() == 2:
+        if self.stackedWidget.currentIndex() == 0:
+            self.refresh_recommand()
+        elif self.stackedWidget.currentIndex() == 1:
+            self.switch_follow_forum_page()
+        elif self.stackedWidget.currentIndex() == 2:
             self.switch_interact_page()
 
     def open_search_window(self):
@@ -1294,7 +1300,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         qt_window_mgr.add_window(user_stared_list)
 
     def init_pages(self):
-        self.recommend = RecommandWindow(self.user_data['bduss'], self.user_data['stoken'])
+        self.recommend = RecommendWindow(self.user_data['bduss'], self.user_data['stoken'])
         self.stackedWidget.addWidget(self.recommend)
 
         self.flist = FollowForumList(self.user_data['bduss'], self.user_data['stoken'])
@@ -1308,13 +1314,14 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     def open_settings_window(self):
         d = SettingsWindow()
         d.exec()
+        d.deleteLater()
 
     def init_profile_menu(self):
         menu = QMenu()
 
         self.user_info_widget = MainPopupMenu(menu)
         self.user_info_widget_action = QWidgetAction(self)
-        self.user_info_widget.followForumClicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
+        self.user_info_widget.followForumClicked.connect(self.switch_follow_forum_page)
         self.user_info_widget_action.setDefaultWidget(self.user_info_widget)
         menu.addAction(self.user_info_widget_action)
 

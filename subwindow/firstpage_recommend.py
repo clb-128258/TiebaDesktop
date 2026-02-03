@@ -1,27 +1,31 @@
 import asyncio
+import gc
 
 import publics.logging as logging
 import aiotieba
 import requests
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QPixmapCache
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 from bs4 import BeautifulSoup
 
-from publics import request_mgr, cache_mgr, profile_mgr, qt_image
-from publics.funcs import start_background_thread, format_second, cut_string
+from publics import request_mgr, cache_mgr, profile_mgr, qt_image, top_toast_widget
+from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget
 
 
-class RecommandWindow(QListWidget):
+class RecommendWindow(QListWidget):
     """首页推荐列表组件"""
     isloading = False
+    is_first_load = False
     offset = 0
     add_tie = pyqtSignal(dict)
+    load_finish = pyqtSignal(top_toast_widget.ToastMessage)
 
     def __init__(self, bduss, stoken):
         super().__init__()
         self.bduss = bduss
         self.stoken = stoken
+        self.init_cover_widgets()
         self.setStyleSheet('QListWidget{outline:0px;}'
                            'QListWidget::item:hover {color:white; background-color:white;}'
                            'QListWidget::item:selected {color:white; background-color:white;}')
@@ -31,7 +35,21 @@ class RecommandWindow(QListWidget):
         self.setFrameShape(QListWidget.Shape.NoFrame)
         self.verticalScrollBar().setSingleStep(20)
         self.add_tie.connect(self.add_thread)
+        self.load_finish.connect(self.on_load_finish)
         self.verticalScrollBar().valueChanged.connect(self.load_more)
+
+    def init_cover_widgets(self):
+        self.toast_widget = top_toast_widget.TopToaster()
+        self.toast_widget.setCoverWidget(self)
+        self.loading_widget = LoadingFlashWidget()
+        self.loading_widget.cover_widget(self)
+        self.loading_widget.hide()
+
+    def on_load_finish(self, msg):
+        if self.is_first_load:
+            self.loading_widget.hide()
+            self.toast_widget.showToast(msg)
+            self.is_first_load = False
 
     def load_more(self):
         if not self.isloading and self.verticalScrollBar().value() >= self.verticalScrollBar().maximum() - self.verticalScrollBar().maximum() / 5:
@@ -53,11 +71,20 @@ class RecommandWindow(QListWidget):
         self.addItem(item)
         self.setItemWidget(item, widget)
 
-    def get_recommand_async(self):
-        if self.bduss:  # 登录了使用新接口
-            start_background_thread(self.get_recommand_v2)
-        else:
-            start_background_thread(self.get_recommand_v1)
+    def get_recommand_async(self, refresh=False):
+        if not self.isloading:
+            self.is_first_load = True if refresh else self.is_first_load
+            if self.is_first_load:
+                self.loading_widget.show()
+                # 清理内存
+                self.clear()
+                QPixmapCache.clear()
+                gc.collect()
+
+            if self.bduss:  # 登录了使用新接口
+                start_background_thread(self.get_recommand_v2)
+            else:
+                start_background_thread(self.get_recommand_v1)
 
     def get_recommand_v1(self):
         """贴吧电脑网页版的推荐接口，不登录也能获取"""
@@ -114,8 +141,8 @@ class RecommandWindow(QListWidget):
             asyncio.run(get_detail(element))
 
         def func():
-            global datapath
             self.isloading = True
+            toast_msg = top_toast_widget.ToastMessage()
             try:
                 # 贴吧电脑网页版的推荐接口，不登录也能获取
                 # 在登录情况下，需要传一组特定的cookie才能使推荐个性化（不只是bduss和stoken），否则是默认推荐
@@ -130,16 +157,25 @@ class RecommandWindow(QListWidget):
                 # 解析网页
                 soup = BeautifulSoup(html, "html.parser")
                 elements = soup.find_all(class_="clearfix j_feed_li")  # 找出所有贴子
+                thread_list = []
 
                 for element in elements:
-                    start_background_thread(start_async, (element,))
+                    thread = start_background_thread(start_async, (element,))
+                    thread_list.append(thread)
+                for t in thread_list:
+                    t.join()
+
+                toast_msg.title = f'已为你刷新 {len(elements)} 条贴子'
+                toast_msg.icon_type = top_toast_widget.ToastIconType.NO_ICON
+                self.offset += 20
+                logging.log_INFO('loading recommands from api /f/index/feedlist finished')
             except Exception as e:
                 logging.log_exception(e)
-            else:
-                self.offset += 20
+                toast_msg.title = str(e)
+                toast_msg.icon_type = top_toast_widget.ToastIconType.ERROR
             finally:
                 self.isloading = False
-                logging.log_INFO('loading recommands from api /f/index/feedlist finished')
+                self.load_finish.emit(toast_msg)
 
         func()
 
@@ -210,8 +246,8 @@ class RecommandWindow(QListWidget):
                 logging.log_exception(e)
 
         def func():
-            global datapath
             self.isloading = True
+            toast_msg = top_toast_widget.ToastMessage()
             try:
                 # 手机网页版贴吧的首页推荐接口
                 # 该接口在未登录的情况下会获取不到数据，并报未知错误 (110003)
@@ -226,12 +262,22 @@ class RecommandWindow(QListWidget):
                     start_background_thread(self.get_recommand_v1)
                 else:
                     tlist = response['data']['thread_list']
+                    thread_list = []
                     for element in tlist:
-                        start_background_thread(start_async, (element,))
+                        thread = start_background_thread(start_async, (element,))
+                        thread_list.append(thread)
+                    for t in thread_list:
+                        t.join()
+
                     logging.log_INFO('loading recommands from api /mg/o/getRecommPage finished')
+                    toast_msg.title = f'已为你刷新 {len(tlist)} 条贴子'
+                    toast_msg.icon_type = top_toast_widget.ToastIconType.NO_ICON
             except Exception as e:
                 logging.log_exception(e)
+                toast_msg.title = str(e)
+                toast_msg.icon_type = top_toast_widget.ToastIconType.ERROR
             finally:
                 self.isloading = False
+                self.load_finish.emit(toast_msg)
 
         func()

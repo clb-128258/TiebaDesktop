@@ -54,6 +54,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
         self.load_comments_async()
 
     def closeEvent(self, a0):
+        self.listWidget.clear()
         a0.accept()
         qt_window_mgr.del_window(self)
 

@@ -40,6 +40,7 @@ class StaredThreadsList(QDialog, star_list.Ui_Dialog):
         self.get_star_threads_async()
 
     def closeEvent(self, a0):
+        self.listWidget.clear()
         a0.accept()
         qt_window_mgr.del_window(self)
 

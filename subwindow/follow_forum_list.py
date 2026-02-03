@@ -15,6 +15,7 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
     """关注吧列表组件"""
     add_ba = pyqtSignal(list)
     ba_add_ok = pyqtSignal()
+    is_first_show = False
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -60,14 +61,14 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
         self.scroll_load_images()
 
     def get_bars_async(self):
+        self.listWidget.clear()
+        QPixmapCache.clear()
+        gc.collect()
+
         if self.bduss:
             self.label_2.hide()
             self.listWidget.show()
             self.pushButton_2.setEnabled(False)
-
-            self.listWidget.clear()
-            QPixmapCache.clear()
-            gc.collect()
 
             start_background_thread(self.get_bars)
         else:
