@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QDialog, QListWidget, QTreeWidgetItem, QFileDialog, 
 
 from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
-    open_url_in_browser, large_num_to_string
+    open_url_in_browser, large_num_to_string, get_exception_string
 import publics.logging as logging
 
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
@@ -594,10 +594,7 @@ class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
                     forum_info = await client.get_forum(self.forum_id)
 
                     if forum_info.err:
-                        if isinstance(forum_info.err, aiotieba.exception.TiebaServerError):
-                            data['err_info'] = f'{forum_info.err.msg} (错误代码 {forum_info.err.code})'
-                        else:
-                            data['err_info'] = str(forum_info.err)
+                        data['err_info'] = get_exception_string(forum_info.err)
                     else:
                         # 整理吧信息
                         data['forum_name'] = forum_info.fname

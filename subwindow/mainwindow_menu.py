@@ -7,7 +7,7 @@ from ui import mw_popup
 from PyQt5.QtWidgets import QWidget, qApp, QMenu
 from PyQt5.QtGui import QIcon, QResizeEvent
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
-from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image
+from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image, logging
 import asyncio
 import pyperclip
 
@@ -129,47 +129,51 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
 
     def get_self_info(self):
         async def getinfo():
-            emit_data = {'portrait': '',
-                         'portrait_pixmap': None,
-                         'nickname': '',
-                         'tieba_id': 0,
-                         'agree_me_num': 0,
-                         'store_num': 0,
-                         'fans': 0,
-                         'follow': 0,
-                         'view_history_num': len(profile_mgr.view_history),
-                         'follow_forum_num': 0}
+            try:
+                emit_data = {'portrait': '',
+                             'portrait_pixmap': None,
+                             'nickname': '',
+                             'tieba_id': 0,
+                             'agree_me_num': 0,
+                             'store_num': 0,
+                             'fans': 0,
+                             'follow': 0,
+                             'view_history_num': len(profile_mgr.view_history),
+                             'follow_forum_num': 0}
 
-            if profile_mgr.current_bduss:
-                params = {
-                    "_client_type": '2',
-                    "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
-                    "BDUSS": profile_mgr.current_bduss,
-                    "stoken": profile_mgr.current_stoken,
-                    "uid": str(profile_mgr.current_uid),
-                    "subapp_type": "hybrid"
-                }
+                if profile_mgr.current_bduss:
+                    params = {
+                        "_client_type": '2',
+                        "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
+                        "BDUSS": profile_mgr.current_bduss,
+                        "stoken": profile_mgr.current_stoken,
+                        "uid": str(profile_mgr.current_uid),
+                        "subapp_type": "hybrid"
+                    }
 
-                resp = request_mgr.run_get_api('/c/u/user/profile', bduss=profile_mgr.current_bduss,
-                                               stoken=profile_mgr.current_stoken, use_mobile_header=True, params=params)
+                    resp = request_mgr.run_get_api('/c/u/user/profile', bduss=profile_mgr.current_bduss,
+                                                   stoken=profile_mgr.current_stoken, use_mobile_header=True,
+                                                   params=params)
 
-                emit_data['portrait'] = resp['user']['portraith'].split('?')[0]
-                emit_data['nickname'] = resp['user']['name_show']
-                self.tieba_id = emit_data['tieba_id'] = int(resp['user']['tieba_uid'])
-                emit_data['agree_me_num'] = int(resp['user']['total_agree_num'])
-                emit_data['store_num'] = int(resp['user']['favorite_num'])
-                emit_data['fans'] = int(resp['user']['fans_num'])
-                emit_data['follow'] = int(resp['user']['concern_num'])
+                    emit_data['portrait'] = resp['user']['portraith'].split('?')[0]
+                    emit_data['nickname'] = resp['user']['name_show']
+                    self.tieba_id = emit_data['tieba_id'] = int(resp['user']['tieba_uid'])
+                    emit_data['agree_me_num'] = int(resp['user']['total_agree_num'])
+                    emit_data['store_num'] = int(resp['user']['favorite_num'])
+                    emit_data['fans'] = int(resp['user']['fans_num'])
+                    emit_data['follow'] = int(resp['user']['concern_num'])
 
-                emit_data['follow_forum_num'] = int(resp['user']['my_like_num'])
-            else:
-                pixmap = QPixmap()
-                pixmap.load('ui/default_user_image.png')
-                pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
-                                       Qt.SmoothTransformation)
-                emit_data['portrait_pixmap'] = pixmap
+                    emit_data['follow_forum_num'] = int(resp['user']['my_like_num'])
+                else:
+                    pixmap = QPixmap()
+                    pixmap.load('ui/default_user_image.png')
+                    pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
+                                           Qt.SmoothTransformation)
+                    emit_data['portrait_pixmap'] = pixmap
 
-            self.infoLoaded.emit(emit_data)
+                self.infoLoaded.emit(emit_data)
+            except Exception as e:
+                logging.log_exception(e)
 
         def start_async():
             loop = asyncio.new_event_loop()

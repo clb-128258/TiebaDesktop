@@ -10,7 +10,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QWidget, QMessageBox
 
 from publics import qt_window_mgr, profile_mgr, cache_mgr, request_mgr, qt_image
-from publics.funcs import LoadingFlashWidget, start_background_thread
+from publics.funcs import LoadingFlashWidget, start_background_thread, get_exception_string
 import publics.logging as logging
 from ui import user_blacklist_setter
 
@@ -87,12 +87,12 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                     else:
                         turn_data['success'] = False
                         turn_data['title'] = '拉黑失败'
-                        turn_data['text'] = str(r.err)
+                        turn_data['text'] = get_exception_string(r.err)
             except Exception as e:
                 logging.log_exception(e)
                 turn_data['success'] = False
                 turn_data['title'] = '程序内部错误'
-                turn_data['text'] = str(e)
+                turn_data['text'] = get_exception_string(e)
             finally:
                 self.set_black_status_ok_signal.emit(turn_data)
 
@@ -173,7 +173,7 @@ class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
                 logging.log_exception(e)
                 turn_data['success'] = False
                 turn_data['title'] = '程序内部错误'
-                turn_data['text'] = str(e)
+                turn_data['text'] = get_exception_string(e)
             finally:
                 self.get_black_status_ok_signal.emit(turn_data)
 

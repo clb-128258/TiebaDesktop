@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QDialog, QListWidgetItem
 
 from publics import qt_window_mgr, top_toast_widget
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
-    listWidget_get_visible_widgets
+    listWidget_get_visible_widgets, get_exception_string
 import publics.logging as logging
 
 from ui import reply_comments
@@ -221,7 +221,7 @@ class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
                         self.add_comment.emit(tdata)
             except Exception as e:
                 logging.log_exception(e)
-                self.set_floor_info.emit((-1, str(e)))
+                self.set_floor_info.emit((-1, get_exception_string(e)))
             else:
                 if comments.has_more:
                     self.page += 1

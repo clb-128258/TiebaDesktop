@@ -1,10 +1,13 @@
 import asyncio
 import os
 import pathlib
+import socket
 import subprocess
+import sys
 import threading
 import time
 import datetime
+import ctypes
 
 import pyperclip
 import requests
@@ -350,6 +353,107 @@ def timestamp_to_string(ts: int):
         timestr = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
 
     return timestr
+
+
+def system_has_network():
+    """
+    检测用户的电脑是否有网络连接
+
+    Notes:
+        在 Windows 下采用 InternetGetConnectedState 函数检测连接状态，返回结果可能不准确
+    """
+
+    def has_default_route_linux():
+        if not os.path.exists("/proc/net/route"):
+            return False
+        with open("/proc/net/route") as f:
+            for line in f:
+                fields = line.strip().split()
+                if fields[1] == "00000000":  # 默认路由的目标是 0.0.0.0（十六进制）
+                    return True
+        return False
+
+    def has_default_route_windows():
+        wininet = ctypes.windll.wininet
+        flags = ctypes.c_uint(0x20)
+        connected = wininet.InternetGetConnectedState(ctypes.byref(flags), 0)
+        return not bool(connected)
+
+    if os.name == 'nt':
+        return has_default_route_windows()
+    elif os.name == 'posix':
+        return has_default_route_linux()
+    else:
+        return None
+
+
+def get_exception_string(error: Exception):
+    """获取错误对象的字符串解释"""
+
+    def extract_gai_error(exc):
+        if isinstance(exc, socket.gaierror):
+            return exc
+        cause = getattr(exc, '__cause__', None) or getattr(exc, '__context__', None)
+        if cause is not None and cause is not exc:  # 防止循环
+            return extract_gai_error(cause)
+        return None
+
+    def extract_system_error(exc):
+        try:
+            error_string = str(exc)
+            error_string = error_string.split('Failed to establish a new connection: ')[-1][0:-3]
+            if error_string.startswith('[WinError '):
+                code = int(error_string.split(' ')[1][0:-1])
+                msg = ' '.join(error_string.split(' ')[2:])
+                return code, msg
+            else:
+                return None, error_string
+        except:
+            return None, str(exc)
+
+    if isinstance(error, aiotieba.exception.TiebaServerError):
+        return f'{error.msg} (错误代码 {error.code})'
+    elif isinstance(error, aiotieba.exception.HTTPStatusError):
+        return f'HTTP {error.code} {error.msg} 错误'
+    elif isinstance(error, aiotieba.exception.TiebaValueError):
+        return '服务器返回的字段值有误'
+    elif isinstance(error, aiotieba.exception.ContentTypeError):
+        return 'HTTP 报文中的 Content-Type 无法被解析'
+    elif isinstance(error, requests.exceptions.HTTPError):
+        return f'HTTP {error.response.status_code} 错误'
+    elif isinstance(error, requests.exceptions.ProxyError):
+        return f'代理服务器不可达，请检查代理设置，或是尝试关闭正在使用的代理软件'
+    elif isinstance(error, requests.exceptions.SSLError):
+        return f'SSL 校验失败'
+    elif isinstance(error, requests.exceptions.Timeout):
+        return f'网络连接超时'
+    elif isinstance(error, requests.exceptions.ContentDecodingError):
+        return f'HTTP 报文解析失败'
+    elif isinstance(error, requests.exceptions.ChunkedEncodingError):
+        return f'服务器返回了无效的数据包'
+    elif isinstance(error, requests.exceptions.TooManyRedirects):
+        return f'重定向次数过多，可能已引发服务器的风控机制'
+    elif isinstance(error, requests.exceptions.MissingSchema):
+        return f'链接语法不正确，无法解析'
+    elif isinstance(error, requests.exceptions.JSONDecodeError):
+        return f'JSON 解析失败'
+    elif isinstance(error, requests.exceptions.ConnectionError):
+        has_network = system_has_network()
+        gai_err = extract_gai_error(error)
+        system_error = extract_system_error(error)
+        if not has_network:
+            return '未连接到互联网，请检查网络设置，并检查网线是否已插好'
+        elif gai_err:
+            return f'DNS 解析失败，请检查 DNS 设置'
+        else:
+            return f'网络连接错误: {system_error[1]}{f" (错误代码 {system_error[0]})" if system_error[0] else ""}'
+
+    elif isinstance(error, KeyError):
+        return '数据的参数不全'
+    elif isinstance(error, json.JSONDecodeError):
+        return f'JSON 解析失败'
+    else:
+        return str(error)
 
 
 class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):

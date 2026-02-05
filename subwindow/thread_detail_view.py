@@ -12,7 +12,7 @@ from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
 
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
-    timestamp_to_string, cut_string, large_num_to_string
+    timestamp_to_string, cut_string, large_num_to_string, get_exception_string
 import publics.logging as logging
 from subwindow import base_ui
 from ui import tie_detail_view
@@ -418,7 +418,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         self.add_post_signal.emit(str(result.err))
             except Exception as e:
                 logging.log_exception(e)
-                self.add_post_signal.emit('程序内部出错，请重试')
+                self.add_post_signal.emit(logging.log_exception(e))
 
         def start_async():
             new_loop = asyncio.new_event_loop()
@@ -508,9 +508,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         self.agree_thread_signal.emit(response['error_msg'])
 
         except Exception as e:
-            print(type(e))
-            print(e)
-            self.agree_thread_signal.emit('程序内部出错，请重试')
+            logging.log_exception(e)
+            self.agree_thread_signal.emit(get_exception_string(e))
 
     def store_thread_ok_action(self, isok):
         toast = top_toast_widget.ToastMessage(isok, 2000, top_toast_widget.ToastIconType.INFORMATION)
@@ -569,7 +568,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         self.store_thread_signal.emit(result['error'])
             except Exception as e:
                 logging.log_exception(e)
-                self.store_thread_signal.emit('程序内部出错，请重试')
+                self.store_thread_signal.emit(get_exception_string(e))
 
         def start_async():
             new_loop = asyncio.new_event_loop()
@@ -1169,7 +1168,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                             f'load thread {self.thread_id} main info ok, send to qt side')
                         self.head_data_signal.emit(tdata)
             except Exception as e:
-                self.head_data_signal.emit({'err_info': str(e)})
+                self.head_data_signal.emit({'err_info': get_exception_string(e)})
                 logging.log_exception(e)
 
         def start_async():

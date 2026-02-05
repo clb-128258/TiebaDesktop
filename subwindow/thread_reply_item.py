@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPixmap, QCursor
 from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 from typing import Union
 from publics import request_mgr, qt_window_mgr, profile_mgr, qt_image
-from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string
+from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string
 import publics.logging as logging
 from subwindow import base_ui
 
@@ -192,9 +192,8 @@ class ReplyItem(QWidget, comment_view.Ui_Form):
                         self.agree_thread_signal.emit(response['error_msg'])
 
         except Exception as e:
-            print(type(e))
-            print(e)
-            self.agree_thread_signal.emit('程序内部出错，请重试')
+            logging.log_exception(e)
+            self.agree_thread_signal.emit(get_exception_string(e))
 
     def handle_flash_timer_event(self):
         if self.flash_timer_count == 6:

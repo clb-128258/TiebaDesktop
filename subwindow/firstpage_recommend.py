@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 from bs4 import BeautifulSoup
 
 from publics import request_mgr, cache_mgr, profile_mgr, qt_image, top_toast_widget
-from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget
+from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget,get_exception_string
 
 
 class RecommendWindow(QListWidget):
@@ -163,7 +163,7 @@ class RecommendWindow(QListWidget):
                     thread = start_background_thread(start_async, (element,))
                     thread_list.append(thread)
                 for t in thread_list:
-                    t.join()
+                    t.join(3)
 
                 toast_msg.title = f'已为你刷新 {len(elements)} 条贴子'
                 toast_msg.icon_type = top_toast_widget.ToastIconType.SUCCESS
@@ -171,7 +171,7 @@ class RecommendWindow(QListWidget):
                 logging.log_INFO('loading recommands from api /f/index/feedlist finished')
             except Exception as e:
                 logging.log_exception(e)
-                toast_msg.title = str(e)
+                toast_msg.title = get_exception_string(e)
                 toast_msg.icon_type = top_toast_widget.ToastIconType.ERROR
             finally:
                 self.isloading = False
@@ -267,14 +267,14 @@ class RecommendWindow(QListWidget):
                         thread = start_background_thread(start_async, (element,))
                         thread_list.append(thread)
                     for t in thread_list:
-                        t.join()
+                        t.join(3)
 
                     logging.log_INFO('loading recommands from api /mg/o/getRecommPage finished')
                     toast_msg.title = f'已为你刷新 {len(tlist)} 条贴子'
                     toast_msg.icon_type = top_toast_widget.ToastIconType.SUCCESS
             except Exception as e:
                 logging.log_exception(e)
-                toast_msg.title = str(e)
+                toast_msg.title = get_exception_string(e)
                 toast_msg.icon_type = top_toast_widget.ToastIconType.ERROR
             finally:
                 self.isloading = False

@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QListWidgetItem
 from publics import profile_mgr, request_mgr, top_toast_widget, logging, funcs
+from publics.funcs import get_exception_string
 
 from ui import thread_vote_info, thread_vote_option_item
 
@@ -98,7 +99,7 @@ class ThreadVoteItem(QWidget, thread_vote_info.Ui_Form):
                 msg.icon_type = top_toast_widget.ToastIconType.INFORMATION
         except Exception as e:
             logging.log_exception(e)
-            msg.title = f'投票失败，程序内部出错了'
+            msg.title = '投票失败 ' + get_exception_string(e)
             msg.icon_type = top_toast_widget.ToastIconType.ERROR
         finally:
             self.msgPopped.emit(msg)

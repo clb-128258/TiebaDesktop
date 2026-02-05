@@ -8,7 +8,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDialog, QMessageBox
 
 from publics import request_mgr, top_toast_widget
-from publics.funcs import start_background_thread
+from publics.funcs import start_background_thread, get_exception_string
 from ui import sign
 
 if os.name == 'nt':
@@ -74,15 +74,11 @@ class SignAllDialog(QDialog, sign.Ui_Dialog):
                 else:
                     err_msg = ''
                     if not r1:
-                        head = ''
-                        if err_msg:
-                            head = '\n'
-                        err_msg += f'{head}成长等级签到：{r1.err.msg}'
+                        head = '\n' if err_msg else ''
+                        err_msg += f'{head}成长等级签到：{get_exception_string(r1.err)}'
                     if not r2:
-                        head = ''
-                        if err_msg:
-                            head = '\n'
-                        err_msg += f'{head}成长等级分享任务：{r2.err.msg}'
+                        head = '\n' if err_msg else ''
+                        err_msg += f'{head}成长等级分享任务：{get_exception_string(r2.err)}'
 
                     self.sign_grow_ok.emit(err_msg)
 

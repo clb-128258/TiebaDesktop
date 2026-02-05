@@ -8,7 +8,8 @@ from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetIte
 
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
-    make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string
+    make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
+    get_exception_string
 import publics.logging as logging
 
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
@@ -513,7 +514,7 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
 
             except Exception as e:
                 logging.log_exception(e)
-                self.set_head_info_signal.emit({'error': '程序内部出错，请重试。'})
+                self.set_head_info_signal.emit({'error': get_exception_string(e)})
 
         def start_async():
             new_loop = asyncio.new_event_loop()
