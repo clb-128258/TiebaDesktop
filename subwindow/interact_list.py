@@ -2,12 +2,13 @@ import asyncio
 import gc
 
 import aiotieba
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QPixmapCache, QPixmap
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QWidget, QListWidgetItem
 
-from publics import request_mgr, cache_mgr
-from publics.funcs import start_background_thread, timestamp_to_string, listWidget_get_visible_widgets
+from publics import request_mgr, top_toast_widget
+from publics.funcs import start_background_thread, timestamp_to_string, listWidget_get_visible_widgets, \
+    get_exception_string
 import publics.logging as logging
 
 from ui import reply_at_me_page
@@ -16,6 +17,7 @@ from ui import reply_at_me_page
 class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
     """点赞、回复和@当前用户的列表"""
     add_post_data = pyqtSignal(dict)
+    error_happened = pyqtSignal(top_toast_widget.ToastMessage)
     reply_page = 1
     at_page = 1
     agree_page = 1
@@ -25,12 +27,13 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
     latest_agree_id = 0
     is_first_show = True
 
-    def __init__(self, bduss, stoken):
+    def __init__(self, bduss, stoken, parent):
         super().__init__()
         self.setupUi(self)
 
         self.bduss = bduss
         self.stoken = stoken
+        self.parent_window = parent
 
         self.label.hide()
         self.listwidgets = [self.listWidget_3, self.listWidget_2, self.listWidget]
@@ -46,6 +49,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         self.tabWidget.currentChanged.connect(self.load_item_images)
 
         self.add_post_data.connect(self.set_inter_data_ui)
+        self.error_happened.connect(self.parent_window.toast_widget.showToast)
 
     def refresh_list(self):
         if not self.is_at_loading and not self.is_reply_loading:
@@ -138,8 +142,9 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         if self.bduss:
             self.label.hide()
             self.tabWidget.show()
-            if (type_ == "reply" and not self.is_reply_loading) or (type_ == "at" and not self.is_at_loading) or (
-                    type_ == "agree" and not self.is_agree_loading):
+            if ((type_ == "reply" and not self.is_reply_loading)
+                    or (type_ == "at" and not self.is_at_loading)
+                    or (type_ == "agree" and not self.is_agree_loading)):
                 start_background_thread(self.load_inter_data, (type_,))
             elif type_ == "all" and not self.is_reply_loading and not self.is_at_loading and not self.is_agree_loading:
                 start_background_thread(self.load_inter_data, ('reply',))
@@ -208,6 +213,8 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                     elif type_ == "at":
                         self.is_at_loading = True
                         datas = await client.get_ats(self.at_page)
+                        if datas.err:
+                            raise datas.err
 
                         for thread in datas.objs:
                             # 用户昵称
@@ -317,27 +324,40 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
                             self.add_post_data.emit(data)
             except Exception as e:
                 logging.log_exception(e)
+                self.error_happened.emit(
+                    top_toast_widget.ToastMessage(f'[GetInteractMsg {type_} Error] ' + get_exception_string(e),
+                                                  icon_type=top_toast_widget.ToastIconType.ERROR
+                                                  )
+                )
             else:
                 if type_ == "reply":
                     if bool(int(datas["page"]["has_more"])):
                         self.reply_page += 1
                     else:
                         self.reply_page = -1
-                    self.is_reply_loading = False
                 elif type_ == "at":
                     if datas.has_more:
                         self.at_page += 1
                     else:
                         self.at_page = -1
-                    self.is_at_loading = False
                 elif type_ == "agree":
                     if bool(int(datas["has_more"])):
                         self.agree_page += 1
                     else:
                         self.agree_page = -1
+            finally:
+                if type_ == "reply":
+                    self.is_reply_loading = False
+                elif type_ == "at":
+                    self.is_at_loading = False
+                elif type_ == "agree":
                     self.is_agree_loading = False
+
                 logging.log_INFO(
-                    f'load userInteractionsList {type_}, page (reply {self.reply_page} at {self.at_page} agree {self.agree_page}) successful')
+                    f'load userInteractionsList {type_}, '
+                    f'page (reply {self.reply_page} '
+                    f'at {self.at_page} '
+                    f'agree {self.agree_page}) finished')
 
         def start_async():
             new_loop = asyncio.new_event_loop()

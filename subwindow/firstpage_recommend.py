@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 from bs4 import BeautifulSoup
 
 from publics import request_mgr, cache_mgr, profile_mgr, qt_image, top_toast_widget
-from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget,get_exception_string
+from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string
 
 
 class RecommendWindow(QListWidget):
@@ -21,10 +21,11 @@ class RecommendWindow(QListWidget):
     add_tie = pyqtSignal(dict)
     load_finish = pyqtSignal(top_toast_widget.ToastMessage)
 
-    def __init__(self, bduss, stoken):
+    def __init__(self, bduss, stoken, parent):
         super().__init__()
         self.bduss = bduss
         self.stoken = stoken
+        self.parent_window = parent
         self.init_cover_widgets()
         self.setStyleSheet('QListWidget{outline:0px;}'
                            'QListWidget::item:hover {color:white; background-color:white;}'
@@ -39,8 +40,6 @@ class RecommendWindow(QListWidget):
         self.verticalScrollBar().valueChanged.connect(self.load_more)
 
     def init_cover_widgets(self):
-        self.toast_widget = top_toast_widget.TopToaster()
-        self.toast_widget.setCoverWidget(self)
         self.loading_widget = LoadingFlashWidget(caption='贴子正在赶来的路上...')
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()
@@ -48,7 +47,7 @@ class RecommendWindow(QListWidget):
     def on_load_finish(self, msg):
         if self.is_first_load:
             self.loading_widget.hide()
-            self.toast_widget.showToast(msg)
+            self.parent_window.toast_widget.showToast(msg)
             self.is_first_load = False
 
     def load_more(self):

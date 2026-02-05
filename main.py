@@ -250,6 +250,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config['web_browser_settings']['url_open_policy'] = self.comboBox_3.currentIndex()
             profile_mgr.local_config['thread_view_settings']['play_gif'] = self.checkBox_12.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = self.checkBox_13.isChecked()
+            profile_mgr.local_config["notify_settings"]["offline_notify"] = self.checkBox_17.isChecked()
             profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = self.checkBox_16.isChecked()
 
             try:
@@ -282,7 +283,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
     def open_proxy_settings(self):
         if platform.system() == 'Windows':  # windows 系统
             if int(platform.version().split('.')[-1]) < 10240:  # win10以下系统
-                open_url_in_browser('inetcpl.cpl ,4')  # 调用控制面板的老设置
+                subprocess.call('inetcpl.cpl ,4', shell=True)  # 调用控制面板的老设置
             else:
                 # win10 以后系统调用 UWP 设置
                 open_url_in_browser('ms-settings:network-proxy')
@@ -555,6 +556,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
             self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
             self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
+            self.checkBox_17.setChecked(profile_mgr.local_config["notify_settings"]["offline_notify"])
 
             rdbtn_index = [self.radioButton_3, self.radioButton_4, self.radioButton_5]
             port = profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port']
@@ -1152,6 +1154,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.init_ui_elements()
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.pushButton.setIcon(QIcon('ui/more.png'))
         self.pushButton.setStyleSheet("QPushButton::menu-indicator{image:none;}")
@@ -1218,6 +1221,10 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5 and self.stackedWidget.currentIndex() == 0:
             self.refresh_recommand()
+
+    def init_ui_elements(self):
+        self.toast_widget = top_toast_widget.TopToaster()
+        self.toast_widget.setCoverWidget(self)
 
     def set_unread_count(self):
         if self.notice_syncer.have_basic_unread_notice():
@@ -1300,13 +1307,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         qt_window_mgr.add_window(user_stared_list)
 
     def init_pages(self):
-        self.recommend = RecommendWindow(self.user_data['bduss'], self.user_data['stoken'])
+        self.recommend = RecommendWindow(self.user_data['bduss'], self.user_data['stoken'], self)
         self.stackedWidget.addWidget(self.recommend)
 
-        self.flist = FollowForumList(self.user_data['bduss'], self.user_data['stoken'])
+        self.flist = FollowForumList(self.user_data['bduss'], self.user_data['stoken'], self)
         self.stackedWidget.addWidget(self.flist)
 
-        self.interactionlist = UserInteractionsList(self.user_data['bduss'], self.user_data['stoken'])
+        self.interactionlist = UserInteractionsList(self.user_data['bduss'], self.user_data['stoken'], self)
         self.stackedWidget.addWidget(self.interactionlist)
 
         self.stackedWidget.setCurrentIndex(0)

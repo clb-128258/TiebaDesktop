@@ -4,26 +4,27 @@ import gc
 import publics.logging as logging
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QPixmapCache
-from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QWidget, QListWidgetItem
 
-from publics import request_mgr
-from publics.funcs import start_background_thread, listWidget_get_visible_widgets
+from publics import request_mgr, top_toast_widget
+from publics.funcs import start_background_thread, listWidget_get_visible_widgets, get_exception_string
 from ui import follow_ba
 
 
 class FollowForumList(QWidget, follow_ba.Ui_Form):
     """关注吧列表组件"""
     add_ba = pyqtSignal(list)
-    ba_add_ok = pyqtSignal()
+    ba_add_ok = pyqtSignal(str)
     is_first_show = False
 
-    def __init__(self, bduss, stoken):
+    def __init__(self, bduss, stoken, parent):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
         self.stoken = stoken
+        self.parent_window = parent
         self.add_ba.connect(self.add_bar)
-        self.ba_add_ok.connect(lambda: self.pushButton_2.setEnabled(True))
+        self.ba_add_ok.connect(self.on_ba_add_ok)
         self.pushButton_2.clicked.connect(self.get_bars_async)
         self.pushButton.clicked.connect(self.show_onekey_sign)
         self.listWidget.verticalScrollBar().setSingleStep(25)
@@ -33,6 +34,13 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
         a0.accept()
         if a0.key() == Qt.Key.Key_F5:
             self.get_bars_async()
+
+    def on_ba_add_ok(self, msg):
+        self.pushButton_2.setEnabled(True)
+        if msg:
+            self.parent_window.toast_widget.showToast(
+                top_toast_widget.ToastMessage(msg, icon_type=top_toast_widget.ToastIconType.ERROR)
+            )
 
     def scroll_load_images(self):
         items = listWidget_get_visible_widgets(self.listWidget)
@@ -45,7 +53,9 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
             d = SignAllDialog(self.bduss, self.stoken)
             d.exec()
         else:
-            QMessageBox.information(self, '提示', '请先登录账号后再进行签到。', QMessageBox.Ok)
+            self.parent_window.toast_widget.showToast(
+                top_toast_widget.ToastMessage('请先登录账号后再进行签到', icon_type=top_toast_widget.ToastIconType.INFORMATION)
+            )
 
     def add_bar(self, data):
         from subwindow.forum_item import ForumItem
@@ -97,8 +107,10 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
                         [forum['avatar'], name, ba_info_str, forum['forum_id'], forum['is_sign'] == 1, level_value])
             except Exception as e:
                 logging.log_exception(e)
+                self.ba_add_ok.emit(get_exception_string(e))
+            else:
+                self.ba_add_ok.emit('')
             finally:
-                self.ba_add_ok.emit()
                 logging.log_INFO('load userself follow forum list complete')
 
         new_loop = asyncio.new_event_loop()

@@ -44,7 +44,12 @@ def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
                     winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
 
 
-def showMessage(title: str, text: str, icon='', topicon='', buttons: list[Button] = None, callback: Callable = None,
+def showMessage(title: str,
+                text: str,
+                icon='',
+                topicon='',
+                buttons: list[Button] = None,
+                callback: Callable = None,
                 lowerText=''):
     """
     显示通知消息
@@ -62,15 +67,16 @@ def showMessage(title: str, text: str, icon='', topicon='', buttons: list[Button
         在 Windows 8.1 系统中会调用 win8toast.send_msg_async 来发送消息，
         此时 topicon 和 buttons 参数是无效的
     """
+    buttons = buttons if buttons else []
 
     def handle_msg_click_winrt(event_args):
         is_button = False
         for b in buttons:
             if event_args.arguments == b.button_id and b.callback:
                 is_button = True
-                b.callback()
+                if b.callback: b.callback()
         if not is_button:
-            callback()
+            if callback: callback()
         wintoaster.remove_toast(newToast)
 
     if platform.system() == 'Windows':

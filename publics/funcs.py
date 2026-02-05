@@ -3,11 +3,11 @@ import os
 import pathlib
 import socket
 import subprocess
-import sys
 import threading
 import time
 import datetime
 import ctypes
+import aiohttp.client_exceptions
 
 import pyperclip
 import requests
@@ -419,6 +419,7 @@ def get_exception_string(error: Exception):
         return '服务器返回的字段值有误'
     elif isinstance(error, aiotieba.exception.ContentTypeError):
         return 'HTTP 报文中的 Content-Type 无法被解析'
+
     elif isinstance(error, requests.exceptions.HTTPError):
         return f'HTTP {error.response.status_code} 错误'
     elif isinstance(error, requests.exceptions.ProxyError):
@@ -447,6 +448,19 @@ def get_exception_string(error: Exception):
             return f'DNS 解析失败，请检查 DNS 设置'
         else:
             return f'网络连接错误: {system_error[1]}{f" (错误代码 {system_error[0]})" if system_error[0] else ""}'
+
+    elif isinstance(error, aiohttp.client_exceptions.ClientConnectorDNSError):
+        has_network = system_has_network()
+        if not has_network:
+            return '未连接到互联网，请检查网络设置，并检查网线是否已插好'
+        else:
+            return f'DNS 解析失败，请检查 DNS 设置'
+    elif isinstance(error, aiohttp.client_exceptions.ClientProxyConnectionError):
+        return f'代理服务器不可达，请检查代理设置，或是尝试关闭正在使用的代理软件'
+    elif isinstance(error, aiohttp.client_exceptions.ServerTimeoutError):
+        return f'网络连接超时'
+    elif isinstance(error, aiohttp.client_exceptions.ClientSSLError):
+        return f'SSL 校验失败'
 
     elif isinstance(error, KeyError):
         return '数据的参数不全'

@@ -32,6 +32,7 @@ import shutil
 import platform
 import time
 import copy
+import subprocess
 
 if os.name == 'nt':
     import win32api

@@ -1,13 +1,18 @@
+import asyncio
 import os
+import platform
 import queue
+import subprocess
 import time
+
+import aiotieba
 import requests
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
 import consts
 from publics import request_mgr, toasting, cache_mgr, profile_mgr
-from publics.funcs import start_background_thread
+from publics.funcs import start_background_thread, system_has_network, open_url_in_browser
 import publics.logging as logging
 
 
@@ -80,16 +85,55 @@ class TiebaMsgSyncer(QObject):
         """获取某个类型的未读通知数"""
         return self.unread_msg_counts.get(msg_type, 0)
 
-    def save_toast_settings(self):
-        profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = False
+    def save_toast_settings(self, ntype):
+        profile_mgr.local_config["notify_settings"][ntype] = False
         profile_mgr.save_local_config()
 
-    def show_toast(self, title, text, icon_path=''):
+    def show_offline_toast(self):
+        def open_network_panel():
+            if platform.system() == 'Windows':  # windows 系统
+                if int(platform.version().split('.')[-1]) < 10240:  # win10以下系统
+                    subprocess.call('control /name Microsoft.NetworkandSharingCenter', shell=True)
+                else:
+                    # win10 以后系统调用 UWP 设置
+                    open_url_in_browser('ms-settings:network')
+
+        if profile_mgr.local_config["notify_settings"]["offline_notify"]:
+            toasting.showMessage('你的电脑未连接到互联网',
+                                 '本软件的主要功能将无法使用。\n单击此通知可打开系统的网络设置界面。',
+                                 buttons=[toasting.Button('关闭此类通知',
+                                                          lambda: self.save_toast_settings('offline_notify'))],
+                                 callback=open_network_panel,
+                                 lowerText='无网络通知')
+
+    def show_interact_toast(self, title, text, icon_path=''):
+        async def set_read():
+            async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                # 把互动消息全部获取一遍，这样服务器就会标记已读
+                await client.get_replys()
+                await client.get_ats()
+
+                payload = {
+                    'BDUSS': self.bduss,
+                    '_client_type': '2',
+                    '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                    'rn': '20',
+                    'stoken': self.stoken,
+                }
+                request_mgr.run_post_api('/c/u/feed/agreeme', payloads=request_mgr.calc_sign(payload),
+                                         use_mobile_header=True, host_type=2)
+
+        def start_async(func):
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(func())
+
         toasting.showMessage(title,
                              text,
                              icon=icon_path,
-                             buttons=[toasting.Button('查看详情', self.activeWindow.emit),
-                                      toasting.Button('关闭此类通知', self.save_toast_settings)],
+                             buttons=[toasting.Button('标记为已读', lambda: start_async(set_read)),
+                                      toasting.Button('关闭此类通知',
+                                                      lambda: self.save_toast_settings('enable_interact_notify'))],
                              callback=self.activeWindow.emit,
                              lowerText='新消息通知')
 
@@ -128,7 +172,7 @@ class TiebaMsgSyncer(QObject):
                             with open(cache_path, 'wb') as file:
                                 file.write(icon_response.content)
 
-                    self.show_toast(title, text, cache_path)
+                    self.show_interact_toast(title, text, cache_path)
 
     def run_sleeper(self):
         sleeper_time = 60
@@ -143,17 +187,24 @@ class TiebaMsgSyncer(QObject):
     def unread_notice_sync_thread(self):
         """未读通知数同步线程"""
         self.is_running = True
+        is_offline = False
         logging.log_INFO('notice syncer started')
         while True:
             try:
                 if self.bduss and self.stoken:
                     self.load_unread_notice_from_api()
+                    is_offline = False
+
                     if self.latest_count != self.get_basic_unread_notice_count():
                         self.latest_count = self.get_basic_unread_notice_count()
                         self.noticeCountChanged.emit()
-                        start_background_thread(self.get_interactMsgAlter)
+                        if self.latest_count != 0:
+                            start_background_thread(self.get_interactMsgAlter)
             except Exception as e:
                 logging.log_exception(e)
+                if not system_has_network() and not is_offline:
+                    is_offline = True
+                    self.show_offline_toast()
             finally:
                 e = self.run_sleeper()
                 if e == 'stop':
@@ -171,7 +222,9 @@ class TiebaMsgSyncer(QObject):
             "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
             "stoken": self.stoken,
         }
-        resp = request_mgr.run_post_api('/c/s/msg', request_mgr.calc_sign(payloads), use_mobile_header=True,
+        resp = request_mgr.run_post_api('/c/s/msg',
+                                        request_mgr.calc_sign(payloads),
+                                        use_mobile_header=True,
                                         host_type=2)
         self.unread_msg_counts = resp['message']
         if self.unread_msg_counts:

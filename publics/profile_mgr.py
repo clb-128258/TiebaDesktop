@@ -14,7 +14,7 @@ local_config_model = {
                              'play_gif': True},
     'forum_view_settings': {'default_sort': 0},
     'web_browser_settings': {'url_open_policy': 0},
-    "notify_settings": {"enable_interact_notify": True},
+    "notify_settings": {"enable_interact_notify": True, 'offline_notify': True},
     "proxy_settings": {"proxy_switch": 0,
                        "custom_proxy_server": {"ip": '', "port": -1},
                        "enabled_scheme": {"http": True, "https": True}
