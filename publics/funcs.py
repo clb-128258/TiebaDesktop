@@ -375,9 +375,9 @@ def system_has_network():
 
     def has_default_route_windows():
         wininet = ctypes.windll.wininet
-        flags = ctypes.c_uint(0x20)
+        flags = ctypes.c_uint(0)
         connected = wininet.InternetGetConnectedState(ctypes.byref(flags), 0)
-        return not bool(connected)
+        return bool(connected)
 
     if os.name == 'nt':
         return has_default_route_windows()

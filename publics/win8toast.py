@@ -5,7 +5,7 @@ import threading
 
 def send_msg(title: str, msgitem: str, icon: str = '', callback=None):
     rtv = subprocess.call(
-        f'{os.getcwd()}\\dlls\\toast.exe -t \"{title}\" -m \"{msgitem}\" -w -p \"{os.path.abspath(icon)}\"', shell=True)
+        f'{os.getcwd()}\\dlls\\toast.exe -w -t \"{title}\" -m \"{msgitem}\" -p \"{os.path.abspath(icon)}\"', shell=True)
     if rtv == 0 and callback is not None:
         callback()
     return rtv

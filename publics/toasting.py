@@ -100,4 +100,4 @@ def showMessage(title: str,
 
             wintoaster.show_toast(newToast)
         elif int(platform.version().split('.')[-1]) == 9600:
-            win8toast.send_msg_async(title, text, icon, callback)
+            win8toast.send_msg_async(title.replace('\n', ' '), text.replace('\n', ' '), icon, callback)

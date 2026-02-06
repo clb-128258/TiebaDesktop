@@ -1252,7 +1252,6 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.interactionlist.refresh_list()
             self.interactionlist.is_first_show = False
         self.stackedWidget.setCurrentIndex(2)
-        self.notice_syncer.run_msg_sync_immedently()
 
     def refresh_recommand(self):
         if self.stackedWidget.currentIndex() == 0:

@@ -52,7 +52,7 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
         self.error_happened.connect(self.parent_window.toast_widget.showToast)
 
     def refresh_list(self):
-        if not self.is_at_loading and not self.is_reply_loading:
+        if not self.is_at_loading and not self.is_reply_loading and not self.is_agree_loading:
             self.listWidget.clear()
             self.listWidget_2.clear()
             self.listWidget_3.clear()
@@ -63,7 +63,8 @@ class UserInteractionsList(QWidget, reply_at_me_page.Ui_Form):
             self.agree_page = 1
             self.latest_agree_id = 0
 
-        self.load_inter_data_async('all')
+            self.load_inter_data_async('all')
+            self.parent_window.notice_syncer.run_msg_sync_immedently()
 
     def load_item_images(self):
         current_widget = self.tabWidget.currentWidget()
