@@ -168,9 +168,9 @@ def make_thread_content(threadContents, previewPlainText=False):
                 _text += f'[{i.desc}]'
 
         elif type(i) == aiotieba.get_posts._classdef.FragVoice and previewPlainText:
-            _text += f'[语音，时长 {format_second(i.duration)}]'
+            _text += f'[语音] {format_second(i.duration)}'
         elif type(i) == aiotieba.get_posts._classdef.FragVideo and previewPlainText:
-            _text += f'[这是一条视频贴，时长 {format_second(i.duration)}，{i.view_num} 次浏览，进贴即可查看]'
+            _text += f'[视频] 时长 {format_second(i.duration)} | {large_num_to_string(i.view_num, endspace=True)}次浏览'
 
         elif type(i) == aiotieba.get_posts._classdef.FragAt and not previewPlainText:
             _text += f' <a href=\"user://{i.user_id}\">{i.text}</a> '

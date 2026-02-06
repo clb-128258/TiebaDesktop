@@ -3,14 +3,14 @@ import gc
 
 import publics.logging as logging
 import aiotieba
-import requests
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QPixmap, QPixmapCache
+from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 from bs4 import BeautifulSoup
 
-from publics import request_mgr, cache_mgr, profile_mgr, qt_image, top_toast_widget
-from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string
+from publics import request_mgr, profile_mgr, top_toast_widget
+from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string, \
+    listWidget_get_visible_widgets, large_num_to_string
 
 
 class RecommendWindow(QListWidget):
@@ -48,11 +48,21 @@ class RecommendWindow(QListWidget):
         if self.is_first_load:
             self.loading_widget.hide()
             self.parent_window.toast_widget.showToast(msg)
+            self.load_list_images()
             self.is_first_load = False
 
+    def load_list_images(self):
+        lws = listWidget_get_visible_widgets(self)
+        for widget in lws:
+            widget.load_all_AsyncImage()
+
     def load_more(self):
-        if not self.isloading and self.verticalScrollBar().value() >= self.verticalScrollBar().maximum() - self.verticalScrollBar().maximum() / 5:
-            self.get_recommand_async()
+        self.load_list_images()
+
+        if not self.isloading:
+            is_scroll_to_end = self.verticalScrollBar().value() >= self.verticalScrollBar().maximum() - self.verticalScrollBar().maximum() / 5
+            if is_scroll_to_end:
+                self.get_recommand_async()
 
     def add_thread(self, infos):
         # {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
@@ -62,8 +72,13 @@ class RecommendWindow(QListWidget):
         item = QListWidgetItem()
         from subwindow.thread_preview_item import ThreadView
         widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
-        widget.set_infos(infos['user_portrait_pixmap'], infos['user_name'], infos['title'], infos['content'],
-                         infos['forum_pixmap'], infos['forum_name'])
+        widget.load_by_callback = True
+        widget.set_infos(infos['author_portrait'],
+                         infos['user_name'],
+                         infos['title'],
+                         infos['content'],
+                         infos['forum_avatar'],
+                         infos['forum_name'])
         widget.set_picture(infos['view_pixmap'])
         widget.adjustSize()
         item.setSizeHint(widget.size())
@@ -87,6 +102,7 @@ class RecommendWindow(QListWidget):
 
     def get_recommand_v1(self):
         """贴吧电脑网页版的推荐接口，不登录也能获取"""
+        from subwindow.thread_preview_item import AsyncLoadImage
 
         async def get_detail(element):
             async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
@@ -99,39 +115,29 @@ class RecommendWindow(QListWidget):
                         0]  # 找出portrait，方便获取用户数据
                 thread_id = element['data-thread-id']  # 贴子id
                 forum_id = element['fid']  # 吧id
+                user_name = element.find_all(class_='post_author')[0].text
 
                 # 找出所有预览图
                 preview_pixmap = []
                 picture_elements = element.find_all(class_="m_pic")  # 找出所有图片
                 for i in picture_elements:
                     pic_addr = i['original']
-                    response = requests.get(pic_addr, headers=request_mgr.header)
-                    if response.content:
-                        pixmap = QPixmap()
-                        pixmap.loadFromData(response.content)
-                        pixmap = qt_image.add_cover_radius_angle_for_pixmap(pixmap, 200, 200, cover_in_center=True)
-                        preview_pixmap.append(pixmap)
-
-                # 进一步获取用户信息
-                userinfo = await client.get_user_info(portrait)
-                user_name = userinfo.nick_name_new
-                user_head_pixmap = QPixmap()
-                user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-                user_head_pixmap = qt_image.add_cover_for_pixmap(user_head_pixmap, 21)
+                    preview_pixmap.append(AsyncLoadImage(pic_addr))
 
                 # 进一步获取吧信息
                 forum = await client.get_forum_detail(int(forum_id))
                 forum_name = forum.fname
-                forum_pixmap = QPixmap()
-                response = requests.get(forum.origin_avatar, headers=request_mgr.header)
-                if response.content:
-                    forum_pixmap.loadFromData(response.content)
-                    forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap, size=17)
+                forum_avatar = forum.small_avatar
 
-                tdata = {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
-                         'content': content, 'author_portrait': portrait, 'user_name': user_name,
-                         'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
-                         'forum_pixmap': forum_pixmap, 'view_pixmap': preview_pixmap}
+                tdata = {'thread_id': thread_id,
+                         'forum_id': forum_id,
+                         'title': title,
+                         'content': content,
+                         'author_portrait': portrait,
+                         'user_name': user_name,
+                         'forum_name': forum_name,
+                         'forum_avatar': forum_avatar,
+                         'view_pixmap': preview_pixmap}
                 self.add_tie.emit(tdata)
 
         def start_async(element):
@@ -162,9 +168,9 @@ class RecommendWindow(QListWidget):
                     thread = start_background_thread(start_async, (element,))
                     thread_list.append(thread)
                 for t in thread_list:
-                    t.join(3)
+                    t.join()
 
-                toast_msg.title = f'已为你刷新 {len(elements)} 条贴子'
+                toast_msg.title = f'已为你刷新 {len(thread_list)} 条贴子'
                 toast_msg.icon_type = top_toast_widget.ToastIconType.SUCCESS
                 self.offset += 20
                 logging.log_INFO('loading recommands from api /f/index/feedlist finished')
@@ -180,12 +186,14 @@ class RecommendWindow(QListWidget):
 
     def get_recommand_v2(self):
         """手机网页版贴吧的首页推荐接口"""
+        from subwindow.thread_preview_item import AsyncLoadImage
+        def judge_filler(element):
+            if profile_mgr.local_config['thread_view_settings']['hide_video'] and element.get('video_info'):
+                # 视频贴过滤检测
+                return False
+            return True
 
         async def get_detail(element):
-            # 视频贴过滤检测
-            if profile_mgr.local_config['thread_view_settings']['hide_video'] and element.get('video_info'):
-                return
-
             title = element['title']  # 找出标题
             content = ''  # 贴子正文
             if element['abstract']:
@@ -193,9 +201,9 @@ class RecommendWindow(QListWidget):
                     if i['type'] == 0:
                         content += i['text']
             if element.get('video_info'):
-                content = '[这是一条视频贴，时长 {vlen}，{view_num} 次浏览，进贴即可查看]'.format(
+                content = '[视频] 时长 {vlen} | {view_num}次浏览'.format(
                     vlen=format_second(element['video_info']['video_duration']),
-                    view_num=element['video_info']['play_count'])
+                    view_num=large_num_to_string(element['video_info']['play_count'], endspace=True))
             content = cut_string(content, 50)
             portrait = element['author']['portrait'].split('?')[0]
             thread_id = element['tid']  # 贴子id
@@ -203,37 +211,29 @@ class RecommendWindow(QListWidget):
 
             # 找出所有预览图
             preview_pixmap = []
-            picture_elements = element['media']  # 找出所有媒体
-            if picture_elements:
-                for i in picture_elements:
-                    if i['type'] == 3:  # 类型是图片
-                        pic_addr = i['big_pic']
-                        response = requests.get(pic_addr, headers=request_mgr.header)
-                        if response.content:
-                            pixmap = QPixmap()
-                            pixmap.loadFromData(response.content)
-                            pixmap = qt_image.add_cover_radius_angle_for_pixmap(pixmap, 200, 200, cover_in_center=True)
-                            preview_pixmap.append(pixmap)
+            picture_elements = element.get('media') if element.get('media') else []
+            for i in picture_elements:
+                if i['type'] == 3:  # 类型是图片
+                    pic_addr = i['big_pic']
+                    preview_pixmap.append(AsyncLoadImage(pic_addr))
 
             # 进一步获取用户信息
             user_name = element['author'].get('user_nickname_v2',
                                               element['author']['display_name'])  # 优先获取新版昵称，如果没有则使用旧版昵称或者用户名
-            user_head_pixmap = QPixmap()
-            user_head_pixmap.loadFromData(cache_mgr.get_portrait(portrait))
-            user_head_pixmap = qt_image.add_cover_for_pixmap(user_head_pixmap, 21)
 
             # 进一步获取吧信息
             forum_name = element['forum']['forum_name']
-            forum_pixmap = QPixmap()
-            response = requests.get(element['forum']['forum_avatar'], headers=request_mgr.header)
-            if response.content:
-                forum_pixmap.loadFromData(response.content)
-                forum_pixmap = qt_image.add_cover_for_pixmap(forum_pixmap, size=17)
+            forum_avatar = element['forum']['forum_avatar']
 
-            tdata = {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
-                     'content': content, 'author_portrait': portrait, 'user_name': user_name,
-                     'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
-                     'forum_pixmap': forum_pixmap, 'view_pixmap': preview_pixmap}
+            tdata = {'thread_id': thread_id,
+                     'forum_id': forum_id,
+                     'title': title,
+                     'content': content,
+                     'author_portrait': portrait,
+                     'user_name': user_name,
+                     'forum_name': forum_name,
+                     'forum_avatar': forum_avatar,
+                     'view_pixmap': preview_pixmap}
             self.add_tie.emit(tdata)
 
         def start_async(element):
@@ -263,13 +263,14 @@ class RecommendWindow(QListWidget):
                     tlist = response['data']['thread_list']
                     thread_list = []
                     for element in tlist:
-                        thread = start_background_thread(start_async, (element,))
-                        thread_list.append(thread)
+                        if judge_filler(element):
+                            thread = start_background_thread(start_async, (element,))
+                            thread_list.append(thread)
                     for t in thread_list:
-                        t.join(3)
+                        t.join()
 
                     logging.log_INFO('loading recommands from api /mg/o/getRecommPage finished')
-                    toast_msg.title = f'已为你刷新 {len(tlist)} 条贴子'
+                    toast_msg.title = f'已为你刷新 {len(thread_list)} 条贴子'
                     toast_msg.icon_type = top_toast_widget.ToastIconType.SUCCESS
             except Exception as e:
                 logging.log_exception(e)
