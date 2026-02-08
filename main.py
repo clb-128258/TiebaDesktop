@@ -1068,7 +1068,7 @@ class LoginWebView(QDialog):
         if not self.islogin:
             if QMessageBox.information(self, '提示', '你确实要中止登录流程吗？',
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-                self.webview.destroyWebview()
+                self.webview.destroyWebviewUntilComplete()
                 a0.accept()
             else:
                 a0.ignore()
@@ -1078,6 +1078,8 @@ class LoginWebView(QDialog):
                                         '账号已登录成功，为保证本地数据完全加载，你需要重启本软件。点击确定键关闭本软件，软件将在下次重新打开时自动应用你的设置。',
                                         QMessageBox.Ok)
                 sys.exit(0)
+
+            self.webview.destroyWebviewUntilComplete()
             mainw.refresh_all_datas()  # 更新主页面信息
             self.flash_widget.hide()
             a0.accept()

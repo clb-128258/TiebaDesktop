@@ -23,6 +23,24 @@ def get_md5_icon(md5: str) -> bytes:
         return bytesdata
 
 
+def save_md5_ico_from_bin(bin_data: bytes) -> str:
+    """
+    从字节数据直接保存md5缓存图像
+
+    Args:
+        bin_data (bytes): 原图像字节数据
+    Return:
+        md5值
+    """
+    md5_value = hashlib.md5(bin_data).hexdigest()
+    local_path = f'{consts.datapath}/image_caches/md5_icon_{md5_value}'
+    if not os.path.isfile(local_path):
+        with open(local_path, 'wb') as file:
+            file.write(bin_data)
+
+    return md5_value
+
+
 def save_md5_ico(link_str: str) -> str:
     """
     下载md5缓存图像
@@ -35,13 +53,7 @@ def save_md5_ico(link_str: str) -> str:
     response = requests.get(link_str, headers=request_mgr.header)
     bytes_data = response.content
     if bytes_data and response.status_code == 200:
-        md5_value = hashlib.md5(bytes_data).hexdigest()
-        local_path = f'{consts.datapath}/image_caches/md5_icon_{md5_value}'
-        if not os.path.isfile(local_path):
-            with open(local_path, 'wb') as file:
-                file.write(bytes_data)
-
-        return md5_value
+        return save_md5_ico_from_bin(bytes_data)
 
 
 def get_bd_hash_img(bd_hash: str, original=False) -> bytes:
@@ -104,4 +116,3 @@ def save_portrait(portrait: str):
         with open(local_path, 'wb') as file:
             file.write(bytes_data)
         return bytes_data
-

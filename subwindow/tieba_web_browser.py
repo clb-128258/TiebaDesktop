@@ -238,7 +238,12 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
                                                        enable_context_menu=True,
                                                        enable_keyboard_keys=True,
                                                        handle_newtab_byuser=True,
-                                                       disable_web_safe=False)
+                                                       disable_web_safe=False,
+                                                       font_family=["Microsoft YaHei",
+                                                                    "MS Shell Dlg 2",
+                                                                    "PingFang SC",
+                                                                    "Hiragino Sans GB",
+                                                                    "sans-serif"])
 
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
@@ -423,7 +428,7 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
 
         if clean_memory:
             if isinstance(widget, ExtWebView2):
-                widget.destroyWebview()
+                widget.destroyWebviewUntilComplete()
                 widget.show_movie.stop()
             widget.deleteLater()
             del widget
@@ -487,14 +492,9 @@ class ExtWebView2(webview2.QWebView2View):
         if self.tab_container:
             self.tab_container.top_toaster.showToast(msg)
 
-    def record_history(self, icon_url, title, url):
-        if url:
-            if icon_url and not icon_url.startswith(
-                    ('http://clb.tiebadesktop.localpage', 'https://clb.tiebadesktop.localpage')):
-                md5 = cache_mgr.save_md5_ico(icon_url)
-            else:
-                md5 = ''
-            profile_mgr.add_view_history(4, {"web_icon_md5": md5, "web_title": title, "web_url": url})
+    def record_history(self, icon_bin, title, url):
+        md5 = cache_mgr.save_md5_ico_from_bin(icon_bin) if icon_bin else ''
+        profile_mgr.add_view_history(4, {"web_icon_md5": md5, "web_title": title, "web_url": url})
 
     def start_ani(self):
         self.show_movie.start()
@@ -505,9 +505,9 @@ class ExtWebView2(webview2.QWebView2View):
         self.setWindowIcon(self.icon())
         self.setWindowTitle(self.title())
         if isok:
-            start_background_thread(self.record_history, (self.iconUrl(), self.title(), self.url()))
+            start_background_thread(self.record_history, (self.iconBinary(), self.title(), self.url()))
         else:
-            start_background_thread(self.record_history, ('', self.url(), self.url()))
+            start_background_thread(self.record_history, (b'', self.title(), self.url()))
 
     def bind_to_tab_container(self, tc: TiebaWebBrowser):
         try:

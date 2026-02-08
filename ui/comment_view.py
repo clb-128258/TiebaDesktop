@@ -147,7 +147,7 @@ class Ui_Form(object):
         self.gridLayout.addWidget(self.label_6, 1, 0, 1, 2)
         self.label_10 = QtWidgets.QLabel(Form)
         self.label_10.setMinimumSize(QtCore.QSize(0, 0))
-        self.label_10.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.label_10.setMaximumSize(QtCore.QSize(16777215, 25))
         self.label_10.setStyleSheet("QLabel{\n"
 "    background-color: rgb(188, 188, 188);\n"
 "    border-radius: 8px;\n"

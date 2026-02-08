@@ -1,7 +1,7 @@
 """webview2模块，实现了webview2与pyqt的绑定"""
 # 先引入跨平台库
 import os
-from PyQt5.QtWidgets import QWidget, QMessageBox
+from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal
 from platform import machine
@@ -191,7 +191,7 @@ def WebView2Version():
         else:
             return ''
     else:
-        print('Warning: Your system is not Windows, so WebView2 can not work at this time')
+        logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
         return ''
 
 
@@ -200,7 +200,7 @@ def isWebView2Installed():
     if os.name == 'nt':
         return _is_chromium()
     else:
-        print('Warning: Your system is not Windows, so WebView2 can not work at this time')
+        logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
         return True
 
 
@@ -216,12 +216,12 @@ class WebViewProfile:
                  handle_newtab_byuser: bool = False,
                  enable_context_menu: bool = True,
                  enable_keyboard_keys: bool = True,
-                 try_to_stop_thread_when_destroy: bool = False,
                  proxy_addr: str = "",
                  enable_gpu_boost: bool = True,
                  enable_link_hover_text: bool = True,
                  ignore_all_render_argvs: bool = False,
-                 disable_web_safe: bool = False
+                 disable_web_safe: bool = False,
+                 font_family:list[str]=None
                  ):
         self.data_folder = data_folder
         self.private_mode = private_mode
@@ -231,12 +231,12 @@ class WebViewProfile:
         self.handle_newtab_byuser = handle_newtab_byuser
         self.enable_context_menu = enable_context_menu
         self.enable_keyboard_keys = enable_keyboard_keys
-        self.try_to_stop_thread_when_destroy = try_to_stop_thread_when_destroy
         self.proxy_addr = proxy_addr
         self.enable_gpu_boost = enable_gpu_boost
         self.enable_link_hover_text = enable_link_hover_text
         self.ignore_all_render_argvs = ignore_all_render_argvs
         self.disable_web_safe = disable_web_safe
+        self.font_family=font_family
 
     def clone(self):
         return WebViewProfile(data_folder=self.data_folder,
@@ -247,12 +247,12 @@ class WebViewProfile:
                               handle_newtab_byuser=self.handle_newtab_byuser,
                               enable_context_menu=self.enable_context_menu,
                               enable_keyboard_keys=self.enable_keyboard_keys,
-                              try_to_stop_thread_when_destroy=self.try_to_stop_thread_when_destroy,
                               proxy_addr=self.proxy_addr,
                               enable_gpu_boost=self.enable_gpu_boost,
                               enable_link_hover_text=self.enable_link_hover_text,
                               ignore_all_render_argvs=self.ignore_all_render_argvs,
-                              disable_web_safe=self.disable_web_safe)
+                              disable_web_safe=self.disable_web_safe,
+                              font_family=self.font_family)
 
 
 class QWebView2View(QWidget):
@@ -272,22 +272,21 @@ class QWebView2View(QWidget):
     jsBridgeReceived = pyqtSignal(str)
 
     newtabSignal = pyqtSignal(str)
-    __setparentsignal = pyqtSignal()
     __render_completed = False
     __webview = None
-    __webview_thread = None
     __webview_core = None
     __current_icon = None
+    __current_icon_binary = None
     __load_after_init = ''
-    __is_destroy_time = False
     __token_got = False
 
     def __init__(self):
         super().__init__()
         self.__profile = None
+        self.__render_completed = False
+
         self.__set_background()
         self.newtabSignal.connect(self.createWindow)
-        self.__setparentsignal.connect(self.__set_parent)
 
     def resizeEvent(self, a0):
         if self.__render_completed and self.__webview is not None:  # 检查 __webview
@@ -305,6 +304,19 @@ class QWebView2View(QWidget):
         """在 handle_newtab_byuser 特性启用时，应当在此处重写新页面事件。"""
         pass
 
+    def baseWebViewObject(self):
+        """
+        获取 .NET 层的 WebView2 实例对象
+
+        Returns:
+            WinForms.WebView2, Core.CoreWebView2 对象
+
+        Notes:
+            请在 Qt 线程上操作此 webview，否则会出现跨线程调用问题\n
+            WinForms.WebView2 的具体使用请参考此文档：https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2
+        """
+        return self.__webview, self.__webview_core
+
     def destroyWebview(self):
         """销毁 WebView 实例。"""
         if self.__render_completed and self.__webview is not None:
@@ -313,8 +325,6 @@ class QWebView2View(QWidget):
                 return ''
 
             self.__run_on_ui_thread(_load)
-            if self.__profile.try_to_stop_thread_when_destroy:
-                self.__is_destroy_time = True
 
     def destroyWebviewUntilComplete(self):
         """销毁 WebView 实例，并等待销毁操作完成。"""
@@ -324,8 +334,6 @@ class QWebView2View(QWidget):
                 return ''
 
             self.__get_value_ui_thread(_load)
-            if self.__profile.try_to_stop_thread_when_destroy:
-                self.__is_destroy_time = True
 
     def clearCacheData(self):
         """清除缓存数据。包括磁盘缓存、下载记录、浏览记录。"""
@@ -359,7 +367,7 @@ class QWebView2View(QWidget):
         if self.__profile is None:
             self.__profile = profile
 
-    def profile(self):
+    def profile(self)->WebViewProfile:
         """获取配置文件对象。"""
         return self.__profile
 
@@ -367,18 +375,22 @@ class QWebView2View(QWidget):
         """获取 Webview 渲染器的进程 ID。"""
         if self.__render_completed and self.__webview is not None:
             return self.__get_value_ui_thread(lambda: self.__webview.CoreWebView2.BrowserProcessId)
+        else:
+            return -1
 
     def isRenderInitOk(self):
         """获取 Webview 是否初始化完成。"""
         return self.__render_completed
 
+    def iconBinary(self):
+        """以字节串的形式获得网页图标。"""
+        if self.__render_completed and self.__webview is not None:
+            return self.__current_icon_binary if self.__current_icon_binary else b''
+
     def icon(self):
         """以 QIcon 对象的形式获得网页图标。"""
         if self.__render_completed and self.__webview is not None:
-            if self.__current_icon is not None:
-                return self.__current_icon
-            else:
-                return QIcon()
+            return self.__current_icon if self.__current_icon is not None else QIcon()
 
     def iconUrl(self):
         """以 URL 字符串的形式获得网页图标。"""
@@ -551,9 +563,7 @@ class QWebView2View(QWidget):
         """初始化 render。"""
         if os.name == 'nt':
             if self.__profile is not None and not self.__render_completed:
-                self.__webview_thread = Thread(ThreadStart(self.__run))
-                self.__webview_thread.ApartmentState = ApartmentState.STA
-                self.__webview_thread.Start()
+                self.__run()
         else:
             logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
 
@@ -579,26 +589,15 @@ class QWebView2View(QWidget):
             webview_properties.IsInPrivateModeEnabled = self.__profile.private_mode
             webview_properties.AdditionalBrowserArguments = args
             webview.CreationProperties = webview_properties
-            webview.DefaultBackgroundColor = Color.White
+            webview.DefaultBackgroundColor = Color.Transparent
             webview.Dock = DockStyle.Fill  # 设置停靠属性
 
             webview.CoreWebView2InitializationCompleted += self.__on_webview_ready
 
             webview.EnsureCoreWebView2Async(None)  # 初始化WebView
-
-            # 手动处理 WinForms 的消息循环
-            if self.__profile.try_to_stop_thread_when_destroy:
-                while 1:
-                    FormsApplication.DoEvents()
-                    if self.__is_destroy_time:
-                        break
-            else:
-                FormsApplication.Run()  # 自动处理的
         except Exception as e:
-            print(f"loop error {e}")
-        finally:
-            print(f"loop ok")
-            return
+            logging.log_WARN('WebView2 init failed')
+            logging.log_exception(e)
 
     def __get_value_ui_thread(self, func):
         vs = []
@@ -636,7 +635,6 @@ class QWebView2View(QWidget):
                 SetParent(hwnd, int(self.winId()))
                 MoveWindow(hwnd, 0, 0, self.width(), self.height(), True)
 
-            # self.__run_on_ui_thread(_set_parent)
             _set_parent()
 
     def __remake_qicon(self):
@@ -646,6 +644,7 @@ class QWebView2View(QWidget):
             pixmap.loadFromData(iconBytes)
             if not pixmap.isNull():  # 图像不为空，加载成功
                 self.__current_icon = QIcon(pixmap)
+                self.__current_icon_binary = iconBytes
                 self.iconChanged.emit(self.__current_icon)
 
         def on_icon_got(faviconStream):
@@ -678,7 +677,7 @@ class QWebView2View(QWidget):
 
     def __on_render_crash(self, _, args):
         self.renderProcessTerminated.emit(args.ExitCode)
-        print(f'WebView2 render crashed,\nCode: {args.ExitCode}\nModule: {args.FailureSourceModulePath}')
+        logging.log_WARN(f'WebView2 render crashed with exit code {args.ExitCode}')
 
     def __on_url_change(self, _, args):
         self.urlChanged.emit()
@@ -717,12 +716,40 @@ class QWebView2View(QWidget):
         message = args.TryGetWebMessageAsString()
         self.jsBridgeReceived.emit(message)
 
+    def __set_font_family(self):
+        # 注入 CSS
+        font_list_string = ', '.join(list(f'\"{font}\"' for font in self.profile().font_family))
+        font_css = f'''
+                html, body, *, p, div, span, li, a, input, button {{
+                    font-family: {font_list_string} !important;
+                }}
+                '''
+        inject_script = f"""
+                (function() {{
+                    // 方法1: adoptedStyleSheets (高优先级)
+                    try {{
+                        const sheet = new CSSStyleSheet();
+                        sheet.replaceSync(`{font_css}`);
+                        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+                        return;
+                    }} catch (e) {{}}
+
+                    // 方法2: <style> 标签
+                    const style = document.createElement('style');
+                    style.textContent = `{font_css}`;
+                    document.documentElement.appendChild(style);
+                }})();
+                """
+
+        # 执行注入
+        self.__webview_core.AddScriptToExecuteOnDocumentCreatedAsync(inject_script)
+
     def __on_webview_ready(self, webview_instance, args):
         if not args.IsSuccess:
-            print(args.InitializationException)
+            logging.log_WARN(str(args.InitializationException))
             return
 
-        self.__setparentsignal.emit()
+        self.__set_parent()
 
         configuration = self.__profile
         core = webview_instance.CoreWebView2
@@ -754,6 +781,9 @@ class QWebView2View(QWidget):
         settings.IsSwipeNavigationEnabled = False
         settings.IsZoomControlEnabled = configuration.enable_zoom_factor
 
+        if self.profile().font_family:
+            self.__set_font_family()
+
         ua = configuration.user_agent
         if ua:
             settings.UserAgent = ua.replace('[default_ua]', settings.UserAgent)
@@ -763,10 +793,6 @@ class QWebView2View(QWidget):
         core.SetVirtualHostNameToFolderMapping("clb.tiebadesktop.localpage.jsplayer",
                                                local_path,
                                                CoreWebView2HostResourceAccessKind.Allow)
-
-        # cookies persist even if UserDataFolder is in memory. We have to delete cookies manually.
-        if configuration.private_mode:
-            core.CookieManager.DeleteAllCookies()
 
         self.__render_completed = True
         self.renderInitializationCompleted.emit()
