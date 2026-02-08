@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>454</width>
-    <height>473</height>
+    <width>461</width>
+    <height>412</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -67,7 +67,16 @@ QDialog{background-color: rgb(255, 255, 255);}
       <item row="2" column="0" colspan="2">
        <widget class="QLabel" name="label_5">
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;其中，--sign-all-forums 是指签到所有吧， --sign-grows 是指成长等级签到。&lt;/p&gt;&lt;p&gt;默认情况下，签到操作完成后，会弹出消息框显示签到结果。&lt;/p&gt;&lt;p&gt;如需静默签到，即完成后不弹窗提示，请添加 --quiet 参数。&lt;/p&gt;&lt;p&gt;有关命令行用法的详细信息，请参阅 &lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/command-usages.md&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;命令行用法&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;
+&lt;body&gt;
+&lt;p&gt;
+其中，--sign-all-forums 是指签到所有吧， --sign-grows 是指成长等级签到。&lt;br&gt;
+默认情况下，签到操作完成后，会弹出消息框显示签到结果。&lt;br&gt;
+如需静默签到，即完成后不弹窗提示，请添加 --quiet 参数。&lt;br&gt;
+有关命令行用法的详细信息，请参阅 &lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;命令行用法&lt;/span&gt;&lt;/a&gt;
+&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -127,7 +136,7 @@ QDialog{background-color: rgb(255, 255, 255);}
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>0</height>
       </size>
      </property>
     </spacer>

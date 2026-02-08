@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\sign.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\sign.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(454, 473)
+        Dialog.resize(461, 412)
         Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "QDialog{background-color: rgb(255, 255, 255);}\n"
 "")
@@ -65,7 +65,7 @@ class Ui_Dialog(object):
         self.horizontalLayout.addWidget(self.pushButton)
         self.horizontalLayout.setStretch(0, 1)
         self.gridLayout.addWidget(self.groupBox, 0, 0, 1, 1)
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(20, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.gridLayout.addItem(spacerItem, 4, 0, 1, 1)
         self.groupBox_3 = QtWidgets.QGroupBox(Dialog)
         self.groupBox_3.setObjectName("groupBox_3")
@@ -93,7 +93,16 @@ class Ui_Dialog(object):
         self.groupBox_4.setTitle(_translate("Dialog", "命令行参数调用"))
         self.lineEdit.setText(_translate("Dialog", "[exepath] --sign-all-forums --sign-grows"))
         self.lineEdit.setPlaceholderText(_translate("Dialog", "参数"))
-        self.label_5.setText(_translate("Dialog", "<html><head/><body><p>其中，--sign-all-forums 是指签到所有吧， --sign-grows 是指成长等级签到。</p><p>默认情况下，签到操作完成后，会弹出消息框显示签到结果。</p><p>如需静默签到，即完成后不弹窗提示，请添加 --quiet 参数。</p><p>有关命令行用法的详细信息，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/command-usages.md\"><span style=\" text-decoration: underline; color:#0000ff;\">命令行用法</span></a></p></body></html>"))
+        self.label_5.setText(_translate("Dialog", "<html>\n"
+"<body>\n"
+"<p>\n"
+"其中，--sign-all-forums 是指签到所有吧， --sign-grows 是指成长等级签到。<br>\n"
+"默认情况下，签到操作完成后，会弹出消息框显示签到结果。<br>\n"
+"如需静默签到，即完成后不弹窗提示，请添加 --quiet 参数。<br>\n"
+"有关命令行用法的详细信息，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md\"><span style=\" text-decoration: underline; color:#0000ff;\">命令行用法</span></a>\n"
+"</p>\n"
+"</body>\n"
+"</html>"))
         self.label_4.setText(_translate("Dialog", "可在命令行中执行以下命令，实现签到操作。与系统自带的 任务计划程序 配合使用，可实现 定时自动签到/开机自动签到 等功能。"))
         self.groupBox.setTitle(_translate("Dialog", "全部一键签到"))
         self.label.setText(_translate("Dialog", "将进行 成长等级签到 和 全吧签到。"))
