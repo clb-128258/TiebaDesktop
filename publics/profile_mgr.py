@@ -34,7 +34,10 @@ current_stoken = ''
 def add_post_draft(thread_id: int, text: str):
     """添加草稿信息"""
     global post_drafts
-    post_drafts[str(thread_id)] = text
+
+    post_drafts[str(thread_id)] = text  # 保证字典内能取到值
+    if not text:
+        del post_drafts[str(thread_id)]
     save_post_drafts()
 
 

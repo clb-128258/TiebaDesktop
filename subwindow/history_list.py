@@ -225,6 +225,14 @@ class HistoryViewWindow(QWidget, view_history.Ui_Form):
                self.read_index < len(profile_mgr.view_history)):
             self.load_history(index)
 
+        if self.widget_list.values():  # 有列表显示时
+            self.label.hide()
+            self.listWidget_2.show()
+            self.load_visible_image()
+        else:  # 无列表显示时
+            self.label.show()
+            self.listWidget_2.hide()
+
     def load_history(self, index: int = -1):
         if index == -1:
             index = self.listWidget.currentRow()
@@ -260,13 +268,5 @@ class HistoryViewWindow(QWidget, view_history.Ui_Form):
                 self.listWidget_2.addItem(item)
                 self.listWidget_2.setItemWidget(item, widget)
                 self.widget_total_height += widget.height()
-
-        if self.widget_list.values():  # 有列表显示时
-            self.label.hide()
-            self.listWidget_2.show()
-            self.load_visible_image()
-        else:  # 无列表显示时
-            self.label.show()
-            self.listWidget_2.hide()
 
         self.listWidget_2.verticalScrollBar().blockSignals(False)

@@ -193,11 +193,19 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton_12.clicked.connect(self.scan_use_detail_async)
         self.pushButton_4.clicked.connect(self.clear_caches_async)
         self.pushButton_6.clicked.connect(self.open_proxy_settings)
+        self.pushButton_7.clicked.connect(self.select_all_caches)
         self.scanFinish.connect(self._set_use_detail_ui)
         self.clearFinish.connect(self._on_caches_cleared)
 
-        self.clearTypeCb = [self.checkBox_4, self.checkBox_5, self.checkBox_9, self.checkBox_10, self.checkBox_8,
-                            self.checkBox_11, self.checkBox_7, self.checkBox_6]
+        self.clearTypeCb = [self.checkBox_4,
+                            self.checkBox_5,
+                            self.checkBox_9,
+                            self.checkBox_10,
+                            self.checkBox_7,
+                            self.checkBox_6,
+                            self.checkBox_18,
+                            self.checkBox_19
+                            ]
         for i in self.clearTypeCb:
             i.stateChanged.connect(self.calc_willfree_size)
 
@@ -315,6 +323,16 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         d.exec()
         self.get_logon_accounts()
 
+    def select_all_caches(self):
+        safetyClearTypeCb = [self.checkBox_4,
+                             self.checkBox_5,
+                             self.checkBox_9,
+                             self.checkBox_10,
+                             self.checkBox_7,
+                             ]
+        for i in safetyClearTypeCb:
+            i.setChecked(True)
+
     def calc_willfree_size(self):
         free_size = 0
         select_num = 0
@@ -335,11 +353,17 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             free_size += self.scannedDetailData["current_webview_cache_size"]
         if self.checkBox_6.isChecked():
             free_size += self.scannedDetailData["current_webview_cookie_size"]
+        if self.checkBox_18.isChecked():
+            free_size += self.scannedDetailData["post_draft_size"]
+        if self.checkBox_19.isChecked():
+            free_size += self.scannedDetailData["history_size"]
 
         self.label_3.setText(f'已选 {select_num} 个条目，大约可清理 {filesize_tostr(free_size)} 空间')
 
     def _on_caches_cleared(self, isok):
         self.load_animation.hide()
+        self.pushButton_12.setEnabled(True)
+
         toast = top_toast_widget.ToastMessage()
         if isok:
             toast.title = '数据清理成功'
@@ -356,9 +380,9 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         if QMessageBox.warning(self, '清理数据',
                                '确认要清理这些数据吗？本操作需要一定时间，请耐心等待，清理数据时请不要关闭本窗口。',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            self.pushButton_12.setEnabled(False)
             self.load_animation.set_caption(caption='正在清理数据，请稍等...')
             self.load_animation.show()
-
             webview = webview2.QWebView2View()
             webview.setProfile(
                 webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
@@ -368,16 +392,18 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
     def clear_caches(self, webview_obj: webview2.QWebView2View):
         def clear_folder(path):
-            if os.path.isdir(path):
-                for i in os.listdir(path):
-                    try:
-                        item_path = f'{path}/{i}'
-                        if os.path.isfile(item_path):
-                            os.remove(item_path)
-                        elif os.path.isdir(item_path):
-                            shutil.rmtree(item_path)
-                    except PermissionError:
-                        continue
+            if not os.path.isdir(path):
+                return
+
+            for i in os.listdir(path):
+                try:
+                    item_path = f'{path}/{i}'
+                    if os.path.isfile(item_path):
+                        os.remove(item_path)
+                    elif os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                except PermissionError:
+                    continue
 
         try:
             while not webview_obj.isRenderInitOk():
@@ -394,6 +420,12 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 aiotieba.helper.cache._fid2fname.clear()
                 aiotieba.helper.cache.save_caches()
                 aiotieba.helper.cache.clear_repeat_items()
+            if self.checkBox_18.isChecked():
+                profile_mgr.post_drafts = {}
+                profile_mgr.save_post_drafts()
+            if self.checkBox_19.isChecked():
+                profile_mgr.view_history = []
+                profile_mgr.save_view_history()
             if self.checkBox_7.isChecked():
                 webview_obj.clearCacheData()
                 time.sleep(4)
@@ -411,15 +443,16 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
     def _set_use_detail_ui(self, data):
         self.scannedDetailData = data
 
+        self.checkBox_18.setText(f'回贴草稿 ({data["post_draft_num"]} 条)')
         self.checkBox_4.setText(f'图像缓存 ({filesize_tostr(data["image_cache_size"])})')
         self.checkBox_5.setText(f'日志文件 ({filesize_tostr(data["log_size"])})')
-        self.checkBox_9.setText(f'游客用户的 WebView 数据 ({filesize_tostr(data["default_webview_size"])})')
+        self.checkBox_9.setText(f'游客网页数据 ({filesize_tostr(data["default_webview_size"])})')
         self.checkBox_10.setText(f'吧信息缓存 ({data["fidcache_num"]} 条)')
         self.checkBox_8.setText(f'主要配置文件 ({filesize_tostr(data["main_profile_size"])})')
-        self.checkBox_11.setText(f'所有用户的 WebView 数据 ({filesize_tostr(data["total_webview_size"])})')
-        self.checkBox_7.setText(f'当前账号的 WebView 缓存 ({filesize_tostr(data["current_webview_cache_size"])})')
-        self.checkBox_6.setText(
-            f'当前账号的 WebView Cookies 数据 ({filesize_tostr(data["current_webview_cookie_size"])})')
+        self.checkBox_11.setText(f'所有网页数据 ({filesize_tostr(data["total_webview_size"])})')
+        self.checkBox_7.setText(f'网页缓存 ({filesize_tostr(data["current_webview_cache_size"])})')
+        self.checkBox_6.setText(f'网页 Cookies ({filesize_tostr(data["current_webview_cookie_size"])})')
+        self.checkBox_19.setText(f'浏览记录 ({data["history_num"]} 条)')
 
         for i in self.clearTypeCb:
             i.setChecked(False)
@@ -456,15 +489,20 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 'total_webview_size': 0,
                 'current_webview_cache_size': 0,
                 'current_webview_cookie_size': 0,
-                'fidcache_size': 0}
+                'fidcache_size': 0,
+                'post_draft_num': 0,
+                'post_draft_size': 0,
+                'history_num': 0,
+                'history_size': 0}
 
         lsc_log = scan_tree_total_size(f'{datapath}/logs')  # 日志文件总大小
         lsc_img = scan_tree_total_size(f'{datapath}/image_caches')  # 图片缓存文件总大小
         data['image_cache_size'] = lsc_img
         data['log_size'] = lsc_log
 
+        main_pf_exclude = ['view_history', 'post_drafts']  # 排除特定文件
         for i in os.listdir(datapath):
-            if os.path.isfile(f'{datapath}/{i}'):
+            if os.path.isfile(f'{datapath}/{i}') and i not in main_pf_exclude:
                 data['main_profile_size'] += os.stat(f'{datapath}/{i}').st_size
 
         data['default_webview_size'] = scan_tree_total_size(f'{datapath}/webview_data/default')
@@ -475,12 +513,18 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         data['total_webview_size'] = scan_tree_total_size(f'{datapath}/webview_data')
         data['fidcache_num'] = len(aiotieba.helper.cache._fname2fid.keys())
         data['fidcache_size'] = os.stat(f'{datapath}/cache_index/fidfname_index.json').st_size
+        data['post_draft_size'] = os.stat(f'{datapath}/post_drafts').st_size
+        data['post_draft_num'] = len(profile_mgr.post_drafts)
+        data['history_size'] = os.stat(f'{datapath}/view_history').st_size
+        data['history_num'] = len(profile_mgr.view_history)
 
         data['total_data_size'] = (lsc_img +
                                    lsc_log +
                                    data['main_profile_size'] +
                                    data['total_webview_size'] +
-                                   data['fidcache_size'])
+                                   data['fidcache_size'] +
+                                   data['post_draft_size'] +
+                                   data['history_size'])
 
         self.scanFinish.emit(data)
 
