@@ -1,7 +1,6 @@
-/ffmpeg/ffmpeg.exe
+/src/binres/ffmpeg.exe
 /.idea/
 /.venv/
-/resf/change_index.json
-/proto/__pycache__
-/resf/protobuf/proto_original/
-/ui/__pycache__
+/src/resf/change_index.json
+/src/proto/__pycache__
+/src/ui/__pycache__

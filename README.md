@@ -9,7 +9,7 @@
 * 首页推荐看贴、进吧看贴
 * 查看贴子内的富媒体（如图片、视频、语音等），支持保存视频
 * 查看某吧详情信息
-* 一键签到所有吧、成长等级签到，并且支持 [命令行参数调用](https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/command-usages.md)
+* 一键签到所有吧、成长等级签到，并且支持 [命令行参数调用](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
 * 查看自己关注的吧
 * 查看用户的个人主页，其中可以查看该用户发布的主题和回复、关注的吧、关注/粉丝列表
 * 关注、拉黑禁言某个用户
@@ -27,7 +27,7 @@
 
 ## 对于想要从源代码运行的用户
 
-请参阅这篇教程：[如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/env_docs/how-to-set-up-env.md)
+请参阅这篇教程：[如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)
 
 # 致谢
 
@@ -37,10 +37,9 @@
 开发提供了很大的便利.
 
 # 友情链接
-
-友情链接：  
+ 
 [TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)  
-[NeoTieBa - 一个基于 Tauri2.0 + Vue3 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)
+[NeoTieBa - 一个基于 Tauri2.0 + Vue3 + TypeScript 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)
 
 # 许可声明
 本软件遵循 MIT License 发布，请在遵守 MIT License 的前提下使用本软件。  

@@ -1,0 +1,10 @@
+PyQt5==5.15.11
+aiotieba==4.6.1
+requests==2.32.4
+pyperclip==1.9.0
+pywin32==311
+beautifulsoup4==4.13.4
+pycryptodome
+pythonnet
+pyaudio
+windows_toasts
