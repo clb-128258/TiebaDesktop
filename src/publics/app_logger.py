@@ -1,8 +1,6 @@
 import pathlib
 import platform
-
 import aiotieba
-
 import consts
 
 
@@ -16,7 +14,7 @@ def log_WARN(info: str):
 
 def log_exception(error: Exception):
     """在日志中记录一个错误"""
-    aiotieba.logging.get_logger().exception(f'[Exception {type(error).__name__}]', exc_info=error)
+    aiotieba.logging.get_logger().exception(f'An exception {type(error).__name__} has been caused', exc_info=error)
 
 
 def init_log():

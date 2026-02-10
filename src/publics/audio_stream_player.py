@@ -4,7 +4,7 @@ import subprocess
 import os
 import queue
 import threading
-from publics.logging import log_INFO
+from publics.app_logger import log_INFO
 from PyQt5.QtCore import QObject, pyqtSignal
 import time
 import enum

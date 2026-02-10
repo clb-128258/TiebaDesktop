@@ -1,7 +1,7 @@
 import asyncio
 import gc
 
-import publics.logging as logging
+import publics.app_logger as logging
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QDialog, QListWidgetItem

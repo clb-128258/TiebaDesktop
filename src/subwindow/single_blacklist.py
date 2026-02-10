@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox
 
 from publics import qt_window_mgr, profile_mgr, cache_mgr, request_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, get_exception_string
-import publics.logging as logging
+import publics.app_logger as logging
 from ui import user_blacklist_setter
 
 

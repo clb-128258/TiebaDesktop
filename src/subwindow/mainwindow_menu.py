@@ -7,7 +7,7 @@ from ui import mw_popup
 from PyQt5.QtWidgets import QWidget, qApp, QMenu
 from PyQt5.QtGui import QIcon, QResizeEvent
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
-from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image, logging
+from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image, app_logger
 import asyncio
 import pyperclip
 

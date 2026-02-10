@@ -13,7 +13,7 @@ from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string
-import publics.logging as logging
+import publics.app_logger as logging
 from subwindow import base_ui
 from ui import tie_detail_view
 

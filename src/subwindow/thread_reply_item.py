@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 from typing import Union
 from publics import request_mgr, qt_window_mgr, profile_mgr, qt_image
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string
-import publics.logging as logging
+import publics.app_logger as logging
 from subwindow import base_ui
 
 from ui import comment_view

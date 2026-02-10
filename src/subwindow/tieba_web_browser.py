@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
 from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget
 from consts import datapath
-from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, logging
+from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread
 
 from ui import tb_browser
@@ -476,7 +476,7 @@ class ExtWebView2(webview2.QWebView2View):
         self.loadAfterRender(url)
 
     def parse_js_msg(self, jsonify_text):
-        logging.log_INFO(f'received text from jsbridge: {jsonify_text}')
+        app_logger.log_INFO(f'received text from jsbridge: {jsonify_text}')
 
         json_data = json.loads(jsonify_text)
         if json_data['type'] == 'topToast':

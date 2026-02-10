@@ -4,7 +4,7 @@ import os
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal
-from publics import logging
+from publics import app_logger
 import typing
 
 # 判断一下是不是windows
@@ -12,7 +12,7 @@ if os.name == 'nt':
     import clr
     from win32gui import SetParent, MoveWindow
 else:
-    logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
+    app_logger.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
 
 isload = False
 
@@ -80,7 +80,7 @@ def loadLibs():
         globals()['CoreWebView2FaviconImageFormat'] = CoreWebView2FaviconImageFormat
         globals()['CoreWebView2Environment'] = CoreWebView2Environment
 
-        logging.log_INFO('WebView2 library has been loaded')
+        app_logger.log_INFO('WebView2 library has been loaded')
 
 
 def getWebView2Version():
@@ -93,7 +93,7 @@ def getWebView2Version():
     if os.name == 'nt':
         return WebView2VersionScaner.get_ver_CoreWebView2Environment()
     else:
-        logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
+        app_logger.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
         return ''
 
 
@@ -151,8 +151,8 @@ class WebView2VersionScaner:
         try:
             return str(CoreWebView2Environment.GetAvailableBrowserVersionString())
         except Exception as e:
-            logging.log_WARN('call CoreWebView2Environment.GetAvailableBrowserVersionString() failed')
-            logging.log_exception(e)
+            app_logger.log_WARN('call CoreWebView2Environment.GetAvailableBrowserVersionString() failed')
+            app_logger.log_exception(e)
             return ''
 
 
@@ -429,7 +429,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def clearCookies(self):
         """
@@ -447,7 +447,7 @@ class QWebView2View(QWidget):
 
             self.__get_value_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def setProfile(self, profile: WebViewProfile):
         """
@@ -602,7 +602,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def url(self) -> str:
         """
@@ -628,7 +628,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def zoomFactor(self) -> float:
         """
@@ -654,7 +654,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def load(self, url: str):
         """
@@ -671,7 +671,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def loadAfterRender(self, url: str):
         """
@@ -694,7 +694,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def openChromiumTaskmgrWindow(self):
         """打开基于 Chromium 的任务管理器窗口（显示内存/CPU 占用）。"""
@@ -706,7 +706,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def openDefaultDownloadDialog(self):
         """显示默认的下载悬浮窗。"""
@@ -718,7 +718,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def openPrintDialog(self):
         """打开网页打印对话框。"""
@@ -742,7 +742,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def initRender(self):
         """
@@ -754,7 +754,7 @@ class QWebView2View(QWidget):
             if self.__profile is not None and not self.__render_completed:
                 self.__run()
             else:
-                logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
+                app_logger.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
 
     def __set_background(self):
         self.setStyleSheet("QWidget{background-color: white;}")
@@ -785,8 +785,8 @@ class QWebView2View(QWidget):
 
             webview.EnsureCoreWebView2Async(None)  # 初始化WebView
         except Exception as e:
-            logging.log_WARN('WebView2 start init failed')
-            logging.log_exception(e)
+            app_logger.log_WARN('WebView2 start init failed')
+            app_logger.log_exception(e)
 
     def __get_value_ui_thread(self, func):
         vs = []
@@ -857,7 +857,7 @@ class QWebView2View(QWidget):
 
     def __on_render_crash(self, _, args):
         self.renderProcessTerminated.emit(args.ExitCode)
-        logging.log_WARN(f'WebView2 render crashed with exit code {args.ExitCode}')
+        app_logger.log_WARN(f'WebView2 render crashed with exit code {args.ExitCode}')
 
     def __on_url_change(self, _, args):
         self.urlChanged.emit()
@@ -938,8 +938,8 @@ class QWebView2View(QWidget):
                                                                                          header_str)
             args.Response = response
         except Exception as e:
-            logging.log_WARN(f'WebView2 Http Catcher failed')
-            logging.log_exception(e)
+            app_logger.log_WARN(f'WebView2 Http Catcher failed')
+            app_logger.log_exception(e)
 
     def __on_js_msg_received(self, _, args):
         message = args.TryGetWebMessageAsString()
@@ -975,7 +975,7 @@ class QWebView2View(QWidget):
 
     def __on_webview_ready(self, webview_instance, args):
         if not args.IsSuccess:
-            logging.log_WARN('WebView2 initialization failed')
+            app_logger.log_WARN('WebView2 initialization failed')
             logging.log_WARN(str(args.InitializationException))
             return
 

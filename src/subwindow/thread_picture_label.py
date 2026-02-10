@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QBuffer, QIODevice, QSize
 from PyQt5.QtGui import QPixmap, QCursor, QMovie
 from PyQt5.QtWidgets import QLabel, QMenu, QAction, QFileDialog
 
-from publics import request_mgr, profile_mgr, logging, qt_image
+from publics import request_mgr, profile_mgr, app_logger, qt_image
 from publics.funcs import start_background_thread, http_downloader
 from publics.qt_image import ImageType
 

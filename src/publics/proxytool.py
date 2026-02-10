@@ -1,6 +1,6 @@
 """代理设置模块"""
 import os
-from publics import profile_mgr, logging
+from publics import profile_mgr, app_logger
 
 
 class WindowsProxyServer:
@@ -32,7 +32,7 @@ class WindowsProxyServer:
             if winreg.QueryValueEx(self.__INTERNET_SETTINGS, "ProxyEnable")[0] == 1:
                 return True
         except Exception as e:
-            logging.log_exception(e)
+            app_logger.log_exception(e)
         return False
 
 
@@ -60,4 +60,4 @@ def set_proxy():
             os.environ['no_proxy'] = '*'
     except Exception as e:
         logging.log_WARN('Warning: proxy settings was not set')
-        logging.log_exception(e)
+        app_logger.log_exception(e)

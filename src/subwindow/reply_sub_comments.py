@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QDialog, QListWidgetItem
 from publics import qt_window_mgr, top_toast_widget
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string
-import publics.logging as logging
+import publics.app_logger as logging
 
 from ui import reply_comments
 

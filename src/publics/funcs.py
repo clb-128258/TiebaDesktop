@@ -20,7 +20,7 @@ import aiotieba
 import json
 
 from publics import aes, profile_mgr, request_mgr, qt_window_mgr, qt_image
-import publics.logging as logging
+import publics.app_logger as logging
 from publics.toasting import init_AUMID
 from ui import loading_amt, user_item
 

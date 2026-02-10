@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize, QRect, Qt
 from PyQt5.QtGui import QImage, QPixmap, QMovie, QBrush, QPainter, QPixmapCache
 import requests
-from publics import request_mgr, cache_mgr, funcs, logging
+from publics import request_mgr, cache_mgr, funcs, app_logger
 from typing import Union, Tuple
 import os
 import enum

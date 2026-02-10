@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, Q
 from publics import profile_mgr, webview2, qt_image
 from publics import proxytool
 from publics.funcs import *
-from publics.logging import init_log
-from publics.logging import log_exception, log_INFO
+from publics.app_logger import init_log
+from publics.app_logger import log_exception, log_INFO
 from publics.tb_syncer import *
 from publics import top_toast_widget
 

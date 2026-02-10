@@ -2,7 +2,7 @@
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QListWidgetItem
-from publics import profile_mgr, request_mgr, top_toast_widget, logging, funcs
+from publics import profile_mgr, request_mgr, top_toast_widget, app_logger, funcs
 from publics.funcs import get_exception_string
 
 from ui import thread_vote_info, thread_vote_option_item

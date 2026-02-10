@@ -27,14 +27,14 @@ def set_qt_languages():
             translator = QTranslator()
             if translator.load(i):
                 app.installTranslator(translator)
-                logging.log_INFO(f'Qt language file {i} loaded')
+                app_logger.log_INFO(f'Qt language file {i} loaded')
                 translators.append(translator)
         return translators
 
 
 def check_webview2():
     """检查用户的电脑是否安装了webview2"""
-    logging.log_INFO(f'Checking webview2')
+    app_logger.log_INFO(f'Checking webview2')
 
     webview2.loadLibs()
     if not webview2.isWebView2Installed():
@@ -56,17 +56,17 @@ def reset_udf():
             global datapath
             consts.datapath = udf
             datapath = udf
-            logging.log_INFO(f'UserDataPath is reset by --reset-udf.')
+            app_logger.log_INFO(f'UserDataPath is reset by --reset-udf.')
         else:
             logging.log_INFO(f'{udf} is not a valid folder, please create it first.')
-        logging.log_INFO(f'Now UserDataPath is {consts.datapath}.')
+        app_logger.log_INFO(f'Now UserDataPath is {consts.datapath}.')
 
 
 def handle_command_events():
     """处理命令行参数，与命令行参数有关的代码均在此执行"""
     cmds = sys.argv
     dont_run_gui = False
-    logging.log_INFO('Handling command args')
+    app_logger.log_INFO('Handling command args')
 
     def get_current_user():
         user_data = {'bduss': '', 'stoken': ''}
@@ -150,16 +150,16 @@ def handle_command_events():
 
     if '--set-current-account' in cmds:
         dont_run_gui = True
-        logging.log_INFO('--set-current-account started')
+        app_logger.log_INFO('--set-current-account started')
         start_async(switch_account())
     else:
         if '--sign-all-forums' in cmds:
             dont_run_gui = True
-            logging.log_INFO('--sign-all-forums started')
+            app_logger.log_INFO('--sign-all-forums started')
             start_async(sign_all())
         if '--sign-grows' in cmds:
             dont_run_gui = True
-            logging.log_INFO('--sign-grows started')
+            app_logger.log_INFO('--sign-grows started')
             start_async(sign_grow())
     if dont_run_gui:
         sys.exit(0)
@@ -282,7 +282,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.fix_local_config()
             self.save_local_config()
         except Exception as e:
-            logging.log_exception(e)
+            app_logger.log_exception(e)
             toast = top_toast_widget.ToastMessage('设置保存失败，请重试', icon_type=top_toast_widget.ToastIconType.ERROR)
             self.top_toaster.showToast(toast)
         else:
@@ -436,7 +436,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
             webview_obj.destroyWebviewUntilComplete()
         except Exception as e:
-            logging.log_exception(e)
+            app_logger.log_exception(e)
             self.clearFinish.emit(False)
         else:
             self.clearFinish.emit(True)
@@ -898,7 +898,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
             else:
                 raise Exception('user info is null')
         except Exception as e:
-            logging.log_exception(e)
+            app_logger.log_exception(e)
             return ''
 
     def start_looper(self):
@@ -914,7 +914,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
                 # 在二维码发生更改时，重新初始化数据
                 loop_count = 0
                 current_sign = self.qr_sign
-                logging.log_INFO(f'looping qr code {current_sign}')
+                app_logger.log_INFO(f'looping qr code {current_sign}')
             elif self.is_qr_loading or not current_sign:
                 # 二维码在加载或没有初始化时不操作
                 pass
@@ -928,7 +928,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
                     # 执行轮询逻辑
                     try:
                         resp = self.query_qr_status()
-                        logging.log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
+                        app_logger.log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
                         self.handle_qr_status(resp)
                     except Exception as e:
                         logging.log_exception(e)
@@ -937,7 +937,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
 
             time.sleep(1)  # 休眠
         else:
-            logging.log_INFO(f'qr code loop thread will exit')
+            app_logger.log_INFO(f'qr code loop thread will exit')
 
     def on_qrimg_loaded(self, success):
         if not success:
@@ -1266,7 +1266,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = False
                 profile_mgr.save_local_config()
             except Exception as e:
-                logging.log_exception(e)
+                app_logger.log_exception(e)
 
         def do_exit():
             a0.accept()
@@ -1472,8 +1472,8 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
                 os.mkdir(f'{datapath}/webview_data/default')
             except Exception as e:
-                logging.log_WARN('handle_d2id_flag method failed')
-                logging.log_exception(e)
+                app_logger.log_WARN('handle_d2id_flag method failed')
+                app_logger.log_exception(e)
             else:
                 save_json({'uid': ''}, f'{datapath}/d2id_flag')
 
@@ -1526,9 +1526,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 self.add_info.emit([pixmap, name])
         except Exception as e:
             self.add_info.emit([])
-            logging.log_exception(e)
+            app_logger.log_exception(e)
         else:
-            logging.log_INFO(f'switched account {profile_mgr.current_uid}')
+            app_logger.log_INFO(f'switched account {profile_mgr.current_uid}')
             self.user_info_loaded.emit()
 
 
@@ -1547,10 +1547,10 @@ if __name__ == "__main__":
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication(sys.argv)
     translates = set_qt_languages()
-    logging.log_INFO('Qt init complete')
+    app_logger.log_INFO('Qt init complete')
     check_webview2()
 
-    logging.log_INFO('Initing main window')
+    app_logger.log_INFO('Initing main window')
     mainw = MainWindow()
     mainw.show()
     logging.log_INFO('Mainwindow showed, into the main loop')

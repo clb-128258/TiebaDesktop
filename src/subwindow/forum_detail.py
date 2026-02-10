@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QDialog, QListWidget, QTreeWidgetItem, QFileDialog, 
 from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
     open_url_in_browser, large_num_to_string, get_exception_string
-import publics.logging as logging
+import publics.app_logger as logging
 
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
 

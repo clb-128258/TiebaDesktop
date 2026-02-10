@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, qt_image
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string
-import publics.logging as logging
+import publics.app_logger as logging
 
 from ui import ba_head
 

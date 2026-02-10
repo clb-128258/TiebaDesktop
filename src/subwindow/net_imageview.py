@@ -8,7 +8,7 @@ from PyQt5.QtCore import pyqtSignal, QEvent, Qt, QMimeData, QUrl, QByteArray, QS
 from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
 from PyQt5.QtWidgets import QWidget, QApplication, QMenu, QAction, QFileDialog
 
-import publics.logging as logging
+import publics.app_logger as logging
 from publics import request_mgr, top_toast_widget
 from ui import image_viewer
 

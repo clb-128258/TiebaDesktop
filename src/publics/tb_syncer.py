@@ -13,7 +13,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 import consts
 from publics import request_mgr, toasting, cache_mgr, profile_mgr
 from publics.funcs import start_background_thread, system_has_network, open_url_in_browser
-import publics.logging as logging
+import publics.app_logger as logging
 
 
 class UnreadMessageType:
