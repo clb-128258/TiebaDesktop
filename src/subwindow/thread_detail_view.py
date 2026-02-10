@@ -1,9 +1,9 @@
 import asyncio
 import gc
 import sys
-
 import aiotieba
 import pyperclip
+
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
@@ -1067,10 +1067,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0}
                         if thread_info.thread.contents.video:
                             video_info['have_video'] = True
-                            video_info['src'] = thread_info.thread.contents.video.src
+                            video_info['src'] = proto_response.data.thread.video_info.video_url  # 获取带参数的正确链接
                             video_info['length'] = thread_info.thread.contents.video.duration
                             video_info['view'] = thread_info.thread.contents.video.view_num
-                            video_info['cover_src'] = thread_info.thread.contents.video.cover_src
+                            video_info['cover_src'] = proto_response.data.thread.video_info.thumbnail_url
 
                         voice_info = {'have_voice': False, 'src': '', 'length': 0}
                         if thread_info.thread.contents.voice:

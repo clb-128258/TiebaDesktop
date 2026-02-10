@@ -1,4 +1,4 @@
-import typing
+import urllib.parse
 import yarl
 import json
 from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint
@@ -215,13 +215,6 @@ class ExtTabBar(QTabBar):
         super().mouseReleaseEvent(event)
 
 
-class HttpHandler(webview2.HttpDataRewriter):
-    def onResponseCaught(self, url: str, statusCode: int, header: typing.Dict[str, str],
-                         content: typing.Optional[bytes]):
-        header['Access-Control-Allow-Origin'] = "*"
-        header['Access-Control-Allow-Methods'] = 'GET'
-        return statusCode, header, content
-
 
 class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
     """贴吧页面内置浏览器"""
@@ -240,7 +233,6 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
         self.toolButton_6.setIcon(QIcon('ui/jumpto.png'))
         self.toolButton_4.setIcon(QIcon('ui/download.png'))
 
-        self.default_http_catcher = HttpHandler()
         self.default_profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
                                                        enable_link_hover_text=False,
                                                        enable_zoom_factor=True,
@@ -248,13 +240,12 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
                                                        enable_context_menu=True,
                                                        enable_keyboard_keys=True,
                                                        handle_newtab_byuser=True,
-                                                       disable_web_safe=True,
+                                                       disable_web_safe=False,
                                                        font_family=["Microsoft YaHei",
                                                                     "MS Shell Dlg 2",
                                                                     "PingFang SC",
                                                                     "Hiragino Sans GB",
                                                                     "sans-serif"],
-                                                       #http_rewriter={'*://bos.nj.bpc.baidu.com/tieba-smallvideo/*': self.default_http_catcher}
                                                        )
 
         self.top_toaster = top_toast_widget.TopToaster()

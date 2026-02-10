@@ -1,3 +1,8 @@
+:root {
+    --theme-color: #5b44c8;
+    --theme-color-shallow: #5a44c883;
+}
+
 html,
 body {
     width: 100%;
@@ -12,4 +17,35 @@ body {
 
 #mse {
     flex: auto;
+}
+
+
+/* xgplayer elements */
+.xgplayer .option-item.selected span {
+    color: var(--theme-color);
+}
+
+.xgplayer .option-item:hover span {
+    color: var(--theme-color);
+}
+
+.xgplayer .xgplayer-error-refresh {
+    color: var(--theme-color);
+}
+
+.xgplayer .xgplayer-progress-btn {
+    display: block;
+    background: var(--theme-color-shallow) !important;
+    border: .5px solid rgba(255, 94, 94, .056545);
+    box-shadow: 0 0 1px var(--theme-color-shallow) !important;
+    width: 20px;
+    height: 20px;
+    border-radius: 30px;
+    left: 0;
+    top: 50%;
+    position: absolute;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    pointer-events: none
 }
