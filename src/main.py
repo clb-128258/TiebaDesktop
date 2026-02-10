@@ -1,21 +1,12 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-import typing
-
 from core_features import *
 
 
 def excepthook(type, value, traceback):
     """捕获并打印错误"""
     if type != SystemExit:
+        log_WARN('An error in main thread was caught')
         log_exception(value)
-        aiotieba.logging.get_logger().warning(f'Error details: ')
-        while traceback:
-            frame = traceback.tb_frame
-            lineno = traceback.tb_lineno
-            filename = frame.f_code.co_filename
-            name = frame.f_code.co_name
-            aiotieba.logging.get_logger().warning(f"Filename: {filename}, Function: {name}, LineNumber: {lineno}")
-            traceback = traceback.tb_next
 
 
 def set_qt_languages():
@@ -27,14 +18,14 @@ def set_qt_languages():
             translator = QTranslator()
             if translator.load(i):
                 app.installTranslator(translator)
-                app_logger.log_INFO(f'Qt language file {i} loaded')
+                log_INFO(f'Qt language file {i} loaded')
                 translators.append(translator)
         return translators
 
 
 def check_webview2():
     """检查用户的电脑是否安装了webview2"""
-    app_logger.log_INFO(f'Checking webview2')
+    log_INFO(f'Checking webview2')
 
     webview2.loadLibs()
     if not webview2.isWebView2Installed():
@@ -56,17 +47,17 @@ def reset_udf():
             global datapath
             consts.datapath = udf
             datapath = udf
-            app_logger.log_INFO(f'UserDataPath is reset by --reset-udf.')
+            log_INFO(f'UserDataPath is reset by --reset-udf.')
         else:
             logging.log_INFO(f'{udf} is not a valid folder, please create it first.')
-        app_logger.log_INFO(f'Now UserDataPath is {consts.datapath}.')
+        log_INFO(f'Now UserDataPath is {consts.datapath}.')
 
 
 def handle_command_events():
     """处理命令行参数，与命令行参数有关的代码均在此执行"""
     cmds = sys.argv
     dont_run_gui = False
-    app_logger.log_INFO('Handling command args')
+    log_INFO('Handling command args')
 
     def get_current_user():
         user_data = {'bduss': '', 'stoken': ''}
@@ -150,16 +141,16 @@ def handle_command_events():
 
     if '--set-current-account' in cmds:
         dont_run_gui = True
-        app_logger.log_INFO('--set-current-account started')
+        log_INFO('--set-current-account started')
         start_async(switch_account())
     else:
         if '--sign-all-forums' in cmds:
             dont_run_gui = True
-            app_logger.log_INFO('--sign-all-forums started')
+            log_INFO('--sign-all-forums started')
             start_async(sign_all())
         if '--sign-grows' in cmds:
             dont_run_gui = True
-            app_logger.log_INFO('--sign-grows started')
+            log_INFO('--sign-grows started')
             start_async(sign_grow())
     if dont_run_gui:
         sys.exit(0)
@@ -186,15 +177,16 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
         self.init_login_button_menu()
         self.listWidget.currentRowChanged.connect(self.stackedWidget.setCurrentIndex)
+        self.listWidget_3.currentRowChanged.connect(self.scroll_common_settings)
         self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{datapath}/logs'))
         self.pushButton.clicked.connect(self.clear_account_list)
-        self.pushButton_5.clicked.connect(self.save_local_config)
         self.pushButton_11.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
         self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
         self.pushButton_12.clicked.connect(self.scan_use_detail_async)
         self.pushButton_4.clicked.connect(self.clear_caches_async)
         self.pushButton_6.clicked.connect(self.open_proxy_settings)
         self.pushButton_7.clicked.connect(self.select_all_caches)
+        self.pushButton_5.clicked.connect(self.add_search_engine)
         self.scanFinish.connect(self._set_use_detail_ui)
         self.clearFinish.connect(self._on_caches_cleared)
 
@@ -211,6 +203,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             i.stateChanged.connect(self.calc_willfree_size)
 
     def closeEvent(self, a0):
+        self.save_local_config()
+
         self.listWidget_2.clear()
         QPixmapCache.clear()
         gc.collect()
@@ -247,6 +241,10 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
         self.pushButton_2.setMenu(menu)
 
+    def scroll_common_settings(self, row):
+        groupbox_map = [self.groupBox_8, self.groupBox_4, self.groupBox_7, self.groupBox_5, self.groupBox_9]
+        self.scrollArea.ensureWidgetVisible(groupbox_map[row])
+
     def save_local_config(self):
         try:
             profile_mgr.local_config['thread_view_settings']['hide_video'] = self.checkBox.isChecked()
@@ -261,6 +259,19 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = self.checkBox_13.isChecked()
             profile_mgr.local_config["notify_settings"]["offline_notify"] = self.checkBox_17.isChecked()
             profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = self.checkBox_16.isChecked()
+            profile_mgr.local_config["other_settings"]["mw_default_page"] = self.comboBox_4.currentIndex()
+            profile_mgr.local_config["webview_settings"]["disable_font_cover"] = self.checkBox_20.isChecked()
+            profile_mgr.local_config["webview_settings"]["disable_gpu"] = self.checkBox_21.isChecked()
+
+            se_name_map = profile_mgr.sep_name_map
+            if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
+                profile_mgr.local_config["other_settings"]["context_menu_search_engine"]['preset'] = se_name_map.get(
+                    self.comboBox_5.currentText())
+                profile_mgr.local_config["other_settings"]["context_menu_search_engine"]['custom_url'] = ''
+            else:
+                profile_mgr.local_config["other_settings"]["context_menu_search_engine"]['preset'] = ''
+                profile_mgr.local_config["other_settings"]["context_menu_search_engine"][
+                    'custom_url'] = self.comboBox_5.currentText()
 
             try:
                 rdbtn_check_index = [self.radioButton_3.isChecked(),
@@ -282,12 +293,19 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.fix_local_config()
             self.save_local_config()
         except Exception as e:
-            app_logger.log_exception(e)
-            toast = top_toast_widget.ToastMessage('设置保存失败，请重试', icon_type=top_toast_widget.ToastIconType.ERROR)
-            self.top_toaster.showToast(toast)
-        else:
-            toast = top_toast_widget.ToastMessage('设置保存成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
-            self.top_toaster.showToast(toast)
+            log_exception(e)
+
+    def add_search_engine(self):
+        text, click_ok = QInputDialog.getText(self, '添加自定义搜索引擎',
+                                              '请在下方输入你要添加的搜索引擎链接，'
+                                              '链接中的 [query] 字段代表实际使用时的搜索关键词（包括中括号）。\n'
+                                              '请注意输入链接头部的 HTTP/HTTPS 前缀。')
+        if click_ok and text:
+            if not text.startswith(('http://', 'https://')):
+                QMessageBox.critical(self, '输入错误', '请输入一个有效的 HTTP/HTTPS 链接。', QMessageBox.Ok)
+            else:
+                self.comboBox_5.addItem(text)
+                self.comboBox_5.setCurrentIndex(self.comboBox_5.count() - 1)
 
     def open_proxy_settings(self):
         if platform.system() == 'Windows':  # windows 系统
@@ -436,7 +454,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
 
             webview_obj.destroyWebviewUntilComplete()
         except Exception as e:
-            app_logger.log_exception(e)
+            log_exception(e)
             self.clearFinish.emit(False)
         else:
             self.clearFinish.emit(True)
@@ -602,6 +620,16 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
             self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
             self.checkBox_17.setChecked(profile_mgr.local_config["notify_settings"]["offline_notify"])
+            self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
+            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["disable_gpu"])
+            self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
+
+            search_engine_settings = profile_mgr.local_config["other_settings"]["context_menu_search_engine"]
+            if search_engine_settings['preset']:
+                self.comboBox_5.setCurrentText(profile_mgr.sep_name_map_inverted[search_engine_settings['preset']])
+            else:
+                self.comboBox_5.addItem(search_engine_settings['custom_url'])
+                self.comboBox_5.setCurrentIndex(self.comboBox_5.count() - 1)
 
             rdbtn_index = [self.radioButton_3, self.radioButton_4, self.radioButton_5]
             port = profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port']
@@ -898,7 +926,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
             else:
                 raise Exception('user info is null')
         except Exception as e:
-            app_logger.log_exception(e)
+            log_exception(e)
             return ''
 
     def start_looper(self):
@@ -914,7 +942,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
                 # 在二维码发生更改时，重新初始化数据
                 loop_count = 0
                 current_sign = self.qr_sign
-                app_logger.log_INFO(f'looping qr code {current_sign}')
+                log_INFO(f'looping qr code {current_sign}')
             elif self.is_qr_loading or not current_sign:
                 # 二维码在加载或没有初始化时不操作
                 pass
@@ -928,7 +956,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
                     # 执行轮询逻辑
                     try:
                         resp = self.query_qr_status()
-                        app_logger.log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
+                        log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
                         self.handle_qr_status(resp)
                     except Exception as e:
                         logging.log_exception(e)
@@ -937,7 +965,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
 
             time.sleep(1)  # 休眠
         else:
-            app_logger.log_INFO(f'qr code loop thread will exit')
+            log_INFO(f'qr code loop thread will exit')
 
     def on_qrimg_loaded(self, success):
         if not success:
@@ -1249,6 +1277,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         self.init_profile_menu()
         self.init_pages()
+        self.stackedWidget.setCurrentIndex(
+            profile_mgr.local_config['other_settings'].get('mw_default_page', 0))  # 设置初始页面
+
         self.notice_syncer.start_sync()
         self.refresh_all_datas()
 
@@ -1266,7 +1297,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = False
                 profile_mgr.save_local_config()
             except Exception as e:
-                app_logger.log_exception(e)
+                log_exception(e)
 
         def do_exit():
             a0.accept()
@@ -1472,8 +1503,8 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
                 os.mkdir(f'{datapath}/webview_data/default')
             except Exception as e:
-                app_logger.log_WARN('handle_d2id_flag method failed')
-                app_logger.log_exception(e)
+                log_WARN('handle_d2id_flag method failed')
+                log_exception(e)
             else:
                 save_json({'uid': ''}, f'{datapath}/d2id_flag')
 
@@ -1526,9 +1557,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 self.add_info.emit([pixmap, name])
         except Exception as e:
             self.add_info.emit([])
-            app_logger.log_exception(e)
+            log_exception(e)
         else:
-            app_logger.log_INFO(f'switched account {profile_mgr.current_uid}')
+            log_INFO(f'switched account {profile_mgr.current_uid}')
             self.user_info_loaded.emit()
 
 
@@ -1547,10 +1578,10 @@ if __name__ == "__main__":
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication(sys.argv)
     translates = set_qt_languages()
-    app_logger.log_INFO('Qt init complete')
+    log_INFO('Qt init complete')
     check_webview2()
 
-    app_logger.log_INFO('Initing main window')
+    log_INFO('Initing main window')
     mainw = MainWindow()
     mainw.show()
     logging.log_INFO('Mainwindow showed, into the main loop')

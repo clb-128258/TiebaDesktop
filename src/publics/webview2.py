@@ -898,18 +898,18 @@ class QWebView2View(QWidget):
                     memoryStream = MemoryStream()
                     args.Request.Content.CopyTo(memoryStream)
                     content = bytes(memoryStream.ToArray())
-            else:
-                method, header_dict, content = '', {}, None
-            url, method, header, content = handler.onRequestCaught(url, method, header_dict, content)
 
-            args.Request.Uri = url
-            args.Request.Method = method
-            for k, v in header.items():
-                args.Request.Headers.SetHeader(k, v)
-            if content:
-                new_stream = Stream()
-                new_stream.Write(Array[Byte](content), 0, len(content))
-                args.Request.Content = new_stream
+                url, method, header, content = handler.onRequestCaught(url, method, header_dict,
+                                                                       content)  # call custom method
+
+                args.Request.Uri = url
+                args.Request.Method = method
+                for k, v in header.items():
+                    args.Request.Headers.SetHeader(k, v)
+                if content:
+                    new_stream = Stream()
+                    new_stream.Write(Array[Byte](content), 0, len(content))
+                    args.Request.Content = new_stream
 
             # response adapter
             if args.Response:
@@ -925,18 +925,18 @@ class QWebView2View(QWidget):
                     memoryStream = MemoryStream()
                     args.Response.Content.CopyTo(memoryStream)
                     content = bytes(memoryStream.ToArray())
-            else:
-                statusCode, header_dict, content = -1, {}, None
 
-            statusCode, header, content = handler.onResponseCaught(url, statusCode, header_dict, content)
+                statusCode, header, content = handler.onResponseCaught(url, statusCode, header_dict,
+                                                                       content)  # call custom method
 
-            header_str = '\n'.join(list(f'{k}: {v}' for k, v in header.items()))
-            new_stream = MemoryStream()
-            if content:
-                new_stream.Write(Array[Byte](content), 0, len(content))
-            response = self.__webview.CoreWebView2.Environment.CreateWebResourceResponse(new_stream, statusCode, "",
-                                                                                         header_str)
-            args.Response = response
+                args.Response.StatusCode = statusCode
+                for k, v in header.items():
+                    if not args.Response.Headers.Contains(k):
+                        args.Response.Headers.AppendHeader(k, v)
+                if content:
+                    new_stream = Stream()
+                    new_stream.Write(Array[Byte](content), 0, len(content))
+                    args.Response.Content = new_stream
         except Exception as e:
             app_logger.log_WARN(f'WebView2 Http Catcher failed')
             app_logger.log_exception(e)

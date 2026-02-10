@@ -215,7 +215,6 @@ class ExtTabBar(QTabBar):
         super().mouseReleaseEvent(event)
 
 
-
 class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
     """贴吧页面内置浏览器"""
     menu = None
@@ -233,6 +232,11 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
         self.toolButton_6.setIcon(QIcon('ui/jumpto.png'))
         self.toolButton_4.setIcon(QIcon('ui/download.png'))
 
+        font_family = ["Microsoft YaHei",
+                       "MS Shell Dlg 2",
+                       "PingFang SC",
+                       "Hiragino Sans GB",
+                       "sans-serif"] if not profile_mgr.local_config['webview_settings']['disable_font_cover'] else []
         self.default_profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
                                                        enable_link_hover_text=False,
                                                        enable_zoom_factor=True,
@@ -241,11 +245,9 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
                                                        enable_keyboard_keys=True,
                                                        handle_newtab_byuser=True,
                                                        disable_web_safe=False,
-                                                       font_family=["Microsoft YaHei",
-                                                                    "MS Shell Dlg 2",
-                                                                    "PingFang SC",
-                                                                    "Hiragino Sans GB",
-                                                                    "sans-serif"],
+                                                       font_family=font_family,
+                                                       enable_gpu_boost=not
+                                                       profile_mgr.local_config['webview_settings']['disable_gpu']
                                                        )
 
         self.top_toaster = top_toast_widget.TopToaster()

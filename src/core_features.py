@@ -1,13 +1,14 @@
 """该文件已无实际意义，保留其仅是为了向下兼容"""
 from PyQt5.QtCore import QLocale, QTranslator, QTimer, QT_VERSION_STR, QT_VERSION
 from PyQt5.QtGui import QPixmapCache
-from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, QApplication, QWidgetAction, QCheckBox
+from PyQt5.QtWidgets import QMessageBox, QMenu, QAction, QDialog, QMainWindow, QApplication, QWidgetAction, QCheckBox, \
+    QInputDialog
 
 from publics import profile_mgr, webview2, qt_image
 from publics import proxytool
 from publics.funcs import *
 from publics.app_logger import init_log
-from publics.app_logger import log_exception, log_INFO
+from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.tb_syncer import *
 from publics import top_toast_widget
 
@@ -20,6 +21,7 @@ from subwindow.mainwindow_menu import MainPopupMenu
 
 from ui import mainwindow, settings, login_by_bduss, qr_login
 
+import typing
 import sys
 import os
 import requests

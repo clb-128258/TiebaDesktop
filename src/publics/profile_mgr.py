@@ -6,21 +6,55 @@ from publics import proxytool
 import consts
 
 local_config_model = {
-    'thread_view_settings': {'hide_video': False,
-                             'hide_ip': False,
-                             'tb_emoticon_size': 1,
-                             'default_sort': 0,
-                             'enable_lz_only': False,
-                             'play_gif': True},
-    'forum_view_settings': {'default_sort': 0},
-    'web_browser_settings': {'url_open_policy': 0},
-    "notify_settings": {"enable_interact_notify": True, 'offline_notify': True},
-    "proxy_settings": {"proxy_switch": 0,
-                       "custom_proxy_server": {"ip": '', "port": -1},
-                       "enabled_scheme": {"http": True, "https": True}
-                       },
-    "other_settings": {"show_msgbox_before_close": True}
+    'thread_view_settings': {
+        'hide_video': False,
+        'hide_ip': False,
+        'tb_emoticon_size': 1,
+        'default_sort': 0,
+        'enable_lz_only': False,
+        'play_gif': True
+    },
+    'forum_view_settings': {
+        'default_sort': 0
+    },
+    'web_browser_settings': {
+        'url_open_policy': 0
+    },
+    "notify_settings": {
+        "enable_interact_notify": True,
+        'offline_notify': True
+    },
+    "proxy_settings": {
+        "proxy_switch": 0,
+        "custom_proxy_server": {"ip": '', "port": -1},
+        "enabled_scheme": {"http": True, "https": True}
+    },
+    "other_settings": {
+        "show_msgbox_before_close": True,
+        "context_menu_search_engine": {"preset": "", "custom_url": ""},
+        "mw_default_page": 0,
+    },
+    "webview_settings": {
+        "disable_font_cover": False,
+        'disable_gpu': False
+    }
 }
+
+search_engine_presets = {
+    "bing": "https://www.bing.com/search?q=[query]",
+    "baidu": "https://www.baidu.com/s?wd=[query]",
+    "google": 'https://www.google.com/search?q=[query]',
+    "yandex": 'https://www.yandex.com/search/?text=[query]'
+}
+# display name -> flag name
+sep_name_map = {
+    'Bing': 'bing',
+    '百度': 'baidu',
+    'Google': 'google',
+    'Yandex': 'yandex'
+}
+# flag name -> display name
+sep_name_map_inverted = {v: k for k, v in sep_name_map.items()}
 
 local_config = {}
 view_history = []

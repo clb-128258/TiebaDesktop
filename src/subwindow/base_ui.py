@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMenu, QAction, QLabel
 from PyQt5.QtGui import QTextDocumentFragment
-from publics import funcs, profile_mgr, qt_window_mgr
+from publics import funcs, profile_mgr, qt_window_mgr, app_logger
 import pyperclip
 
 
@@ -11,6 +11,18 @@ def create_thread_content_menu(parent_label: QLabel):
         qt_window_mgr.add_window(window)
         window.lineEdit.setText(text)
         window.start_search()
+
+    def get_search_engine_link():
+        try:
+            settings = profile_mgr.local_config['other_settings']['context_menu_search_engine']
+            if settings['preset']:
+                return profile_mgr.sep_name_map_inverted[settings['preset']], profile_mgr.search_engine_presets[
+                    settings['preset']]
+            else:
+                return '自定义引擎', settings['custom_url']
+        except Exception as e:
+            app_logger.log_exception(e)
+            return 'Bing', profile_mgr.search_engine_presets['bing']
 
     selected_text = parent_label.selectedText()
     all_text = QTextDocumentFragment.fromHtml(parent_label.text()).toPlainText() if parent_label.text().startswith(
@@ -40,8 +52,10 @@ def create_thread_content_menu(parent_label: QLabel):
         search_tb.setVisible(False)
     menu.addAction(search_tb)
 
-    search_network = QAction(f'在 Bing 中搜索“{selected_text}”', parent_label)
-    search_network.triggered.connect(lambda: funcs.open_url_in_browser(f'https://www.bing.com/search?q={selected_text}'))
+    engine_name, engine_link = get_search_engine_link()
+    engine_link = engine_link.replace('[query]', selected_text)
+    search_network = QAction(f'在 {engine_name} 中搜索“{selected_text}”', parent_label)
+    search_network.triggered.connect(lambda: funcs.open_url_in_browser(engine_link))
     if not selected_text:
         search_network.setVisible(False)
     menu.addAction(search_network)
