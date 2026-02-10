@@ -1,4 +1,6 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
+import typing
+
 from core_features import *
 
 
@@ -34,13 +36,12 @@ def check_webview2():
     """检查用户的电脑是否安装了webview2"""
     logging.log_INFO(f'Checking webview2')
 
+    webview2.loadLibs()
     if not webview2.isWebView2Installed():
         msgbox = QMessageBox()
         msgbox.warning(None, '运行警告',
                        '你的电脑上似乎还未安装 WebView2 运行时。本程序的部分功能（如登录等）将不可用。',
                        QMessageBox.Ok)
-    else:
-        webview2.loadLibs()
 
 
 def reset_udf():
@@ -95,9 +96,9 @@ def handle_command_events():
             if not (r1 and r2):
                 err_msg = '签到失败，详情如下：'
                 if not r1:
-                    err_msg += f'\n成长等级签到：{r1.err.msg}'
+                    err_msg += f'\n成长等级签到：{r1.err}'
                 if not r2:
-                    err_msg += f'\n成长等级分享任务：{r2.err.msg}'
+                    err_msg += f'\n成长等级分享任务：{r2.err}'
             msgbox(err_msg)
 
     async def sign_all():
@@ -1078,6 +1079,30 @@ class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
 
 class LoginWebView(QDialog):
     """登录百度账号的webview，用户在网页执行登陆操作，webview后台抓取bduss等登录信息"""
+
+    class LoginRewriter(QObject, webview2.HttpDataRewriter):
+        is_token_got = False
+        tokenGot = pyqtSignal(dict)
+
+        def onRequestCaught(self, url: str, method: str, header: typing.Dict[str, str],
+                            content: typing.Optional[bytes]):
+            if not self.is_token_got:
+                tlist = [
+                    'BDUSS',
+                    'STOKEN']
+
+                cookies_dic = self.parseCookieToDict(header['Cookie'])
+                login_cookies = {}
+                for k, v in cookies_dic.items():
+                    if k in tlist:
+                        login_cookies[k] = v
+
+                if len(login_cookies.keys()) == len(tlist):
+                    self.is_token_got = True
+                    self.tokenGot.emit(login_cookies)
+
+            return url, method, header, content
+
     islogin = False
     closeSignal = pyqtSignal()
     need_restart = False
@@ -1085,20 +1110,23 @@ class LoginWebView(QDialog):
     def __init__(self):
         super().__init__()
         self.setStyleSheet('QDialog{background-color:white;}QWidget{font-family: \"微软雅黑\";}')
-        self.setWindowTitle('登录贴吧账号')
+        self.setWindowTitle('登录百度账号')
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.closeSignal.connect(self.close)
         self.init_flash_widget()
 
         self.webview = webview2.QWebView2View()
+        self.http_catcher = self.LoginRewriter()
+        self.http_catcher.tokenGot.connect(self.start_login)
         self.webview.setParent(self)
-        self.webview.tokenGot.connect(self.start_login)
+        self.webview.newtabSignal.connect(self.open_in_current_page)
         self.profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/default',
                                                enable_link_hover_text=False,
                                                enable_zoom_factor=False, enable_error_page=False,
                                                enable_context_menu=False, enable_keyboard_keys=False,
-                                               handle_newtab_byuser=False)
+                                               handle_newtab_byuser=True,
+                                               http_rewriter={'*://tieba.baidu.com/*': self.http_catcher})
         self.webview.setProfile(self.profile)
         self.webview.loadAfterRender('https://passport.baidu.com/v2/?login&u=https%3A%2F%2Ftieba.baidu.com')
         self.webview.initRender()
@@ -1136,6 +1164,9 @@ class LoginWebView(QDialog):
         self.flash_widget = LoadingFlashWidget(caption='登录成功，即将跳转...')
         self.flash_widget.cover_widget(self, enable_filler=False)
         self.flash_widget.hide()
+
+    def open_in_current_page(self, link):
+        self.webview.load(link)
 
     def start_login(self, infos):
         self.webview.hide()

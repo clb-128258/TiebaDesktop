@@ -16,7 +16,7 @@ def log_WARN(info: str):
 
 def log_exception(error: Exception):
     """在日志中记录一个错误"""
-    log_WARN(f'[Exception {type(error).__name__}] {str(error)}')
+    aiotieba.logging.get_logger().exception(f'[Exception {type(error).__name__}]', exc_info=error)
 
 
 def init_log():
