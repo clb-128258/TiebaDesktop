@@ -6,7 +6,7 @@ from subwindow.user_home_page import UserHomeWindow
 from ui import mw_popup
 from PyQt5.QtWidgets import QWidget, qApp, QMenu
 from PyQt5.QtGui import QIcon, QResizeEvent
-from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
+from PyQt5.QtCore import pyqtSignal, QTimer, QEvent, QSize
 from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image, app_logger
 import asyncio
 import pyperclip
@@ -55,7 +55,7 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
         self.get_self_info_async()
 
     def resizeEvent(self, a0):
-        resizeEvent = QResizeEvent(self.size(), self.parent_menu.size())
+        resizeEvent = QResizeEvent(QSize(self.width(), self.height() + 100), self.parent_menu.size())
         qApp.sendEvent(self.parent_menu, resizeEvent)  # 使菜单调整到正确大小
 
     def eventFilter(self, source, event):
@@ -167,13 +167,12 @@ class MainPopupMenu(QWidget, mw_popup.Ui_Form):
                 else:
                     pixmap = QPixmap()
                     pixmap.load('ui/default_user_image.png')
-                    pixmap = pixmap.scaled(50, 50, Qt.KeepAspectRatio,
-                                           Qt.SmoothTransformation)
+                    pixmap = qt_image.add_cover_for_pixmap(pixmap, 50)
                     emit_data['portrait_pixmap'] = pixmap
 
                 self.infoLoaded.emit(emit_data)
             except Exception as e:
-                logging.log_exception(e)
+                app_logger.log_exception(e)
 
         def start_async():
             loop = asyncio.new_event_loop()

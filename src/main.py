@@ -1191,7 +1191,7 @@ class LoginWebView(QDialog):
                                                enable_error_page=False,
                                                enable_context_menu=False,
                                                enable_keyboard_keys=False,
-                                               handle_newtab_byuser=True,
+                                               handle_newtab_byuser=False,
                                                http_rewriter={'*://tieba.baidu.com/*': self.http_catcher})
         self.webview.setProfile(self.profile)
         self.webview.loadAfterRender('https://passport.baidu.com/v2/?login&u=https%3A%2F%2Ftieba.baidu.com')
