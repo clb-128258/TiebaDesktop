@@ -59,10 +59,38 @@ sep_name_map_inverted = {v: k for k, v in sep_name_map.items()}
 local_config = {}
 view_history = []
 post_drafts = {}
+window_rects = {}
 
 current_uid = 'default'
 current_bduss = ''
 current_stoken = ''
+
+
+def add_window_rects(window_class, x, y, w, h, is_maxsize):
+    """添加窗口位置信息"""
+    global window_rects
+    window_rects[window_class.__name__] = [x, y, w, h, is_maxsize]
+    save_window_rects()
+
+
+def get_window_rects(window_class):
+    """获取窗口位置信息"""
+    return window_rects.get(window_class.__name__)
+
+
+def load_window_rects() -> dict:
+    """加载窗口位置信息"""
+    global window_rects
+    with open(f'{consts.datapath}/window_rects.json', 'rt') as file:
+        window_rects = json.loads(file.read())
+        return window_rects
+
+
+def save_window_rects():
+    """保存窗口位置信息到文件"""
+    global window_rects
+    with open(f'{consts.datapath}/window_rects.json', 'wt') as file:
+        file.write(json.dumps(window_rects, indent=4))
 
 
 def add_post_draft(thread_id: int, text: str):
@@ -218,7 +246,8 @@ def init_all_datas():
 
     thread_list = [start_background_thread(load_local_config),
                    start_background_thread(load_view_history),
-                   start_background_thread(load_post_drafts)]
+                   start_background_thread(load_post_drafts),
+                   start_background_thread(load_window_rects)]
 
     for i in thread_list:
         i.join()

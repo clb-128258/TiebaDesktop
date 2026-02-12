@@ -187,6 +187,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.pushButton_6.clicked.connect(self.open_proxy_settings)
         self.pushButton_7.clicked.connect(self.select_all_caches)
         self.pushButton_5.clicked.connect(self.add_search_engine)
+        self.pushButton_8.clicked.connect(self.reset_local_config)
         self.scanFinish.connect(self._set_use_detail_ui)
         self.clearFinish.connect(self._on_caches_cleared)
 
@@ -197,13 +198,20 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                             self.checkBox_7,
                             self.checkBox_6,
                             self.checkBox_18,
-                            self.checkBox_19
+                            self.checkBox_19,
+                            self.checkBox_22
                             ]
         for i in self.clearTypeCb:
             i.stateChanged.connect(self.calc_willfree_size)
 
+        self.move_as_config()
+
     def closeEvent(self, a0):
         self.save_local_config()
+        profile_mgr.add_window_rects(type(self),
+                                     self.x(), self.y() + 32,
+                                     self.width(), self.height(),
+                                     False)
 
         self.listWidget_2.clear()
         QPixmapCache.clear()
@@ -214,6 +222,14 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         if a0.key() == Qt.Key.Key_Escape:
             a0.ignore()
             self.close()
+
+    def move_as_config(self):
+        window_rect = profile_mgr.get_window_rects(type(self))
+        if window_rect:
+            self.setGeometry(window_rect[0],
+                             window_rect[1],
+                             window_rect[2],
+                             window_rect[3])
 
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
@@ -244,6 +260,16 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
     def scroll_common_settings(self, row):
         groupbox_map = [self.groupBox_8, self.groupBox_4, self.groupBox_7, self.groupBox_5, self.groupBox_9]
         self.scrollArea.ensureWidgetVisible(groupbox_map[row])
+
+    def reset_local_config(self):
+        if QMessageBox.warning(self,
+                               '警告',
+                               '确认要重置所有设置吗？重置后，本页的所有选项都将恢复到默认状态。',
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            profile_mgr.fix_local_config()
+            self.load_local_config()
+            self.top_toaster.showToast(
+                top_toast_widget.ToastMessage('设置重置成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
 
     def save_local_config(self):
         try:
@@ -376,6 +402,8 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             free_size += self.scannedDetailData["post_draft_size"]
         if self.checkBox_19.isChecked():
             free_size += self.scannedDetailData["history_size"]
+        if self.checkBox_22.isChecked():
+            free_size += self.scannedDetailData["window_rect_size"]
 
         self.label_3.setText(f'已选 {select_num} 个条目，大约可清理 {filesize_tostr(free_size)} 空间')
 
@@ -440,11 +468,14 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 aiotieba.helper.cache.save_caches()
                 aiotieba.helper.cache.clear_repeat_items()
             if self.checkBox_18.isChecked():
-                profile_mgr.post_drafts = {}
+                profile_mgr.post_drafts.clear()
                 profile_mgr.save_post_drafts()
             if self.checkBox_19.isChecked():
                 profile_mgr.view_history = []
                 profile_mgr.save_view_history()
+            if self.checkBox_22.isChecked():
+                profile_mgr.window_rects.clear()
+                profile_mgr.save_window_rects()
             if self.checkBox_7.isChecked():
                 webview_obj.clearCacheData()
                 time.sleep(4)
@@ -472,6 +503,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         self.checkBox_7.setText(f'网页缓存 ({filesize_tostr(data["current_webview_cache_size"])})')
         self.checkBox_6.setText(f'网页 Cookies ({filesize_tostr(data["current_webview_cookie_size"])})')
         self.checkBox_19.setText(f'浏览记录 ({data["history_num"]} 条)')
+        self.checkBox_22.setText(f'窗口大小位置 ({data["window_rect_num"]} 条)')
 
         for i in self.clearTypeCb:
             i.setChecked(False)
@@ -512,14 +544,16 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
                 'post_draft_num': 0,
                 'post_draft_size': 0,
                 'history_num': 0,
-                'history_size': 0}
+                'history_size': 0,
+                'window_rect_num': 0,
+                'window_rect_size': 0}
 
         lsc_log = scan_tree_total_size(f'{datapath}/logs')  # 日志文件总大小
         lsc_img = scan_tree_total_size(f'{datapath}/image_caches')  # 图片缓存文件总大小
         data['image_cache_size'] = lsc_img
         data['log_size'] = lsc_log
 
-        main_pf_exclude = ['view_history', 'post_drafts']  # 排除特定文件
+        main_pf_exclude = ['view_history', 'post_drafts', 'window_rects.json']  # 排除特定文件
         for i in os.listdir(datapath):
             if os.path.isfile(f'{datapath}/{i}') and i not in main_pf_exclude:
                 data['main_profile_size'] += os.stat(f'{datapath}/{i}').st_size
@@ -533,9 +567,11 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
         data['fidcache_num'] = len(aiotieba.helper.cache._fname2fid.keys())
         data['fidcache_size'] = os.stat(f'{datapath}/cache_index/fidfname_index.json').st_size
         data['post_draft_size'] = os.stat(f'{datapath}/post_drafts').st_size
-        data['post_draft_num'] = len(profile_mgr.post_drafts)
+        data['post_draft_num'] = len(profile_mgr.post_drafts.keys())
         data['history_size'] = os.stat(f'{datapath}/view_history').st_size
         data['history_num'] = len(profile_mgr.view_history)
+        data['window_rect_num'] = len(profile_mgr.window_rects.keys())
+        data['window_rect_size'] = os.stat(f'{datapath}/window_rects.json').st_size
 
         data['total_data_size'] = (lsc_img +
                                    lsc_log +
@@ -1284,6 +1320,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         self.notice_syncer.start_sync()
         self.refresh_all_datas()
+        self.move_as_config()
 
     def closeEvent(self, a0):
         def whether_show_question():
@@ -1302,6 +1339,11 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 log_exception(e)
 
         def do_exit():
+            profile_mgr.add_window_rects(type(self),
+                                         self.x(), self.y() + 32,
+                                         self.width(), self.height(),
+                                         self.isMaximized())
+
             a0.accept()
             app.closeAllWindows()
             app.quit()
@@ -1331,6 +1373,16 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5 and self.stackedWidget.currentIndex() == 0:
             self.refresh_recommand()
+
+    def move_as_config(self):
+        window_rect = profile_mgr.get_window_rects(type(self))
+        if window_rect and window_rect[4]:
+            self.showMaximized()
+        elif window_rect:
+            self.setGeometry(window_rect[0],
+                             window_rect[1],
+                             window_rect[2],
+                             window_rect[3])
 
     def init_ui_elements(self):
         self.toast_widget = top_toast_widget.TopToaster()

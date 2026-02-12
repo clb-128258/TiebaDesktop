@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>914</width>
-    <height>594</height>
+    <width>908</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -225,7 +225,7 @@ QDialog{background-color: rgb(255, 255, 255);}
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>669</width>
+            <width>663</width>
             <height>1053</height>
            </rect>
           </property>
@@ -1590,110 +1590,6 @@ QDialog{background-color: rgb(255, 255, 255);}
             <property name="horizontalSpacing">
              <number>9</number>
             </property>
-            <item row="4" column="0">
-             <widget class="QCheckBox" name="checkBox_9">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="text">
-               <string>游客网页数据</string>
-              </property>
-             </widget>
-            </item>
-            <item row="11" column="0">
-             <widget class="QCheckBox" name="checkBox_11">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>所有网页数据</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLabel" name="label_12">
-              <property name="styleSheet">
-               <string notr="true">QLabel{color: grey;}</string>
-              </property>
-              <property name="text">
-               <string>包括缓存到本地的贴子图片、用户头像图片等</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="1" rowspan="2">
-             <widget class="QLabel" name="label_34">
-              <property name="styleSheet">
-               <string notr="true">QLabel{color: grey;}</string>
-              </property>
-              <property name="text">
-               <string>回复主题时未被发送的草稿内容</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QLabel" name="label_28">
-              <property name="styleSheet">
-               <string notr="true">QLabel{color: grey;}</string>
-              </property>
-              <property name="text">
-               <string>当前账号在 WebView 内产生的登录信息，清除后会导致浏览器内账号退出登录</string>
-              </property>
-             </widget>
-            </item>
-            <item row="10" column="0">
-             <widget class="QCheckBox" name="checkBox_8">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>主要配置文件</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QCheckBox" name="checkBox_6">
-              <property name="text">
-               <string>网页 Cookies</string>
-              </property>
-             </widget>
-            </item>
-            <item row="11" column="1">
-             <widget class="QLabel" name="label_33">
-              <property name="styleSheet">
-               <string notr="true">QLabel{color: grey;}</string>
-              </property>
-              <property name="text">
-               <string>所有用户的 WebView 数据，需切换到对应账号进行清理操作，或退出对应账号即可清理</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QCheckBox" name="checkBox_5">
-              <property name="text">
-               <string>日志文件</string>
-              </property>
-             </widget>
-            </item>
-            <item row="10" column="1">
-             <widget class="QLabel" name="label_30">
-              <property name="styleSheet">
-               <string notr="true">QLabel{color: grey;}</string>
-              </property>
-              <property name="text">
-               <string>包含设置选项、登录信息等，不可删除</string>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="1">
-             <widget class="QLabel" name="label_32">
-              <property name="styleSheet">
-               <string notr="true">QLabel{color: grey;}</string>
-              </property>
-              <property name="text">
-               <string>吧 ID 到吧名称的映射表</string>
-              </property>
-             </widget>
-            </item>
             <item row="5" column="0">
              <widget class="QCheckBox" name="checkBox_10">
               <property name="enabled">
@@ -1704,10 +1600,13 @@ QDialog{background-color: rgb(255, 255, 255);}
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
-             <widget class="QCheckBox" name="checkBox_7">
+            <item row="6" column="0" rowspan="2">
+             <widget class="QCheckBox" name="checkBox_18">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
               <property name="text">
-               <string>网页缓存</string>
+               <string>回贴草稿</string>
               </property>
              </widget>
             </item>
@@ -1721,23 +1620,13 @@ QDialog{background-color: rgb(255, 255, 255);}
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
-             <widget class="QLabel" name="label_29">
+            <item row="13" column="1">
+             <widget class="QLabel" name="label_33">
               <property name="styleSheet">
                <string notr="true">QLabel{color: grey;}</string>
               </property>
               <property name="text">
-               <string>当前账号在 WebView 内浏览网页时产生的缓存</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QLabel" name="label_27">
-              <property name="styleSheet">
-               <string notr="true">QLabel{color: grey;}</string>
-              </property>
-              <property name="text">
-               <string>可用于诊断程序问题</string>
+               <string>所有用户的 WebView 数据，需切换到对应账号进行清理操作，或退出对应账号即可清理</string>
               </property>
              </widget>
             </item>
@@ -1748,13 +1637,13 @@ QDialog{background-color: rgb(255, 255, 255);}
               </property>
              </widget>
             </item>
-            <item row="6" column="0" rowspan="2">
-             <widget class="QCheckBox" name="checkBox_18">
-              <property name="enabled">
-               <bool>true</bool>
+            <item row="3" column="1">
+             <widget class="QLabel" name="label_28">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
               </property>
               <property name="text">
-               <string>回贴草稿</string>
+               <string>当前账号在 WebView 内产生的登录信息，清除后会导致浏览器内账号退出登录</string>
               </property>
              </widget>
             </item>
@@ -1775,6 +1664,137 @@ QDialog{background-color: rgb(255, 255, 255);}
               </property>
               <property name="text">
                <string>浏览内容时产生的记录数据</string>
+              </property>
+             </widget>
+            </item>
+            <item row="13" column="0">
+             <widget class="QCheckBox" name="checkBox_11">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>所有网页数据</string>
+              </property>
+             </widget>
+            </item>
+            <item row="12" column="1">
+             <widget class="QLabel" name="label_30">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
+              </property>
+              <property name="text">
+               <string>包含设置选项、登录信息等，不可删除</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="label_29">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
+              </property>
+              <property name="text">
+               <string>当前账号在 WebView 内浏览网页时产生的缓存</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="checkBox_9">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>游客网页数据</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="checkBox_5">
+              <property name="text">
+               <string>日志文件</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="label_12">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
+              </property>
+              <property name="text">
+               <string>包括缓存到本地的贴子图片、用户头像图片等</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QCheckBox" name="checkBox_6">
+              <property name="text">
+               <string>网页 Cookies</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="checkBox_7">
+              <property name="text">
+               <string>网页缓存</string>
+              </property>
+             </widget>
+            </item>
+            <item row="12" column="0">
+             <widget class="QCheckBox" name="checkBox_8">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>主要配置文件</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLabel" name="label_27">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
+              </property>
+              <property name="text">
+               <string>可用于诊断程序问题</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QLabel" name="label_32">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
+              </property>
+              <property name="text">
+               <string>吧 ID 到吧名称的映射表</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1" rowspan="2">
+             <widget class="QLabel" name="label_34">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
+              </property>
+              <property name="text">
+               <string>回复主题时未被发送的草稿内容</string>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="0" rowspan="2">
+             <widget class="QCheckBox" name="checkBox_22">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>窗口大小位置</string>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="1" rowspan="2">
+             <widget class="QLabel" name="label_45">
+              <property name="styleSheet">
+               <string notr="true">QLabel{color: grey;}</string>
+              </property>
+              <property name="text">
+               <string>已保存的窗口方位信息，以便在下次打开窗口时还原大小与尺寸</string>
               </property>
              </widget>
             </item>

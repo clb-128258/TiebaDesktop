@@ -77,7 +77,8 @@ def create_data():
                    f'{consts.datapath}/cache_index/fidfname_index.json': {},
                    f'{consts.datapath}/d2id_flag': {'uid': ''},
                    f'{consts.datapath}/view_history': [],
-                   f'{consts.datapath}/post_drafts': {}}  # 欲创建的json文件
+                   f'{consts.datapath}/post_drafts': {},
+                   f'{consts.datapath}/window_rects.json': {}}  # 欲创建的json文件
 
     for i in expect_folder:
         if not os.path.isdir(i):
