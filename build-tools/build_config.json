@@ -1,0 +1,19 @@
+{
+    "src_code_path": "H:\\Code\\TiebaDesktop\\src",
+    "py_environ_path": "H:\\Code\\TiebaDesktop\\.venv",
+    "sevenzip_path": "C:\\Program Files\\7-Zip\\7z.exe",
+    "installer_cfg": {
+        "build_nsis": true,
+        "makensis_path": "D:\\Program Files (x86)\\NSIS\\makensis.exe"
+    },
+    "version": {
+        "version_string": "1.2.2-beta",
+        "version_array": [
+            1,
+            2,
+            2,
+            0
+        ],
+        "git_last_commit_hash": "b7521348"
+    }
+}
