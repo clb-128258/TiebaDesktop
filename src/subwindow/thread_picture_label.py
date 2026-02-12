@@ -6,17 +6,14 @@ from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QBuffer, QIODevice, QSize
 from PyQt5.QtGui import QPixmap, QCursor, QMovie
 from PyQt5.QtWidgets import QLabel, QMenu, QAction, QFileDialog
 
-from publics import request_mgr, profile_mgr, app_logger, qt_image
+from publics import request_mgr, profile_mgr, qt_image
 from publics.funcs import start_background_thread, http_downloader
 from publics.qt_image import ImageType
 
 
 class ThreadPictureLabel(QLabel):
     """嵌入在列表的贴子图片"""
-    set_picture_signal = pyqtSignal(QPixmap)
-    set_gif_signal = pyqtSignal(bytes)
     opic_view = None
-    isGif = ImageType.OtherStatic
 
     def __init__(self, width, height, src, view_src):
         super().__init__()
@@ -25,22 +22,35 @@ class ThreadPictureLabel(QLabel):
         self.height_n = height + 5
         self.preview_src = view_src
 
+        self.image_loader = qt_image.MultipleImage()
+        self.image_loader.currentPixmapChanged.connect(self.set_picture)
+        self.image_loader.imageLoadSucceed.connect(lambda: self.on_img_loaded(True))
+        self.image_loader.imageLoadFailed.connect(lambda: self.on_img_loaded(False))
+        self.image_loader.setImageInfo(qt_image.ImageLoadSource.HttpLink,
+                                       self.preview_src,
+                                       coverType=qt_image.ImageCoverType.RadiusAngleCover,
+                                       expectSize=(self.width_n, self.height_n))
+
         self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.setToolTip('图片正在加载...')
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.init_picture_contextmenu)
-        self.set_picture_signal.connect(self.set_picture)
-        self.set_gif_signal.connect(self.set_gif_picture)
         self.destroyed.connect(self.on_destroy)
+
         self.setFixedSize(self.width_n, self.height_n)
 
     def on_destroy(self):
-        if self.isGif is not ImageType.OtherStatic:
-            self.gif_container.stop()
-            self.gif_buffer.close()
-            self.gif_byte_array.clear()
+        self.image_loader.destroyImage()
         if self.opic_view:
             self.opic_view.close()
+
+    def on_img_loaded(self, success):
+        if success:
+            self.setToolTip('')
+            if not profile_mgr.local_config['thread_view_settings']['play_gif'] and self.image_loader.isDynamicImage():
+                self.image_loader.stopPlayDynamicImage()
+        else:
+            self.setToolTip('图片加载失败，请重试')
 
     def mouseDoubleClickEvent(self, a0):
         a0.accept()
@@ -48,81 +58,29 @@ class ThreadPictureLabel(QLabel):
 
     def set_picture(self, pixmap):
         self.setPixmap(pixmap)
-        self.setToolTip('贴子图片')
-
-    def set_gif_picture(self, gif_bytes):
-        def on_frame_changed():
-            self.setPixmap(self.gif_container.currentPixmap())
-
-        def on_play_failed():
-            self.setToolTip('无法播放动图，你可以尝试查看大图。')
-
-        self.gif_byte_array = QByteArray(gif_bytes)
-        self.gif_buffer = QBuffer(self.gif_byte_array)
-        self.gif_buffer.open(QIODevice.OpenModeFlag.ReadOnly)
-
-        self.gif_container = QMovie(self)
-        self.gif_container.frameChanged.connect(on_frame_changed)
-        self.gif_container.error.connect(on_play_failed)
-        self.gif_container.setScaledSize(QSize(self.width_n, self.height_n))
-        self.gif_container.setDevice(self.gif_buffer)
-        self.gif_container.setCacheMode(QMovie.CacheMode.CacheAll)
-
-        if self.gif_container.isValid():
-            self.gif_container.jumpToFrame(0)
-            if profile_mgr.local_config['thread_view_settings']['play_gif']:
-                self.gif_container.start()
-            self.setToolTip('Gif 或 Webp 图片，右键可暂停播放')
-        else:
-            on_play_failed()
 
     def load_picture_async(self):
-        start_background_thread(self.load_picture)
-
-    def load_picture(self):
-        pixmap = QPixmap()
-        try:
-            response = requests.get(self.preview_src, headers=request_mgr.header)
-            if response.content:
-                if response.headers['content-type'] == 'image/gif':
-                    self.isGif = ImageType.Gif
-                    self.set_gif_signal.emit(response.content)
-                    return
-                elif response.headers['content-type'] == 'image/webp':
-                    self.isGif = ImageType.Webp
-                    self.set_gif_signal.emit(response.content)
-                    return
-                else:
-                    pixmap.loadFromData(response.content)
-                    pixmap = qt_image.add_cover_radius_angle_for_pixmap(pixmap, self.width_n, self.height_n)
-        except Exception as e:
-            logging.log_exception(e)
-        finally:
-            self.set_picture_signal.emit(pixmap)
+        self.image_loader.loadImage()
 
     def pause_play_gif(self):
-        if self.isGif is not ImageType.OtherStatic:
-            if self.gif_container.state() == QMovie.MovieState.Paused:
-                self.gif_container.setPaused(False)
-            elif self.gif_container.state() == QMovie.MovieState.Running:
-                self.gif_container.setPaused(True)
-            elif self.gif_container.state() == QMovie.MovieState.NotRunning:
-                self.gif_container.start()
+        if self.image_loader.isDynamicImage():
+            if self.image_loader.isDynamicPlaying():
+                self.image_loader.pausePlayDynamicImage()
+            else:
+                self.image_loader.unpausePlayDynamicImage()
 
     def init_picture_contextmenu(self):
         menu = QMenu()
 
         action_pause_gif = QAction(self)
         action_pause_gif.triggered.connect(self.pause_play_gif)
-        if self.isGif is ImageType.OtherStatic:
+        if not self.image_loader.isDynamicImage():
             action_pause_gif.setVisible(False)
         else:
-            if self.gif_container.state() == QMovie.MovieState.Paused:
+            if not self.image_loader.isDynamicPlaying():
                 action_pause_gif.setText('恢复 GIF/WEBP 播放')
-            elif self.gif_container.state() == QMovie.MovieState.Running:
+            else:
                 action_pause_gif.setText('暂停 GIF/WEBP 播放')
-            elif self.gif_container.state() == QMovie.MovieState.NotRunning:
-                action_pause_gif.setText('开始播放 GIF/WEBP')
         menu.addAction(action_pause_gif)
 
         show_o = QAction('显示大图', self)
@@ -161,7 +119,7 @@ class ThreadPictureLabel(QLabel):
         file_type_text_index = {ImageType.Gif: 'GIF 动图文件 (*.gif)',
                                 ImageType.Webp: 'Webp 图片文件 (*.webp)',
                                 ImageType.OtherStatic: 'JPG 图片文件 (*.jpg;*.jpeg)'}
-        file_type_text = file_type_text_index[self.isGif]
+        file_type_text = file_type_text_index.get(self.image_loader.imageType(), ImageType.OtherStatic)
 
         path, type_ = QFileDialog.getSaveFileName(self, '选择图片保存位置', '', file_type_text)
         if path:

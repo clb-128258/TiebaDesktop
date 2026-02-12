@@ -11,7 +11,10 @@ def add_cover_radius_angle(image: QImage,
                            width: int = -1,
                            height: int = -1,
                            cover_in_center: bool = False) -> QImage:
-    resize_rate = round((width / image.width() + height / image.height()) / 2, 2)
+    if width == height == -1:
+        resize_rate = 1.0
+    else:
+        resize_rate = round((width / image.width() + height / image.height()) / 2, 2)
     round_diameter_original = 9
     round_diameter_actually = int(round_diameter_original * (1 / resize_rate))
 
@@ -219,7 +222,6 @@ class MultipleImage(QObject):
         self.__gif_buffer.open(QIODevice.OpenModeFlag.ReadOnly)
 
         self.__gif_container = QMovie(self)
-
         self.__gif_container.frameChanged.connect(on_frame_changed)
         self.__gif_container.error.connect(
             lambda e: self.imageLoadFailed.emit(f'QMovie load failed because {self.__gif_container.lastErrorString()}'))
@@ -385,9 +387,12 @@ class MultipleImage(QObject):
             raise Exception('image is not a dynamic image')
 
     def unpausePlayDynamicImage(self):
-        """继续播放动图"""
+        """继续播放动图，如果动图处于停止状态则重新开始播放"""
         if self.isDynamicImage():
-            self.__gif_container.setPaused(False)
+            if self.__gif_container.state() == QMovie.MovieState.NotRunning:
+                self.startPlayDynamicImage()
+            else:
+                self.__gif_container.setPaused(False)
         else:
             raise Exception('image is not a dynamic image')
 
@@ -413,10 +418,10 @@ class MultipleImage(QObject):
         if self.__image_type == ImageType.OtherStatic:
             return self.__static_pixmap
         elif self.isDynamicImage():
-            if self.__cover_type == ImageCoverType.RoundCover:
-                return QPixmap.fromImage(self.__gif_covered_image)
-            else:
+            if self.__cover_type == ImageCoverType.NoCover:
                 return self.__gif_container.currentPixmap()
+            else:
+                return QPixmap.fromImage(self.__gif_covered_image)
 
     def destroyImage(self):
         """释放图像所占用的资源"""
