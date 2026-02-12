@@ -34,7 +34,7 @@ QDialog{background-color: rgb(255, 255, 255);}
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="currentRow">
-      <number>-1</number>
+      <number>0</number>
      </property>
      <item>
       <property name="text">
@@ -180,7 +180,7 @@ QDialog{background-color: rgb(255, 255, 255);}
           <enum>QFrame::NoFrame</enum>
          </property>
          <property name="currentRow">
-          <number>-1</number>
+          <number>0</number>
          </property>
          <item>
           <property name="text">
@@ -226,7 +226,7 @@ QDialog{background-color: rgb(255, 255, 255);}
             <x>0</x>
             <y>0</y>
             <width>669</width>
-            <height>1050</height>
+            <height>1053</height>
            </rect>
           </property>
           <property name="styleSheet">
@@ -1209,7 +1209,7 @@ QDialog{background-color: rgb(255, 255, 255);}
                  <item row="7" column="0">
                   <layout class="QGridLayout" name="gridLayout_20" columnstretch="0,1">
                    <property name="topMargin">
-                    <number>0</number>
+                    <number>4</number>
                    </property>
                    <item row="0" column="1">
                     <widget class="QLabel" name="label_38">
@@ -1287,7 +1287,7 @@ QDialog{background-color: rgb(255, 255, 255);}
                    <string/>
                   </property>
                   <property name="text">
-                   <string>禁用 WebView 硬件加速</string>
+                   <string>启用 WebView 界面冻结</string>
                   </property>
                  </widget>
                 </item>
@@ -1411,7 +1411,7 @@ QDialog{background-color: rgb(255, 255, 255);}
 </string>
                   </property>
                   <property name="text">
-                   <string>勾选后，WebView 的 GPU 加速功能将被禁用。修改后请重启内置浏览器</string>
+                   <string>开启后，在 WebView 窗口处于非活动状态时，页面内容将暂停渲染。可解决兼容性问题，但是会影响视觉体验</string>
                   </property>
                  </widget>
                 </item>
@@ -1433,7 +1433,7 @@ QDialog{background-color: rgb(255, 255, 255);}
               <item row="4" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_29" stretch="0,0,0">
                 <property name="topMargin">
-                 <number>3</number>
+                 <number>5</number>
                 </property>
                 <item>
                  <widget class="QPushButton" name="pushButton_8">

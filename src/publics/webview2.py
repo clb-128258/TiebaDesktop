@@ -1,9 +1,9 @@
 """webview2模块，实现了webview2与pyqt的绑定"""
 # 先引入跨平台库
 import os
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QWidget, QLabel
+from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache
+from PyQt5.QtCore import pyqtSignal, Qt
 from publics import app_logger
 import typing
 
@@ -37,9 +37,14 @@ def loadLibs():
         clr.AddReference(os.path.join(self_path, "Microsoft.Web.WebView2.Core.dll"))
         clr.AddReference(os.path.join(self_path, "Microsoft.Web.WebView2.WinForms.dll"))
 
-        from Microsoft.Web.WebView2.Core import CoreWebView2PermissionState, CoreWebView2HostResourceAccessKind, \
-            CoreWebView2BrowsingDataKinds, CoreWebView2WebResourceContext, CoreWebView2FaviconImageFormat, \
-            CoreWebView2Environment
+        from Microsoft.Web.WebView2.Core import (
+            CoreWebView2PermissionState,
+            CoreWebView2HostResourceAccessKind, \
+            CoreWebView2BrowsingDataKinds,
+            CoreWebView2WebResourceContext,
+            CoreWebView2FaviconImageFormat, \
+            CoreWebView2Environment,
+            CoreWebView2CapturePreviewImageFormat)
         from Microsoft.Web.WebView2.WinForms import WebView2, CoreWebView2CreationProperties
 
         from System import Uri, Object, Action
@@ -79,6 +84,7 @@ def loadLibs():
         globals()['Stream'] = Stream
         globals()['CoreWebView2FaviconImageFormat'] = CoreWebView2FaviconImageFormat
         globals()['CoreWebView2Environment'] = CoreWebView2Environment
+        globals()['CoreWebView2CapturePreviewImageFormat'] = CoreWebView2CapturePreviewImageFormat
 
         app_logger.log_INFO('WebView2 library has been loaded')
 
@@ -133,6 +139,19 @@ class CSharpConverter:
         thread = Thread(ThreadStart(wait_thread))
         thread.ApartmentState = ApartmentState.STA
         thread.Start()
+
+    @classmethod
+    def createCSharpThread(cls, target: typing.Callable):
+        """
+        创建一个 C# 线程。
+
+        Args:
+            target (typing.Callable): 线程内运行的函数
+        """
+
+        thread = Thread(ThreadStart(target))
+        thread.ApartmentState = ApartmentState.STA
+        return thread
 
 
 class WebView2VersionScaner:
@@ -284,6 +303,18 @@ class WebViewProfile:
                               http_rewriter=self.http_rewriter)
 
 
+class WebViewCoverLabel(QLabel):
+    def __init__(self, parent):
+        super().__init__()
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.setScaledContents(True)
+
+        self.parent_webview = parent
+        self.setParent(parent)
+
+
 class QWebView2View(QWidget):
     """
     可在 PyQt5 应用中嵌入的 WebView2 组件（仅限 Windows）。
@@ -327,6 +358,8 @@ class QWebView2View(QWidget):
     jsBridgeReceived = pyqtSignal(str)
     newtabSignal = pyqtSignal(str)
 
+    __update_frozen_view = pyqtSignal(QPixmap)
+
     def __init__(self):
         """初始化 QWebView2View 实例（不创建底层 WebView2 控件）。"""
         super().__init__()
@@ -338,6 +371,13 @@ class QWebView2View(QWidget):
         self.__load_after_init = ''
         self.__profile = None
         self.__render_completed = False
+        self.__frozen_enabled = False
+        self.__is_frozen_enabling = False
+        self.__has_first_load = False
+
+        self.__frozen_view_label = WebViewCoverLabel(self)
+        self.__frozen_view_label.hide()
+        self.__update_frozen_view.connect(self.__set_frozen_pixmap)
 
         self.__set_background()
         self.newtabSignal.connect(self.createWindow)
@@ -345,11 +385,11 @@ class QWebView2View(QWidget):
     def resizeEvent(self, a0):
         """重写 QWidget.resizeEvent，确保 WebView2 控件随窗口大小调整。"""
         if self.__render_completed and self.__webview is not None:
-            def _resize():
-                hwnd = self.__webview.Handle.ToInt32()
-                MoveWindow(hwnd, 0, 0, self.width(), self.height(), True)
+            hwnd = self.__webview.Handle.ToInt32()
+            MoveWindow(hwnd, 0, 0, self.width(), self.height(), True)
 
-            self.__run_on_ui_thread(_resize)
+            if self.__frozen_enabled:
+                self.__frozen_view_label.setGeometry(0, 0, self.width(), self.height())
 
     def closeEvent(self, a0):
         """
@@ -448,6 +488,32 @@ class QWebView2View(QWidget):
             self.__get_value_ui_thread(_load)
         else:
             app_logger.log_WARN('WebView has not inited')
+
+    def isFrozenModeEnabled(self) -> bool:
+        """
+        获取是否已经启用冻结模式。
+        在冻结模式下，WebView 内容不会被渲染到屏幕，而是显示一个预览图。
+        """
+        return self.__frozen_enabled
+
+    def setFrozenModeEnabled(self, enable: bool):
+        """
+        设置是否启用冻结模式。
+
+        在冻结模式下，WebView 内容不会被渲染到屏幕，而是显示一个预览图。
+
+        Args:
+            enable (bool): 是否启用冻结模式
+        """
+        if self.__has_first_load and self.__frozen_enabled != enable and not self.__is_frozen_enabling:  # 只在第一次导航开始之后执行
+            if enable:
+                self.__is_frozen_enabling = True
+                self.__run_on_ui_thread(self.__capture_webview)
+            else:
+                self.__webview.Visible = True
+                self.__frozen_view_label.hide()
+                self.setAudioMuted(False)
+                self.__frozen_enabled = False
 
     def setProfile(self, profile: WebViewProfile):
         """
@@ -574,11 +640,23 @@ class QWebView2View(QWidget):
             return self.__get_value_ui_thread(lambda: self.__webview.CoreWebView2.DocumentTitle)
         return ''
 
+    def canForward(self) -> bool:
+        """获取是否可以前进一页。"""
+        if self.__render_completed and self.__webview is not None:
+            return self.__get_value_ui_thread(lambda: self.__webview.CoreWebView2.CanGoForward)
+        return False
+
+    def canBack(self) -> bool:
+        """获取是否可以后退一页。"""
+        if self.__render_completed and self.__webview is not None:
+            return self.__get_value_ui_thread(lambda: self.__webview.CoreWebView2.CanGoBack)
+        return False
+
     def forward(self):
         """前进到历史记录中的下一页（如果可能）。"""
         if self.__render_completed and self.__webview is not None:
             def _load():
-                self.__webview.GoForward()
+                self.__webview.CoreWebView2.GoForward()
 
             self.__run_on_ui_thread(_load)
         else:
@@ -588,7 +666,7 @@ class QWebView2View(QWidget):
         """后退到历史记录中的上一页（如果可能）。"""
         if self.__render_completed and self.__webview is not None:
             def _load():
-                self.__webview.GoBack()
+                self.__webview.CoreWebView2.GoBack()
 
             self.__run_on_ui_thread(_load)
         else:
@@ -598,7 +676,7 @@ class QWebView2View(QWidget):
         """重新加载当前页面。"""
         if self.__render_completed and self.__webview is not None:
             def _load():
-                self.__webview.Reload()
+                self.__webview.CoreWebView2.Reload()
 
             self.__run_on_ui_thread(_load)
         else:
@@ -612,7 +690,7 @@ class QWebView2View(QWidget):
             str: 完整的 URL 字符串。
         """
         if self.__render_completed and self.__webview is not None:
-            return str(self.__webview.Source)
+            return str(self.__webview.CoreWebView2.Source)
         return ''
 
     def setHtml(self, html: str = '<html></html>'):
@@ -624,7 +702,7 @@ class QWebView2View(QWidget):
         """
         if self.__render_completed and self.__webview is not None:
             def _load():
-                self.__webview.NavigateToString(html)
+                self.__webview.CoreWebView2.NavigateToString(html)
 
             self.__run_on_ui_thread(_load)
         else:
@@ -808,6 +886,40 @@ class QWebView2View(QWidget):
     def __wait_task_give_callback(self, task, callback):
         CSharpConverter.waitCSharpAsyncFunction(task, callback)
 
+    def __capture_webview(self):
+        # 冻结模式下异步抓取图片
+        try:
+            if self.__render_completed and self.__webview:
+                stream = MemoryStream()
+                task = self.__webview_core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream)
+                CSharpConverter.waitCSharpAsyncFunction(task, lambda _: self.__on_webview_captured(stream))
+        except Exception as e:
+            app_logger.log_WARN('call core_webview.CapturePreviewAsync failed')
+            app_logger.log_exception(e)
+
+    def __on_webview_captured(self, stream):
+        iconBytes = bytes(stream.ToArray())
+        pixmap = QPixmap()
+        pixmap.loadFromData(iconBytes)
+        if not pixmap.isNull():
+            self.__update_frozen_view.emit(pixmap)
+
+        # 释放资源
+        stream.Dispose()
+        stream.Close()
+        QPixmapCache.clear()
+
+    def __set_frozen_pixmap(self, pixmap):
+        self.__frozen_view_label.setPixmap(pixmap)
+        self.__frozen_view_label.setGeometry(0, 0, self.width(), self.height())
+        self.__frozen_view_label.show()
+        self.__frozen_view_label.raise_()
+
+        self.__webview.Visible = False
+        self.setAudioMuted(True)
+        self.__frozen_enabled = True
+        self.__is_frozen_enabling = False
+
     def __set_parent(self):
         if self.__webview is not None:
             def _set_parent():
@@ -826,6 +938,10 @@ class QWebView2View(QWidget):
                 self.__current_icon = QIcon(pixmap)
                 self.__current_icon_binary = iconBytes
                 self.iconChanged.emit(self.__current_icon)
+
+            # 释放资源
+            memoryStream.Dispose()
+            memoryStream.Close()
 
         def on_icon_got(faviconStream):
             memoryStream = MemoryStream()
@@ -863,6 +979,8 @@ class QWebView2View(QWidget):
         self.urlChanged.emit()
 
     def __on_navigation_start(self, _, args):
+        if not self.__has_first_load:
+            self.__has_first_load = True
         self.loadStarted.emit()
 
     def __on_navigation_completed(self, _, args):
@@ -979,11 +1097,11 @@ class QWebView2View(QWidget):
             logging.log_WARN(str(args.InitializationException))
             return
 
-        self.__set_parent()
-
         configuration = self.__profile
         core = webview_instance.CoreWebView2
         self.__webview_core = core
+
+        self.__set_parent()
 
         if self.profile().http_rewriter:
             for k, v in self.profile().http_rewriter.items():

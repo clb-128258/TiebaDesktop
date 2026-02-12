@@ -31,12 +31,12 @@ local_config_model = {
     },
     "other_settings": {
         "show_msgbox_before_close": True,
-        "context_menu_search_engine": {"preset": "", "custom_url": ""},
+        "context_menu_search_engine": {"preset": "bing", "custom_url": ""},
         "mw_default_page": 0,
     },
     "webview_settings": {
         "disable_font_cover": False,
-        'disable_gpu': False
+        'view_frozen': False
     }
 }
 

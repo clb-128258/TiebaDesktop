@@ -261,7 +261,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = self.checkBox_16.isChecked()
             profile_mgr.local_config["other_settings"]["mw_default_page"] = self.comboBox_4.currentIndex()
             profile_mgr.local_config["webview_settings"]["disable_font_cover"] = self.checkBox_20.isChecked()
-            profile_mgr.local_config["webview_settings"]["disable_gpu"] = self.checkBox_21.isChecked()
+            profile_mgr.local_config["webview_settings"]["view_frozen"] = self.checkBox_21.isChecked()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -621,7 +621,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
             self.checkBox_17.setChecked(profile_mgr.local_config["notify_settings"]["offline_notify"])
             self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
-            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["disable_gpu"])
+            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
 
             search_engine_settings = profile_mgr.local_config["other_settings"]["context_menu_search_engine"]
@@ -1151,8 +1151,10 @@ class LoginWebView(QDialog):
         self.webview.newtabSignal.connect(self.open_in_current_page)
         self.profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/default',
                                                enable_link_hover_text=False,
-                                               enable_zoom_factor=False, enable_error_page=False,
-                                               enable_context_menu=False, enable_keyboard_keys=False,
+                                               enable_zoom_factor=False,
+                                               enable_error_page=False,
+                                               enable_context_menu=False,
+                                               enable_keyboard_keys=False,
                                                handle_newtab_byuser=True,
                                                http_rewriter={'*://tieba.baidu.com/*': self.http_catcher})
         self.webview.setProfile(self.profile)

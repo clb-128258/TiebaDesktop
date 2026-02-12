@@ -103,7 +103,7 @@ class Ui_Dialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, -468, 669, 1050))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 669, 1053))
         self.scrollAreaWidgetContents.setStyleSheet("QWidget#scrollAreaWidgetContents{background-color: rgb(255, 255, 255);}\n"
 "")
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
@@ -413,7 +413,7 @@ class Ui_Dialog(object):
         self.horizontalLayout_22.addItem(spacerItem25)
         self.gridLayout_6.addLayout(self.horizontalLayout_22, 6, 0, 1, 1)
         self.gridLayout_20 = QtWidgets.QGridLayout()
-        self.gridLayout_20.setContentsMargins(-1, 0, -1, -1)
+        self.gridLayout_20.setContentsMargins(-1, 4, -1, -1)
         self.gridLayout_20.setObjectName("gridLayout_20")
         self.label_38 = QtWidgets.QLabel(self.groupBox_4)
         self.label_38.setStyleSheet("QLabel{color: grey;}\n"
@@ -488,7 +488,7 @@ class Ui_Dialog(object):
         self.horizontalLayout_27.addItem(spacerItem32)
         self.gridLayout_22.addLayout(self.horizontalLayout_27, 3, 0, 1, 1)
         self.horizontalLayout_29 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_29.setContentsMargins(-1, 3, -1, -1)
+        self.horizontalLayout_29.setContentsMargins(-1, 5, -1, -1)
         self.horizontalLayout_29.setObjectName("horizontalLayout_29")
         self.pushButton_8 = QtWidgets.QPushButton(self.groupBox_9)
         self.pushButton_8.setObjectName("pushButton_8")
@@ -757,9 +757,9 @@ class Ui_Dialog(object):
         self.gridLayout_12.addWidget(self.stackedWidget, 0, 2, 1, 1)
 
         self.retranslateUi(Dialog)
-        self.listWidget.setCurrentRow(-1)
+        self.listWidget.setCurrentRow(0)
         self.stackedWidget.setCurrentIndex(0)
-        self.listWidget_3.setCurrentRow(-1)
+        self.listWidget_3.setCurrentRow(0)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
@@ -852,10 +852,10 @@ class Ui_Dialog(object):
         self.radioButton.setText(_translate("Dialog", "小（与文字一样大）"))
         self.radioButton_2.setText(_translate("Dialog", "大（与贴吧网页版上的一样大）"))
         self.groupBox_9.setTitle(_translate("Dialog", "高级设置"))
-        self.checkBox_21.setText(_translate("Dialog", "禁用 WebView 硬件加速"))
+        self.checkBox_21.setText(_translate("Dialog", "启用 WebView 界面冻结"))
         self.checkBox_20.setText(_translate("Dialog", "禁用 WebView 字体重设"))
         self.label_42.setText(_translate("Dialog", "勾选后，将不会尝试重写 WebView 中的网页字体，而是遵循原字体"))
-        self.label_43.setText(_translate("Dialog", "勾选后，WebView 的 GPU 加速功能将被禁用。修改后请重启内置浏览器"))
+        self.label_43.setText(_translate("Dialog", "开启后，在 WebView 窗口处于非活动状态时，页面内容将暂停渲染。可解决兼容性问题，但是会影响视觉体验"))
         self.pushButton_8.setText(_translate("Dialog", "重置所有设置"))
         self.label_44.setText(_translate("Dialog", "点击左侧按钮可使所有设置恢复到默认状态"))
         self.label_2.setText(_translate("Dialog", "清理本地数据"))

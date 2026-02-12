@@ -337,7 +337,7 @@ class MultipleImage(QObject):
                 return
 
         except Exception as e:
-            logging.log_exception(e)
+            app_logger.log_exception(e)
             self.imageLoadFailed.emit(str(e))
         else:
             self.imageLoadSucceed.emit()

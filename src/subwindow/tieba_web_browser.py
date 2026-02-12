@@ -1,9 +1,8 @@
-import urllib.parse
 import yarl
 import json
-from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint
+from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
-from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget
+from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QMenu, QAction, QMessageBox
 from consts import datapath
 from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread
@@ -51,7 +50,19 @@ class ExtTabBar(QTabBar):
         QTabBar::tab:selected {
             font: 9pt "微软雅黑";
             background: rgb(202, 202, 202);
-        }""")
+        }
+        QTabBar::close-button {
+            image: url(./ui/close_black.png);
+            width: 21px;
+            height: 21px;
+        }
+        QTabBar::close-button:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        QTabBar::close-button:pressed {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        """)
         self.setTabsClosable(True)
         self.setUsesScrollButtons(True)
         self.setAcceptDrops(True)  # 允许拖入
@@ -217,7 +228,6 @@ class ExtTabBar(QTabBar):
 
 class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
     """贴吧页面内置浏览器"""
-    menu = None
 
     def __init__(self):
         super().__init__()
@@ -231,6 +241,8 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
         self.toolButton_5.setIcon(QIcon('ui/os_browser.png'))
         self.toolButton_6.setIcon(QIcon('ui/jumpto.png'))
         self.toolButton_4.setIcon(QIcon('ui/download.png'))
+        self.toolButton_4.setIcon(QIcon('ui/download.png'))
+        self.toolButton_7.setIcon(QIcon('ui/more_horiz.png'))
 
         font_family = ["Microsoft YaHei",
                        "MS Shell Dlg 2",
@@ -246,8 +258,6 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
                                                        handle_newtab_byuser=True,
                                                        disable_web_safe=False,
                                                        font_family=font_family,
-                                                       enable_gpu_boost=not
-                                                       profile_mgr.local_config['webview_settings']['disable_gpu']
                                                        )
 
         self.top_toaster = top_toast_widget.TopToaster()
@@ -266,9 +276,27 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
         self.toolButton_5.clicked.connect(self.button_os_browser)
         self.toolButton_6.clicked.connect(self.button_open_client)
         self.toolButton_4.clicked.connect(self.button_open_downloads)
+        self.toolButton_7.clicked.connect(self.button_context_menu)
+
+        self.has_context_menu = False
+        self.lineEdit.installEventFilter(self)
+
+        self.window_active_looper = QTimer(self)
+        self.window_active_looper.setInterval(100)
+        self.window_active_looper.timeout.connect(self.handle_window_frozen)
+        if profile_mgr.local_config["webview_settings"]["view_frozen"]:
+            self.window_active_looper.start()
+
+    def eventFilter(self, source, event):
+        if source == self.lineEdit and event.type() == QEvent.Type.ContextMenu:
+            self.has_context_menu = True
+        elif source == self.lineEdit and event.type() == QEvent.Type.FocusIn:
+            self.has_context_menu = False
+        return super(type(self), self).eventFilter(source, event)
 
     def closeEvent(self, a0):
         a0.accept()
+        self.window_active_looper.stop()
         while self.tabWidget.count() != 0:
             self.remove_widget(0)
         qt_window_mgr.del_window(self)
@@ -306,24 +334,114 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
     def parse_weburl_to_tburl(self):
         tb_url = ''
         widget = self.tabWidget.currentWidget()
-        if isinstance(widget, ExtWebView2):
-            if widget.isRenderInitOk():
-                url = widget.url()
-                tb_thread_urls = ('http://tieba.baidu.com/p/', 'https://tieba.baidu.com/p/',)
-                tb_forum_urls = ('http://tieba.baidu.com/f', 'https://tieba.baidu.com/f',)
-                tb_homepage_urls = ('http://tieba.baidu.com/home/', 'https://tieba.baidu.com/home/')
-                if url.startswith(tb_thread_urls):
-                    thread_id = url.split('?')[0].split('/')[-1]
-                    tb_url = f'tieba_thread://{thread_id}'
-                elif url.startswith(tb_forum_urls):
-                    forum_name = yarl.URL(url).query['kw']
+        if isinstance(widget, ExtWebView2) and widget.isRenderInitOk():
+            url = widget.url()
+            tb_thread_urls = ('http://tieba.baidu.com/p/', 'https://tieba.baidu.com/p/',)
+            tb_forum_urls = ('http://tieba.baidu.com/f', 'https://tieba.baidu.com/f',)
+            tb_homepage_urls = ('http://tieba.baidu.com/home/', 'https://tieba.baidu.com/home/')
+            if url.startswith(tb_thread_urls):
+                thread_id = url.split('?')[0].split('/')[-1]
+                tb_url = f'tieba_thread://{thread_id}'
+            elif url.startswith(tb_forum_urls):
+                forum_name = yarl.URL(url).query.get('kw')
+                if forum_name:
                     tb_url = f'tieba_forum_namely://{forum_name}'
-                elif url.startswith(tb_homepage_urls):
-                    portrait = yarl.URL(url).query.get('id')
-                    if portrait:
-                        tb_url = f'user://{portrait}'
+            elif url.startswith(tb_homepage_urls):
+                portrait = yarl.URL(url).query.get('id')
+                if portrait:
+                    tb_url = f'user://{portrait}'
 
         return tb_url
+
+    def handle_window_frozen(self):
+        for i in range(self.tabWidget.count()):
+            widget = self.tabWidget.widget(i)
+            if isinstance(widget, ExtWebView2):
+                is_active = (i == self.tabWidget.currentIndex()
+                             and not self.isMinimized()
+                             and not self.has_context_menu)
+                if is_active:
+                    widget.setFrozenModeEnabled(False)
+                else:
+                    widget.setFrozenModeEnabled(True)
+
+    def clean_browser_cache(self):
+        widget = self.tabWidget.currentWidget()
+        if (isinstance(widget, webview2.QWebView2View)
+                and widget.isRenderInitOk()
+                and QMessageBox.warning(self,
+                                        '数据清理提示',
+                                        '确认要清理浏览器缓存吗？\n'
+                                        '这会清理你的磁盘缓存、下载历史和浏览历史，'
+                                        '且下次访问网站的速度可能会变慢。',
+                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes):
+            widget.clearCacheData()
+            self.top_toaster.showToast(
+                top_toast_widget.ToastMessage('缓存清理成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
+
+    def clean_browser_cookies(self):
+        widget = self.tabWidget.currentWidget()
+        if (isinstance(widget, webview2.QWebView2View)
+                and widget.isRenderInitOk()
+                and QMessageBox.warning(self,
+                                        '数据清理提示',
+                                        '确认要清理浏览器状态性数据吗？\n'
+                                        '这会清理你的 Cookies、自动填充、密码保存及所有 DOM 存储，'
+                                        '你将丢失在浏览器内的账号登录状态。\n'
+                                        '此操作不可撤销，请谨慎操作。',
+                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes):
+            widget.clearCookies()
+            self.top_toaster.showToast(
+                top_toast_widget.ToastMessage('状态性数据清理成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
+
+    def button_context_menu(self):
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, webview2.QWebView2View) and widget.isRenderInitOk():
+            menu = QMenu()
+            current_zoom = QAction(f'当前网页缩放 {int(widget.zoomFactor() * 100)}%', self)
+            current_zoom.setEnabled(False)
+            menu.addAction(current_zoom)
+
+            zoom_bigger = QAction('增加 10% 缩放', self)
+            zoom_bigger.triggered.connect(lambda: widget.setZoomFactor(widget.zoomFactor() + 0.1))
+            menu.addAction(zoom_bigger)
+
+            zoom_smaller = QAction('减小 10% 缩放', self)
+            zoom_smaller.triggered.connect(lambda: widget.setZoomFactor(widget.zoomFactor() - 0.1))
+            menu.addAction(zoom_smaller)
+
+            zoom_reset = QAction('恢复默认缩放', self)
+            zoom_reset.triggered.connect(lambda: widget.setZoomFactor(1.0))
+            menu.addAction(zoom_reset)
+
+            menu.addSeparator()
+
+            print_page = QAction('打印网页', self)
+            print_page.triggered.connect(widget.openPrintDialog)
+            menu.addAction(print_page)
+
+            taskmgr = QAction('任务管理器', self)
+            taskmgr.triggered.connect(widget.openChromiumTaskmgrWindow)
+            menu.addAction(taskmgr)
+
+            devtools = QAction('开发者工具', self)
+            devtools.triggered.connect(widget.openDevtoolsWindow)
+            menu.addAction(devtools)
+
+            menu.addSeparator()
+
+            clear_cache = QAction('清理缓存', self)
+            clear_cache.triggered.connect(self.clean_browser_cache)
+            menu.addAction(clear_cache)
+
+            clear_cookie = QAction('清理状态性数据', self)
+            clear_cookie.triggered.connect(self.clean_browser_cookies)
+            menu.addAction(clear_cookie)
+
+            self.has_context_menu = True
+            bt_pos = self.toolButton_7.mapToGlobal(QPoint(0, 0))
+            menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.toolButton_7.height()))
+            self.has_context_menu = False
 
     def button_back(self):
         widget = self.tabWidget.currentWidget()
@@ -359,21 +477,23 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
         widget = self.tabWidget.currentWidget()
         if isinstance(widget, ExtWebView2):
             url = self.lineEdit.text()
-            if not url.startswith(('http://', 'https://')):
-                url = 'http://' + url
+            if not url.startswith(('http://', 'https://', 'edge://')):
+                url = 'https://' + url
             widget.load(url)
 
     def on_tab_changed(self):
         self.reset_url_text()
         self.reset_main_title()
-        self.reset_client_button_visitable()
+        self.reset_top_buttons_visitable()
 
-    def reset_client_button_visitable(self):
+    def reset_top_buttons_visitable(self):
         tieba_url = self.parse_weburl_to_tburl()
-        if tieba_url:
-            self.toolButton_6.show()
-        else:
-            self.toolButton_6.hide()
+        self.toolButton_6.setVisible(bool(tieba_url))
+
+        widget = self.tabWidget.currentWidget()
+        if isinstance(widget, ExtWebView2):
+            self.toolButton.setEnabled(widget.canBack())
+            self.toolButton_2.setVisible(widget.canForward())
 
     def reset_main_title(self):
         widget = self.tabWidget.currentWidget()
@@ -523,5 +643,5 @@ class ExtWebView2(webview2.QWebView2View):
         self.windowCloseRequested.connect(lambda: tc.remove_widget(tc.tabWidget.indexOf(self)))
         self.newtabSignal.connect(tc.add_new_page)
         self.urlChanged.connect(tc.reset_url_text)
-        self.urlChanged.connect(tc.reset_client_button_visitable)
+        self.urlChanged.connect(tc.reset_top_buttons_visitable)
         self.tab_container = tc

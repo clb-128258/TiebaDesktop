@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\tb_browser.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\tb_browser.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -63,7 +63,7 @@ class Ui_Form(object):
 "                /* 禁用状态：半透明，显示不可点击 */\n"
 "                QToolButton:disabled {\n"
 "                background-color: transparent;\n"
-"                opacity: 0.4;\n"
+"                opacity: 0.25;\n"
 "                }\n"
 "\n"
 "                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
@@ -170,6 +170,9 @@ class Ui_Form(object):
         self.toolButton_4 = QtWidgets.QToolButton(self.frame)
         self.toolButton_4.setObjectName("toolButton_4")
         self.horizontalLayout.addWidget(self.toolButton_4)
+        self.toolButton_7 = QtWidgets.QToolButton(self.frame)
+        self.toolButton_7.setObjectName("toolButton_7")
+        self.horizontalLayout.addWidget(self.toolButton_7)
         self.gridLayout.addWidget(self.frame, 0, 0, 1, 1)
 
         self.retranslateUi(Form)
@@ -192,3 +195,5 @@ class Ui_Form(object):
         self.toolButton_6.setText(_translate("Form", "oc"))
         self.toolButton_4.setToolTip(_translate("Form", "<html><head/><body><p>查看下载内容</p></body></html>"))
         self.toolButton_4.setText(_translate("Form", "dl"))
+        self.toolButton_7.setToolTip(_translate("Form", "工具菜单"))
+        self.toolButton_7.setText(_translate("Form", "mn"))

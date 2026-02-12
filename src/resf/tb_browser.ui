@@ -106,7 +106,7 @@
                 /* 禁用状态：半透明，显示不可点击 */
                 QToolButton:disabled {
                 background-color: transparent;
-                opacity: 0.4;
+                opacity: 0.25;
                 }
 
                 /* 可选：如果按钮有菜单箭头，也可以美化箭头 */
@@ -291,6 +291,16 @@ QTabBar::tab:selected {
         </property>
         <property name="text">
          <string>dl</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_7">
+        <property name="toolTip">
+         <string>工具菜单</string>
+        </property>
+        <property name="text">
+         <string>mn</string>
         </property>
        </widget>
       </item>
