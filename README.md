@@ -27,7 +27,8 @@
 
 ## 对于想要从源代码运行的用户
 
-请参阅这篇教程：[如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)
+请参阅这篇教程：[如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)  
+如果想要编译出可执行文件，请参阅：[主程序编译指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
 
 # 致谢
 
@@ -37,10 +38,11 @@
 开发提供了很大的便利.
 
 # 友情链接
- 
+
 [TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)  
 [NeoTieBa - 一个基于 Tauri2.0 + Vue3 + TypeScript 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)
 
 # 许可声明
+
 本软件遵循 MIT License 发布，请在遵守 MIT License 的前提下使用本软件。  
 本软件仅供学习交流使用，请勿用于任何商业或非法用途，使用本软件所产生的任何后果都与作者无关。
