@@ -12,8 +12,8 @@ def get_default_datapath():
 
 
 enable_log_file = True
-APP_VERSION_STR = '1.2.2-beta'
-APP_VERSION_NUM = 7
+APP_VERSION_STR = '1.2.3-beta'
+APP_VERSION_NUM = 8
 WINDOWS_AUMID = 'CLB.TiebaDesktop'
 encrypt_key = 'G6WxHyBcliRT5KqcaLkskO5SKB3JJ9dX'
 datapath = get_default_datapath()
