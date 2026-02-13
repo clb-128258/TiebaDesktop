@@ -8,7 +8,7 @@ SCHEME_HTTP = 'http://'
 SCHEME_HTTPS = 'https://'
 TIEBA_APP_HOST = 'tiebac.baidu.com'
 TIEBA_WEB_HOST = 'tieba.baidu.com'
-TIEBA_CLIENT_VERSION = '12.94.1.0'
+TIEBA_CLIENT_VERSION = '22.1.1.0'
 
 header = {
     'User-Agent': f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 CLBTiebaDesktop/{consts.APP_VERSION_STR}',

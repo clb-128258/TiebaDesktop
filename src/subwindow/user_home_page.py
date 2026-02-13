@@ -46,6 +46,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         self.frame_3.hide()
         self.frame_5.hide()
         self.frame_4.hide()
+        self.frame_9.hide()
+        self.frame_10.hide()
+        self.frame_11.hide()
 
         self.page = {'thread': {'loading': False, 'page': 1},
                      'reply': {'loading': False, 'page': 1},
@@ -374,6 +377,19 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                 self.label_13.hide()
 
             have_flag_showed = False
+            if data['hide_posts']:
+                self.frame_11.show()
+                have_flag_showed = True
+            if data['hide_follow_fans'] != 1:
+                self.frame_9.show()
+                self.frame_10.show()
+                have_flag_showed = True
+                if data['hide_follow_fans'] == 3:
+                    text = '该用户隐藏了关注和粉丝列表。'
+                else:
+                    text = '该用户设置关注与粉丝列表仅互关好友可见。'
+                self.label_18.setText(text)
+                self.label_19.setText(text)
             if data['is_banned']:
                 self.frame_3.show()
                 self.label_12.setText(
@@ -441,7 +457,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         'thread_reply_permission': 0,
                         'follow_forums_show_permission': 0,
                         'desp': '',
-                        'bd_user_name': ''}
+                        'bd_user_name': '',
+                        'hide_posts': 0,
+                        'hide_follow_fans': 0}
 
                 if self.user_id_portrait in ('00000000', 0):
                     data['error'] = '无法加载匿名用户的个人主页信息。'
@@ -497,6 +515,8 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         data['follow_forums_show_permission'] = user_info.priv_like
                         data['desp'] = user_info.sign
                         data['post_c'] = user_info.post_num
+                        data['hide_posts'] = response_proto.data.user.priv_sets.post == 0
+                        data['hide_follow_fans'] = response_proto.data.user.priv_sets.follow
                         self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
 
                         god_info = ''
