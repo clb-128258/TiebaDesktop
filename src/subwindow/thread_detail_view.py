@@ -5,7 +5,7 @@ import aiotieba
 import pyperclip
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
-from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor
+from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
 
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
@@ -108,9 +108,14 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.label_11.hide()
         self.label_12.hide()
         self.label_13.hide()
+        self.frame_3.hide()
         self.collapse_text_area()
+
+        self.label_19.setPixmap(QPixmap('ui/warning.png').scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.toolButton_2.setIcon(QIcon('ui/close_black.png'))
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.toolButton.setIcon(QIcon('ui/close_white.png'))
+
         self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
                                       'QListWidget::item:hover {color:white; background-color:white;}'
                                       'QListWidget::item:selected {color:white; background-color:white;}')
@@ -122,6 +127,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.listWidget_4.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.listWidget_4.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
+
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
         self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
         self.init_load_flash()
@@ -153,6 +159,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.toolButton.clicked.connect(self.verticalFrame.hide)
         self.lz_portrait.currentPixmapChanged.connect(self.label_4.setPixmap)
         self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.pushButton_2.setIcon(QIcon(pixmap)))
+        self.toolButton_2.clicked.connect(self.frame_3.hide)
 
         # 重写事件过滤器
         self.label_3.installEventFilter(self)
@@ -902,6 +909,9 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                 self.horizontalLayout_2.removeWidget(self.label_12)
             if not self.label_8.isVisible() and not self.label_12.isVisible() and not self.label_13.isVisible():
                 self.gridLayout.setHorizontalSpacing(0)
+            if datas['content_statement']:
+                self.frame_3.show()
+                self.label_20.setText('内容声明：'+datas['content_statement'])
 
             self.label_9.setText('Lv.{0}'.format(datas['uf_level']))
             qss = ''
@@ -916,8 +926,10 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
             self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
 
-            if not datas['view_pixmap'] and not datas['video_info']['have_video'] and not datas['voice_info'][
-                'have_voice'] and not datas['repost_info']['have_repost']:
+            if (not datas['view_pixmap']
+                    and not datas['video_info']['have_video']
+                    and not datas['voice_info']['have_voice']
+                    and not datas['repost_info']['have_repost']):
                 self.listWidget.hide()
             else:
                 if datas['video_info']['have_video']:
@@ -1063,6 +1075,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                         is_forum_manager = bool(thread_info.thread.user.is_bawu)
                         self.reply_num = post_num = thread_info.thread.reply_num - 1
                         self.reply_total_pages = thread_info.page.total_page
+                        content_statement = proto_response.data.thread.content_statement
 
                         video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0}
                         if thread_info.thread.contents.video:
@@ -1141,7 +1154,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
 
                         tdata = {'forum_id': forum_id,  # 吧id
                                  'title': title,  # 标题
-                                 'content': content,  # 正内容
+                                 'content': content,  # 正文内容
                                  'author_portrait': portrait,  # 作者portrait
                                  'user_name': user_name,  # 作者昵称
                                  'forum_name': forum_name,  # 吧名称
@@ -1161,7 +1174,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                  'repost_info': repost_info,  # 转发贴信息
                                  'forum_slogan': forum_slogan,  # 吧标语
                                  'vote_info': vote_info,  # 投票信息
-                                 'draft_text': draft_text  # 草稿文本
+                                 'draft_text': draft_text,  # 草稿文本
+                                 'content_statement': content_statement  # 内容提示，如 "疑似含AI内容"
                                  }
 
                         logging.log_INFO(

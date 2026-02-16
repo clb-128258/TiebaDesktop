@@ -59,4 +59,6 @@ message User {
     }
     BazhuSign bazhu_grade = 105;
     int32 is_like = 24;
+    int32 deregistered = 169;
+    int32 priv_thread = 92;
 }

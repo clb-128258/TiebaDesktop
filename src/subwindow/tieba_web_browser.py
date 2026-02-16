@@ -3,7 +3,8 @@ import json
 from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
 from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QMenu, QAction, QMessageBox
-from consts import datapath
+
+from consts import datapath, APP_VERSION_STR
 from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread
 
@@ -194,6 +195,8 @@ class ExtTabBar(QTabBar):
                                             self.parent_window.size())
                 else:  # 只有一个标签页
                     # 直接移动当前窗口的位置
+                    if self.parent_window.isMaximized():  # 最大化时先还原
+                        self.parent_window.showNormal()
                     self.parent_window.move(cursor_pos.x() - self.moved_value_x,
                                             cursor_pos.y() - self.moved_value_y)
 
@@ -258,6 +261,7 @@ class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
                                                        handle_newtab_byuser=True,
                                                        disable_web_safe=False,
                                                        font_family=font_family,
+                                                       user_agent=f'[default_ua] CLBTiebaDesktop/{APP_VERSION_STR}',
                                                        )
 
         self.top_toaster = top_toast_widget.TopToaster()

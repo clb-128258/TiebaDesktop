@@ -62,4 +62,10 @@ message ThreadInfo {
         string content = 2;
     }
     CustomState custom_state = 212;
+    string title_ai = 246;
+    string from = 49;
+    string show_ext_str = 244;
+    string content_statement = 265;
+    int32 is_vote = 11;
+    int32 storecount = 68;
 }

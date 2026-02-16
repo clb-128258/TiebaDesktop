@@ -328,6 +328,9 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         if data['error']:
             QMessageBox.critical(self, '用户信息加载失败', data['error'], QMessageBox.Ok)
             self.close()
+        elif data['deregistered']:
+            QMessageBox.critical(self, '用户已注销', '你访问的用户已注销账号，个人信息无法查看。', QMessageBox.Ok)
+            self.close()
         else:
             self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, self.real_portrait,
                                              qt_image.ImageCoverType.RoundCover, (50, 50))
@@ -437,29 +440,31 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
         async def run_func():
             try:
                 # 初始化数据
-                data = {'error': '',
-                        'name': '',
-                        'sex': 0,
-                        'level': 0,
-                        'agree_c': 0,
-                        'tieba_id': 0,
-                        'post_c': 0,
-                        'thread_c': 0,
-                        'account_age': 0.0,
-                        'ip': '',
-                        'follow_forum_count': 0,
-                        'follow': 0,
-                        'fans': 0,
-                        'god_info': '',
-                        'is_banned': False,
-                        'unban_days': 0,
-                        'has_chance_to_unban': False,
-                        'thread_reply_permission': 0,
-                        'follow_forums_show_permission': 0,
-                        'desp': '',
-                        'bd_user_name': '',
-                        'hide_posts': 0,
-                        'hide_follow_fans': 0}
+                data = {'error': '',  # 错误信息
+                        'name': '',  # 昵称
+                        'sex': 0,  # 性别
+                        'level': 0,  # 成长等级
+                        'agree_c': 0,  # 获赞数
+                        'tieba_id': 0,  # 贴吧id
+                        'post_c': 0,  # 发贴数，包括主题和回复
+                        'thread_c': 0,  # 主题数
+                        'account_age': 0.0,  # 吧龄
+                        'ip': '',  # ip属地
+                        'follow_forum_count': 0,  # 关注吧数量
+                        'follow': 0,  # 关注数
+                        'fans': 0,  # 粉丝数
+                        'god_info': '',  # 大神/吧主信息
+                        'is_banned': False,  # 是否被封号
+                        'unban_days': 0,  # 封号天数，36500天为永封
+                        'has_chance_to_unban': False,  # 是否有机会解封，目前不使用此字段
+                        'thread_reply_permission': 0,  # 贴子评论权限
+                        'follow_forums_show_permission': 0,  # 关注吧查看权限
+                        'desp': '',  # 个人简介
+                        'bd_user_name': '',  # 百度用户名
+                        'hide_posts': False,  # 是否隐藏回贴，目前不使用此字段
+                        'hide_follow_fans': 0,  # 是否隐藏关注粉丝列表
+                        'deregistered': False  # 是否已注销
+                        }
 
                 if self.user_id_portrait in ('00000000', 0):
                     data['error'] = '无法加载匿名用户的个人主页信息。'
@@ -515,8 +520,8 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                         data['follow_forums_show_permission'] = user_info.priv_like
                         data['desp'] = user_info.sign
                         data['post_c'] = user_info.post_num
-                        data['hide_posts'] = response_proto.data.user.priv_sets.post == 0
                         data['hide_follow_fans'] = response_proto.data.user.priv_sets.follow
+                        data['deregistered'] = bool(response_proto.data.user.deregistered)
                         self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
 
                         god_info = ''
