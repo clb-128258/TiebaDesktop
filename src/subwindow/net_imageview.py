@@ -8,7 +8,7 @@ from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
 from PyQt5.QtWidgets import QWidget, QApplication, QMenu, QAction, QFileDialog
 
 import publics.app_logger as logging
-from publics import request_mgr, top_toast_widget
+from publics import request_mgr, top_toast_widget, profile_mgr
 from ui import image_viewer
 
 
@@ -52,11 +52,34 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
                 return True  # 让qt忽略事件
         return super(NetworkImageViewer, self).eventFilter(source, event)  # 否则照常处理事件
 
+    def show_as_config(self):
+        window_rect = profile_mgr.get_window_rects(type(self))
+        if not window_rect:
+            self.show()
+            return
+
+        self.setGeometry(window_rect[0],
+                         window_rect[1],
+                         window_rect[2],
+                         window_rect[3])
+
+        if window_rect[4]:
+            self.showMaximized()
+        else:
+            self.show()
+
+    def save_geometry_config(self):
+        profile_mgr.add_window_rects(type(self),
+                                     self.x(), self.y() + 32,
+                                     self.width(), self.height(),
+                                     self.isMaximized())
+
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
 
     def closeEvent(self, e):
+        self.save_geometry_config()
         self.closed.emit()
         e.accept()
 

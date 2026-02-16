@@ -1,12 +1,11 @@
 import gc
 
 import pyperclip
-import requests
-from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QBuffer, QIODevice, QSize
-from PyQt5.QtGui import QPixmap, QCursor, QMovie
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QLabel, QMenu, QAction, QFileDialog
 
-from publics import request_mgr, profile_mgr, qt_image
+from publics import profile_mgr, qt_image
 from publics.funcs import start_background_thread, http_downloader
 from publics.qt_image import ImageType
 
@@ -113,7 +112,7 @@ class ThreadPictureLabel(QLabel):
             from subwindow.net_imageview import NetworkImageViewer
             self.opic_view = NetworkImageViewer(self.src_addr)
             self.opic_view.closed.connect(close_memory_clear)
-            self.opic_view.show()
+            self.opic_view.show_as_config()
 
     def save_picture(self):
         file_type_text_index = {ImageType.Gif: 'GIF 动图文件 (*.gif)',

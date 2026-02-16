@@ -9,14 +9,15 @@ distributed_window = []
 def add_window(widget: QWidget, showAfterAdd=True):
     distributed_window.append(widget)
     window_rect = profile_mgr.get_window_rects(type(widget))
-    if window_rect and window_rect[4]:
-        widget.showMaximized()
-    elif window_rect:
+    if window_rect:
         widget.setGeometry(window_rect[0],
                            window_rect[1],
                            window_rect[2],
                            window_rect[3])
-    if showAfterAdd:
+
+    if showAfterAdd and window_rect and window_rect[4]:
+        widget.showMaximized()
+    elif showAfterAdd:
         widget.show()
 
 
