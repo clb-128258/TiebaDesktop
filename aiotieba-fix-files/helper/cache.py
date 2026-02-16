@@ -97,10 +97,10 @@ class ForumInfoCache:
             fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的forum_id
+            int: 该贴吧的forum_id，如缓存中没有则返回整形 -1
         """
 
-        return _fname2fid.get(fname, "")
+        return int(_fname2fid.get(fname, -1))
 
     @classmethod
     def get_fname(cls, fid: int) -> str:

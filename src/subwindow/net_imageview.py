@@ -1,4 +1,3 @@
-import gc
 import os
 import threading
 import time

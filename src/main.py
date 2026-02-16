@@ -288,6 +288,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             profile_mgr.local_config["other_settings"]["mw_default_page"] = self.comboBox_4.currentIndex()
             profile_mgr.local_config["webview_settings"]["disable_font_cover"] = self.checkBox_20.isChecked()
             profile_mgr.local_config["webview_settings"]["view_frozen"] = self.checkBox_21.isChecked()
+            profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"] = self.checkBox_23.isChecked()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -656,6 +657,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
             self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
             self.checkBox_17.setChecked(profile_mgr.local_config["notify_settings"]["offline_notify"])
+            self.checkBox_23.setChecked(profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"])
             self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
             self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
@@ -1303,6 +1305,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.pushButton.setIcon(QIcon('ui/more.png'))
         self.pushButton.setStyleSheet("QPushButton::menu-indicator{image:none;}")
         self.notice_syncer = TiebaMsgSyncer()
+        self.clipboard_syncer = ClipboardSyncer()
 
         self.pushButton_3.clicked.connect(self.switch_follow_forum_page)
         self.pushButton_4.clicked.connect(self.switch_interact_page)

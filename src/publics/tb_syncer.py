@@ -4,16 +4,39 @@ import platform
 import queue
 import subprocess
 import time
+import yarl
 
+import pyperclip
 import aiotieba
 import requests
 
+from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QObject, pyqtSignal
 
 import consts
-from publics import request_mgr, toasting, cache_mgr, profile_mgr
-from publics.funcs import start_background_thread, system_has_network, open_url_in_browser
+from publics import request_mgr, toasting, cache_mgr, profile_mgr, qt_image
+from publics.funcs import start_background_thread, system_has_network, open_url_in_browser, cut_string
 import publics.app_logger as logging
+
+
+def download_toast_icon(link):
+    """下载通知缓存图标"""
+    if link.startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
+        portrait = link.split('/')[-1].replace('.jpg', '')
+        cache_path = f'{consts.datapath}/image_caches/portrait_{portrait}.jpg'
+        if not os.path.isfile(cache_path):
+            cache_mgr.save_portrait(portrait)
+    else:
+        timestr = time.strftime("%Y%m%d_%H%M%S", time.localtime(time.time()))
+        cache_path = f'{consts.datapath}/image_caches/ToastNotifyIconCache_{timestr}.png'
+        icon_response = requests.get(link, headers=request_mgr.header)
+        if icon_response.content and icon_response.status_code == 200:
+            image = QImage()
+            image.loadFromData(icon_response.content)
+            image = qt_image.add_round_cover(image, 150 if max(image.width(), image.height()) >= 150 else -1)
+            image.save(cache_path)
+
+    return cache_path
 
 
 class UnreadMessageType:
@@ -27,6 +50,109 @@ class UnreadMessageType:
     OFFICIAL_SYSTEM_NOTIFICATION = "pletter"  # 系统通知（例如贴子被系统删）
 
 
+class ClipboardSyncer(QObject):
+    """
+    用于轮询剪切板并处理跳转的类
+    """
+    clipboardActived = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+
+        self.latest_cbtext = ''
+        self.tb_rule_index = {'thread': ['tieba_thread://[value]',
+                                         lambda link: link.split('?')[0].split('/')[-1],
+                                         'thread'],
+                              'user': ['user://[value]',
+                                       lambda link: yarl.URL(link).query.get('id'),
+                                       'user'],
+                              'forum': ['tieba_forum_namely://[value]',
+                                        lambda link: yarl.URL(link).query.get('kw'),
+                                        'forum']}
+        self.tb_match_rule = {
+            f'{request_mgr.SCHEME_HTTPS}{request_mgr.TIEBA_WEB_HOST}/p/': self.tb_rule_index['thread'],
+            f'{request_mgr.SCHEME_HTTPS}{request_mgr.TIEBA_WEB_HOST}/home/main?': self.tb_rule_index['user'],
+            f'{request_mgr.SCHEME_HTTPS}{request_mgr.TIEBA_WEB_HOST}/f?': self.tb_rule_index['forum'],
+            f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_WEB_HOST}/p/': self.tb_rule_index['thread'],
+            f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_WEB_HOST}/home/main?': self.tb_rule_index['user'],
+            f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_WEB_HOST}/f?': self.tb_rule_index['forum']
+        }
+
+        self.clipboardActived.connect(open_url_in_browser)
+        self.cboard_loop_thread = start_background_thread(self.cboard_looper)
+
+    def get_tb_data(self, type_, value):
+        """获取贴吧相关信息的显示字符串"""
+
+        async def func():
+            async with (aiotieba.Client(profile_mgr.current_bduss, profile_mgr.current_stoken, proxy=True) as client):
+                if type_ == 'thread':
+                    original_data = await client.get_posts(int(value))
+                    img_src = original_data.thread.contents.imgs[0].src if original_data.thread.contents.imgs else ''
+                    return f'来自 {original_data.forum.fname}吧 的贴子：\n{cut_string(original_data.thread.title, 20)}', img_src
+                elif type_ == 'user':
+                    original_data = await client.get_user_info(value)
+                    portrait_link = f'http://tb.himg.baidu.com/sys/portrait/item/{original_data.portrait}'
+                    user_desp = ('\n简介：' + cut_string(original_data.sign, 20)) if original_data.sign else ''
+                    return f'{original_data.nick_name_new}{user_desp}', portrait_link
+                elif type_ == 'forum':
+                    original_data = await client.get_forum_detail(value)
+                    return f'{original_data.fname}吧\n标语：{cut_string(original_data.slogan, 20)}', original_data.small_avatar
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            return asyncio.run(func())
+
+        return start_async()
+
+    def save_toast_settings(self, ntype):
+        profile_mgr.local_config["notify_settings"][ntype] = False
+        profile_mgr.save_local_config()
+
+    def show_msg(self, text, icon, url):
+        toasting.showMessage('剪切板中有可跳转的内容',
+                             text,
+                             icon=icon,
+                             buttons=[toasting.Button('打开页面',
+                                                      lambda: self.clipboardActived.emit(url)),
+                                      toasting.Button('关闭此类通知',
+                                                      lambda: self.save_toast_settings('enable_clipboard_notify'))],
+                             callback=lambda: self.clipboardActived.emit(url),
+                             lowerText='剪切板跳转通知')
+
+    def query_cboard(self):
+        """执行一次对剪切板的查询"""
+        cb_text = pyperclip.paste()
+        if cb_text == self.latest_cbtext:
+            return
+
+        self.latest_cbtext = cb_text
+        for k, v in self.tb_match_rule.items():
+            is_startswith = cb_text.startswith(k)
+            value = v[1](cb_text)
+            if is_startswith and value:
+                internal_link = v[0].replace('[value]', value)
+                text, icon = self.get_tb_data(v[2], value)
+                icon_cache_path = download_toast_icon(icon) if icon else ''
+
+                self.show_msg(text, icon_cache_path, internal_link)
+                break
+
+    def cboard_looper(self):
+        """剪切板轮询器"""
+        while True:
+            try:
+                if profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"]:
+                    self.query_cboard()
+            except KeyError:  # 忽略 KeyError
+                pass
+            except Exception as e:
+                logging.log_exception(e)
+            finally:
+                time.sleep(1)
+
+
 class TiebaMsgSyncer(QObject):
     """
     贴吧用户状态同步器
@@ -34,6 +160,9 @@ class TiebaMsgSyncer(QObject):
     Args:
         bduss (str): 该用户的bduss
         stoken (str): 该用户的stoken
+
+    Notes:
+        该同步器可以在后台同步互动消息，网络状态等
     """
 
     unread_msg_counts: dict = {}
@@ -158,20 +287,7 @@ class TiebaMsgSyncer(QObject):
 
                 if icon_list := resp['data'].get("icon_list"):
                     link = icon_list[-1]
-
-                    if link.startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
-                        portrait = link.split('/')[-1].replace('.jpg', '')
-                        cache_path = f'{consts.datapath}/image_caches/portrait_{portrait}.jpg'
-                        if not os.path.isfile(cache_path):
-                            cache_mgr.save_portrait(portrait)
-                    else:
-                        timestr = time.strftime("%Y%m%d_%H%M%S", time.localtime(time.time()))
-                        cache_path = f'{consts.datapath}/image_caches/ToastNotifyIconCache_{timestr}.jpg'
-                        icon_response = requests.get(link, headers=request_mgr.header)
-                        if icon_response.content and icon_response.status_code == 200:
-                            with open(cache_path, 'wb') as file:
-                                file.write(icon_response.content)
-
+                    cache_path = download_toast_icon(link)
                     self.show_interact_toast(title, text, cache_path)
 
     def run_sleeper(self):

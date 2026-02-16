@@ -226,7 +226,7 @@ QDialog{background-color: rgb(255, 255, 255);}
             <x>0</x>
             <y>0</y>
             <width>663</width>
-            <height>1053</height>
+            <height>1109</height>
            </rect>
           </property>
           <property name="styleSheet">
@@ -750,20 +750,40 @@ QDialog{background-color: rgb(255, 255, 255);}
                  <property name="bottomMargin">
                   <number>9</number>
                  </property>
-                 <item row="0" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0">
+                 <item row="3" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_24" stretch="0,0,0">
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
                    <item>
-                    <widget class="QCheckBox" name="checkBox_13">
-                     <property name="toolTip">
-                      <string/>
+                    <spacer name="horizontalSpacer_29">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>17</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_41">
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{color: grey;}
+</string>
                      </property>
                      <property name="text">
-                      <string>互动消息通知推送</string>
+                      <string>勾选后，当你的电脑失去互联网连接后，程序将向你发送一个通知，并引导你修复网络问题</string>
                      </property>
                     </widget>
                    </item>
                    <item>
-                    <spacer name="horizontalSpacer_10">
+                    <spacer name="horizontalSpacer_30">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -851,13 +871,13 @@ QDialog{background-color: rgb(255, 255, 255);}
                    </item>
                   </layout>
                  </item>
-                 <item row="3" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_24" stretch="0,0,0">
+                 <item row="5" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_30" stretch="0,0,0">
                    <property name="topMargin">
                     <number>0</number>
                    </property>
                    <item>
-                    <spacer name="horizontalSpacer_29">
+                    <spacer name="horizontalSpacer_37">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -873,18 +893,72 @@ QDialog{background-color: rgb(255, 255, 255);}
                     </spacer>
                    </item>
                    <item>
-                    <widget class="QLabel" name="label_41">
+                    <widget class="QLabel" name="label_46">
                      <property name="styleSheet">
                       <string notr="true">QLabel{color: grey;}
 </string>
                      </property>
                      <property name="text">
-                      <string>勾选后，当你的电脑失去互联网连接后，程序将向你发送一个通知，并引导你修复网络问题</string>
+                      <string>勾选后，程序会读取你的剪切板，并在检测到贴吧链接时通知你</string>
                      </property>
                     </widget>
                    </item>
                    <item>
-                    <spacer name="horizontalSpacer_30">
+                    <spacer name="horizontalSpacer_39">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="0" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0">
+                   <item>
+                    <widget class="QCheckBox" name="checkBox_13">
+                     <property name="toolTip">
+                      <string/>
+                     </property>
+                     <property name="text">
+                      <string>互动消息通知推送</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_10">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="4" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_31" stretch="0,0">
+                   <item>
+                    <widget class="QCheckBox" name="checkBox_23">
+                     <property name="toolTip">
+                      <string/>
+                     </property>
+                     <property name="text">
+                      <string>剪切板跳转通知</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_40">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>

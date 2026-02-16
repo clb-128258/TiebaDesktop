@@ -22,7 +22,8 @@ local_config_model = {
     },
     "notify_settings": {
         "enable_interact_notify": True,
-        'offline_notify': True
+        'offline_notify': True,
+        'enable_clipboard_notify': True
     },
     "proxy_settings": {
         "proxy_switch": 0,
