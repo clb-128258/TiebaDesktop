@@ -19,13 +19,16 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
     gifLoaded = pyqtSignal(bytes)
     closed = pyqtSignal()
     start_pos = None
-    round_angle = 0
     isDraging = False
     originalImage = None
     downloadOk = False
     isResizing = False
     isGif = False
     gif_container = None
+
+    round_angle = 0
+    is_horizontal_mirror = False
+    is_vertical_mirror = False
 
     def __init__(self, src):
         super().__init__()
@@ -135,13 +138,33 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
         self.action_pause_gif = QAction('暂停 GIF 播放', self)
         self.action_pause_gif.triggered.connect(self.pause_play_gif)
         menu.addAction(self.action_pause_gif)
+
         menu.addSeparator()
+
         transform_left = QAction('顺时针旋转 90 度', self)
         transform_left.triggered.connect(self.transform_image_left)
         menu.addAction(transform_left)
+
         transform_right = QAction('逆时针旋转 90 度', self)
         transform_right.triggered.connect(self.transform_image_right)
         menu.addAction(transform_right)
+
+        menu.addSeparator()
+
+        mirror_horizontal = QAction('水平翻转', self)
+        mirror_horizontal.setCheckable(True)
+        mirror_horizontal.setChecked(self.is_horizontal_mirror)
+        mirror_horizontal.triggered.connect(self.mirror_horizontally)
+        menu.addAction(mirror_horizontal)
+
+        mirror_vertical = QAction('垂直翻转', self)
+        mirror_vertical.setCheckable(True)
+        mirror_vertical.setChecked(self.is_vertical_mirror)
+        mirror_vertical.triggered.connect(self.mirror_vertically)
+        menu.addAction(mirror_vertical)
+
+        menu.addSeparator()
+
         reset_pixmap = QAction('复原图片', self)
         reset_pixmap.triggered.connect(self.reset_image)
         menu.addAction(reset_pixmap)
@@ -153,6 +176,9 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
         self.action_copyto = QAction('复制', self)
         self.action_copyto.triggered.connect(
             lambda: QApplication.clipboard().setPixmap(QPixmap.fromImage(self.originalImage)))
+        self.action_copyto.triggered.connect(
+            lambda: self.top_toaster.showToast(
+                top_toast_widget.ToastMessage('复制成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)))
         share_menu.addAction(self.action_copyto)
 
         save = QAction('保存', self)
@@ -160,6 +186,14 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
         share_menu.addAction(save)
 
         self.pushButton_4.setMenu(share_menu)
+
+    def mirror_vertically(self):
+        self.is_vertical_mirror = not self.is_vertical_mirror
+        self.resize_image()
+
+    def mirror_horizontally(self):
+        self.is_horizontal_mirror = not self.is_horizontal_mirror
+        self.resize_image()
 
     def transform_image_left(self):
         self.round_angle += 90
@@ -171,6 +205,8 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
 
     def reset_image(self):
         self.round_angle = 0
+        self.is_vertical_mirror = False
+        self.is_horizontal_mirror = False
         self.spinBox.setValue(100)
         self.resize_image()
 
@@ -185,6 +221,11 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
                 append_text += f'[逆时针旋转 {abs(self.round_angle)}°] '
             elif self.round_angle > 0:
                 append_text += f'[顺时针旋转 {self.round_angle}°] '
+        if self.is_horizontal_mirror:
+            append_text += f'[水平翻转] '
+        if self.is_vertical_mirror:
+            append_text += f'[垂直翻转] '
+
         if append_text:
             self.setWindowTitle(f'{append_text} - 图片查看器')
         else:
@@ -230,6 +271,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
                     nw = _
                 result_image = result_image.scaled(nw, nh, Qt.AspectRatioMode.KeepAspectRatio,
                                                    Qt.TransformationMode.SmoothTransformation)
+            result_image = result_image.mirrored(self.is_horizontal_mirror, self.is_vertical_mirror)
             self.updateImage.emit(QPixmap.fromImage(result_image))
         self.isResizing = False
 
