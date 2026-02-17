@@ -1,13 +1,13 @@
 import asyncio
 import gc
+import time
 
 import aiotieba
-import requests
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, qt_image
+from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, qt_image, top_toast_widget
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string
 import publics.app_logger as logging
@@ -24,7 +24,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
     update_signal = pyqtSignal(dict)
     add_thread = pyqtSignal(dict)
     thread_refresh_ok = pyqtSignal()
-    follow_forum_ok = pyqtSignal(bool)
+    follow_forum_ok = pyqtSignal(dict)
 
     def __init__(self, bduss, stoken, fid):
         super().__init__()
@@ -34,6 +34,8 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.forum_id = fid
 
         self.page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
+        self.is_followed = False
+        self.is_signed = False
         self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
         for i in range(len(self.listwidgets)):
             lw = self.listwidgets[i]
@@ -51,7 +53,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         self.forum_admin_portrait = qt_image.MultipleImage()
         self.forum_admin_portrait.currentPixmapChanged.connect(self.label_6.setPixmap)
 
-        self.init_load_flash()
+        self.init_elements()
         self.label_9.hide()
         self.pushButton.hide()
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
@@ -82,9 +84,12 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         a0.accept()
         qt_window_mgr.del_window(self)
 
-    def init_load_flash(self):
+    def init_elements(self):
         self.flash_shower = LoadingFlashWidget()
         self.flash_shower.cover_widget(self)
+
+        self.toast_widget = top_toast_widget.TopToaster()
+        self.toast_widget.setCoverWidget(self)
 
     def threadList_load_image(self):
         for lw in self.listwidgets:
@@ -104,45 +109,94 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
         qt_window_mgr.add_window(forum_detail_window)
 
     def show_follow_result(self, r):
-        if r:
-            self.pushButton.setText('已关注')
-            self.pushButton.setEnabled(False)
-            self.pushButton.setToolTip('已关注本吧')
-            QMessageBox.information(self, '提示', f'关注成功，现在你是本吧的吧成员了。祝你在{self.forum_name}吧玩得愉快！',
-                                    QMessageBox.Ok)
+        if not r['success']:
+            self.toast_widget.showToast(
+                top_toast_widget.ToastMessage(r['text'], icon_type=top_toast_widget.ToastIconType.ERROR))
         else:
-            QMessageBox.critical(self, '提示', '关注失败，请再试一次。', QMessageBox.Ok)
+            self.toast_widget.showToast(
+                top_toast_widget.ToastMessage(r['text'], icon_type=top_toast_widget.ToastIconType.SUCCESS))
+
+        if r['type'] == 1:
+            self.pushButton.setText('签到')
+            self.pushButton.setEnabled(True)
+        elif r['type'] == 2:
+            user_sign_rank = r['user_sign_rank']
+            sign_bonus_point = r['sign_bonus_point']
+
+            self.pushButton.setText('已签到')
+            self.pushButton.setEnabled(False)
+            self.pushButton.setToolTip(f'本次签到所加经验值：{sign_bonus_point}\n签到名次：第 {user_sign_rank} 个签到')
 
     def do_follow_forum(self):
-        async def get_detail():
+        async def run_follow_or_sign():
+            emit_data = {'success': False, 'text': '', 'type': 0}
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    r = await client.follow_forum(self.forum_id)
-                    self.follow_forum_ok.emit(bool(r))
+                    if not self.is_followed:
+                        emit_data['type'] = 1
+                        r = await client.follow_forum(self.forum_id)
+                        self.is_followed = emit_data['success'] = bool(r)
+                        emit_data['text'] = f'关注成功，欢迎加入 {self.forum_name}吧' if bool(
+                            r) else get_exception_string(r.err)
+                    elif not self.is_signed:
+                        emit_data['type'] = 2
+                        tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
+                            {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
+                                                            use_mobile_header=True,
+                                                            host_type=2)
+                        tbs = tsb_resp["anti"]["tbs"]
+
+                        payload = {
+                            'BDUSS': self.bduss,
+                            '_client_type': "2",
+                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                            'fid': self.forum_id,
+                            'kw': self.forum_name,
+                            'stoken': self.stoken,
+                            'tbs': tbs,
+                        }
+                        r = request_mgr.run_post_api('/c/c/forum/sign',
+                                                     payloads=request_mgr.calc_sign(payload),
+                                                     bduss=self.bduss,
+                                                     stoken=self.stoken,
+                                                     use_mobile_header=True,
+                                                     host_type=2)
+                        if r['error_code'] == '0':
+                            user_sign_rank = r['user_info']['user_sign_rank']
+                            sign_bonus_point = r['user_info']['sign_bonus_point']
+                            emit_data['user_sign_rank'] = user_sign_rank
+                            emit_data['sign_bonus_point'] = sign_bonus_point
+
+                            emit_data['success'] = True
+                            emit_data[
+                                'text'] = f'签到成功，经验 +{sign_bonus_point}，你是本吧第 {user_sign_rank} 个签到的人'
+                        elif r['error_code'] == '160002':
+                            user_sign_rank = 'N/A'
+                            sign_bonus_point = 'N/A'
+                            emit_data['user_sign_rank'] = user_sign_rank
+                            emit_data['sign_bonus_point'] = sign_bonus_point
+
+                            emit_data['success'] = True
+                            emit_data['text'] = f'已签到过 {self.forum_name}吧，无需再签到'
+                        else:
+                            emit_data['success'] = False
+                            emit_data['text'] = f'{r["error_msg"]} (错误代码 {r["error_code"]})'
+                        self.is_signed = emit_data['success']
+
             except Exception as e:
                 logging.log_exception(e)
+                emit_data['success'] = False
+                emit_data['text'] = get_exception_string(e)
+            finally:
+                self.follow_forum_ok.emit(emit_data)
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(run_follow_or_sign())
 
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        asyncio.run(get_detail())
+        start_background_thread(start_async)
 
     def add_thread_(self, infos):
-        # 这些数据是为了对照用的
-        # 'type': tpe,
-        # 'thread_id': thread_id,
-        # 'forum_id': forum_id,
-        # 'title': title,
-        # 'content': content,
-        # 'user_name': user_name,
-        # 'user_portrait_pixmap': user_head_pixmap,
-        # 'forum_name': '',
-        # 'forum_pixmap': QPixmap(),
-        # 'view_pixmap': preview_pixmap,
-        # 'time_stamp': timestr,
-        # 'view_count': view_count,
-        # 'agree_count': agree_count,
-        # 'reply_count': reply_count,
-        # 'repost_count': repost_count
         item = QListWidgetItem()
         from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
         widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
@@ -408,10 +462,23 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                 self.gridLayout_5.removeWidget(self.label_6)
                 self.label_7.setText('本吧暂时没有吧主。')
 
+            self.is_followed = datas['is_followed'] == 1
             if datas['is_followed'] == 1:
-                self.pushButton.setText('已关注')
-                self.pushButton.setEnabled(False)
-                self.pushButton.setToolTip('已关注此吧')
+                self.is_signed = datas['forum_sign_info']['is_sign_in'] == 1
+                if datas['forum_sign_info']['is_sign_in'] == 1:
+                    self.pushButton.setEnabled(False)
+                    sign_time_str = time.strftime("%H:%M:%S", time.localtime(datas['forum_sign_info']['sign_time']))
+                    sign_rank = datas['forum_sign_info']['user_sign_rank']
+                    self.pushButton.setToolTip(f'今日签到时间：{sign_time_str}\n签到名次：第 {sign_rank} 个签到')
+
+                    if datas['forum_sign_info']['miss_sign_num'] > 0:
+                        self.pushButton.setText(f"漏签 {datas['forum_sign_info']['miss_sign_num']} 天")
+                    else:
+                        self.pushButton.setText(f"已连签 {datas['forum_sign_info']['cont_sign_num']} 天")
+                else:
+                    self.pushButton.setEnabled(True)
+                    self.pushButton.setText('签到')
+
             elif datas['is_followed'] == 2:
                 self.pushButton.setText('登录后即可关注')
                 self.pushButton.setEnabled(False)
@@ -419,6 +486,23 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
             self.flash_shower.hide()
 
     def load_info(self):
+        def frs_bottom(kw):
+            payload = {
+                'BDUSS': self.bduss,
+                '_client_type': "2",
+                '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                'kw': kw,
+                'stoken': self.stoken
+            }
+
+            resp = request_mgr.run_post_api('/c/f/frs/frsBottom', request_mgr.calc_sign(payload),
+                                            bduss=self.bduss,
+                                            stoken=self.stoken, host_type=2, use_mobile_header=True)
+            if resp['error_code'] != 0:
+                raise Exception(f'{resp["error_msg"]} (错误代码 {resp["error_code"]})')
+            else:
+                return resp
+
         async def get_detail():
             async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                 try:
@@ -428,19 +512,7 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                     if not forum_name:
                         raise NameError(f'forum name is empty (id {self.forum_id})')
                     else:
-                        payload = {
-                            'BDUSS': self.bduss,
-                            '_client_type': "2",
-                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                            'kw': forum_name,
-                            'stoken': self.stoken
-                        }
-
-                        resp = request_mgr.run_post_api('/c/f/frs/frsBottom', request_mgr.calc_sign(payload),
-                                                        bduss=self.bduss,
-                                                        stoken=self.stoken, host_type=2, use_mobile_header=True)
-                        if resp['error_code'] != 0:
-                            raise Exception(f'{resp["error_msg"]} (错误代码 {resp["error_code"]})')
+                        resp = frs_bottom(forum_name)
 
                         level_info = ''
                         level_value = 1
@@ -455,16 +527,16 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                         forum_slogan = resp["forum"]["slogan"]
                         follow_count = resp["forum"]["member_num"]
                         post_count = resp["forum"]["post_num"]
+                        forum_sign_info = resp['forum'].get('sign_in_info', {'user_info': None})['user_info']
                         if admin_info := resp["forum"].get("managers"):
                             forum_admin_name = admin_info[0]["show_name"]
                             forum_admin_portrait = admin_info[0]["portrait"].split('?')[0]
                         else:
                             forum_admin_name = ''
                             forum_admin_portrait = ''
-
                         forum_avatar = resp['forum']["avatar"]
 
-                        md5v = cache_mgr.save_md5_ico(resp['forum']["avatar"])
+                        md5v = cache_mgr.save_md5_ico(forum_avatar)
                         profile_mgr.add_view_history(3, {"icon_md5": md5v, "forum_id": self.forum_id,
                                                          "forum_name": self.forum_name})
 
@@ -484,7 +556,8 @@ class ForumShowWindow(QWidget, ba_head.Ui_Form):
                              'admin_portrait': forum_admin_portrait,
                              'is_followed': isFollowed,
                              'level_info': level_info,
-                             'uf_level': level_value}
+                             'uf_level': level_value,
+                             'forum_sign_info': forum_sign_info}
                 finally:
                     self.update_signal.emit(tdata)
 

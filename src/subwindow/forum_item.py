@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QMessageBox
 
-from publics import request_mgr, qt_window_mgr, qt_image
+from publics import request_mgr, qt_window_mgr, qt_image, top_toast_widget
 from publics.funcs import start_background_thread
 from ui import ba_item
 
@@ -15,7 +15,7 @@ class ForumItem(QWidget, ba_item.Ui_Form):
     load_by_callback = False
     __is_loaded = False
 
-    def __init__(self, fid, issign, bduss, stoken, fname):
+    def __init__(self, fid, issign, bduss, stoken, fname, toast_widget=None):
         super().__init__()
         self.setupUi(self)
         self.forum_id = fid
@@ -23,6 +23,7 @@ class ForumItem(QWidget, ba_item.Ui_Form):
         self.bduss = bduss
         self.stoken = stoken
         self.forum_name = fname
+        self.toast_widget = toast_widget
 
         self.label_9.hide()
 
@@ -49,11 +50,19 @@ class ForumItem(QWidget, ba_item.Ui_Form):
 
     def update_sign_ui(self, isok):
         if isok[0]:
-            QMessageBox.information(self, isok[1], isok[2])
+            if self.toast_widget:
+                self.toast_widget.showToast(
+                    top_toast_widget.ToastMessage(isok[2], icon_type=top_toast_widget.ToastIconType.SUCCESS))
+            else:
+                QMessageBox.information(self, isok[1], isok[2])
             self.pushButton_2.setEnabled(False)
             self.pushButton_2.setText('已签到')
         else:
-            QMessageBox.critical(self, isok[1], isok[2])
+            if self.toast_widget:
+                self.toast_widget.showToast(
+                    top_toast_widget.ToastMessage(isok[2], icon_type=top_toast_widget.ToastIconType.ERROR))
+            else:
+                QMessageBox.critical(self, isok[1], isok[2])
             self.pushButton_2.setEnabled(True)
 
     def sign_async(self):
@@ -92,11 +101,11 @@ class ForumItem(QWidget, ba_item.Ui_Form):
                 turn_data[0] = True
                 turn_data[1] = '签到成功'
                 turn_data[
-                    2] = f'{self.forum_name}吧 已签到成功。\n本次签到经验 +{sign_bonus_point}，你是今天本吧第 {user_sign_rank} 个签到的用户。'
+                    2] = f'签到成功，经验 +{sign_bonus_point}，你是本吧第 {user_sign_rank} 个签到的人'
             elif r['error_code'] == '160002':
                 turn_data[0] = True
                 turn_data[1] = '已经签到过了'
-                turn_data[2] = f'你已签到过 {self.forum_name}吧，无需再签到。'
+                turn_data[2] = f'已签到过 {self.forum_name}吧，无需再签到'
             else:
                 turn_data[0] = False
                 turn_data[1] = '签到失败'

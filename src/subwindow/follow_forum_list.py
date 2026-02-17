@@ -54,13 +54,14 @@ class FollowForumList(QWidget, follow_ba.Ui_Form):
             d.exec()
         else:
             self.parent_window.toast_widget.showToast(
-                top_toast_widget.ToastMessage('请先登录账号后再进行签到', icon_type=top_toast_widget.ToastIconType.INFORMATION)
+                top_toast_widget.ToastMessage('请先登录账号后再进行签到',
+                                              icon_type=top_toast_widget.ToastIconType.INFORMATION)
             )
 
     def add_bar(self, data):
         from subwindow.forum_item import ForumItem
         item = QListWidgetItem()
-        widget = ForumItem(data[3], data[4], self.bduss, self.stoken, data[1])
+        widget = ForumItem(data[3], data[4], self.bduss, self.stoken, data[1], self.parent_window.toast_widget)
         widget.load_by_callback = True
         widget.set_info(data[0], data[1] + '吧', leveldesp=data[2])
         widget.set_level_color(data[5])
