@@ -1,12 +1,12 @@
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import QTimer, QEvent, QPropertyAnimation, QEasingCurve, QPoint, Qt
+from PyQt5.QtGui import QPixmap, QColor
+from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+from PyQt5.QtCore import QTimer, QEvent, QPropertyAnimation, QEasingCurve, QPoint, Qt, QParallelAnimationGroup
 from ui import top_toast
 import enum
 import queue
 
 Y_POS_MOVE_VALUE = 30  # y坐标偏移量
-ANIMATION_TIME = 150  # 动画显示时间
+ANIMATION_TIME = 200  # 动画显示时间
 ICON_SIZE = 20  # 提示图标大小
 
 
@@ -56,6 +56,9 @@ class TopToaster(QWidget, top_toast.Ui_Form):
         self.setFixedHeight(32)
         self.init_pixmap_cache()
 
+        self.opacity_effect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity_effect)
+
         self._is_showing = False
         self.toast_queue = queue.Queue()
         self.toast_hide_timer = QTimer(self)
@@ -72,24 +75,52 @@ class TopToaster(QWidget, top_toast.Ui_Form):
     def showWithAnimation(self):
         self.show()
         self._sync_parent_widget_size()
-        self._animation_show.setStartValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
-        self._animation_show.setEndValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
-        self._animation_show.start()
+
+        # 更新位移动画的起止点
+        self._pos_anim_show.setStartValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
+        self._pos_anim_show.setEndValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
+
+        self._group_show.start()
 
     def hideWithAnimation(self):
-        self._animation_hide.setStartValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
-        self._animation_hide.setEndValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
-        self._animation_hide.start()
+        self._pos_anim_hide.setStartValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
+        self._pos_anim_hide.setEndValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
+
+        self._group_hide.start()
 
     def init_animation(self):
-        self._animation_show = QPropertyAnimation(self, b"pos")
-        self._animation_show.setDuration(ANIMATION_TIME)
-        self._animation_show.setEasingCurve(QEasingCurve.OutCubic)  # 弹出时用 OutCubic
+        # 位移动画
+        self._pos_anim_show = QPropertyAnimation(self, b"pos")
+        self._pos_anim_show.setDuration(ANIMATION_TIME)
+        self._pos_anim_show.setEasingCurve(QEasingCurve.OutBack)
 
-        self._animation_hide = QPropertyAnimation(self, b"pos")
-        self._animation_hide.setDuration(ANIMATION_TIME)
-        self._animation_hide.setEasingCurve(QEasingCurve.InCubic)  # 收回时用 InCubic
-        self._animation_hide.finished.connect(self._hide_toast_widget_fully)
+        # 透明度动画 (从 0 到 1)
+        self._opacity_anim_show = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self._opacity_anim_show.setDuration(ANIMATION_TIME)
+        self._opacity_anim_show.setStartValue(0.0)
+        self._opacity_anim_show.setEndValue(1.0)
+
+        # 3. 弹出动画组
+        self._group_show = QParallelAnimationGroup(self)
+        self._group_show.addAnimation(self._pos_anim_show)
+        self._group_show.addAnimation(self._opacity_anim_show)
+
+        # 隐藏时的位移动画
+        self._pos_anim_hide = QPropertyAnimation(self, b"pos")
+        self._pos_anim_hide.setDuration(ANIMATION_TIME)
+        self._pos_anim_hide.setEasingCurve(QEasingCurve.InBack)
+
+        # 隐藏时的透明度动画 (从 1 到 0)
+        self._opacity_anim_hide = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self._opacity_anim_hide.setDuration(ANIMATION_TIME)
+        self._opacity_anim_hide.setStartValue(1.0)
+        self._opacity_anim_hide.setEndValue(0.0)
+
+        # 4. 隐藏动画组
+        self._group_hide = QParallelAnimationGroup(self)
+        self._group_hide.addAnimation(self._pos_anim_hide)
+        self._group_hide.addAnimation(self._opacity_anim_hide)
+        self._group_hide.finished.connect(self._hide_toast_widget_fully)
 
     def init_pixmap_cache(self):
         self.success_icon = QPixmap('ui/success.png').scaled(ICON_SIZE, ICON_SIZE,
