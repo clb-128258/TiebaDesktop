@@ -61,14 +61,13 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
             self.show()
             return
 
-        self.setGeometry(window_rect[0],
-                         window_rect[1],
-                         window_rect[2],
-                         window_rect[3])
-
         if window_rect[4]:
             self.showMaximized()
         else:
+            self.setGeometry(window_rect[0],
+                             window_rect[1],
+                             window_rect[2],
+                             window_rect[3])
             self.show()
 
     def save_geometry_config(self):
@@ -151,17 +150,17 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
 
         menu.addSeparator()
 
-        mirror_horizontal = QAction('水平翻转', self)
-        mirror_horizontal.setCheckable(True)
-        mirror_horizontal.setChecked(self.is_horizontal_mirror)
-        mirror_horizontal.triggered.connect(self.mirror_horizontally)
-        menu.addAction(mirror_horizontal)
+        self.mirror_horizontal = QAction('水平翻转', self)
+        self.mirror_horizontal.setCheckable(True)
+        self.mirror_horizontal.setChecked(self.is_horizontal_mirror)
+        self.mirror_horizontal.triggered.connect(self.mirror_horizontally)
+        menu.addAction(self.mirror_horizontal)
 
-        mirror_vertical = QAction('垂直翻转', self)
-        mirror_vertical.setCheckable(True)
-        mirror_vertical.setChecked(self.is_vertical_mirror)
-        mirror_vertical.triggered.connect(self.mirror_vertically)
-        menu.addAction(mirror_vertical)
+        self.mirror_vertical = QAction('垂直翻转', self)
+        self.mirror_vertical.setCheckable(True)
+        self.mirror_vertical.setChecked(self.is_vertical_mirror)
+        self.mirror_vertical.triggered.connect(self.mirror_vertically)
+        menu.addAction(self.mirror_vertical)
 
         menu.addSeparator()
 
@@ -234,6 +233,9 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
     def _resizeslot(self, pixmap):
         self.label.setPixmap(pixmap)
         self.scrollAreaWidgetContents.setMinimumSize(pixmap.width(), pixmap.height())
+
+        self.mirror_horizontal.setChecked(self.is_horizontal_mirror)
+        self.mirror_vertical.setChecked(self.is_vertical_mirror)
         self.reset_title()
 
     def _resizedo(self, ruler):

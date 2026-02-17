@@ -9,7 +9,7 @@ distributed_window = []
 def add_window(widget: QWidget, showAfterAdd=True):
     distributed_window.append(widget)
     window_rect = profile_mgr.get_window_rects(type(widget))
-    if window_rect:
+    if window_rect and not window_rect[4]:
         widget.setGeometry(window_rect[0],
                            window_rect[1],
                            window_rect[2],
