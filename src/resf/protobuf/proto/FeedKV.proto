@@ -1,0 +1,7 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message FeedKV {
+    string key = 1;
+    string value = 2;
+}

@@ -1,16 +1,23 @@
 import asyncio
+import datetime
 import gc
 import sys
+import time
+import typing
+import json
+
 import aiotieba
 import pyperclip
 
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer, QObject
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
-from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem, QDialog
 
+import consts
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
+from proto.AddPost import AddPostReqIdl_pb2, AddPostResIdl_pb2
 
-from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
+from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image, webview2
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string
 import publics.app_logger as logging
@@ -55,6 +62,146 @@ def find_last_at_or_above(list_widget, y):
     return low
 
 
+def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json_info):
+    async def get_tbs():
+        tsb_resp = request_mgr.run_post_api('/c/s/login',
+                                            request_mgr.calc_sign({'_client_version': request_mgr.TIEBA_CLIENT_VERSION,
+                                                                   'bdusstoken': bduss}),
+                                            use_mobile_header=True,
+                                            host_type=2)
+        tbs = tsb_resp["anti"]["tbs"]
+        return tbs
+
+    async def get_access_info(aiotieba_client) -> tuple[str, str, str, str, str]:
+        """
+        获取贴吧风控信息
+
+        Return:
+            以下风控字段值，均为字符串类型：z_id, client_id, sample_id, show_name, tbs
+        """
+        aiotieba_http_core = aiotieba_client._http_core
+
+        result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
+                                      aiotieba.sync.request(aiotieba_http_core),
+                                      aiotieba_client.get_self_info(),
+                                      get_tbs()
+                                      )
+        z_id = result[0]
+        client_id, sample_id = result[1][0], result[1][1]
+        show_name = result[2].show_name
+        tbs = result[3]
+
+        return z_id, client_id, sample_id, show_name, tbs
+
+    async def run():
+        logging.log_INFO(f'add post in thread {thread_id}')
+        async with aiotieba.Client(bduss, stoken, proxy=True) as client:
+            access_info = await get_access_info(client)
+            z_id, client_id, sample_id, show_name, tbs = access_info[0], access_info[1], access_info[2], access_info[3], \
+                access_info[4]
+
+            # aiotieba.api.add_post.pack_proto function
+            request_body_proto = AddPostReqIdl_pb2.AddPostReqIdl()
+            request_body_proto.data.common.BDUSS = bduss
+            request_body_proto.data.common._client_type = 2
+            request_body_proto.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+            request_body_proto.data.common._client_id = client_id
+            request_body_proto.data.common._phone_imei = "000000000000000"
+            request_body_proto.data.common._from = "ad_wandoujia"
+            request_body_proto.data.common.cuid = client.account.cuid_galaxy2
+            current_ts = time.time()
+            current_tsms = int(current_ts * 1000)
+            current_dt = datetime.datetime.fromtimestamp(current_ts)
+            request_body_proto.data.common._timestamp = current_tsms
+            request_body_proto.data.common.model = "PFGM00"
+            request_body_proto.data.common.tbs = tbs
+            request_body_proto.data.common.net_type = 1
+            request_body_proto.data.common.pversion = "1.0.3"
+            request_body_proto.data.common._os_version = '12'
+            request_body_proto.data.common.brand = "oppo"
+            request_body_proto.data.common.lego_lib_version = "3.0.0"
+            request_body_proto.data.common.applist = ""
+            request_body_proto.data.common.stoken = stoken
+            request_body_proto.data.common.z_id = z_id
+            request_body_proto.data.common.cuid_galaxy2 = client.account.cuid_galaxy2
+            request_body_proto.data.common.cuid_gid = ""
+            request_body_proto.data.common.c3_aid = client.account.c3_aid
+            request_body_proto.data.common.sample_id = sample_id
+            request_body_proto.data.common.scr_w = 900
+            request_body_proto.data.common.scr_h = 1600
+            request_body_proto.data.common.scr_dip = 1.5
+            request_body_proto.data.common.q_type = 0
+            request_body_proto.data.common.is_teenager = 0
+            request_body_proto.data.common.sdk_ver = "3.36.0"
+            request_body_proto.data.common.framework_ver = "3340042"
+            request_body_proto.data.common.naws_game_ver = "1030000"
+            request_body_proto.data.common.active_timestamp = current_tsms - 86400 * 30
+            request_body_proto.data.common.first_install_time = current_tsms - 86400 * 30
+            request_body_proto.data.common.last_update_time = current_tsms - 86400 * 30
+            request_body_proto.data.common.event_day = f"{current_dt.year}{current_dt.month}{current_dt.day}"
+            request_body_proto.data.common.android_id = client.account.android_id
+            request_body_proto.data.common.cmode = 1
+            request_body_proto.data.common.start_scheme = ""
+            request_body_proto.data.common.start_type = 1
+            request_body_proto.data.common.idfv = "0"
+            request_body_proto.data.common.extra = ""
+            request_body_proto.data.common.user_agent = request_mgr.header_protobuf['User-Agent']
+            request_body_proto.data.common.personalized_rec_switch = 1
+            request_body_proto.data.common.device_score = "0.4"
+
+            request_body_proto.data.anonymous = "1"
+            request_body_proto.data.can_no_forum = "0"
+            request_body_proto.data.is_feedback = "0"
+            request_body_proto.data.takephoto_num = "0"
+            request_body_proto.data.entrance_type = "0"
+            request_body_proto.data.vcode_tag = "12"
+            request_body_proto.data.new_vcode = "1"
+            request_body_proto.data.content = text
+            request_body_proto.data.fid = str(forum_id)
+            request_body_proto.data.v_fid = ""
+            request_body_proto.data.v_fname = ""
+            request_body_proto.data.kw = str(await client.get_fname(forum_id))
+            request_body_proto.data.is_barrage = "0"
+            request_body_proto.data.from_fourm_id = str(forum_id)
+            request_body_proto.data.tid = str(thread_id)
+            request_body_proto.data.is_ad = "0"
+            request_body_proto.data.post_from = "3"
+            request_body_proto.data.name_show = show_name
+            request_body_proto.data.is_pictxt = "0"
+            request_body_proto.data.show_custom_figure = 0
+            request_body_proto.data.is_show_bless = 0
+            request_body_proto.data.with_tail = 1
+            request_body_proto.data.score_id = 0
+            request_body_proto.data.score = 0
+
+            # 验证码特判
+            if captcha_json_info and captcha_md5:
+                vcode_stringify = json.dumps(captcha_json_info, separators=(',', ':'))
+                request_body_proto.data.vcode_type = "6"
+                request_body_proto.data.vcode_md5 = captcha_md5
+                request_body_proto.data.vcode = vcode_stringify
+
+            response_bin = request_mgr.run_protobuf_api('/c/c/post/add',
+                                                        payloads=request_body_proto.SerializeToString(),
+                                                        cmd_id=309731,
+                                                        bduss=bduss,
+                                                        stoken=stoken,
+                                                        host_type=2
+                                                        )
+
+            response_proto = AddPostResIdl_pb2.AddPostResIdl()
+            response_proto.ParseFromString(response_bin)
+
+            return response_proto
+
+    def start_async():
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        return asyncio.run(run())
+
+    return start_async()
+
+
 class ThreadPreview:
     """要预填充的贴子信息"""
     forum_name = ''  # 最后须带吧字
@@ -65,6 +212,87 @@ class ThreadPreview:
 
     title = ''
     text = ''
+
+
+class AddPostCaptchaWebView(QDialog):
+    """发贴遇到验证码时，显示验证码网页的webview"""
+
+    class CaptchaDataGetter(QObject, webview2.HttpDataRewriter):
+        is_captcha_token_got = False
+        captchaTokenGot = pyqtSignal(dict)
+
+        def onResponseCaught(self, url: str, statusCode: int, header: typing.Dict[str, str],
+                             content: typing.Optional[bytes]):
+            if statusCode == 200 and not self.is_captcha_token_got:
+                json_data = json.loads(content.decode())
+                if json_data['code'] == 0:
+                    self.is_captcha_token_got = True
+                    self.captchaTokenGot.emit(json_data['data'])
+                else:
+                    logging.log_WARN(f'tieba add post captcha failed with json info {json_data}')
+            else:
+                logging.log_WARN(f'tieba add post captcha failed with HTTP status code {statusCode}')
+
+            return statusCode, header, content
+
+    def __init__(self, captcha_md5, h5_link):
+        super().__init__()
+
+        self.captcha_md5 = captcha_md5
+        self.h5_link = h5_link
+        self.captcha_success_json_info = None
+
+        self.setStyleSheet('QDialog{background-color:white;}QWidget{font-family: \"微软雅黑\";}')
+        self.setWindowTitle('交互式发贴验证码')
+        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
+        self.resize(800, 600)
+
+        self.webview = webview2.QWebView2View()
+        self.http_catcher = self.CaptchaDataGetter()
+        self.http_catcher.captchaTokenGot.connect(self.on_captcha_succeed)
+        self.webview.setParent(self)
+        self.profile = webview2.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}',
+                                               user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
+                                               enable_link_hover_text=False,
+                                               enable_zoom_factor=False,
+                                               enable_error_page=True,
+                                               enable_context_menu=True,
+                                               enable_keyboard_keys=True,
+                                               handle_newtab_byuser=False,
+                                               http_rewriter={
+                                                   '*://seccaptcha.baidu.com/v1/webapi/verint/verify/p_puzzle*': self.http_catcher})
+        self.webview.setProfile(self.profile)
+        self.webview.loadAfterRender(h5_link)
+        self.webview.initRender()
+
+    def resizeEvent(self, a0):
+        self.webview.setGeometry(0, 0, self.width(), self.height())
+
+    def keyPressEvent(self, a0):
+        if a0.key() == Qt.Key.Key_Escape:
+            a0.ignore()
+            self.close()
+
+    def closeEvent(self, a0):
+        if not self.http_catcher.is_captcha_token_got:
+            if QMessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
+                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                self.webview.destroyWebviewUntilComplete()
+                a0.accept()
+            else:
+                a0.ignore()
+        else:
+            self.webview.destroyWebviewUntilComplete()
+            a0.accept()
+
+    def exec_window(self):
+        self.exec()
+        return self.captcha_md5, self.captcha_success_json_info
+
+    def on_captcha_succeed(self, data):
+        self.captcha_success_json_info = data
+        self.close()
 
 
 class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
@@ -86,7 +314,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
     show_reply_end_text = pyqtSignal(int)
     store_thread_signal = pyqtSignal(str)
     agree_thread_signal = pyqtSignal(str)
-    add_post_signal = pyqtSignal(str)
+    add_post_signal = pyqtSignal(dict)
     reply_loaded_signal = pyqtSignal()
 
     def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False, preview_info=None):
@@ -152,7 +380,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.checkBox.stateChanged.connect(lambda: self.load_sub_threads_refreshly())
         self.label_2.linkActivated.connect(self.end_label_link_event)
         self.pushButton_4.clicked.connect(self.agree_thread_async)
-        self.pushButton_3.clicked.connect(self.add_post_async)
+        self.pushButton_3.clicked.connect(lambda: self.add_post_async())
         self.pushButton_7.clicked.connect(self.submit_pagejump)
         self.pushButton_9.clicked.connect(self.jump_prev_page)
         self.pushButton_8.clicked.connect(self.jump_first_page)
@@ -162,13 +390,15 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.toolButton_2.clicked.connect(self.frame_3.hide)
 
         # 重写事件过滤器
-        self.label_3.installEventFilter(self)
-        self.label_4.installEventFilter(self)
-        self.label_9.installEventFilter(self)
-        self.textEdit.installEventFilter(self)
-        self.textEdit.viewport().installEventFilter(self)
-        self.textEdit.horizontalScrollBar().installEventFilter(self)
-        self.textEdit.verticalScrollBar().installEventFilter(self)
+        add_post_area_widgets = [self.label_3, self.label_4,
+                                 self.label_9, self.textEdit,
+                                 self.textEdit.viewport(),
+                                 self.textEdit.horizontalScrollBar(),
+                                 self.textEdit.verticalScrollBar(),
+                                 self.pushButton_3, self.pushButton_5,
+                                 self.pushButton_6, self.pushButton_10]
+        for w in add_post_area_widgets:
+            w.installEventFilter(self)
 
         if preview_info:
             self.flash_shower.hide()
@@ -189,7 +419,16 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                 self.is_textedit_menu_poping = False
                 self.lay_text_area()
         elif event.type() == QEvent.Type.FocusOut:
-            if source == self.textEdit and not self.is_textedit_menu_poping:
+            if (source == self.textEdit
+                    and not self.is_textedit_menu_poping
+                    and not QRect(0, self.height() - 135, self.width(), 135).contains(
+                        self.mapFromGlobal(QCursor.pos()))):
+                self.collapse_text_area()
+            elif (source in (self.pushButton_3, self.pushButton_5,
+                             self.pushButton_6, self.pushButton_10)
+                  and not self.is_textedit_menu_poping
+                  and not QRect(0, self.height() - 135, self.width(), 135).contains(
+                        self.mapFromGlobal(QCursor.pos()))):
                 self.collapse_text_area()
         elif event.type() == QEvent.Type.ContextMenu:
             if source in (
@@ -350,6 +589,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                                                                      icon_type=top_toast_widget.ToastIconType.SUCCESS))
 
     def lay_text_area(self):
+        self.frame_2.show()
         self.textEdit.setPlaceholderText('来都来了，说两句吧\n'
                                          '提示：按 Enter 可换行，按 Ctrl+Enter 键可发送回复')
         self.textEdit.setFont(QFont('微软雅黑', 10))
@@ -358,35 +598,47 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
     def collapse_text_area(self):
+        self.frame_2.hide()
         self.textEdit.setPlaceholderText('来都来了，说两句吧')
         self.textEdit.setFont(QFont('微软雅黑', 9))
         self.textEdit.setFixedHeight(28)
         self.textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-    def add_post_ok_action(self, isok):
+    def add_post_ok_action(self, msg):
         toast = top_toast_widget.ToastMessage()
+        toast.title = msg['text']
 
-        if not isok:
+        if msg['success']:
             self.textEdit.setText('')
             self.is_textedit_menu_poping = False
             self.collapse_text_area()
-
-            toast.title = '回贴成功'
             toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
 
             # 异步跳转到最后一页
             self.reply_page = self.reply_total_pages
-            QTimer.singleShot(2500, lambda: self.load_sub_threads_refreshly(reset_page=False))
+            QTimer.singleShot(4000, lambda: self.load_sub_threads_refreshly(reset_page=False))
         else:
-            toast.title = isok
             toast.icon_type = top_toast_widget.ToastIconType.ERROR
 
         self.top_toaster.showToast(toast)
         self.frame1.setEnabled(True)
         self.pushButton_3.setText('发贴')
 
-    def add_post_async(self):
+        # 验证码模式特判
+        if msg['is_captcha']:
+            md5 = msg['captcha_info']['md5']
+            h5_link = msg['captcha_info']['link']
+
+            dialog = AddPostCaptchaWebView(md5, h5_link)
+            md5, json_info = dialog.exec_window()
+            if json_info:
+                self.add_post_async(md5, json_info)
+            else:
+                self.top_toaster.showToast(top_toast_widget.ToastMessage('用户已取消交互验证',
+                                                                         icon_type=top_toast_widget.ToastIconType.INFORMATION))
+
+    def add_post_async(self, captcha_md5=None, captcha_json_info=None):
         if not self.textEdit.toPlainText():
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title='请输入内容后再回贴',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
@@ -394,45 +646,56 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title='目前处于游客状态，请登录后再回贴',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
         else:
-            show_string = ('回复功能目前还处于测试阶段。\n'
-                           '使用本软件回贴可能会遇到发贴失败等情况，甚至可能导致你的账号被永久全吧封禁。\n'
-                           '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
-            msgbox = QMessageBox(QMessageBox.Warning, '回贴风险提示', show_string, parent=self)
-            msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
-            msgbox.button(QMessageBox.Help).setText("去网页发贴")
-            msgbox.button(QMessageBox.Yes).setText("无视风险，继续发贴")
-            msgbox.button(QMessageBox.No).setText("取消发贴")
-            r = msgbox.exec()
-            flag = r == QMessageBox.Yes
-            if r == QMessageBox.Help:
-                url = f'https://tieba.baidu.com/p/{self.thread_id}'
-                open_url_in_browser(url)
+            if not (captcha_md5 and captcha_json_info):
+                show_string = ('回复功能目前还处于测试阶段。\n'
+                               '使用本软件回贴可能会遇到发贴失败、弹验证码等情况，甚至可能导致你的账号被全吧永久封禁。\n'
+                               '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
+                msgbox = QMessageBox(QMessageBox.Warning, '回贴风险提示', show_string, parent=self)
+                msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
+                msgbox.button(QMessageBox.Help).setText("去网页发贴")
+                msgbox.button(QMessageBox.Yes).setText("无视风险，继续发贴")
+                msgbox.button(QMessageBox.No).setText("取消发贴")
+                r = msgbox.exec()
+                flag = r == QMessageBox.Yes
+                if r == QMessageBox.Help:
+                    url = f'https://tieba.baidu.com/p/{self.thread_id}'
+                    open_url_in_browser(url)
+            else:
+                flag = True
 
             if flag:
                 self.frame1.setEnabled(False)
                 self.pushButton_3.setText('发送中...')
-                start_background_thread(self.add_post)
+                start_background_thread(self.add_post, args=(captcha_md5, captcha_json_info))
 
-    def add_post(self):
-        async def dopost():
-            try:
-                logging.log_INFO(f'post thread {self.thread_id}')
-                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    result = await client.add_post(self.forum_id, self.thread_id, self.textEdit.toPlainText())
-                    if result:
-                        self.add_post_signal.emit('')
-                    else:
-                        self.add_post_signal.emit(str(result.err))
-            except Exception as e:
-                logging.log_exception(e)
-                self.add_post_signal.emit(logging.log_exception(e))
-
-        def start_async():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            asyncio.run(dopost())
-
-        start_async()
+    def add_post(self, captcha_md5, captcha_json_info):
+        emit_data = {'success': False,
+                     'text': '',
+                     'is_captcha': False,
+                     'captcha_info': {'md5': '', 'link': ''}
+                     }
+        try:
+            result = add_post(self.bduss, self.stoken, self.forum_id, self.thread_id, self.textEdit.toPlainText(),
+                              captcha_md5, captcha_json_info)
+            if result.error.errorno == 0:
+                emit_data['success'] = True
+                exp_text = f'经验 +{result.data.exp.inc}' if result.data.exp.inc not in ('0', '') else '本次回贴没有增加任何经验值'
+                emit_data['text'] = f'回贴成功，{exp_text}'
+            elif int(result.data.info.need_vcode):
+                emit_data['success'] = False
+                emit_data['is_captcha'] = True
+                emit_data['captcha_info']['md5'] = result.data.info.vcode_md5
+                emit_data['captcha_info']['link'] = result.data.info.vcode_pic_url
+                emit_data['text'] = '服务器要求输入验证码，请在弹出的验证网页中完成验证。如多次弹出验证，建议使用官方客户端发贴'
+            else:
+                emit_data['success'] = False
+                emit_data['text'] = f'{result.error.errmsg} (错误代码 {result.error.errorno})'
+        except Exception as e:
+            logging.log_exception(e)
+            emit_data['success'] = False
+            emit_data['text'] = get_exception_string(e)
+        finally:
+            self.add_post_signal.emit(emit_data)
 
     def agree_thread_ok_action(self, isok):
         self.pushButton_4.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
@@ -911,7 +1174,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
                 self.gridLayout.setHorizontalSpacing(0)
             if datas['content_statement']:
                 self.frame_3.show()
-                self.label_20.setText('内容声明：'+datas['content_statement'])
+                self.label_20.setText('内容声明：' + datas['content_statement'])
 
             self.label_9.setText('Lv.{0}'.format(datas['uf_level']))
             qss = ''

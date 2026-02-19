@@ -1,0 +1,10 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message LabelInfo {
+    int32 labelHot = 1;
+    string labelContent = 2;
+    string labelId = 3;
+    string img_url = 4;
+    int32 type = 5;
+}

@@ -1,0 +1,7 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message NoticeInfo {
+    string notice = 1;
+    int32 pullCommentFrequence = 2;
+}

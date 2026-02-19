@@ -1,0 +1,7 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message ToastConfig {
+    string pre_color_msg = 1;
+    string toast_back_image = 2;
+}

@@ -176,7 +176,7 @@ class WebView2VersionScaner:
 
 
 class HttpDataRewriter:
-    """可用于重写webview中发起的http请求"""
+    """可用于捕获或重写webview中发起的http请求"""
 
     @classmethod
     def parseCookieToDict(cls, cookieString: str):
@@ -989,6 +989,42 @@ class QWebView2View(QWidget):
     def __title_change_event(self, _, args):
         self.titleChanged.emit(self.title())
 
+    def __on_response_got(self, _, args):
+        def on_content_loaded(url, statusCode, header_dict, content_cstream):
+            memoryStream = MemoryStream()
+            content_cstream.CopyTo(memoryStream)
+            content = bytes(memoryStream.ToArray())
+            handler.onResponseCaught(url, statusCode, header_dict, content)  # call custom method
+
+        try:
+            url = str(args.Request.Uri)
+            handler = None
+            if not self.profile().http_rewriter:
+                return
+            for k, v in self.profile().http_rewriter.items():
+                if k.replace('*', '') in url or k == '*':  # 匹配url
+                    handler = v
+                    break
+            if not handler:
+                return
+
+            # response adapter
+            if args.Response:
+                statusCode = int(args.Response.StatusCode)
+                header_dict = {}
+                header_iterator = args.Response.Headers.GetIterator()
+                while header_iterator.HasCurrentHeader:
+                    header_dict[str(header_iterator.Current.Key)] = str(header_iterator.Current.Value)
+                    header_iterator.MoveNext()
+
+                task = args.Response.GetContentAsync()
+                CSharpConverter.waitCSharpAsyncFunction(task,
+                                                        lambda result: on_content_loaded(url, statusCode, header_dict,
+                                                                                         result))
+        except Exception as e:
+            app_logger.log_WARN(f'WebView2 Http Catcher failed')
+            app_logger.log_exception(e)
+
     def __on_request_got(self, _, args):
         try:
             url = str(args.Request.Uri)
@@ -1025,7 +1061,7 @@ class QWebView2View(QWidget):
                 for k, v in header.items():
                     args.Request.Headers.SetHeader(k, v)
                 if content:
-                    new_stream = Stream()
+                    new_stream = MemoryStream()
                     new_stream.Write(Array[Byte](content), 0, len(content))
                     args.Request.Content = new_stream
 
@@ -1052,7 +1088,7 @@ class QWebView2View(QWidget):
                     if not args.Response.Headers.Contains(k):
                         args.Response.Headers.AppendHeader(k, v)
                 if content:
-                    new_stream = Stream()
+                    new_stream = MemoryStream()
                     new_stream.Write(Array[Byte](content), 0, len(content))
                     args.Response.Content = new_stream
         except Exception as e:
@@ -1119,6 +1155,7 @@ class QWebView2View(QWidget):
         core.ContainsFullScreenElementChanged += self.__on_fullscreen_requested
         core.WebResourceRequested += self.__on_request_got
         core.WebMessageReceived += self.__on_js_msg_received
+        core.WebResourceResponseReceived += self.__on_response_got
 
         settings = core.Settings
         settings.AreBrowserAcceleratorKeysEnabled = configuration.enable_keyboard_keys

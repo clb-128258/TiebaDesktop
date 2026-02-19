@@ -7,7 +7,7 @@ message CommonReq {
     string _client_id = 3;
     string apid = 4;
     string _phone_imei = 5;
-    string from = 6;
+    string _from = 6;
     string cuid = 7;
     int64 _timestamp = 8;
     string model = 9;

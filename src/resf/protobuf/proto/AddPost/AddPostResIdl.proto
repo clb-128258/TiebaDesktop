@@ -1,0 +1,45 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/Error.proto";
+import "proto/AddPost/DrawThreadPopUp.proto";
+import "proto/AddPost/PostScoreInfo.proto";
+import "proto/Anti.proto";
+import "proto/ContriInfo.proto";
+import "proto/IconStampInfo.proto";
+import "proto/PostAntiInfo.proto";
+import "proto/ReplyExp.proto";
+import "proto/TbInteraction.proto";
+import "proto/Toast.proto";
+import "proto/VcodeInfo.proto";
+import "proto/ZhiBoInfoTW.proto";
+
+message DataRes_AddPost {
+    string opgroup = 1;
+    string tid = 2;
+    string pid = 3;
+    string video_id = 4;
+    string msg = 5;
+    string pre_msg = 6;
+    string color_msg = 7;
+    ZhiBoInfoTW twzhibo_info = 8;
+    ReplyExp exp = 9;
+    ContriInfo contri_info = 10;
+    IconStampInfo icon_stamp_info = 13;
+    PostAntiInfo info = 14;
+    Anti anti_stat = 15;
+    TbInteraction tb_hudong = 16;
+    VcodeInfo anti = 17;
+    string ext_msg = 18;
+    Toast toast = 19;
+    repeated string hotmemes_hit = 20;
+    PostScoreInfo score_info = 21;
+    DrawThreadPopUp draw_thread_popup = 22;
+    int32 draw_thread_has_reply = 23;
+    repeated int64 vaild_task_ids = 24;
+}
+
+message AddPostResIdl {
+    Error error = 1;
+    DataRes_AddPost data = 2;
+}

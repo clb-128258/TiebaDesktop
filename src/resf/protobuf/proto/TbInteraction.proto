@@ -1,0 +1,6 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message TbInteraction {
+    string content = 1;
+}

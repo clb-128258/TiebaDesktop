@@ -1,0 +1,10 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/UserSessionInfo.proto";
+
+message AccessState {
+    string type = 1;
+    string token = 2;
+    UserSessionInfo userinfo = 3;
+}

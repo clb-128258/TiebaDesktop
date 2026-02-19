@@ -1,0 +1,10 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message VcodeExtra {
+    string textimg = 1;
+    string slideimg = 2;
+    string endpoint = 3;
+    string successimg = 4;
+    string slideendpoint = 5;
+}

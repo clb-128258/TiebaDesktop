@@ -1,0 +1,11 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/FeedKV.proto";
+
+message PostScoreInfo {
+    string avg_score = 1;
+    uint64 total_user_num = 2;
+    repeated FeedKV score_user_num = 3;
+    uint64 id = 4;
+}
