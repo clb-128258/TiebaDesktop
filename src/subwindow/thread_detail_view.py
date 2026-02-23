@@ -81,6 +81,7 @@ def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json
         """
         aiotieba_http_core = aiotieba_client._http_core
 
+        # 并发执行，提高性能
         result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
                                       aiotieba.sync.request(aiotieba_http_core),
                                       aiotieba_client.get_self_info(),
@@ -261,7 +262,7 @@ class AddPostCaptchaWebView(QDialog):
                                                enable_keyboard_keys=True,
                                                handle_newtab_byuser=False,
                                                http_rewriter={
-                                                   '*://seccaptcha.baidu.com/v1/webapi/verint/verify/p_puzzle*': self.http_catcher})
+                                                   '*://seccaptcha.baidu.com/v1/webapi/verint/verify/*': self.http_catcher})
         self.webview.setProfile(self.profile)
         self.webview.loadAfterRender(h5_link)
         self.webview.initRender()

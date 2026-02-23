@@ -66,6 +66,9 @@ class ClipboardSyncer(QObject):
                               'user': ['user://[value]',
                                        lambda link: yarl.URL(link).query.get('id'),
                                        'user'],
+                              'user_mobile': ['user://[value]',
+                                              lambda link: self.get_tb_data('user_tbid', link.split('#')[1]),
+                                              'user'],
                               'forum': ['tieba_forum_namely://[value]',
                                         lambda link: yarl.URL(link).query.get('kw'),
                                         'forum']}
@@ -75,14 +78,20 @@ class ClipboardSyncer(QObject):
             f'{request_mgr.SCHEME_HTTPS}{request_mgr.TIEBA_WEB_HOST}/f?': self.tb_rule_index['forum'],
             f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_WEB_HOST}/p/': self.tb_rule_index['thread'],
             f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_WEB_HOST}/home/main?': self.tb_rule_index['user'],
-            f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_WEB_HOST}/f?': self.tb_rule_index['forum']
+            f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_WEB_HOST}/f?': self.tb_rule_index['forum'],
+            '[end]#整段复制后打开贴吧即可找到Ta': self.tb_rule_index['user_mobile']  # 添加前缀`[end]`则为末尾匹配，否则是前缀匹配
         }
 
         self.clipboardActived.connect(open_url_in_browser)
         self.cboard_loop_thread = start_background_thread(self.cboard_looper)
 
     def get_tb_data(self, type_, value):
-        """获取贴吧相关信息的显示字符串"""
+        """
+        获取贴吧相关信息的显示字符串
+
+        Notes:
+            当 type_ 为 user_tbid 时，只会返回对应用户的portrait，而不是完整信息
+        """
 
         async def func():
             async with (aiotieba.Client(profile_mgr.current_bduss, profile_mgr.current_stoken, proxy=True) as client):
@@ -98,6 +107,9 @@ class ClipboardSyncer(QObject):
                 elif type_ == 'forum':
                     original_data = await client.get_forum_detail(value)
                     return f'{original_data.fname}吧\n标语：{cut_string(original_data.slogan, 20)}', original_data.small_avatar
+                elif type_ == 'user_tbid':
+                    original_data = await client.tieba_uid2user_info(int(value))
+                    return original_data.portrait
 
         def start_async():
             new_loop = asyncio.new_event_loop()
@@ -129,7 +141,7 @@ class ClipboardSyncer(QObject):
 
         self.latest_cbtext = cb_text
         for k, v in self.tb_match_rule.items():
-            is_startswith = cb_text.startswith(k)
+            is_startswith = cb_text.startswith(k) if not k.startswith('[end]') else cb_text.endswith(k[5:])
             value = v[1](cb_text)
             if is_startswith and value:
                 internal_link = v[0].replace('[value]', value)
