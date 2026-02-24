@@ -544,6 +544,12 @@ class Ui_Form(object):
         self.pushButton.setText(_translate("Form", "..."))
         self.textEdit.setPlaceholderText(_translate("Form", "来都来了，说两句吧"))
         self.pushButton_3.setText(_translate("Form", "发贴"))
-        self.pushButton_5.setText(_translate("Form", "添加图片"))
+        self.pushButton_5.setToolTip(_translate("Form", "向输入框内插入图片富文本标签。\n"
+"将会在文本光标处插入富文本标签，如果选择了文本，那么选择的文本会被替换为富文本标签。"))
+        self.pushButton_5.setText(_translate("Form", "图片"))
+        self.pushButton_6.setToolTip(_translate("Form", "向输入框内插入提及信息富文本标签，可以通过该方法@他人。\n"
+"将会在文本光标处插入富文本标签，如果选择了文本，那么选择的文本会被替换为富文本标签。"))
         self.pushButton_6.setText(_translate("Form", "@他人"))
-        self.pushButton_10.setText(_translate("Form", "添加表情"))
+        self.pushButton_10.setToolTip(_translate("Form", "向输入框内插入表情富文本标签，可以插入贴吧的黄豆表情。\n"
+"将会在文本光标处插入富文本标签，如果选择了文本，那么选择的文本会被替换为富文本标签。"))
+        self.pushButton_10.setText(_translate("Form", "表情"))

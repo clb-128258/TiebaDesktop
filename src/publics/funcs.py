@@ -499,6 +499,7 @@ class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
         self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
         self.show_movie.setScaledSize(QSize(120, 120))
         self.show_movie.frameChanged.connect(lambda: self.label_18.setPixmap(self.show_movie.currentPixmap()))
+        self.destroyed.connect(self.show_movie.deleteLater)
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Resize and source is self.parent():  # 父组件调整大小

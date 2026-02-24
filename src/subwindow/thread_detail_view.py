@@ -22,6 +22,7 @@ from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_backgro
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string
 import publics.app_logger as logging
 from subwindow import base_ui
+from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import tie_detail_view
 
 
@@ -389,6 +390,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.lz_portrait.currentPixmapChanged.connect(self.label_4.setPixmap)
         self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.pushButton_2.setIcon(QIcon(pixmap)))
         self.toolButton_2.clicked.connect(self.frame_3.hide)
+        self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
 
         # 重写事件过滤器
         add_post_area_widgets = [self.label_3, self.label_4,
@@ -588,6 +590,15 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.load_sub_threads_refreshly(reset_page=False)
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title='已发起跳页操作',
                                                                      icon_type=top_toast_widget.ToastIconType.SUCCESS))
+
+    def show_addpost_image_switcher(self):
+        dialog = TiebaImageUploader()
+        image_list = dialog.exec_window()
+        if image_list:
+            insert_text = '\n'.join(f'#(pic,{i.image_id},{i.origin_width},{i.origin_height})' for i in image_list)
+            self.textEdit.insertPlainText(insert_text)
+
+        dialog.deleteLater()
 
     def lay_text_area(self):
         self.frame_2.show()

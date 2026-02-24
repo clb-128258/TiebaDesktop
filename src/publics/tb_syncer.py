@@ -142,8 +142,7 @@ class ClipboardSyncer(QObject):
         self.latest_cbtext = cb_text
         for k, v in self.tb_match_rule.items():
             is_startswith = cb_text.startswith(k) if not k.startswith('[end]') else cb_text.endswith(k[5:])
-            value = v[1](cb_text)
-            if is_startswith and value:
+            if is_startswith and (value := v[1](cb_text)):
                 internal_link = v[0].replace('[value]', value)
                 text, icon = self.get_tb_data(v[2], value)
                 icon_cache_path = download_toast_icon(icon) if icon else ''
