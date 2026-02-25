@@ -427,6 +427,7 @@ class TiebaImageUploader(QDialog, tb_image_uploader.Ui_Dialog):
         return uploaded_obj
 
     def upload_images(self):
+        max_running_thread_num = 7
         process_queue = queue.Queue()
         thread_pool = []
         total_num = len(self.image_list)
@@ -451,7 +452,12 @@ class TiebaImageUploader(QDialog, tb_image_uploader.Ui_Dialog):
                 else:
                     time.sleep(0.01)
             else:
-                self.uploadFinished.emit('' if fail_num == 0 else f'有 {fail_num} 张图片上传失败，请重新上传')
+                upload_resp_text = '' if fail_num == 0 else f'有 {fail_num} 张图片上传失败，请重新上传'
+                if not upload_resp_text:
+                    self.uploadStateUpdated.emit('图片全部上传成功，窗口即将关闭...')
+                    time.sleep(1)
+
+                self.uploadFinished.emit(upload_resp_text)
 
         def wait_threads():
             running_thread_pool = []
@@ -461,14 +467,14 @@ class TiebaImageUploader(QDialog, tb_image_uploader.Ui_Dialog):
                 while running_thread_pool:
                     running_thread_pool[0].join()
                     running_thread_pool.pop(0)
-                    if len(running_thread_pool) < 5 and not wait_for_all:
+                    if len(running_thread_pool) < max_running_thread_num and not wait_for_all:
                         break
 
             for thread in thread_pool:
-                if len(running_thread_pool) < 5:  # 在线程池空余时
+                if len(running_thread_pool) < max_running_thread_num:  # 在线程池空余时
                     thread.start()
                     running_thread_pool.append(thread)
-                elif len(running_thread_pool) >= 5:  # 在当前运行线程数达到上限时
+                elif len(running_thread_pool) >= max_running_thread_num:  # 在当前运行线程数达到上限时
                     # 先等待一个可用的线程位
                     wait_running_threads()
 

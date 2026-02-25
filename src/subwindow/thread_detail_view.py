@@ -229,6 +229,7 @@ class AddPostCaptchaWebView(QDialog):
                 json_data = json.loads(content.decode())
                 if json_data['code'] == 0:
                     self.is_captcha_token_got = True
+                    time.sleep(1)  # 休眠一秒，保证ui显示效果
                     self.captchaTokenGot.emit(json_data['data'])
                 else:
                     logging.log_WARN(f'tieba add post captcha failed with json info {json_data}')

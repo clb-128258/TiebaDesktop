@@ -209,7 +209,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
     def closeEvent(self, a0):
         self.save_local_config()
         profile_mgr.add_window_rects(type(self),
-                                     self.x(), self.y() + 32,
+                                     self.x() + 1, self.y() + 31,
                                      self.width(), self.height(),
                                      False)
 
@@ -1344,7 +1344,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         def do_exit():
             profile_mgr.add_window_rects(type(self),
-                                         self.x(), self.y() + 32,
+                                         self.x() + 1, self.y() + 31,
                                          self.width(), self.height(),
                                          self.isMaximized())
 

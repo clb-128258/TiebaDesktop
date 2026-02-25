@@ -1,6 +1,6 @@
 import yarl
 import json
-from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent
+from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent, QVariantAnimation, QEasingCurve
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
 from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QMenu, QAction, QMessageBox
 
@@ -68,6 +68,8 @@ class ExtTabBar(QTabBar):
         self.setUsesScrollButtons(True)
         self.setAcceptDrops(True)  # 允许拖入
 
+        self.tabBarDoubleClicked.connect(self.on_tab_double_clicked)
+
         self.dragStartPos = QPoint()  # 记录鼠标按下时的位置
         self.draggedTabIdx = -1  # 当前被拖动的tab索引
         self.current_drag_distance = -1  # 指针与tab左侧间距
@@ -86,9 +88,17 @@ class ExtTabBar(QTabBar):
     def create_new_browser(self, widget, window_pos, window_size):
         browser = TiebaWebBrowser()
         browser.add_new_widget(widget)
-        qt_window_mgr.add_window(browser)
+        qt_window_mgr.add_window(browser, showAfterAdd=False)
         browser.resize(window_size)
         browser.move(window_pos)
+        browser.show()
+
+    def on_tab_double_clicked(self, index):
+        if index != -1 and self.count() == 1:
+            if self.parent_window.isMaximized():
+                self.parent_window.showNormal()
+            else:
+                self.parent_window.showMaximized()
 
     def dragEnterEvent(self, a0):
         if a0.mimeData().hasFormat("tiebadesktop/web-browser-tab"):  # 先判断格式类型

@@ -532,8 +532,11 @@ class UserHomeWindow(QWidget, user_home_page.Ui_Form):
                             god_info += response_proto.data.user.bazhu_grade.desc.replace('/', '、')
                         data['god_info'] = god_info
 
-                        profile_mgr.add_view_history(2, {"uid": self.real_user_id, "portrait": self.real_portrait,
-                                                         "nickname": self.nick_name})
+                        if not data['deregistered']:  # 在没有注销的情况下记录历史
+                            profile_mgr.add_view_history(2,
+                                                         {"uid": self.real_user_id,
+                                                          "portrait": self.real_portrait,
+                                                          "nickname": self.nick_name})
 
                 self.set_head_info_signal.emit(data)
 

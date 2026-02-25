@@ -26,7 +26,7 @@ def del_window(widget: QWidget):
     if widget in distributed_window:
         widget.hide()
         profile_mgr.add_window_rects(type(widget),
-                                     widget.x(), widget.y() + 32,  # 算上标题栏的高度
+                                     widget.x() + 1, widget.y() + 31,
                                      widget.width(), widget.height(),
                                      widget.isMaximized())
 

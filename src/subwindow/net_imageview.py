@@ -72,7 +72,7 @@ class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
 
     def save_geometry_config(self):
         profile_mgr.add_window_rects(type(self),
-                                     self.x(), self.y() + 32,
+                                     self.x() + 1, self.y() + 31,
                                      self.width(), self.height(),
                                      self.isMaximized())
 
