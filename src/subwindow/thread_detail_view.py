@@ -392,6 +392,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.pushButton_2.setIcon(QIcon(pixmap)))
         self.toolButton_2.clicked.connect(self.frame_3.hide)
         self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
+        self.pushButton_10.clicked.connect(self.show_addpost_emoji_selector)
 
         # 重写事件过滤器
         add_post_area_widgets = [self.label_3, self.label_4,
@@ -600,6 +601,17 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.textEdit.insertPlainText(insert_text)
 
         dialog.deleteLater()
+
+    def show_addpost_emoji_selector(self):
+        selector = base_ui.TiebaEmojiSelector()
+
+        self.is_textedit_menu_poping = True
+        bt_pos = self.pushButton_10.mapToGlobal(QPoint(0, 0))
+        show_pos = QPoint(bt_pos.x(), bt_pos.y() - selector.height() - 3)
+        emoji_id, emoji_text = selector.pop_selector(show_pos)
+        if emoji_text:
+            self.textEdit.insertPlainText(emoji_text)
+        self.is_textedit_menu_poping = False
 
     def lay_text_area(self):
         self.frame_2.show()

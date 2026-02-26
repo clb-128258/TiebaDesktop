@@ -61,6 +61,8 @@ local_config = {}
 view_history = []
 post_drafts = {}
 window_rects = {}
+emoticons_list = {}  # tag -> id
+emoticons_list_inverted = {}  # id -> tag
 
 current_uid = 'default'
 current_bduss = ''
@@ -241,6 +243,13 @@ def save_view_history():
         file.write(json.dumps(view_history, indent=4))
 
 
+def load_emoticons_list():
+    global emoticons_list, emoticons_list_inverted
+    with open('./ui/emoticons_index.json', 'rt', encoding='utf-8') as file:
+        emoticons_list = json.loads(file.read())
+        emoticons_list_inverted = {v: k for k, v in emoticons_list.items()}
+
+
 def init_all_datas():
     """从本地磁盘加载所有配置数据"""
     from publics.funcs import start_background_thread
@@ -248,7 +257,8 @@ def init_all_datas():
     thread_list = [start_background_thread(load_local_config),
                    start_background_thread(load_view_history),
                    start_background_thread(load_post_drafts),
-                   start_background_thread(load_window_rects)]
+                   start_background_thread(load_window_rects),
+                   start_background_thread(load_emoticons_list)]
 
     for i in thread_list:
         i.join()

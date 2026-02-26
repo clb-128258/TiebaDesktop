@@ -1,7 +1,6 @@
 import asyncio
 import os
 import pathlib
-import random
 import socket
 import subprocess
 import threading
@@ -14,7 +13,7 @@ import pyperclip
 import requests
 from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer
 from PyQt5.QtGui import QMovie, QIcon, QPixmap
-from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem
+from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem, QTableWidget, QListWidget
 
 import consts
 import aiotieba
@@ -112,8 +111,8 @@ def format_second(seconds):
     return minute + ':' + second
 
 
-def listWidget_get_visible_widgets(listWidget):
-    """获取qlistwidget中所有可见的qwidget条目"""
+def listWidget_get_visible_widgets(listWidget: QListWidget):
+    """获取 QListWidget 中所有可见的 QWidget 条目"""
 
     # https://stackoverflow.com/questions/63724917/get-current-visible-qlistwidget-items
     rect = listWidget.viewport().contentsRect()
@@ -125,6 +124,48 @@ def listWidget_get_visible_widgets(listWidget):
             bottom = listWidget.model().index(listWidget.count() - 1)
         for index in range(top.row(), bottom.row() + 1):
             result.append(listWidget.itemWidget(listWidget.item(index)))
+    return result
+
+
+def tableWidget_get_visible_items(tableWidget: QTableWidget):
+    """获取 QTableWidget 中所有可见的 QTableWidgetItem 条目"""
+    viewport = tableWidget.viewport()
+    width = viewport.width()
+    height = viewport.height()
+
+    # 1. 获取左上角和右下角对应的行和列
+    # rowAt(0) 是视口最顶部的行，rowAt(height-1) 是视口最底部的行
+    start_row = tableWidget.rowAt(0)
+    end_row = tableWidget.rowAt(height - 1)
+
+    start_col = tableWidget.columnAt(0)
+    end_col = tableWidget.columnAt(width - 1)
+
+    # 2. 处理无效索引（如果视口没填满，rowAt/columnAt 可能会返回 -1）
+    if start_row == -1: start_row = 0
+    if end_row == -1: end_row = tableWidget.rowCount() - 1
+
+    if start_col == -1: start_col = 0
+    if end_col == -1: end_col = tableWidget.columnCount() - 1
+
+    result = []
+
+    # 3. 遍历确定的范围
+    for r in range(start_row, end_row + 1):
+        # 排除被手动隐藏的行
+        if tableWidget.isRowHidden(r):
+            continue
+
+        for c in range(start_col, end_col + 1):
+            # 排除被手动隐藏的列
+            if tableWidget.isColumnHidden(c):
+                continue
+
+            item = tableWidget.item(r, c)
+            # 只有当该单元格确实存在 item 时才添加
+            if item:
+                result.append(item)
+
     return result
 
 
