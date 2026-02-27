@@ -7,15 +7,16 @@ from PyQt5.QtGui import QIcon, QPixmap
 from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
 
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtWidgets import QWidget, QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
 from publics import qt_window_mgr, profile_mgr, cache_mgr, request_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, get_exception_string
 import publics.app_logger as logging
+from subwindow import base_ui
 from ui import user_blacklist_setter
 
 
-class SingleUserBlacklistWindow(QWidget, user_blacklist_setter.Ui_Form):
+class SingleUserBlacklistWindow(base_ui.WindowBaseQWidget, user_blacklist_setter.Ui_Form):
     """拉黑设置窗口"""
     get_black_status_ok_signal = pyqtSignal(dict)
     set_black_status_ok_signal = pyqtSignal(dict)

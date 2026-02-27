@@ -5,17 +5,18 @@ import time
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
-from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, qt_image, top_toast_widget
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string
 import publics.app_logger as logging
+from subwindow import base_ui
 
 from ui import ba_head
 
 
-class ForumShowWindow(QWidget, ba_head.Ui_Form):
+class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
     """吧入口窗口，显示基础吧信息和吧内贴子等"""
     forum_name = ''
     page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}

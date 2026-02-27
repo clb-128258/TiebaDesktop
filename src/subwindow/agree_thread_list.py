@@ -4,14 +4,15 @@ import gc
 import publics.app_logger as logging
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
-from PyQt5.QtWidgets import QDialog, QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets
+from subwindow import base_ui
 from ui import star_list
 
 
-class AgreedThreadsList(QDialog, star_list.Ui_Dialog):
+class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
     """点赞的贴子列表，和最新版贴吧一样，可查看点赞过的贴子\n
     由于和收藏列表一样都是贴子列表，所以直接继承star_list.Ui_Dialog来写"""
     add_thread = pyqtSignal(dict)

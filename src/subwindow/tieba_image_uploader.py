@@ -8,9 +8,10 @@ import time
 
 from PyQt5.QtCore import Qt, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache, QMovie, QImage
-from PyQt5.QtWidgets import QDialog, QFileDialog, QApplication, QMenu, QAction, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QApplication, QMenu, QAction, QMessageBox
 
 from publics import request_mgr, top_toast_widget, funcs, profile_mgr, app_logger, qt_image
+from subwindow import base_ui
 from ui import tb_image_uploader
 
 
@@ -91,7 +92,7 @@ class WillUploadImage:
         self.image_pixmap = qt_image.add_cover_radius_angle_for_pixmap(self.image_pixmap, 500, 500)
 
 
-class TiebaImageUploader(QDialog, tb_image_uploader.Ui_Dialog):
+class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog):
     imageLoaded = pyqtSignal(WillUploadImage)
     uploadStateUpdated = pyqtSignal(str)
     uploadFinished = pyqtSignal(str)

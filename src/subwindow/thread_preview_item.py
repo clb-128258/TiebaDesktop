@@ -1,9 +1,10 @@
-from PyQt5.QtWidgets import QWidget, QLabel
+from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 
 from publics import qt_window_mgr, qt_image
 from publics.funcs import timestamp_to_string, large_num_to_string
+from subwindow import base_ui
 
 from ui import tie_preview
 
@@ -39,7 +40,7 @@ class AsyncLoadImage(qt_image.MultipleImage):
             self.isLoaded = True
 
 
-class ThreadView(QWidget, tie_preview.Ui_Form):
+class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
     """贴子在列表内的预览小组件"""
     is_treasure = False
     is_top = False

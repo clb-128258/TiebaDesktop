@@ -7,7 +7,7 @@ import pyperclip
 import requests
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QDialog, QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
+from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
     QTableWidgetItem
 
 from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
@@ -16,11 +16,12 @@ from publics.funcs import LoadingFlashWidget, start_background_thread, http_down
 import publics.app_logger as logging
 
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
+from subwindow import base_ui
 
 from ui import forum_detail
 
 
-class ForumDetailWindow(QDialog, forum_detail.Ui_Dialog):
+class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
     """吧详细信息窗口，可显示吧详细信息、吧务信息、等级排行榜"""
     set_main_info_signal = pyqtSignal(dict)
     action_ok_signal = pyqtSignal(dict)

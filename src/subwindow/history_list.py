@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from subwindow import base_ui
 from ui import view_history, view_history_item, view_history_single_item
 from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, top_toast_widget, qt_image
 
@@ -151,7 +153,7 @@ class DayHistoryItem(QWidget, view_history_item.Ui_Form):
         widget.resize(widget.sizeHint())
 
 
-class HistoryViewWindow(QWidget, view_history.Ui_Form):
+class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
     """浏览记录窗口"""
 
     def __init__(self):

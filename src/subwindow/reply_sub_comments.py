@@ -4,17 +4,18 @@ import gc
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
-from PyQt5.QtWidgets import QDialog, QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, top_toast_widget
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string
 import publics.app_logger as logging
+from subwindow import base_ui
 
 from ui import reply_comments
 
 
-class ReplySubComments(QDialog, reply_comments.Ui_Dialog):
+class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
     """楼中楼窗口，可查看楼中楼内的回复"""
     isLoading = False
     page = 1

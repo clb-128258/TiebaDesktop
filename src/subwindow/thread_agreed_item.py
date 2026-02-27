@@ -1,13 +1,13 @@
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtWidgets import QWidget
 
 from publics import qt_window_mgr, qt_image
 from publics.funcs import open_url_in_browser
+from subwindow import base_ui
 
 from ui import agreed_item
 
 
-class AgreedThreadItem(QWidget, agreed_item.Ui_Form):
+class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
     """互动列表中被点赞的内容"""
     portrait = ''
     thread_id = -1

@@ -11,7 +11,7 @@ import pyperclip
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer, QObject
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
-from PyQt5.QtWidgets import QWidget, QMenu, QAction, QMessageBox, QListWidgetItem, QDialog
+from PyQt5.QtWidgets import QMenu, QAction, QMessageBox, QListWidgetItem
 
 import consts
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
@@ -216,7 +216,7 @@ class ThreadPreview:
     text = ''
 
 
-class AddPostCaptchaWebView(QDialog):
+class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
     """发贴遇到验证码时，显示验证码网页的webview"""
 
     class CaptchaDataGetter(QObject, webview2.HttpDataRewriter):
@@ -298,7 +298,7 @@ class AddPostCaptchaWebView(QDialog):
         self.close()
 
 
-class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
+class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     """主题贴详情窗口，可以浏览主题贴详细内容和回复"""
     first_floor_pid = -1  # 首楼回复id
     forum_id = -1  # 吧id
@@ -393,6 +393,7 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
         self.toolButton_2.clicked.connect(self.frame_3.hide)
         self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
         self.pushButton_10.clicked.connect(self.show_addpost_emoji_selector)
+        self.pushButton_6.clicked.connect(self.show_addpost_atuser_selector)
 
         # 重写事件过滤器
         add_post_area_widgets = [self.label_3, self.label_4,
@@ -601,7 +602,8 @@ class ThreadDetailView(QWidget, tie_detail_view.Ui_Form):
             self.textEdit.insertPlainText(insert_text)
 
         dialog.deleteLater()
-
+    def show_addpost_atuser_selector(self):
+        self.top_toaster.showToast(top_toast_widget.ToastMessage('该功能尚未实现，敬请期待',icon_type=top_toast_widget.ToastIconType.INFORMATION))
     def show_addpost_emoji_selector(self):
         selector = base_ui.TiebaEmojiSelector()
 

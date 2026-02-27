@@ -4,15 +4,16 @@ import gc
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
-from PyQt5.QtWidgets import QDialog, QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr
 from publics.funcs import start_background_thread, listWidget_get_visible_widgets
 import publics.app_logger as logging
+from subwindow import base_ui
 from ui import star_list
 
 
-class StaredThreadsList(QDialog, star_list.Ui_Dialog):
+class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
     """收藏的贴子列表，可查看已收藏的贴子"""
     add_thread = pyqtSignal(dict)
 

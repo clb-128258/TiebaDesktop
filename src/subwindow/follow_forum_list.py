@@ -4,14 +4,15 @@ import gc
 import publics.app_logger as logging
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QPixmapCache
-from PyQt5.QtWidgets import QWidget, QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import request_mgr, top_toast_widget
 from publics.funcs import start_background_thread, listWidget_get_visible_widgets, get_exception_string
+from subwindow import base_ui
 from ui import follow_ba
 
 
-class FollowForumList(QWidget, follow_ba.Ui_Form):
+class FollowForumList(base_ui.WindowBaseQWidget, follow_ba.Ui_Form):
     """关注吧列表组件"""
     add_ba = pyqtSignal(list)
     ba_add_ok = pyqtSignal(str)

@@ -1,13 +1,13 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWidget
 
 from publics import audio_stream_player
 from publics.funcs import format_second
+from subwindow import base_ui
 from ui import thread_voice_item
 
 
-class ThreadVoiceItem(QWidget, thread_voice_item.Ui_Form):
+class ThreadVoiceItem(base_ui.WindowBaseQWidget, thread_voice_item.Ui_Form):
     """嵌入在列表的语音贴播放组件"""
     source_link = ''
     length = 0

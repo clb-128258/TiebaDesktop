@@ -156,7 +156,7 @@ def handle_command_events():
         sys.exit(0)
 
 
-class SettingsWindow(QDialog, settings.Ui_Dialog):
+class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
     """设置窗口"""
     scanFinish = pyqtSignal(dict)
     clearFinish = pyqtSignal(bool)
@@ -719,7 +719,7 @@ class SettingsWindow(QDialog, settings.Ui_Dialog):
             self.label.setText(f'你目前已登录 {account_num} 个账号。')
 
 
-class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
+class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
     """扫码登录对话框"""
     BAIDU_PASSPORT_HOST = 'passport.baidu.com'
     qr_code_loaded = pyqtSignal(dict)
@@ -1074,7 +1074,7 @@ class QRLoginDialog(QDialog, qr_login.Ui_Dialog):
             self.qr_code_loaded.emit(emit_data)
 
 
-class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
+class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
     """高级登录对话框"""
 
     def __init__(self):
@@ -1143,7 +1143,7 @@ class SeniorLoginDialog(QDialog, login_by_bduss.Ui_Dialog):
                                  QMessageBox.Ok)
 
 
-class LoginWebView(QDialog):
+class LoginWebView(base_ui.WindowBaseQDialog):
     """登录百度账号的webview，用户在网页执行登陆操作，webview后台抓取bduss等登录信息"""
 
     class LoginRewriter(QObject, webview2.HttpDataRewriter):

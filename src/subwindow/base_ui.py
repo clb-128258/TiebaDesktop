@@ -4,7 +4,7 @@ import pyperclip
 import os
 
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QWidgetAction, QTableWidgetItem
+from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QWidgetAction, QTableWidgetItem, QDialog
 from PyQt5.QtGui import QTextDocumentFragment, QIcon, QPixmapCache, QPixmap
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
@@ -12,6 +12,8 @@ from ui import tb_emoji_selector
 
 
 def create_thread_content_menu(parent_label: QLabel):
+    """创建一个文本右键菜单"""
+
     def open_search_window(text):
         from subwindow.tieba_search_entry import TiebaSearchWindow
         window = TiebaSearchWindow(profile_mgr.current_bduss, profile_mgr.current_stoken)
@@ -77,7 +79,23 @@ def create_thread_content_menu(parent_label: QLabel):
     return menu
 
 
+class WindowBaseQWidget(QWidget):
+    """所有 独立窗口/嵌入组件 引用的 QWidget 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+
+class WindowBaseQDialog(QDialog):
+    """所有独立模态窗口引用的 QDialog 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+
 class EmojiItem(QTableWidgetItem):
+    """基于 QTableWidgetItem 的表情条目"""
+
     def __init__(self, emoji_name):
         super().__init__()
         self.emoji_name = emoji_name
@@ -103,7 +121,9 @@ class EmojiItem(QTableWidgetItem):
             self._is_img_loaded = True
 
 
-class TiebaEmojiSelector(QWidget, tb_emoji_selector.Ui_Form):
+class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
+    """贴吧黄豆表情选择器组件"""
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)

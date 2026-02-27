@@ -1,17 +1,17 @@
 import gc
 
-import requests
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
-from PyQt5.QtWidgets import QDialog, QListWidget, QMessageBox, QListWidgetItem
+from PyQt5.QtGui import QIcon, QPixmapCache
+from PyQt5.QtWidgets import QListWidget, QMessageBox, QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
+from publics import qt_window_mgr, request_mgr
 from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
     listWidget_get_visible_widgets
+from subwindow import base_ui
 from ui import forum_search
 
 
-class TiebaSearchWindow(QDialog, forum_search.Ui_Dialog):
+class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
     """贴吧搜索窗口"""
     add_result = pyqtSignal(dict)
 

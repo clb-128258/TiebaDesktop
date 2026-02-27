@@ -1,12 +1,13 @@
 import yarl
 import json
-from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent, QVariantAnimation, QEasingCurve
+from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
 from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QMenu, QAction, QMessageBox
 
 from consts import datapath, APP_VERSION_STR
 from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread
+from subwindow import base_ui
 
 from ui import tb_browser
 
@@ -239,7 +240,7 @@ class ExtTabBar(QTabBar):
         super().mouseReleaseEvent(event)
 
 
-class TiebaWebBrowser(QWidget, tb_browser.Ui_Form):
+class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
     """贴吧页面内置浏览器"""
 
     def __init__(self):

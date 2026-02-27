@@ -1,14 +1,15 @@
 """贴子内的投票内容"""
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWidget, QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem
 from publics import profile_mgr, request_mgr, top_toast_widget, app_logger, funcs
 from publics.funcs import get_exception_string
+from subwindow import base_ui
 
 from ui import thread_vote_info, thread_vote_option_item
 
 
-class VoteItem(QWidget, thread_vote_option_item.Ui_Form):
+class VoteItem(base_ui.WindowBaseQWidget, thread_vote_option_item.Ui_Form):
     voteSubmitted = pyqtSignal(int)
 
     def __init__(self, vop_id: int):
@@ -33,7 +34,7 @@ class VoteItem(QWidget, thread_vote_option_item.Ui_Form):
         self.label.show()
 
 
-class ThreadVoteItem(QWidget, thread_vote_info.Ui_Form):
+class ThreadVoteItem(base_ui.WindowBaseQWidget, thread_vote_info.Ui_Form):
     msgPopped = pyqtSignal(top_toast_widget.ToastMessage)
     voteok = pyqtSignal(dict)
 
@@ -98,7 +99,7 @@ class ThreadVoteItem(QWidget, thread_vote_info.Ui_Form):
                 msg.title = '登录账号后即可进行投票'
                 msg.icon_type = top_toast_widget.ToastIconType.INFORMATION
         except Exception as e:
-            logging.log_exception(e)
+            app_logger.log_exception(e)
             msg.title = '投票失败 ' + get_exception_string(e)
             msg.icon_type = top_toast_widget.ToastIconType.ERROR
         finally:

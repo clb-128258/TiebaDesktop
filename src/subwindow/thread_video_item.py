@@ -1,12 +1,13 @@
-from PyQt5.QtWidgets import QWidget, QFileDialog
+from PyQt5.QtWidgets import QFileDialog
 from publics.funcs import start_background_thread, http_downloader, format_second, large_num_to_string, \
     open_url_in_browser
 from publics import qt_image
+from subwindow import base_ui
 from ui import thread_video_item
 import base64
 
 
-class ThreadVideoItem(QWidget, thread_video_item.Ui_Form):
+class ThreadVideoItem(base_ui.WindowBaseQWidget, thread_video_item.Ui_Form):
     """嵌入在列表的视频贴入口组件"""
     source_link = ''
     cover_link = ''

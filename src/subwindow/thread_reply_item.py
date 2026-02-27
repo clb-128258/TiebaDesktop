@@ -1,7 +1,7 @@
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
 from PyQt5.QtGui import QPixmap, QCursor
-from PyQt5.QtWidgets import QWidget, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 from typing import Union
 from publics import request_mgr, qt_window_mgr, profile_mgr, qt_image
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string
@@ -33,7 +33,7 @@ def find_first_reply_window(post_id, show_thread_button) -> bool:
     return False
 
 
-class ReplyItem(QWidget, comment_view.Ui_Form):
+class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
     """嵌入在列表里的回复贴内容"""
     height_count = 0
     portrait = ''

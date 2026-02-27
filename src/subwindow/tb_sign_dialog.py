@@ -5,10 +5,11 @@ import sys
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
 from publics import request_mgr, top_toast_widget
 from publics.funcs import start_background_thread, get_exception_string
+from subwindow import base_ui
 from ui import sign
 
 if os.name == 'nt':
@@ -16,7 +17,7 @@ if os.name == 'nt':
     import win32con
 
 
-class SignAllDialog(QDialog, sign.Ui_Dialog):
+class SignAllDialog(base_ui.WindowBaseQDialog, sign.Ui_Dialog):
     """一键签到窗口，可以实现全吧和成长等级签到"""
     update_label_count = pyqtSignal(str)
     sign_grow_ok = pyqtSignal(str)

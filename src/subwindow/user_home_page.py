@@ -4,7 +4,7 @@ import aiotieba
 import pyperclip
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QWidget, QAction, QMenu, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
@@ -13,11 +13,12 @@ from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread,
 import publics.app_logger as logging
 
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
+from subwindow import base_ui
 
 from ui import user_home_page
 
 
-class UserHomeWindow(QWidget, user_home_page.Ui_Form):
+class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
     """用户个人主页窗口"""
     set_head_info_signal = pyqtSignal(dict)
     set_list_info_signal = pyqtSignal(tuple)

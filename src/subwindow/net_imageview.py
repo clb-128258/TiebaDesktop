@@ -5,14 +5,15 @@ import time
 import requests
 from PyQt5.QtCore import pyqtSignal, QEvent, Qt, QMimeData, QUrl, QByteArray, QSize, QBuffer, QIODevice
 from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
-from PyQt5.QtWidgets import QWidget, QApplication, QMenu, QAction, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMenu, QAction, QFileDialog
 
 import publics.app_logger as logging
 from publics import request_mgr, top_toast_widget, profile_mgr
+from subwindow import base_ui
 from ui import image_viewer
 
 
-class NetworkImageViewer(QWidget, image_viewer.Ui_Form):
+class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
     """图片查看器窗口，支持旋转缩放图片，以及保存"""
     updateImage = pyqtSignal(QPixmap)
     finishDownload = pyqtSignal(bool)

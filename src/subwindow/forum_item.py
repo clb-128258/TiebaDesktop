@@ -2,14 +2,15 @@ import asyncio
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWidget, QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
 from publics import request_mgr, qt_window_mgr, qt_image, top_toast_widget
 from publics.funcs import start_background_thread
+from subwindow import base_ui
 from ui import ba_item
 
 
-class ForumItem(QWidget, ba_item.Ui_Form):
+class ForumItem(base_ui.WindowBaseQWidget, ba_item.Ui_Form):
     """列表内嵌入的吧组件"""
     signok = pyqtSignal(tuple)
     load_by_callback = False
