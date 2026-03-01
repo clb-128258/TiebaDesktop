@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QEvent
 
-from publics import qt_window_mgr, qt_image
+from publics import qt_window_mgr, qt_image, profile_mgr
 from publics.funcs import open_url_in_browser
 from subwindow import base_ui
 
@@ -35,6 +35,10 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
         self.left_image = qt_image.MultipleImage()
         self.left_image.currentImageChanged.connect(lambda: self.label_2.setPixmap(self.left_image.currentPixmap()))
         self.destroyed.connect(self.left_image.destroyImage)
+
+    def reset_theme(self):
+        super().reset_theme()
+        self.add_extend_qss(f'QPushButton{{color: {profile_mgr.get_theme_font_color_string()};}}')
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease and source in (

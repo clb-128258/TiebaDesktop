@@ -36,6 +36,14 @@ class FollowForumList(base_ui.WindowBaseQWidget, follow_ba.Ui_Form):
         if a0.key() == Qt.Key.Key_F5:
             self.get_bars_async()
 
+    def reset_theme(self):
+        self.set_theme_qss()
+
+        # 设置列表内容的样式
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            widget.reset_theme()
+
     def on_ba_add_ok(self, msg):
         self.pushButton_2.setEnabled(True)
         if msg:

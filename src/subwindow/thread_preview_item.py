@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 
-from publics import qt_window_mgr, qt_image
+from publics import qt_window_mgr, qt_image, profile_mgr
 from publics.funcs import timestamp_to_string, large_num_to_string
 from subwindow import base_ui
 
@@ -69,6 +69,10 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
         self.forum_image.currentPixmapChanged.connect(self.label.setPixmap)
         self.destroyed.connect(self.portrait_image.destroyImage)
         self.destroyed.connect(self.forum_image.destroyImage)
+
+    def reset_theme(self):
+        super().reset_theme()
+        self.add_extend_qss(f'QPushButton{{color: {profile_mgr.get_theme_font_color_string()};}}')
 
     def load_all_AsyncImage(self):
         if not self.is_loaded:

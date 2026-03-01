@@ -1,4 +1,7 @@
+import ctypes
 import gc
+from ctypes import wintypes
+
 import yarl
 import pyperclip
 import os
@@ -9,6 +12,18 @@ from PyQt5.QtGui import QTextDocumentFragment, QIcon, QPixmapCache, QPixmap
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
 from ui import tb_emoji_selector
+
+# --- Windows API 常量与定义 ---
+WM_THEMECHANGED = 0x031A
+WM_SETTINGCHANGE = 0x001A
+# DWM 属性 ID
+DWMWA_USE_IMMERSIVE_DARK_MODE = 20  # Windows 11/Win10 20H1+
+DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19  # 旧版 Win10，从 1809 版本开始
+
+dwmapi = ctypes.WinDLL("dwmapi")
+
+# 标记上一次是否启用深色模式
+last_apps_dark_mode = funcs.get_system_dark_mode_status()
 
 
 def create_thread_content_menu(parent_label: QLabel):
@@ -79,11 +94,123 @@ def create_thread_content_menu(parent_label: QLabel):
     return menu
 
 
+def set_window_dark_mode(hwnd, enabled: bool):
+    """设置窗口标题栏的深色模式"""
+    is_dark = ctypes.c_int(1 if enabled else 0)
+
+    # 尝试使用新版 ID
+    res = dwmapi.DwmSetWindowAttribute(
+        hwnd,
+        DWMWA_USE_IMMERSIVE_DARK_MODE,
+        ctypes.byref(is_dark),
+        ctypes.sizeof(is_dark)
+    )
+
+    # 如果失败，尝试旧版 ID
+    if res != 0:
+        dwmapi.DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_USE_IMMERSIVE_DARK_MODE_OLD,
+            ctypes.byref(is_dark),
+            ctypes.sizeof(is_dark)
+        )
+
+
+def set_widget_dark_mode(widget: QWidget):
+    """为 Qt 窗口设置标题栏颜色"""
+    if os.name == 'nt' and widget.isWindow():
+        is_dark = profile_mgr.get_theme_policy() == 2
+        set_window_dark_mode(int(widget.winId()), is_dark)
+
+
+def set_theme_qss_as_cfg(widget, extended_qss=''):
+    def replace_color_flags(qss: str):
+        bg_color = profile_mgr.get_theme_color_string()
+        font_color = profile_mgr.get_theme_font_color_string()
+
+        qss = qss.replace('BG_COLOR', bg_color)
+        qss = qss.replace('FONT_COLOR', font_color)
+
+        return qss
+
+    qss_list = []
+    policy = profile_mgr.get_theme_policy()
+
+    if policy == 1:
+        qss_list.append(replace_color_flags(profile_mgr.theme_qss['bright']))
+    elif policy == 2:
+        qss_list.append(replace_color_flags(profile_mgr.theme_qss['dark']))
+    qss_list.append(replace_color_flags(profile_mgr.theme_qss['common']))
+
+    widget.setStyleSheet('\n'.join(qss_list) + extended_qss)
+
+
+def handle_native_event(widget, refreshThemeFunc, eventType, message):
+    """
+    处理系统原生事件，并同步主题设置
+
+    Args:
+        widget (QWidget): 接收到事件的Widget
+        refreshThemeFunc (Callable): 在需要刷新主题时，调用的方法
+        eventType: 从 nativeEvent 事件中获取
+        message: 从 nativeEvent 事件中获取
+    Notes:
+        该函数仅供顶级窗口使用
+    """
+    global last_apps_dark_mode
+    if eventType == b'windows_generic_MSG':
+        # 将指针转换为 MSG 结构体
+        msg = wintypes.MSG.from_address(int(message))
+
+        # 监听是否修改系统设置
+        if msg.message == WM_SETTINGCHANGE:
+            is_darkmode = funcs.get_system_dark_mode_status()
+            paths = ['theme_settings', 'bright_dark_policy']
+            follow_sys_theme = funcs.get_dict_value_treely(profile_mgr.local_config, paths, 0) == 0
+            try:
+                change_area = ctypes.wstring_at(msg.lParam)
+            except:
+                change_area = ""
+
+            if follow_sys_theme and change_area == "ImmersiveColorSet" and is_darkmode != last_apps_dark_mode:
+                last_apps_dark_mode = is_darkmode
+                refreshThemeFunc()
+                return True
+
+    return False
+
+
 class WindowBaseQWidget(QWidget):
     """所有 独立窗口/嵌入组件 引用的 QWidget 父类"""
 
     def __init__(self):
         super().__init__()
+        self.isWindowShowed = False
+
+    def showEvent(self, a0):
+        a0.accept()
+        if not self.isWindowShowed:
+            self.isWindowShowed = True
+            self.reset_theme()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, self.reset_theme, eventType, message)
+        if is_changed:
+            qt_window_mgr.refresh_all_windows_theme()
+        return super().nativeEvent(eventType, message)
+
+    def set_theme_qss(self):
+        """载入标准样式主题，同时为窗口标题栏设置颜色"""
+        set_theme_qss_as_cfg(self)
+        set_widget_dark_mode(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
 
 
 class WindowBaseQDialog(QDialog):
@@ -91,6 +218,32 @@ class WindowBaseQDialog(QDialog):
 
     def __init__(self):
         super().__init__()
+        self.isWindowShowed = False
+
+    def showEvent(self, a0):
+        a0.accept()
+        if not self.isWindowShowed:
+            self.isWindowShowed = True
+            self.reset_theme()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, self.reset_theme, eventType, message)
+        if is_changed:
+            qt_window_mgr.refresh_all_windows_theme()
+        return super().nativeEvent(eventType, message)
+
+    def set_theme_qss(self):
+        """载入标准样式主题，同时为窗口标题栏设置颜色"""
+        set_theme_qss_as_cfg(self)
+        set_widget_dark_mode(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
 
 
 class EmojiItem(QTableWidgetItem):
@@ -130,7 +283,7 @@ class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
         self.setFixedSize(self.size())
         self.tableWidget.setIconSize(QSize(30, 30))
         self.label_2.setPixmap(
-            QPixmap('ui/quiz_black.png').scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            QPixmap('ui/icon_black/quiz.png').scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.frame.hide()
 
         self.tableWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_images)
@@ -145,7 +298,7 @@ class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
         self.load_emojis()
 
     def showEvent(self, a0):
-        a0.accept()
+        super().showEvent(a0)
         self.activateWindow()
         self.scroll_load_images()
 
@@ -213,13 +366,13 @@ class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
     def pop_selector(self, pos):
         self.menu = QMenu()
         self.menu.setObjectName('selectorContainerMenu')
-        self.menu.setStyleSheet("""
-            QMenu#selectorContainerMenu {
-                background-color: white; /* 设置背景色 */
+        self.menu.setStyleSheet(f"""
+            QMenu#selectorContainerMenu {{
+                background-color: {profile_mgr.get_theme_color_string()}; /* 设置背景色 */
                 border: 1px solid #CCCCCC; /* 设置边框 */
                 padding: 0px;   /* 去掉菜单整体的内边距 */
                 margin: 0px;    /* 去掉菜单整体的外边距 */
-            }""")
+            }}""")
 
         action = QWidgetAction(self)
         action.setDefaultWidget(self)

@@ -7,6 +7,7 @@ import threading
 import time
 import datetime
 import ctypes
+
 import aiohttp.client_exceptions
 
 import pyperclip
@@ -513,6 +514,30 @@ def get_exception_string(error: Exception):
         return str(error)
 
 
+def get_dict_value_treely(dict_data: dict, paths: list, default_value=None):
+    """递归式地向字典内数据取关键字值"""
+    final_value = dict_data.get(paths[0], {})
+    for i in paths[1:]:
+        final_value = final_value.get(i)
+        if final_value is None:
+            break
+
+    return final_value if final_value is not None else default_value
+
+
+def get_system_dark_mode_status():
+    """从注册表读取系统是否开启了应用深色模式"""
+    try:
+        import winreg
+
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+        return value == 0  # 0 表示深色模式
+    except Exception as e:
+        logging.log_exception(e)
+        return False
+
+
 class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
     """覆盖在其它widget上层的加载动画组件"""
 
@@ -520,11 +545,20 @@ class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)  # 始终置顶
+        self.set_theme_qss()
         self.setAttribute(Qt.WA_TranslucentBackground, False)  # 背景不透明
-        self.setStyleSheet('QFrame#frame{background-color: rgb(255, 255, 255); color: rgb(255, 255, 255);}')  # 白色背景
         self.set_caption(show_caption, caption)
 
         self.init_load_flash()
+
+    def set_theme_qss(self):
+        color = profile_mgr.get_theme_color_string()
+        color_reversed = profile_mgr.get_theme_font_color_string()
+        self.setStyleSheet(f"""
+            QWidget{{font-family: "微软雅黑";}}
+            QWidget{{background-color:{color};color:{color};}}
+        """)
+        self.label_17.setStyleSheet(f'QLabel{{color:{color_reversed};}}')
 
     def set_caption(self, show_caption=True, caption=''):
         if show_caption:

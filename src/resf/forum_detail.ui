@@ -13,11 +13,6 @@
   <property name="windowTitle">
    <string>吧详情</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-QDialog{background-color: rgb(255, 255, 255);}
-</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout_5">
    <item row="0" column="0">
     <widget class="QPushButton" name="pushButton_8">
@@ -473,7 +468,7 @@ QLabel{
 	color: rgb(255, 255, 255);
 }</string>
             </property>
-            <layout class="QGridLayout" name="gridLayout_27" columnstretch="2,0">
+            <layout class="QGridLayout" name="gridLayout_27" columnstretch="2">
              <property name="leftMargin">
               <number>15</number>
              </property>
@@ -1166,8 +1161,8 @@ QLabel{
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>83</width>
-            <height>16</height>
+            <width>100</width>
+            <height>30</height>
            </rect>
           </property>
           <property name="palette">

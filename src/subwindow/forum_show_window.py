@@ -38,12 +38,9 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.is_followed = False
         self.is_signed = False
         self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
+
         for i in range(len(self.listwidgets)):
             lw = self.listwidgets[i]
-
-            lw.setStyleSheet('QListWidget{outline:0px;}'
-                             'QListWidget::item:hover {color:white; background-color:white;}'
-                             'QListWidget::item:selected {color:white; background-color:white;}')
             lw.verticalScrollBar().setSingleStep(20)
             lw.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
             lw.verticalScrollBar().valueChanged.connect(self.threadList_load_image)
@@ -70,6 +67,19 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.tabWidget.currentChanged.connect(self.threadList_load_image)
         self.pushButton_4.clicked.connect(
             lambda: open_url_in_browser(f'https://tieba.baidu.com/f?kw={self.forum_name}'))
+
+    def reset_theme(self):
+        super().reset_theme()
+        color = profile_mgr.get_theme_color_string()
+        for lw in self.listwidgets:
+            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                             f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                             f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+
+            # 设置列表内容的样式
+            for i in range(lw.count()):
+                widget = lw.itemWidget(lw.item(i))
+                widget.reset_theme()
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5:
@@ -190,6 +200,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                 emit_data['text'] = get_exception_string(e)
             finally:
                 self.follow_forum_ok.emit(emit_data)
+
         def start_async():
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\forum_search.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\forum_search.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,9 +15,6 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(823, 578)
-        Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"QDialog{background-color: rgb(255, 255, 255);}\n"
-"")
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()

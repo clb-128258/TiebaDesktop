@@ -15,28 +15,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(807, 613)
-        palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
-        Form.setPalette(palette)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"")
         self.gridLayout_9 = QtWidgets.QGridLayout(Form)
         self.gridLayout_9.setObjectName("gridLayout_9")
         self.frame = QtWidgets.QFrame(Form)
@@ -118,6 +96,7 @@ class Ui_Form(object):
 "    border-radius: 10px;\n"
 "    border-width: 3px 8px;\n"
 "    border-color: rgb(221, 221, 221);\n"
+"    color: black;\n"
 "}\n"
 "")
         self.label_14.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
@@ -134,6 +113,7 @@ class Ui_Form(object):
 "    border-radius: 10px;\n"
 "    border-width: 3px 8px;\n"
 "    border-color: rgb(221, 221, 221);\n"
+"    color: black;\n"
 "}\n"
 "")
         self.label_8.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
@@ -150,6 +130,7 @@ class Ui_Form(object):
 "    border-radius: 10px;\n"
 "    border-width: 3px 8px;\n"
 "    border-color: rgb(221, 221, 221);\n"
+"    color: black;\n"
 "}\n"
 "")
         self.label_3.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
@@ -166,6 +147,7 @@ class Ui_Form(object):
 "    border-radius: 10px;\n"
 "    border-width: 3px 8px;\n"
 "    border-color: rgb(221, 221, 221);\n"
+"    color: black;\n"
 "}\n"
 "")
         self.label_4.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
@@ -182,6 +164,7 @@ class Ui_Form(object):
 "    border-radius: 10px;\n"
 "    border-width: 3px 8px;\n"
 "    border-color: rgb(221, 221, 221);\n"
+"    color: black;\n"
 "}\n"
 "")
         self.label_5.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
@@ -203,6 +186,9 @@ class Ui_Form(object):
         self.frame_3.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
 "    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
 "}")
         self.frame_3.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_3.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -222,6 +208,9 @@ class Ui_Form(object):
         self.frame_2.setStyleSheet("QFrame{\n"
 "    background-color: rgb(199, 188, 255);\n"
 "    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
 "}")
         self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_2.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -241,6 +230,9 @@ class Ui_Form(object):
         self.frame_5.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
 "    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
 "}")
         self.frame_5.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_5.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -277,6 +269,9 @@ class Ui_Form(object):
         self.frame_11.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
 "    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
 "}")
         self.frame_11.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_11.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -312,6 +307,9 @@ class Ui_Form(object):
         self.frame_4.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
 "    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
 "}")
         self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_4.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -333,6 +331,9 @@ class Ui_Form(object):
         self.frame_9.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
 "    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
 "}")
         self.frame_9.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_9.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -361,6 +362,9 @@ class Ui_Form(object):
         self.frame_10.setStyleSheet("QFrame{\n"
 "    background-color: rgb(154, 154, 154);\n"
 "    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
 "}")
         self.frame_10.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_10.setFrameShadow(QtWidgets.QFrame.Raised)

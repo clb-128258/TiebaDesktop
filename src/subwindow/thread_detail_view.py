@@ -245,7 +245,6 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
         self.h5_link = h5_link
         self.captcha_success_json_info = None
 
-        self.setStyleSheet('QDialog{background-color:white;}QWidget{font-family: \"微软雅黑\";}')
         self.setWindowTitle('交互式发贴验证码')
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowFlags(Qt.WindowCloseButtonHint)
@@ -342,25 +341,15 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.frame_3.hide()
         self.collapse_text_area()
 
-        self.label_19.setPixmap(QPixmap('ui/warning.png').scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.toolButton_2.setIcon(QIcon('ui/close_black.png'))
+        self.label_19.setPixmap(
+            QPixmap('ui/icon_black/warning.png').scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.toolButton_2.setIcon(QIcon('ui/icon_black/close.png'))
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.toolButton.setIcon(QIcon('ui/close_white.png'))
-
-        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
-                                      'QListWidget::item:hover {color:white; background-color:white;}'
-                                      'QListWidget::item:selected {color:white; background-color:white;}')
-        self.listWidget_4.setStyleSheet('QListWidget{outline:0px;}'
-                                        'QListWidget::item:hover {color:white; background-color:white;}'
-                                        'QListWidget::item:selected {color:white; background-color:white;}')
-        self.listWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.listWidget_4.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.listWidget_4.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
+        self.toolButton.setIcon(QIcon('ui/icon_white/close.png'))
 
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
         self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
+        self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
         self.init_load_flash()
         self.init_top_toaster()
 
@@ -413,6 +402,27 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.flash_shower.show()
         self.get_thread_head_info_async()
         self.get_sub_thread_async()
+
+    def reset_theme(self):
+        super().reset_theme()
+
+        listwidgets = [self.listWidget, self.listWidget_4]
+        flat_buttons = [self.pushButton, self.pushButton_4]
+        color = profile_mgr.get_theme_color_string()
+        font_color = profile_mgr.get_theme_font_color_string()
+        for lw in listwidgets:
+            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                             f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                             f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+            lw.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            lw.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        # 设置回复列表内容的样式
+        for i in range(self.listWidget_4.count()):
+            widget = self.listWidget_4.itemWidget(self.listWidget_4.item(i))
+            widget.reset_theme()
+        for btn in flat_buttons:
+            btn.setStyleSheet(f'QPushButton{{color: {font_color};}}')
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease:
@@ -602,8 +612,11 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.textEdit.insertPlainText(insert_text)
 
         dialog.deleteLater()
+
     def show_addpost_atuser_selector(self):
-        self.top_toaster.showToast(top_toast_widget.ToastMessage('该功能尚未实现，敬请期待',icon_type=top_toast_widget.ToastIconType.INFORMATION))
+        self.top_toaster.showToast(top_toast_widget.ToastMessage('该功能尚未实现，敬请期待',
+                                                                 icon_type=top_toast_widget.ToastIconType.INFORMATION))
+
     def show_addpost_emoji_selector(self):
         selector = base_ui.TiebaEmojiSelector()
 

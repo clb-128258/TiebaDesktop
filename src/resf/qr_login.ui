@@ -13,11 +13,6 @@
   <property name="windowTitle">
    <string>扫码登录</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-QDialog{background-color: rgb(255, 255, 255);}
-</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout_3" columnstretch="4,10,4">
    <property name="topMargin">
     <number>20</number>

@@ -13,11 +13,6 @@
   <property name="windowTitle">
    <string>上传图片</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-QDialog{background-color: rgb(255, 255, 255);}
-</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
     <widget class="QFrame" name="frame">

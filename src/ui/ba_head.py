@@ -35,8 +35,6 @@ class Ui_Form(object):
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
         Form.setPalette(palette)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"")
         self.gridLayout_6 = QtWidgets.QGridLayout(Form)
         self.gridLayout_6.setObjectName("gridLayout_6")
         self.gridLayout = QtWidgets.QGridLayout()

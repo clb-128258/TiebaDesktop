@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidget, QMessageBox, QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr
+from publics import qt_window_mgr, request_mgr, profile_mgr
 from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
     listWidget_get_visible_widgets
 from subwindow import base_ui
@@ -33,12 +33,6 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         for i in self.listwidgets:
             i.verticalScrollBar().setSingleStep(20)
 
-        contain_thread_listwidgets = [self.listWidget_2, self.listWidget_4, self.listWidget_5]
-        for i in contain_thread_listwidgets:
-            i.setStyleSheet('QListWidget{outline:0px;}'
-                            'QListWidget::item:hover {color:white; background-color:white;}'
-                            'QListWidget::item:selected {color:white; background-color:white;}')
-
         self.listWidget_2.verticalScrollBar().valueChanged.connect(
             lambda: self.scroll_load_more('thread', self.listWidget_2))
         self.listWidget_4.verticalScrollBar().valueChanged.connect(
@@ -57,6 +51,23 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         self.add_result.connect(self._ui_add_search_result)
         self.comboBox.currentIndexChanged.connect(self.handle_search_type_switch)
         self.pushButton.clicked.connect(self.start_search)
+
+    def reset_theme(self):
+        super().reset_theme()
+
+        color = profile_mgr.get_theme_color_string()
+        contain_thread_listwidgets = [self.listWidget_2, self.listWidget_4, self.listWidget_5]
+        for i in contain_thread_listwidgets:
+            i.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                            f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                            f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+        self.tab_3.setStyleSheet(f'QWidget#tab_3{{background-color: {color}}}')
+
+        # 设置列表内容的样式
+        for lw in self.listwidgets:
+            for i in range(lw.count()):
+                widget = lw.itemWidget(lw.item(i))
+                widget.reset_theme()
 
     def closeEvent(self, a0):
         for i in self.listwidgets:

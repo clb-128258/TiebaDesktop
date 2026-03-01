@@ -13,11 +13,6 @@
   <property name="windowTitle">
    <string>高级登录</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-QDialog{background-color: rgb(255, 255, 255);}
-</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="2" column="0" colspan="3">
     <widget class="QLineEdit" name="lineEdit">

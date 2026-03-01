@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr
+from publics import qt_window_mgr, request_mgr, profile_mgr
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets
 from subwindow import base_ui
 from ui import star_list
@@ -32,9 +32,6 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.label.setText('这里可以查看你点过赞的贴子。')
         self.resize(720, 520)
 
-        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
-                                      'QListWidget::item:hover {color:white; background-color:white;}'
-                                      'QListWidget::item:selected {color:white; background-color:white;}')
         self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_list_info)
         self.listWidget.verticalScrollBar().setSingleStep(25)
 
@@ -42,6 +39,13 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.pushButton.clicked.connect(self.refresh_agreed_threads)
 
         self.get_agreed_threads_async()
+
+    def reset_theme(self):
+        super().reset_theme()
+        color = profile_mgr.get_theme_color_string()
+        self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                                      f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                                      f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
 
     def closeEvent(self, a0):
         self.listWidget.clear()

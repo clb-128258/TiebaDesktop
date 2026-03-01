@@ -15,9 +15,6 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(639, 370)
-        Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"QDialog{background-color: rgb(255, 255, 255);}\n"
-"")
         self.gridLayout_2 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.frame = QtWidgets.QFrame(Dialog)

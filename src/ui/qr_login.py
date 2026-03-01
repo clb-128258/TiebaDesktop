@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\qr_login.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\qr_login.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,9 +15,6 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(456, 508)
-        Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"QDialog{background-color: rgb(255, 255, 255);}\n"
-"")
         self.gridLayout_3 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_3.setContentsMargins(-1, 20, -1, 20)
         self.gridLayout_3.setObjectName("gridLayout_3")

@@ -6,6 +6,7 @@ from PyQt5.QtGui import QIcon, QResizeEvent
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import qApp, QMenu
 
+import consts
 from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image, app_logger
 from subwindow import base_ui
 from subwindow.history_list import HistoryViewWindow
@@ -25,7 +26,7 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
         self.setupUi(self)
 
         self.parent_menu = parent_menu
-        self.toolButton_3.setIcon(QIcon('ui/content_copy.png'))
+        self.toolButton_3.setIcon(QIcon(f'ui/icon_black/content_copy.png'))
 
         self.infoLoaded.connect(self._ui_set_self_info)
         self.toolButton_3.clicked.connect(self.copy_tieba_id)
@@ -53,7 +54,12 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
         for w in click_areas:
             w.installEventFilter(self)
 
+    def reset_theme(self):
+        super().reset_theme()
+        self.add_extend_qss(f'QLabel{{color: {consts.qss_bright_font_color}}}')
+
     def showEvent(self, a0):
+        super().showEvent(a0)
         self.get_self_info_async()
 
     def resizeEvent(self, a0):

@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr
+from publics import qt_window_mgr, request_mgr, profile_mgr
 from publics.funcs import start_background_thread, listWidget_get_visible_widgets
 import publics.app_logger as logging
 from subwindow import base_ui
@@ -29,9 +29,6 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
 
-        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
-                                      'QListWidget::item:hover {color:white; background-color:white;}'
-                                      'QListWidget::item:selected {color:white; background-color:white;}')
         self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_list_info)
         self.listWidget.verticalScrollBar().setSingleStep(25)
 
@@ -39,6 +36,17 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.pushButton.clicked.connect(self.refresh_star_threads)
 
         self.get_star_threads_async()
+
+    def reset_theme(self):
+        super().reset_theme()
+        color = profile_mgr.get_theme_color_string()
+        self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                                      f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                                      f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+        # 设置列表内容的样式
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            widget.reset_theme()
 
     def closeEvent(self, a0):
         self.listWidget.clear()
@@ -107,7 +115,7 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
                         data = {'user_name': thread['author']['show_nickname'], 'user_portrait_pixmap': None,
                                 'thread_id': thread['tid'], 'forum_id': await client.get_fid(thread['forum_name']),
                                 'forum_name': thread['forum_name'], 'title': thread["title"], 'picture': None,
-                                'is_del': bool(thread['is_deleted'])}
+                                'is_del': bool(thread.get('is_deleted', False))}
 
                         portrait = thread["author"]["portrait"].split('?')[0]
                         data['user_portrait'] = portrait

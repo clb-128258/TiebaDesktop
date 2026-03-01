@@ -14,8 +14,7 @@
    <string>点赞信息</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-</string>
+   <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,1,0">
    <item row="0" column="0">
@@ -74,13 +73,13 @@
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>0</height>
+         <height>26</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>16777215</height>
+         <height>26</height>
         </size>
        </property>
        <property name="styleSheet">
@@ -91,6 +90,7 @@
     padding-right: 5px; 
     padding-bottom: 4px;
     padding-left: 5px;
+	color: black;
 }
 </string>
        </property>

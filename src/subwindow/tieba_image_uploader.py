@@ -104,8 +104,8 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
         self.setAcceptDrops(True)
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.pushButton.setIcon(QIcon('ui/arrow_back_white.png'))
-        self.pushButton_3.setIcon(QIcon('ui/arrow_forward_white.png'))
+        self.pushButton.setIcon(QIcon(f'ui/icon_white/arrow_back.png'))
+        self.pushButton_3.setIcon(QIcon(f'ui/icon_white/arrow_forward.png'))
         self.pushButton_3.setIconSize(QSize(25, 25))
         self.pushButton.setIconSize(QSize(25, 25))
 

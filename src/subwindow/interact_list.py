@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import request_mgr, top_toast_widget
+from publics import request_mgr, top_toast_widget, profile_mgr
 from publics.funcs import start_background_thread, timestamp_to_string, listWidget_get_visible_widgets, \
     get_exception_string
 import publics.app_logger as logging
@@ -36,13 +36,11 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
         self.stoken = stoken
         self.parent_window = parent
 
-        self.label.hide()
         self.listwidgets = [self.listWidget_3, self.listWidget_2, self.listWidget]
         for lw in self.listwidgets:
             lw.verticalScrollBar().setSingleStep(25)
-            lw.setStyleSheet('QListWidget{outline:0px;}'
-                             'QListWidget::item:hover {color:white; background-color:white;}'
-                             'QListWidget::item:selected {color:white; background-color:white;}')
+        self.label.hide()
+
         self.listWidget.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('reply'))
         self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('at'))
         self.listWidget_3.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('agree'))
@@ -51,6 +49,19 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
 
         self.add_post_data.connect(self.set_inter_data_ui)
         self.error_happened.connect(self.parent_window.toast_widget.showToast)
+
+    def reset_theme(self):
+        self.set_theme_qss()
+
+        # 设置列表内容的样式
+        color = profile_mgr.get_theme_color_string()
+        for lw in self.listwidgets:
+            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                             f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                             f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+            for i in range(lw.count()):
+                widget = lw.itemWidget(lw.item(i))
+                widget.reset_theme()
 
     def refresh_list(self):
         if not self.is_at_loading and not self.is_reply_loading and not self.is_agree_loading:

@@ -8,6 +8,43 @@ from PyQt5.QtWidgets import QWidget, QListWidgetItem, QMessageBox, QGraphicsDrop
 from PyQt5.QtGui import QIcon, QPixmap, QColor
 from PyQt5.QtCore import pyqtSignal, QSize
 
+toolbutton_qss = """QToolButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    /* 设置图标大小 */
+    icon-size: 24px;
+    /* 可选：设置最小尺寸，保持按钮大小一致 */
+    min-width: 10px;
+    min-height: 10px;
+    }
+
+    /* 鼠标悬停时：轻微灰色背景 */
+    QToolButton:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    /* 按下时：更深的背景色，模拟按下效果 */
+    QToolButton:pressed {
+    background-color: rgba(0, 0, 0, 0.15);
+    }
+
+    /* 禁用状态：半透明，显示不可点击 */
+    QToolButton:disabled {
+    background-color: transparent;
+    opacity: 0.4;
+    }
+
+    /* 可选：如果按钮有菜单箭头，也可以美化箭头 */
+    QToolButton::menu-indicator {
+    image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */
+    subcontrol-position: right center;
+    subcontrol-origin: padding;
+    left: -4px;
+    }
+"""
+
 
 def get_day_str(ts: int):
     weekIndex = {0: '一',
@@ -22,7 +59,7 @@ def get_day_str(ts: int):
     return f"{dt.year}年{dt.month}月{dt.day}日 星期{weekIndex[dt.weekday()]}"
 
 
-class SingleHistoryItem(QWidget, view_history_single_item.Ui_Form):
+class SingleHistoryItem(base_ui.WindowBaseQWidget, view_history_single_item.Ui_Form):
     history_info = {}
     setIconAsync = pyqtSignal(QPixmap)
 
@@ -99,16 +136,28 @@ class SingleHistoryItem(QWidget, view_history_single_item.Ui_Form):
         self.adjustSize()
 
 
-class DayHistoryItem(QWidget, view_history_item.Ui_Form):
+class DayHistoryItem(base_ui.WindowBaseQWidget, view_history_item.Ui_Form):
     def __init__(self, date_str: str, parent_listwidget: QWidget):
         super().__init__()
         self.setupUi(self)
+        self.label.setText(date_str)
+        self.init_shadow_effect()
 
         self.list_height = 0
         self.parent_listwidget = parent_listwidget
         self.is_icon_loaded = False
-        self.init_shadow_effect()
-        self.label.setText(date_str)
+
+    def reset_theme(self):
+        self.set_theme_qss()
+        self.add_extend_qss(toolbutton_qss)
+        color = profile_mgr.get_theme_color_string()
+        policy = profile_mgr.get_theme_policy()
+
+        self.frame.setStyleSheet(f"""QFrame#frame {{
+            background-color: {color};
+            border-radius: 20px; /* 圆角半径 */
+            border: 1px solid {'rgba(255, 255, 255, 0.1)' if policy==2 else '#D3D3D3'};
+        }}""")
 
     def init_shadow_effect(self):
         shadow_effect = QGraphicsDropShadowEffect()
@@ -163,15 +212,13 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
         self.widget_list = {}
         self.read_index = 0
         self.widget_total_height = 0
+
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label.hide()
-        self.listWidget_2.setStyleSheet('QListWidget#listWidget_2{outline:0px;}'
-                                        'QListWidget#listWidget_2::item:hover {color:white; background-color:white;}'
-                                        'QListWidget#listWidget_2::item:selected {color:white; background-color:white;}')
         self.listWidget_2.verticalScrollBar().setSingleStep(20)
-        self.listWidget_2.verticalScrollBar().valueChanged.connect(self.scroll_load)
         self.init_top_toaster()
 
+        self.listWidget_2.verticalScrollBar().valueChanged.connect(self.scroll_load)
         self.listWidget.currentRowChanged.connect(self.reload_history)
         self.pushButton.clicked.connect(self.clear_history)
         self.pushButton_2.clicked.connect(lambda: self.reload_history())
@@ -190,6 +237,19 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
+
+    def reset_theme(self):
+        self.set_theme_qss()
+        self.add_extend_qss(toolbutton_qss)
+        color = profile_mgr.get_theme_color_string()
+        self.listWidget_2.setStyleSheet(f'QListWidget#listWidget_2{{outline:0px;background-color:{color};}}'
+                                        f'QListWidget#listWidget_2::item:hover {{color:{color}; background-color:{color};}}'
+                                        f'QListWidget#listWidget_2::item:selected {{color:{color}; background-color:{color};}}')
+
+        # 设置列表内容的样式
+        for i in range(self.listWidget_2.count()):
+            widget = self.listWidget_2.itemWidget(self.listWidget_2.item(i))
+            widget.reset_theme()
 
     def scroll_load(self):
         self.load_visible_image()

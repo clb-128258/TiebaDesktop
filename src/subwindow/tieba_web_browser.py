@@ -11,6 +11,24 @@ from subwindow import base_ui
 
 from ui import tb_browser
 
+toolbutton_qss = """QToolButton {
+        background-color: transparent;
+        border: none;
+        border-radius: 17px;
+        padding: 4px;
+        /* 设置图标大小 */
+        icon-size: 26px;
+        /* 可选：设置最小尺寸，保持按钮大小一致 */
+        min-width: 10px;
+        min-height: 10px;
+    }
+    
+    /* 禁用状态：半透明，显示不可点击 */
+    QToolButton:disabled {
+        background-color: transparent;
+        opacity: 0.1;
+    }"""
+
 moved_out_tabs = {}
 
 
@@ -37,34 +55,7 @@ class ExtPreviewLabel(QLabel):
 class ExtTabBar(QTabBar):
     def __init__(self, parent_window: QWidget, parent_tabwidget: QTabWidget):
         super().__init__()
-        self.setStyleSheet("""QTabBar {
-            border: none;
-            qproperty-drawBase: false;
-        }
-        QTabBar::tab {
-            padding: 6px 10px;
-            border-radius: 14px;
-        }
-        QTabBar::tab:hover {
-            font: 9pt "微软雅黑";
-            background: rgb(232, 232, 232);
-        }
-        QTabBar::tab:selected {
-            font: 9pt "微软雅黑";
-            background: rgb(202, 202, 202);
-        }
-        QTabBar::close-button {
-            image: url(./ui/close_black.png);
-            width: 21px;
-            height: 21px;
-        }
-        QTabBar::close-button:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-        QTabBar::close-button:pressed {
-            background-color: rgba(0, 0, 0, 0.3);
-        }
-        """)
+        self.reset_theme()
         self.setTabsClosable(True)
         self.setUsesScrollButtons(True)
         self.setAcceptDrops(True)  # 允许拖入
@@ -85,6 +76,41 @@ class ExtTabBar(QTabBar):
 
         self.drag_preview_label = ExtPreviewLabel(self)
         self.drag_pixmap = None
+
+    def reset_theme(self):
+        policy = profile_mgr.get_theme_policy()
+        color = profile_mgr.get_theme_color_string()
+        font_color = profile_mgr.get_theme_font_color_string()
+        self.setStyleSheet(f"""QTabBar {{
+            border: none;
+            qproperty-drawBase: false;
+        }}
+        QTabBar::tab {{
+            padding: 6px 10px;
+            border-radius: 14px;
+            color: {font_color};
+            background: {color};
+        }}
+        QTabBar::tab:hover {{
+            font: 9pt "微软雅黑";
+            background: {'rgb(40, 40, 40)' if policy == 2 else 'rgb(232, 232, 232)'};
+        }}
+        QTabBar::tab:selected {{
+            font: 9pt "微软雅黑";
+            background: {'rgb(60, 60, 60)' if policy == 2 else 'rgb(202, 202, 202)'};
+        }}
+        QTabBar::close-button {{
+            image: url(./ui/icon_{profile_mgr.get_theme_policy_string()[1]}/close.png);
+            width: 21px;
+            height: 21px;
+        }}
+        QTabBar::close-button:hover {{
+            background-color: {'rgba(255, 255, 255, 0.15)' if policy == 2 else 'rgba(0, 0, 0, 0.1)'};
+        }}
+        QTabBar::close-button:pressed {{
+            background-color: {'rgba(255, 255, 255, 0.3)' if policy == 2 else 'rgba(0, 0, 0, 0.3)'};
+        }}
+        """)
 
     def create_new_browser(self, widget, window_pos, window_size):
         browser = TiebaWebBrowser()
@@ -247,16 +273,15 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         super().__init__()
         self.setupUi(self)
 
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
+
+        self.tab_bar = ExtTabBar(self, self.tabWidget)
+        self.tabWidget.setTabBar(self.tab_bar)
+        self.draggedin_tab_id = -1
+
         self.setAcceptDrops(True)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.toolButton.setIcon(QIcon('ui/back.png'))
-        self.toolButton_2.setIcon(QIcon('ui/forward.png'))
-        self.toolButton_3.setIcon(QIcon('ui/refresh.png'))
-        self.toolButton_5.setIcon(QIcon('ui/os_browser.png'))
-        self.toolButton_6.setIcon(QIcon('ui/jumpto.png'))
-        self.toolButton_4.setIcon(QIcon('ui/download.png'))
-        self.toolButton_4.setIcon(QIcon('ui/download.png'))
-        self.toolButton_7.setIcon(QIcon('ui/more_horiz.png'))
 
         font_family = ["Microsoft YaHei",
                        "MS Shell Dlg 2",
@@ -274,13 +299,6 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
                                                        font_family=font_family,
                                                        user_agent=f'[default_ua] CLBTiebaDesktop/{APP_VERSION_STR}',
                                                        )
-
-        self.top_toaster = top_toast_widget.TopToaster()
-        self.top_toaster.setCoverWidget(self)
-
-        self.tab_bar = ExtTabBar(self, self.tabWidget)
-        self.tabWidget.setTabBar(self.tab_bar)
-        self.draggedin_tab_id = -1
 
         self.tabWidget.tabCloseRequested.connect(self.remove_widget)
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
@@ -345,6 +363,50 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         # 清理内存
         del moved_out_tabs[self.draggedin_tab_id]
         self.draggedin_tab_id = -1
+
+    def reset_theme(self):
+        self.set_theme_qss()
+        self.tab_bar.reset_theme()
+
+        policy = profile_mgr.get_theme_policy()
+        color = profile_mgr.get_theme_color_string()
+        font_color = profile_mgr.get_theme_font_color_string()
+
+        self.frame.setStyleSheet(f"""{toolbutton_qss}
+            QToolButton:hover {{
+                background-color: {'rgba(255, 255, 255, 0.1)' if policy == 2 else 'rgba(0, 0, 0, 0.08)'};
+            }}
+            QToolButton:pressed {{
+                background-color: {'rgba(255, 255, 255, 0.2)' if policy == 2 else 'rgba(0, 0, 0, 0.15)'};
+            }}
+        """)
+        self.lineEdit.setStyleSheet(f"""QLineEdit {{
+            background-color: {color};
+            border: 1px solid {'rgb(100,100,100)' if policy == 2 else '#cccccc'};
+            border-radius: 15px;
+            padding: 5px;
+            color: {font_color};
+        }}
+        
+        QLineEdit:hover {{
+            border: 1px solid {'rgb(100,100,100)' if policy == 2 else '#cccccc'};
+            background-color: {'rgb(50,50,50)' if policy == 2 else '#f0f0f0'}; /* 悬浮时的背景颜色 */
+            border-color: #999999; /* 悬浮时的边框颜色 */
+        }}
+        
+        QLineEdit:focus {{
+            border: 2px solid {'rgb(100,100,100)' if policy == 2 else '#cccccc'};
+            background-color: {color};
+            border-color: #0078d7; /* 选中时的边框颜色 */
+        }}""")
+
+        self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/back.png'))
+        self.toolButton_2.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/forward.png'))
+        self.toolButton_3.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/refresh.png'))
+        self.toolButton_5.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/os_browser.png'))
+        self.toolButton_6.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/jumpto.png'))
+        self.toolButton_4.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/download.png'))
+        self.toolButton_7.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/more_horiz.png'))
 
     def parse_weburl_to_tburl(self):
         tb_url = ''

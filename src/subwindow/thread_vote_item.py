@@ -47,9 +47,14 @@ class ThreadVoteItem(base_ui.WindowBaseQWidget, thread_vote_info.Ui_Form):
         self.forum_id = forum_id
         self.vote_item: list[VoteItem] = []
 
-        self.label.setPixmap(QPixmap('ui/vote.png').scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.voteok.connect(self._on_poll_finish)
         self.destroyed.connect(self.listWidget.clear)
+
+    def reset_theme(self):
+        super().reset_theme()
+        vote_icon = QPixmap(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/vote.png')
+        vote_icon = vote_icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.label.setPixmap(vote_icon)
 
     def _on_poll_finish(self, datas):
         for widget in self.vote_item:

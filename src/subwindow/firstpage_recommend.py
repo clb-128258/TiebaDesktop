@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import consts
 
 import publics.app_logger as logging
 import aiotieba
@@ -11,6 +12,7 @@ from bs4 import BeautifulSoup
 from publics import request_mgr, profile_mgr, top_toast_widget
 from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string, \
     listWidget_get_visible_widgets, large_num_to_string
+from subwindow import base_ui
 
 
 class RecommendWindow(QListWidget):
@@ -27,9 +29,7 @@ class RecommendWindow(QListWidget):
         self.stoken = stoken
         self.parent_window = parent
         self.init_cover_widgets()
-        self.setStyleSheet('QListWidget{outline:0px;}'
-                           'QListWidget::item:hover {color:white; background-color:white;}'
-                           'QListWidget::item:selected {color:white; background-color:white;}')
+        self.set_theme_qss()
         self.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
         self.setHorizontalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
         self.setSizeAdjustPolicy(QListWidget.SizeAdjustPolicy.AdjustToContents)
@@ -43,6 +43,20 @@ class RecommendWindow(QListWidget):
         self.loading_widget = LoadingFlashWidget(caption='贴子正在赶来的路上...')
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()
+
+    def set_theme_qss(self):
+        color = profile_mgr.get_theme_color_string()
+        lw_qss = (f'\nQListWidget{{outline:0px; color:{color}; background-color:{color};}}'
+                  f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                  f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+        base_ui.set_theme_qss_as_cfg(self, lw_qss)
+
+        self.loading_widget.set_theme_qss()  # 设置加载动画页的样式
+
+        # 设置列表内容的样式
+        for i in range(self.count()):
+            widget = self.itemWidget(self.item(i))
+            widget.reset_theme()
 
     def on_load_finish(self, msg):
         if self.is_first_load:

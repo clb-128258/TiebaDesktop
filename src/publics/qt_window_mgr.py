@@ -6,6 +6,15 @@ from publics import profile_mgr
 distributed_window = []
 
 
+def refresh_all_windows_theme(need_refresh_main=True):
+    if need_refresh_main:
+        from __main__ import mainw
+        mainw.set_theme_qss()
+
+    for w in distributed_window:
+        w.reset_theme()
+
+
 def add_window(widget: QWidget, showAfterAdd=True):
     distributed_window.append(widget)
     window_rect = profile_mgr.get_window_rects(type(widget))

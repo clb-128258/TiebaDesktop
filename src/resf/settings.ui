@@ -13,11 +13,6 @@
   <property name="windowTitle">
    <string>设置</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-QDialog{background-color: rgb(255, 255, 255);}
-</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout_12">
    <item row="0" column="0">
     <widget class="QListWidget" name="listWidget">
@@ -226,12 +221,8 @@ QDialog{background-color: rgb(255, 255, 255);}
             <x>0</x>
             <y>0</y>
             <width>663</width>
-            <height>1109</height>
+            <height>1196</height>
            </rect>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">QWidget#scrollAreaWidgetContents{background-color: rgb(255, 255, 255);}
-</string>
           </property>
           <layout class="QGridLayout" name="gridLayout">
            <property name="leftMargin">
@@ -267,53 +258,7 @@ QDialog{background-color: rgb(255, 255, 255);}
               <property name="bottomMargin">
                <number>9</number>
               </property>
-              <item row="0" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_14" stretch="0,0,0">
-                <item>
-                 <widget class="QLabel" name="label_17">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
-                  <property name="text">
-                   <string>主窗口默认启动页：</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="comboBox_4">
-                  <item>
-                   <property name="text">
-                    <string>推荐</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>进吧</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>消息</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_12">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="1" column="0">
+              <item row="3" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0">
                 <item>
                  <widget class="QLabel" name="label_19">
@@ -372,22 +317,38 @@ QDialog{background-color: rgb(255, 255, 255);}
                </layout>
               </item>
               <item row="2" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="0,0">
-                <property name="topMargin">
-                 <number>4</number>
-                </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_14" stretch="0,0,0">
                 <item>
-                 <widget class="QCheckBox" name="checkBox_16">
+                 <widget class="QLabel" name="label_17">
                   <property name="toolTip">
                    <string/>
                   </property>
                   <property name="text">
-                   <string>退出软件时要求用户确认</string>
+                   <string>主窗口默认启动页：</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_15">
+                 <widget class="QComboBox" name="comboBox_4">
+                  <item>
+                   <property name="text">
+                    <string>推荐</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>进吧</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>消息</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_12">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -401,7 +362,7 @@ QDialog{background-color: rgb(255, 255, 255);}
                 </item>
                </layout>
               </item>
-              <item row="3" column="0">
+              <item row="5" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_19" stretch="0,0,0">
                 <property name="topMargin">
                  <number>0</number>
@@ -435,6 +396,132 @@ QDialog{background-color: rgb(255, 255, 255);}
                 </item>
                 <item>
                  <spacer name="horizontalSpacer_20">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_32" stretch="0,0,0">
+                <item>
+                 <widget class="QLabel" name="label_47">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>主题颜色：</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="comboBox_6">
+                  <item>
+                   <property name="text">
+                    <string>跟随系统</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>浅色模式</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>深色模式</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_41">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="4" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="0,0">
+                <property name="topMargin">
+                 <number>4</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="checkBox_16">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>退出软件时要求用户确认</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_15">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="1" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_33" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_42">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>66</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_48">
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{color: grey;}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>将在设置窗口关闭时应用此设置。
+GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
+注意：“跟随系统”功能仅支持 Windows 10 1809 及更高版本的系统，
+在低版本系统中，选择该选项将会看到浅色模式的界面。</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_43">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>

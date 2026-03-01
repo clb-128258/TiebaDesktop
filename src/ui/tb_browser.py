@@ -15,65 +15,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(1215, 701)
-        palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
-        Form.setPalette(palette)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"\n"
-"\n"
-"                QToolButton {\n"
-"                background-color: transparent;\n"
-"                border: none;\n"
-"                border-radius: 17px;\n"
-"                padding: 4px;\n"
-"                /* 设置图标大小 */\n"
-"                icon-size: 26px;\n"
-"                /* 可选：设置最小尺寸，保持按钮大小一致 */\n"
-"                min-width: 10px;\n"
-"                min-height: 10px;\n"
-"                }\n"
-"\n"
-"                /* 鼠标悬停时：轻微灰色背景 */\n"
-"                QToolButton:hover {\n"
-"                background-color: rgba(0, 0, 0, 0.08);\n"
-"                }\n"
-"\n"
-"                /* 按下时：更深的背景色，模拟按下效果 */\n"
-"                QToolButton:pressed {\n"
-"                background-color: rgba(0, 0, 0, 0.15);\n"
-"                }\n"
-"\n"
-"                /* 禁用状态：半透明，显示不可点击 */\n"
-"                QToolButton:disabled {\n"
-"                background-color: transparent;\n"
-"                opacity: 0.25;\n"
-"                }\n"
-"\n"
-"                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
-"                QToolButton::menu-indicator {\n"
-"                image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */\n"
-"                subcontrol-position: right center;\n"
-"                subcontrol-origin: padding;\n"
-"                left: -4px;\n"
-"                }\n"
-"            ")
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
@@ -140,25 +81,7 @@ class Ui_Form(object):
         font.setFamily("微软雅黑")
         font.setPointSize(10)
         self.lineEdit.setFont(font)
-        self.lineEdit.setStyleSheet("QLineEdit {\n"
-"                                        background-color: white;\n"
-"                                        border: 1px solid #cccccc;\n"
-"                                        border-radius: 15px;\n"
-"                                        padding: 5px;\n"
-"                                        }\n"
-"\n"
-"                                        QLineEdit:hover {\n"
-"                                        border: 1px solid #cccccc;\n"
-"                                        background-color: #f0f0f0; /* 悬浮时的背景颜色 */\n"
-"                                        border-color: #999999; /* 悬浮时的边框颜色 */\n"
-"                                        }\n"
-"\n"
-"                                        QLineEdit:focus {\n"
-"                                        border: 2px solid #cccccc;\n"
-"                                        background-color: #e0e0ff; /* 选中时的背景颜色 */\n"
-"                                        border-color: #0078d7; /* 选中时的边框颜色 */\n"
-"                                        }\n"
-"                                    ")
+        self.lineEdit.setStyleSheet("")
         self.lineEdit.setObjectName("lineEdit")
         self.horizontalLayout.addWidget(self.lineEdit)
         self.toolButton_5 = QtWidgets.QToolButton(self.frame)

@@ -85,6 +85,10 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
         self.flash_timer.setInterval(200)
         self.flash_timer.timeout.connect(self.handle_flash_timer_event)
 
+    def reset_theme(self):
+        super().reset_theme()
+        self.add_extend_qss(f'QPushButton{{color: {profile_mgr.get_theme_font_color_string()};}}')
+
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease and source in (
                 self.label_3, self.label_4) and self.allow_home_page:

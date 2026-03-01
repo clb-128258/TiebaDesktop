@@ -13,12 +13,6 @@
   <property name="windowTitle">
    <string>表情选择menu</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-QWidget#Form{
-	background-color: rgb(255, 255, 255);
-}</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,1">
    <property name="leftMargin">
     <number>9</number>

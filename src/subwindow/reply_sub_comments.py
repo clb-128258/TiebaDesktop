@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, top_toast_widget
+from publics import qt_window_mgr, top_toast_widget, profile_mgr
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string
 import publics.app_logger as logging
@@ -36,9 +36,6 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.init_top_toaster()
         self.listWidget.verticalScrollBar().setSingleStep(25)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.listWidget.setStyleSheet('QListWidget{outline:0px;}'
-                                      'QListWidget::item:hover {color:white; background-color:white;}'
-                                      'QListWidget::item:selected {color:white; background-color:white;}')
 
         self.add_comment.connect(self.ui_add_comment)
         self.set_floor_info.connect(self.ui_set_floor_info)
@@ -53,6 +50,17 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
             self.label.setText(f'第 {self.floor_num} 楼的回复，共 {self.comment_count} 条')
 
         self.load_comments_async()
+
+    def reset_theme(self):
+        super().reset_theme()
+        color = profile_mgr.get_theme_color_string()
+        self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                                      f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                                      f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+        # 设置列表内容的样式
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            widget.reset_theme()
 
     def closeEvent(self, a0):
         self.listWidget.clear()

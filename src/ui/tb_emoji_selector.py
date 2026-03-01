@@ -15,10 +15,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(319, 216)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"QWidget#Form{\n"
-"    background-color: rgb(255, 255, 255);\n"
-"}")
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setContentsMargins(9, 9, -1, -1)
         self.gridLayout_2.setObjectName("gridLayout_2")

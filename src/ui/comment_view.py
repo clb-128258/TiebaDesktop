@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\comment_view.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\comment_view.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,8 +15,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(309, 203)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"")
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -146,8 +144,8 @@ class Ui_Form(object):
         self.label_6.setObjectName("label_6")
         self.gridLayout.addWidget(self.label_6, 1, 0, 1, 2)
         self.label_10 = QtWidgets.QLabel(Form)
-        self.label_10.setMinimumSize(QtCore.QSize(0, 0))
-        self.label_10.setMaximumSize(QtCore.QSize(16777215, 25))
+        self.label_10.setMinimumSize(QtCore.QSize(0, 26))
+        self.label_10.setMaximumSize(QtCore.QSize(16777215, 26))
         self.label_10.setStyleSheet("QLabel{\n"
 "    background-color: rgb(188, 188, 188);\n"
 "    border-radius: 8px;\n"
@@ -155,6 +153,7 @@ class Ui_Form(object):
 "    padding-right: 5px; \n"
 "    padding-bottom: 4px;\n"
 "    padding-left: 5px;\n"
+"    color: black;\n"
 "}\n"
 "")
         self.label_10.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)

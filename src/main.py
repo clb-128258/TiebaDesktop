@@ -161,6 +161,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
     scanFinish = pyqtSignal(dict)
     clearFinish = pyqtSignal(bool)
     scannedDetailData = {}
+    brightDarkPolicyFlag = 0  # 用于标记主题颜色是否被修改
 
     def __init__(self):
         super().__init__()
@@ -289,6 +290,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["webview_settings"]["disable_font_cover"] = self.checkBox_20.isChecked()
             profile_mgr.local_config["webview_settings"]["view_frozen"] = self.checkBox_21.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"] = self.checkBox_23.isChecked()
+            profile_mgr.local_config["theme_settings"]["bright_dark_policy"] = self.comboBox_6.currentIndex()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -321,6 +323,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.save_local_config()
         except Exception as e:
             log_exception(e)
+        else:
+            if self.brightDarkPolicyFlag != self.comboBox_6.currentIndex():  # 只在选项改变时执行切换主题
+                QTimer.singleShot(300, lambda: qt_window_mgr.refresh_all_windows_theme())  # 延迟执行，防止UI卡顿
 
     def add_search_engine(self):
         text, click_ok = QInputDialog.getText(self, '添加自定义搜索引擎',
@@ -646,6 +651,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
     def load_local_config(self):
         try:
+            self.brightDarkPolicyFlag = profile_mgr.local_config["theme_settings"]["bright_dark_policy"]
+
             self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
             self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
             self.checkBox_12.setChecked(profile_mgr.local_config['thread_view_settings']['play_gif'])
@@ -661,6 +668,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
             self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
+            self.comboBox_6.setCurrentIndex(self.brightDarkPolicyFlag)
 
             search_engine_settings = profile_mgr.local_config["other_settings"]["context_menu_search_engine"]
             if search_engine_settings['preset']:
@@ -1175,7 +1183,6 @@ class LoginWebView(base_ui.WindowBaseQDialog):
 
     def __init__(self):
         super().__init__()
-        self.setStyleSheet('QDialog{background-color:white;}QWidget{font-family: \"微软雅黑\";}')
         self.setWindowTitle('登录百度账号')
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowFlags(Qt.WindowCloseButtonHint)
@@ -1301,8 +1308,8 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.init_ui_elements()
+        self.set_theme_qss(True)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.pushButton.setIcon(QIcon('ui/more.png'))
         self.pushButton.setStyleSheet("QPushButton::menu-indicator{image:none;}")
         self.notice_syncer = TiebaMsgSyncer()
         self.clipboard_syncer = ClipboardSyncer()
@@ -1325,6 +1332,14 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.notice_syncer.start_sync()
         self.refresh_all_datas()
         self.move_as_config()
+
+    def nativeEvent(self, eventType, message):
+        def on_switch_theme_required():
+            self.set_theme_qss()
+            qt_window_mgr.refresh_all_windows_theme(False)
+
+        base_ui.handle_native_event(self, on_switch_theme_required, eventType, message)
+        return super().nativeEvent(eventType, message)
 
     def closeEvent(self, a0):
         def whether_show_question():
@@ -1387,6 +1402,33 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                              window_rect[1],
                              window_rect[2],
                              window_rect[3])
+
+    def set_theme_qss(self, is_init_setting=False):
+        base_ui.set_widget_dark_mode(self)
+
+        color = profile_mgr.get_theme_color_string()
+        color_reversed = profile_mgr.get_theme_font_color_string()
+
+        # 设置自己的样式
+        self.setStyleSheet(f"""
+            QWidget{{font-family: "微软雅黑";}}
+            QLabel{{color:{color_reversed};}}
+            QMainWindow{{background-color:{color};}}
+            QFrame#frame{{background-color:{color};}}
+        """)
+        self.frame.setStyleSheet(f'QPushButton{{color:{color_reversed};}}')
+        self.pushButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/more.png'))
+
+        # 初始化阶段不对子页面设置，初始化时子页面会自己设置
+        if not is_init_setting:
+            # 设置子页面的样式
+            self.recommend.set_theme_qss()
+            self.flist.reset_theme()
+            self.interactionlist.reset_theme()
+
+            # 弹出通知
+            toast = top_toast_widget.ToastMessage('主题切换成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.toast_widget.showToast(toast)
 
     def init_ui_elements(self):
         self.toast_widget = top_toast_widget.TopToaster()

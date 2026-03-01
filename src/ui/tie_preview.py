@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\tie_preview.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\tie_preview.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,8 +15,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(517, 263)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"")
         self.gridLayout_3 = QtWidgets.QGridLayout(Form)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()

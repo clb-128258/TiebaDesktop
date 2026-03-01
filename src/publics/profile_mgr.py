@@ -38,6 +38,9 @@ local_config_model = {
     "webview_settings": {
         "disable_font_cover": False,
         'view_frozen': False
+    },
+    "theme_settings": {
+        "bright_dark_policy": 0
     }
 }
 
@@ -63,10 +66,46 @@ post_drafts = {}
 window_rects = {}
 emoticons_list = {}  # tag -> id
 emoticons_list_inverted = {}  # id -> tag
+theme_qss = {"common": "", "dark": "", "bright": ""}
 
 current_uid = 'default'
 current_bduss = ''
 current_stoken = ''
+
+
+def get_theme_policy():
+    """
+    获取当前的主题方案
+
+    Return:
+        int: 1为浅色模式，2为深色模式
+    """
+    from publics.funcs import get_dict_value_treely, get_system_dark_mode_status
+
+    paths = ['theme_settings', 'bright_dark_policy']
+    policy = get_dict_value_treely(local_config, paths, 0)
+    policy = policy if policy != 0 else (2 if get_system_dark_mode_status() else 1)
+    return policy
+
+
+def get_theme_policy_string():
+    """
+    获取当前的主题方案的字符串形式
+
+    Return:
+        tuple[str,str]: 主题背景方案, 主题文字方案
+    """
+    return ('black', 'white') if get_theme_policy() == 2 else ('white', 'black')
+
+
+def get_theme_color_string():
+    """获取当前主题方案的背景颜色样式字符串"""
+    return consts.qss_dark_bg_color if get_theme_policy() == 2 else consts.qss_bright_bg_color
+
+
+def get_theme_font_color_string():
+    """获取当前主题方案的字体颜色样式字符串"""
+    return consts.qss_dark_font_color if get_theme_policy() == 2 else consts.qss_bright_font_color
 
 
 def add_window_rects(window_class, x, y, w, h, is_maxsize):
@@ -250,6 +289,18 @@ def load_emoticons_list():
         emoticons_list_inverted = {v: k for k, v in emoticons_list.items()}
 
 
+def load_theme_qss():
+    global theme_qss
+
+    qss_list = {"common": './ui/common_style.qss',
+                "dark": './ui/dark_style.qss',
+                "bright": './ui/bright_style.qss'}
+    for k, v in qss_list.items():
+        with open(v, 'rt', encoding='utf-8') as file:
+            qss = file.read()
+            theme_qss[k] = qss
+
+
 def init_all_datas():
     """从本地磁盘加载所有配置数据"""
     from publics.funcs import start_background_thread
@@ -258,7 +309,8 @@ def init_all_datas():
                    start_background_thread(load_view_history),
                    start_background_thread(load_post_drafts),
                    start_background_thread(load_window_rects),
-                   start_background_thread(load_emoticons_list)]
+                   start_background_thread(load_emoticons_list),
+                   start_background_thread(load_theme_qss)]
 
     for i in thread_list:
         i.join()

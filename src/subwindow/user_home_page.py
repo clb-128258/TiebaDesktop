@@ -38,7 +38,8 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.user_id_portrait = user_id_portrait
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.label_11.setPixmap(QPixmap('ui/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
+        self.label_11.setPixmap(
+            QPixmap(f'ui/icon_black/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
         self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
 
         # 隐藏组件
@@ -69,13 +70,6 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.listWidget_4.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('thread'))
         self.listWidget_5.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('fans'))
 
-        self.listWidget_4.setStyleSheet('QListWidget{outline:0px;}'
-                                        'QListWidget::item:hover {color:white; background-color:white;}'
-                                        'QListWidget::item:selected {color:white; background-color:white;}')
-        self.listWidget_2.setStyleSheet('QListWidget{outline:0px;}'
-                                        'QListWidget::item:hover {color:white; background-color:white;}'
-                                        'QListWidget::item:selected {color:white; background-color:white;}')
-
         # 隐藏ip属地
         if profile_mgr.local_config['thread_view_settings']['hide_ip']:
             self.label_5.hide()
@@ -96,6 +90,21 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.init_top_toaster()
         self.init_load_flash()
         self.get_head_info_async()
+
+    def reset_theme(self):
+        super().reset_theme()
+        color = profile_mgr.get_theme_color_string()
+        self.listWidget_4.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                                        f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                                        f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+        self.listWidget_2.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
+                                        f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
+                                        f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+
+        for lw in self.listwidgets.values():
+            for i in range(lw.count()):
+                widget = lw.itemWidget(lw.item(i))
+                widget.reset_theme()
 
     def closeEvent(self, a0):
         self.flash_shower.hide()

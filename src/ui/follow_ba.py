@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\follow_ba.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\follow_ba.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,9 +15,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(1052, 530)
-        Form.setStyleSheet("QMainWindow{background-color: rgb(255, 255, 255);}\n"
-"QWidget{font-family: \"微软雅黑\";}\n"
-"")
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.gridLayout = QtWidgets.QGridLayout()

@@ -1,0 +1,124 @@
+QFrame#line {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+QFrame#line_2 {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+
+QHeaderView::section:hover {
+    background-color: #454545;
+    color: FONT_COLOR;
+}
+
+QHeaderView::section:pressed {
+    background-color: #505050;
+}
+
+
+QTextEdit {
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    selection-background-color: #0078d7;
+    selection-color: #ffffff;
+}
+
+QTextEdit:hover {
+    border: 1px solid #5c5c5c;
+}
+
+QTextEdit:focus {
+    border: 1px solid #0078d7;
+    background-color: #323232;
+}
+
+QTextEdit:disabled {
+    background-color: #1e1e1e;
+    color: #666666;
+    border: 1px solid #333333;
+}
+
+QLineEdit {
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    padding: 3px 2px;
+    selection-background-color: #0078d7;
+    selection-color: #ffffff;
+}
+
+QLineEdit:hover {
+    border: 1px solid #5c5c5c;
+}
+
+QLineEdit:focus {
+    border: 1px solid #0078d7;
+    background-color: #323232;
+}
+
+QLineEdit:disabled {
+    background-color: #1e1e1e;
+    color: #666666;
+    border: 1px solid #333333;
+}
+
+/* 垂直滚动条整体 */
+QScrollBar:vertical {
+    border: none;
+    background: #2b2b2b;
+    /* 轨道颜色：深灰 */
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+
+/* 滑块部分 */
+QScrollBar::handle:vertical {
+    background: #505050;
+    /* 滑块颜色：中灰 */
+    min-height: 30px;
+    border-radius: 5px;
+    /* 圆角控制 */
+    margin: 2px;
+    /* 关键：让滑块看起来是悬浮在轨道里的 */
+}
+
+/* 鼠标悬停在滑块上 */
+QScrollBar::handle:vertical:hover {
+    background: #666666;
+    /* 悬停变亮 */
+}
+
+/* 鼠标按下状态 */
+QScrollBar::handle:vertical:pressed {
+    background: #808080;
+}
+
+/* 隐藏上下箭头 */
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* 轨道背景：防止出现默认的白色/灰色填充 */
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+/* 水平滚动条 (同理应用) */
+QScrollBar:horizontal {
+    border: none;
+    background: #2b2b2b;
+    height: 10px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #505050;
+    min-width: 30px;
+    border-radius: 5px;
+    margin: 2px;
+}

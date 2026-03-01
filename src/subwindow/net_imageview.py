@@ -49,6 +49,10 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
 
         self.load_image()
 
+    def reset_theme(self):
+        super().reset_theme()
+        self.frame.setStyleSheet(f'QFrame#frame{{background-color:{profile_mgr.get_theme_color_string()};}}')
+
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.Wheel and source is self.scrollArea.viewport():
             if event.modifiers() == Qt.KeyboardModifier.ControlModifier:

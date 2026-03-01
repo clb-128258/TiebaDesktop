@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\view_history.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\view_history.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,65 +15,6 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(868, 537)
-        palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
-        Form.setPalette(palette)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"\n"
-"\n"
-"                QToolButton {\n"
-"                background-color: transparent;\n"
-"                border: none;\n"
-"                border-radius: 6px;\n"
-"                padding: 6px;\n"
-"                /* 设置图标大小 */\n"
-"                icon-size: 24px;\n"
-"                /* 可选：设置最小尺寸，保持按钮大小一致 */\n"
-"                min-width: 10px;\n"
-"                min-height: 10px;\n"
-"                }\n"
-"\n"
-"                /* 鼠标悬停时：轻微灰色背景 */\n"
-"                QToolButton:hover {\n"
-"                background-color: rgba(0, 0, 0, 0.08);\n"
-"                }\n"
-"\n"
-"                /* 按下时：更深的背景色，模拟按下效果 */\n"
-"                QToolButton:pressed {\n"
-"                background-color: rgba(0, 0, 0, 0.15);\n"
-"                }\n"
-"\n"
-"                /* 禁用状态：半透明，显示不可点击 */\n"
-"                QToolButton:disabled {\n"
-"                background-color: transparent;\n"
-"                opacity: 0.4;\n"
-"                }\n"
-"\n"
-"                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
-"                QToolButton::menu-indicator {\n"
-"                image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */\n"
-"                subcontrol-position: right center;\n"
-"                subcontrol-origin: padding;\n"
-"                left: -4px;\n"
-"                }\n"
-"            ")
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setObjectName("gridLayout")
         self.verticalLayout = QtWidgets.QVBoxLayout()

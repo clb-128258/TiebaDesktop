@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\forum_detail.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\forum_detail.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,9 +15,6 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(920, 565)
-        Dialog.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"QDialog{background-color: rgb(255, 255, 255);}\n"
-"")
         self.gridLayout_5 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_5.setObjectName("gridLayout_5")
         self.pushButton_8 = QtWidgets.QPushButton(Dialog)
@@ -483,7 +480,7 @@ class Ui_Dialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 83, 16))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 100, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)

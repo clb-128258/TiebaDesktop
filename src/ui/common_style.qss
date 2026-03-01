@@ -1,0 +1,88 @@
+QDialog {
+    background-color: BG_COLOR;
+}
+
+QWidget#Form {
+    background-color: BG_COLOR;
+}
+
+QWidget#scrollAreaWidgetContents {
+    background-color: BG_COLOR;
+}
+
+QWidget {
+    font-family: "微软雅黑";
+}
+
+QLabel {
+    color: FONT_COLOR;
+}
+
+QListWidget {
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+}
+
+QTableWidget {
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+}
+
+QTreeWidget {
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+}
+
+QGroupBox {
+    color: FONT_COLOR;
+}
+
+QCheckBox {
+    color: FONT_COLOR;
+}
+
+QRadioButton {
+    color: FONT_COLOR;
+}
+
+QHeaderView {
+    background-color: BG_COLOR;
+    border: none;
+    border-bottom: none;
+    font-size: 12px;
+}
+
+QHeaderView::section {
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+    padding: 1px;
+    border: none;
+}
+
+QTabWidget {
+    background: transparent;
+    border: none;
+}
+
+QTabWidget::pane {
+    border: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+QTextBrowser {
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+    border: none;
+    selection-background-color: #0078d7;
+    selection-color: #ffffff;
+}
+
+QTextBrowser:hover {
+    border: none;
+}
+
+QTextBrowser:focus {
+    border: none;
+    background-color: BG_COLOR;
+}

@@ -13,11 +13,6 @@
   <property name="windowTitle">
    <string>楼中楼回复</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget{font-family: &quot;微软雅黑&quot;;}
-QDialog{background-color: rgb(255, 255, 255);}
-</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0" columnstretch="0,0,0,0">
    <item row="1" column="2">
     <widget class="QPushButton" name="pushButton_2">

@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 
-from publics import audio_stream_player
+from publics import audio_stream_player, profile_mgr
 from publics.funcs import format_second
 from subwindow import base_ui
 from ui import thread_voice_item
@@ -17,7 +17,6 @@ class ThreadVoiceItem(base_ui.WindowBaseQWidget, thread_voice_item.Ui_Form):
         super().__init__()
         self.setupUi(self)
         self.play_engine = audio_stream_player.HttpMp3Player()
-        self.label.setPixmap(QPixmap('ui/voice_icon.png').scaled(20, 20, transformMode=Qt.SmoothTransformation))
         self.pushButton_2.hide()
 
         self.play_engine.playEvent.connect(self.handle_events)
@@ -25,6 +24,12 @@ class ThreadVoiceItem(base_ui.WindowBaseQWidget, thread_voice_item.Ui_Form):
         self.pushButton_2.clicked.connect(self.play_engine.stop_play)
 
         self.destroyed.connect(self.play_engine.stop_play)
+
+    def reset_theme(self):
+        super().reset_theme()
+        voice_icon = QPixmap(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/voice_icon.png')
+        voice_icon = voice_icon.scaled(20, 20, transformMode=Qt.SmoothTransformation)
+        self.label.setPixmap(voice_icon)
 
     def start_pause_audio(self):
         if not self.play_engine.is_audio_playing():
