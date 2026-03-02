@@ -182,8 +182,11 @@ class HttpDataRewriter:
     def parseCookieToDict(cls, cookieString: str):
         """将header中的cookie字段解析为字典"""
         cookies_dic = {}
-        for i in cookieString.split('; '):
-            cookies_dic[i.split('=')[0]] = i.split('=')[1]
+        try:
+            for i in cookieString.split('; '):
+                cookies_dic[i.split('=')[0]] = i.split('=')[1]
+        except Exception as e:
+            app_logger.log_exception(e)
 
         return cookies_dic
 
@@ -1018,9 +1021,9 @@ class QWebView2View(QWidget):
                     header_iterator.MoveNext()
 
                 task = args.Response.GetContentAsync()
-                CSharpConverter.waitCSharpAsyncFunction(task,
-                                                        lambda result: on_content_loaded(url, statusCode, header_dict,
-                                                                                         result))
+                task.Wait()
+                stream = task.Result
+                on_content_loaded(url, statusCode, header_dict, stream)
         except Exception as e:
             app_logger.log_WARN(f'WebView2 Http Catcher failed')
             app_logger.log_exception(e)
@@ -1065,32 +1068,6 @@ class QWebView2View(QWidget):
                     new_stream.Write(Array[Byte](content), 0, len(content))
                     args.Request.Content = new_stream
 
-            # response adapter
-            if args.Response:
-                statusCode = int(args.Response.StatusCode)
-                header_dict = {}
-                header_iterator = args.Response.Headers.GetIterator()
-                while header_iterator.HasCurrentHeader:
-                    header_dict[str(header_iterator.Current.Key)] = str(header_iterator.Current.Value)
-                    header_iterator.MoveNext()
-                if not args.Response.Content:
-                    content = None
-                else:
-                    memoryStream = MemoryStream()
-                    args.Response.Content.CopyTo(memoryStream)
-                    content = bytes(memoryStream.ToArray())
-
-                statusCode, header, content = handler.onResponseCaught(url, statusCode, header_dict,
-                                                                       content)  # call custom method
-
-                args.Response.StatusCode = statusCode
-                for k, v in header.items():
-                    if not args.Response.Headers.Contains(k):
-                        args.Response.Headers.AppendHeader(k, v)
-                if content:
-                    new_stream = MemoryStream()
-                    new_stream.Write(Array[Byte](content), 0, len(content))
-                    args.Response.Content = new_stream
         except Exception as e:
             app_logger.log_WARN(f'WebView2 Http Catcher failed')
             app_logger.log_exception(e)

@@ -1258,7 +1258,7 @@ class LoginWebView(base_ui.WindowBaseQDialog):
             except:
                 return '', '', 0
 
-        self.webview.destroyWebview()  # 先销毁webview
+        self.webview.destroyWebviewUntilComplete()  # 先销毁webview
         time.sleep(5)
 
         # 获取用户信息
