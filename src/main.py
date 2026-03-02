@@ -1417,6 +1417,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.flist.reset_theme()
             self.interactionlist.reset_theme()
             self.user_info_widget.reset_theme()
+            self.popup_menu.reset_theme()
 
             # 弹出通知
             toast = top_toast_widget.ToastMessage('主题切换成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
@@ -1523,37 +1524,37 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         d.deleteLater()
 
     def init_profile_menu(self):
-        menu = base_ui.BaseQMenu()
+        self.popup_menu = base_ui.BaseQMenu()
 
-        self.user_info_widget = MainPopupMenu(menu)
+        self.user_info_widget = MainPopupMenu(self.popup_menu)
         self.user_info_widget_action = QWidgetAction(self)
         self.user_info_widget.followForumClicked.connect(self.switch_follow_forum_page)
         self.user_info_widget_action.setDefaultWidget(self.user_info_widget)
-        menu.addAction(self.user_info_widget_action)
+        self.popup_menu.addAction(self.user_info_widget_action)
 
         self.my_agrees = QAction('我的点赞', self)
         self.my_agrees.triggered.connect(self.open_agreed_window)
-        menu.addAction(self.my_agrees)
+        self.popup_menu.addAction(self.my_agrees)
 
         self.login = QAction('登录账号', self)
         self.login.triggered.connect(self.login_exec)
-        menu.addAction(self.login)
+        self.popup_menu.addAction(self.login)
 
-        menu.addSeparator()
+        self.popup_menu.addSeparator()
 
         self.setting = QAction('软件设置', self)
         self.setting.triggered.connect(self.open_settings_window)
-        menu.addAction(self.setting)
+        self.popup_menu.addAction(self.setting)
 
         self.exit_login_ac = QAction('退出登录', self)
         self.exit_login_ac.triggered.connect(self.exit_login)
-        menu.addAction(self.exit_login_ac)
+        self.popup_menu.addAction(self.exit_login_ac)
 
         self.exit_whole_app = QAction('退出软件', self)
         self.exit_whole_app.triggered.connect(self.close)
-        menu.addAction(self.exit_whole_app)
+        self.popup_menu.addAction(self.exit_whole_app)
 
-        self.pushButton.setMenu(menu)
+        self.pushButton.setMenu(self.popup_menu)
 
     def set_profile_menu(self):
         if self.user_data['bduss']:
