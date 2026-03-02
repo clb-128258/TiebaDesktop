@@ -545,13 +545,13 @@ class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)  # 始终置顶
-        self.set_theme_qss()
+        self.reset_theme()
         self.setAttribute(Qt.WA_TranslucentBackground, False)  # 背景不透明
         self.set_caption(show_caption, caption)
 
         self.init_load_flash()
 
-    def set_theme_qss(self):
+    def reset_theme(self):
         color = profile_mgr.get_theme_color_string()
         color_reversed = profile_mgr.get_theme_font_color_string()
         self.setStyleSheet(f"""
@@ -648,13 +648,19 @@ class UserItem(QWidget, user_item.Ui_Form):
         self.label_3.setToolTip(
             '请注意，贴吧 ID 与用户 ID 不同，贴吧 ID 显示在贴吧 APP 的个人主页上，用户 ID 则主要供 APP 内部使用。')
 
-        self.toolButton.setIcon(QIcon('ui/content_copy.png'))
         self.toolButton.clicked.connect(self.show_toolbutton_icon)
-
         self.portrait_image = qt_image.MultipleImage()
         self.portrait_image.currentImageChanged.connect(
             lambda: self.label.setPixmap(self.portrait_image.currentPixmap()))
         self.destroyed.connect(self.portrait_image.destroyImage)
+
+        self.reset_theme()
+
+    def reset_theme(self):
+        from subwindow.base_ui import set_theme_qss_as_cfg
+
+        set_theme_qss_as_cfg(self)
+        self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/content_copy.png'))
 
     def mouseDoubleClickEvent(self, a0):
         a0.accept()
@@ -663,8 +669,9 @@ class UserItem(QWidget, user_item.Ui_Form):
             self.open_user_homepage(self.user_portrait_id)
 
     def show_toolbutton_icon(self):
-        self.toolButton.setIcon(QIcon('ui/checked.png'))
-        QTimer.singleShot(2000, lambda: self.toolButton.setIcon(QIcon('ui/content_copy.png')))
+        self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/checked.png'))
+        QTimer.singleShot(2000, lambda: self.toolButton.setIcon(
+            QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/content_copy.png')))
 
     def open_user_homepage(self, uid):
         from subwindow.user_home_page import UserHomeWindow

@@ -22,7 +22,7 @@ QTextEdit {
     color: FONT_COLOR;
     border: 1px solid #404040;
     border-radius: 6px;
-    selection-background-color: #0078d7;
+    selection-background-color: #5b44c8;
     selection-color: #ffffff;
 }
 
@@ -31,7 +31,7 @@ QTextEdit:hover {
 }
 
 QTextEdit:focus {
-    border: 1px solid #0078d7;
+    border: 1px solid #5b44c8;
     background-color: #323232;
 }
 
@@ -41,13 +41,14 @@ QTextEdit:disabled {
     border: 1px solid #333333;
 }
 
+
 QLineEdit {
     background-color: BG_COLOR;
     color: FONT_COLOR;
     border: 1px solid #404040;
     border-radius: 6px;
     padding: 3px 2px;
-    selection-background-color: #0078d7;
+    selection-background-color: #5b44c8;
     selection-color: #ffffff;
 }
 
@@ -56,7 +57,7 @@ QLineEdit:hover {
 }
 
 QLineEdit:focus {
-    border: 1px solid #0078d7;
+    border: 1px solid #5b44c8;
     background-color: #323232;
 }
 
@@ -66,54 +67,25 @@ QLineEdit:disabled {
     border: 1px solid #333333;
 }
 
-/* 垂直滚动条整体 */
+
 QScrollBar:vertical {
     border: none;
-    background: #2b2b2b;
-    /* 轨道颜色：深灰 */
-    width: 10px;
+    background: transparent;
+    width: 14px;
     margin: 0px 0px 0px 0px;
 }
 
-/* 滑块部分 */
 QScrollBar::handle:vertical {
     background: #505050;
-    /* 滑块颜色：中灰 */
     min-height: 30px;
     border-radius: 5px;
-    /* 圆角控制 */
     margin: 2px;
-    /* 关键：让滑块看起来是悬浮在轨道里的 */
 }
 
-/* 鼠标悬停在滑块上 */
-QScrollBar::handle:vertical:hover {
-    background: #666666;
-    /* 悬停变亮 */
-}
-
-/* 鼠标按下状态 */
-QScrollBar::handle:vertical:pressed {
-    background: #808080;
-}
-
-/* 隐藏上下箭头 */
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
-
-/* 轨道背景：防止出现默认的白色/灰色填充 */
-QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical {
-    background: none;
-}
-
-/* 水平滚动条 (同理应用) */
 QScrollBar:horizontal {
     border: none;
-    background: #2b2b2b;
-    height: 10px;
+    background: BG_COLOR;
+    height: 14px;
 }
 
 QScrollBar::handle:horizontal {
@@ -121,4 +93,128 @@ QScrollBar::handle:horizontal {
     min-width: 30px;
     border-radius: 5px;
     margin: 2px;
+}
+
+QScrollBar::handle:hover {
+    background: #666666;
+}
+
+QScrollBar::handle:pressed {
+    background: #808080;
+}
+
+
+QTabBar::tab {
+    background-color: transparent;
+    color: #a0a0a0;
+    min-width: 40px;
+    padding: 6px 13px;
+    margin-bottom: 0px;
+}
+
+QTabBar::tab:hover {
+    background-color: #383838;
+    color: #c2c2c2;
+}
+
+QTabBar::tab:selected {
+    color: FONT_COLOR;
+    background-color: #323232;
+    border-bottom: 2px solid #5b44c8;
+    font-weight: bold;
+}
+
+
+QComboBox {
+    border: 1px solid #454545;
+    border-radius: 6px;
+    padding: 1px 4px;
+    background: #2b2b2b;
+    color: FONT_COLOR;
+    font-size: 12px;
+}
+
+QComboBox::down-arrow {
+    image: url(./ui/icon_white/more.png);
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    border: 1px solid #454545;
+    background-color: BG_COLOR;
+    color: FONT_COLOR;
+    selection-background-color: #5b44c8;
+    outline: none;
+}
+
+
+QPushButton[flat="false"] {
+    background-color: #3c3c3c;
+    color: FONT_COLOR;
+    border: 1px solid #505050;
+    border-radius: 6px;
+    padding: 2px 9px;
+    font-size: 12px;
+    min-width: 50px;
+}
+
+QPushButton[flat="false"]::menu-indicator {
+    image: url(./ui/icon_white/more.png);
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    right: 4px;
+    width: 12px;
+    height: 12px;
+}
+
+QPushButton[flat="false"]:hover {
+    background-color: #4a4a4a;
+    border: 1px solid #5b44c8;
+}
+
+QPushButton[flat="false"]:pressed {
+    background-color: #2b2b2b;
+    border: 1px solid #3b2d85;
+}
+
+QPushButton[flat="false"]:disabled {
+    background-color: #2d2d2d;
+    color: #707070;
+    border: 1px solid #3a3a3a;
+}
+
+
+QMenu {
+    background-color: BG_COLOR;
+    border: 1px solid #454545;
+    border-radius: 9px;
+    padding: 3px 0px;
+    color: FONT_COLOR;
+}
+
+QMenu::item:selected {
+    background-color: #5b44c8;
+}
+
+QMenu::item:disabled {
+    color: #666666;
+    background-color: transparent;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #454545;
+    margin: 2px 5px;
+}
+
+QMenu::right-arrow {
+    image: url(./ui/icon_white/arrow_forward.png);
+    left: 5px;
+    width: 16px;
+    height: 16px;
+}
+
+QMenu::indicator:non-exclusive:checked {
+    image: url(./ui/icon_white/checked.png);
 }

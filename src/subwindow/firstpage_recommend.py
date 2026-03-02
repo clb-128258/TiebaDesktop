@@ -51,7 +51,7 @@ class RecommendWindow(QListWidget):
                   f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
         base_ui.set_theme_qss_as_cfg(self, lw_qss)
 
-        self.loading_widget.set_theme_qss()  # 设置加载动画页的样式
+        self.loading_widget.reset_theme()  # 设置加载动画页的样式
 
         # 设置列表内容的样式
         for i in range(self.count()):

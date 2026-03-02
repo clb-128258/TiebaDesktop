@@ -43,7 +43,7 @@
         <x>0</x>
         <y>0</y>
         <width>854</width>
-        <height>482</height>
+        <height>484</height>
        </rect>
       </property>
       <property name="palette">
@@ -991,7 +991,7 @@ QPushButton:pressed {
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>30</height>
+          <height>28</height>
          </size>
         </property>
         <property name="text">

@@ -11,7 +11,7 @@ import pyperclip
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer, QObject
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
-from PyQt5.QtWidgets import QMenu, QAction, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
 import consts
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
@@ -497,7 +497,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def init_more_menu(self):
         url = f'https://tieba.baidu.com/p/{self.thread_id}'
 
-        menu = QMenu()
+        menu = base_ui.BaseQMenu()
 
         jump_page = QAction('跳页', self)
         jump_page.triggered.connect(self.show_pagejump_bar)
@@ -622,7 +622,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         self.is_textedit_menu_poping = True
         bt_pos = self.pushButton_10.mapToGlobal(QPoint(0, 0))
-        show_pos = QPoint(bt_pos.x(), bt_pos.y() - selector.height() - 3)
+        show_pos = QPoint(bt_pos.x(), bt_pos.y() - selector.height() - 8)
         emoji_id, emoji_text = selector.pop_selector(show_pos)
         if emoji_text:
             self.textEdit.insertPlainText(emoji_text)

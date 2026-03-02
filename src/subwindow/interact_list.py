@@ -51,7 +51,7 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
         self.error_happened.connect(self.parent_window.toast_widget.showToast)
 
     def reset_theme(self):
-        self.set_theme_qss()
+        super().reset_theme()
 
         # 设置列表内容的样式
         color = profile_mgr.get_theme_color_string()

@@ -32,6 +32,7 @@ class Ui_Dialog(object):
 "    border-radius: 17px;\n"
 "    padding: 5px 3px;\n"
 "    font-weight: 500;\n"
+"    min-width: 0px;\n"
 "}\n"
 "QPushButton:hover {\n"
 "    background-color: rgba(89, 67, 255,0.8);\n"

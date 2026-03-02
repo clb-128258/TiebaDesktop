@@ -2,7 +2,7 @@ import yarl
 import json
 from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
-from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QMenu, QAction, QMessageBox
+from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QAction, QMessageBox
 
 from consts import datapath, APP_VERSION_STR
 from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
@@ -85,12 +85,14 @@ class ExtTabBar(QTabBar):
             border: none;
             qproperty-drawBase: false;
         }}
+        
         QTabBar::tab {{
             padding: 6px 10px;
             border-radius: 14px;
             color: {font_color};
             background: {color};
         }}
+        
         QTabBar::tab:hover {{
             font: 9pt "微软雅黑";
             background: {'rgb(40, 40, 40)' if policy == 2 else 'rgb(232, 232, 232)'};
@@ -98,6 +100,7 @@ class ExtTabBar(QTabBar):
         QTabBar::tab:selected {{
             font: 9pt "微软雅黑";
             background: {'rgb(60, 60, 60)' if policy == 2 else 'rgb(202, 202, 202)'};
+            border-bottom: none;
         }}
         QTabBar::close-button {{
             image: url(./ui/icon_{profile_mgr.get_theme_policy_string()[1]}/close.png);
@@ -109,6 +112,14 @@ class ExtTabBar(QTabBar):
         }}
         QTabBar::close-button:pressed {{
             background-color: {'rgba(255, 255, 255, 0.3)' if policy == 2 else 'rgba(0, 0, 0, 0.3)'};
+        }}
+        
+        {toolbutton_qss}
+        QToolButton:hover {{
+            background-color: {'rgba(255, 255, 255, 0.1)' if policy == 2 else 'rgba(0, 0, 0, 0.08)'};
+        }}
+        QToolButton:pressed {{
+            background-color: {'rgba(255, 255, 255, 0.2)' if policy == 2 else 'rgba(0, 0, 0, 0.15)'};
         }}
         """)
 
@@ -474,7 +485,7 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
     def button_context_menu(self):
         widget = self.tabWidget.currentWidget()
         if isinstance(widget, webview2.QWebView2View) and widget.isRenderInitOk():
-            menu = QMenu()
+            menu = base_ui.BaseQMenu()
             current_zoom = QAction(f'当前网页缩放 {int(widget.zoomFactor() * 100)}%', self)
             current_zoom.setEnabled(False)
             menu.addAction(current_zoom)

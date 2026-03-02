@@ -26,7 +26,6 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
         self.setupUi(self)
 
         self.parent_menu = parent_menu
-        self.toolButton_3.setIcon(QIcon(f'ui/icon_black/content_copy.png'))
 
         self.infoLoaded.connect(self._ui_set_self_info)
         self.toolButton_3.clicked.connect(self.copy_tieba_id)
@@ -56,7 +55,7 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
 
     def reset_theme(self):
         super().reset_theme()
-        self.add_extend_qss(f'QLabel{{color: {consts.qss_bright_font_color}}}')
+        self.toolButton_3.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/content_copy.png'))
 
     def showEvent(self, a0):
         super().showEvent(a0)
@@ -84,8 +83,9 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
 
     def copy_tieba_id(self):
         pyperclip.copy(str(self.tieba_id))
-        self.toolButton_3.setIcon(QIcon('ui/checked.png'))
-        QTimer.singleShot(2000, lambda: self.toolButton_3.setIcon(QIcon('ui/content_copy.png')))
+        self.toolButton_3.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/checked.png'))
+        QTimer.singleShot(2000, lambda: self.toolButton_3.setIcon(
+            QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/content_copy.png')))
 
     def open_history_window(self):
         history_window = HistoryViewWindow()

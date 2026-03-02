@@ -242,7 +242,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.load_animation.hide()
 
     def init_login_button_menu(self):
-        menu = QMenu()
+        menu = base_ui.BaseQMenu()
 
         webview_login = QAction('网页登录 (推荐)', self)
         webview_login.triggered.connect(self.add_account)
@@ -1334,11 +1334,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.move_as_config()
 
     def nativeEvent(self, eventType, message):
-        def on_switch_theme_required():
-            self.set_theme_qss()
-            qt_window_mgr.refresh_all_windows_theme(False)
-
-        base_ui.handle_native_event(self, on_switch_theme_required, eventType, message)
+        base_ui.handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
         return super().nativeEvent(eventType, message)
 
     def closeEvent(self, a0):
@@ -1410,12 +1406,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         color_reversed = profile_mgr.get_theme_font_color_string()
 
         # 设置自己的样式
-        self.setStyleSheet(f"""
-            QWidget{{font-family: "微软雅黑";}}
-            QLabel{{color:{color_reversed};}}
-            QMainWindow{{background-color:{color};}}
-            QFrame#frame{{background-color:{color};}}
-        """)
+        base_ui.set_theme_qss_as_cfg(self, f'\nQFrame#frame{{background-color:{color};}}')
         self.frame.setStyleSheet(f'QPushButton{{color:{color_reversed};}}')
         self.pushButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/more.png'))
 
@@ -1425,6 +1416,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.recommend.set_theme_qss()
             self.flist.reset_theme()
             self.interactionlist.reset_theme()
+            self.user_info_widget.reset_theme()
 
             # 弹出通知
             toast = top_toast_widget.ToastMessage('主题切换成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
@@ -1531,7 +1523,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         d.deleteLater()
 
     def init_profile_menu(self):
-        menu = QMenu()
+        menu = base_ui.BaseQMenu()
 
         self.user_info_widget = MainPopupMenu(menu)
         self.user_info_widget_action = QWidgetAction(self)

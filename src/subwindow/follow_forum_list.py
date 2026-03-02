@@ -37,7 +37,7 @@ class FollowForumList(base_ui.WindowBaseQWidget, follow_ba.Ui_Form):
             self.get_bars_async()
 
     def reset_theme(self):
-        self.set_theme_qss()
+        super().reset_theme()
 
         # 设置列表内容的样式
         for i in range(self.listWidget.count()):

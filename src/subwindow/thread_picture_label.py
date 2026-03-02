@@ -3,11 +3,12 @@ import gc
 import pyperclip
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QLabel, QMenu, QAction, QFileDialog
+from PyQt5.QtWidgets import QLabel, QAction, QFileDialog
 
 from publics import profile_mgr, qt_image
 from publics.funcs import start_background_thread, http_downloader
 from publics.qt_image import ImageType
+from subwindow import base_ui
 
 
 class ThreadPictureLabel(QLabel):
@@ -69,7 +70,7 @@ class ThreadPictureLabel(QLabel):
                 self.image_loader.unpausePlayDynamicImage()
 
     def init_picture_contextmenu(self):
-        menu = QMenu()
+        menu = base_ui.BaseQMenu()
 
         action_pause_gif = QAction(self)
         action_pause_gif.triggered.connect(self.pause_play_gif)

@@ -1,3 +1,4 @@
+"""基础 UI 组件库，负责 UI 的主题管理"""
 import ctypes
 import gc
 from ctypes import wintypes
@@ -6,9 +7,10 @@ import yarl
 import pyperclip
 import os
 
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QWidgetAction, QTableWidgetItem, QDialog
-from PyQt5.QtGui import QTextDocumentFragment, QIcon, QPixmapCache, QPixmap
+from PyQt5.QtCore import QSize, Qt, QEvent
+from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QWidgetAction, QTableWidgetItem, QDialog, QLineEdit, \
+    QTextEdit, QPlainTextEdit, QGraphicsDropShadowEffect
+from PyQt5.QtGui import QTextDocumentFragment, QIcon, QPixmapCache, QPixmap, QColor, QPalette
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
 from ui import tb_emoji_selector
@@ -70,7 +72,7 @@ def create_thread_content_menu(parent_label: QLabel):
 
     menu.addSeparator()
 
-    search_tb = QAction(f'在贴吧内搜索“{selected_text}”', parent_label)
+    search_tb = QAction(f'在贴吧内搜索“{funcs.cut_string(selected_text, 20)}”', parent_label)
     search_tb.triggered.connect(lambda: open_search_window(selected_text))
     if not selected_text:
         search_tb.setVisible(False)
@@ -85,7 +87,7 @@ def create_thread_content_menu(parent_label: QLabel):
 
     engine_name, engine_link = get_search_engine_link()
     engine_link = engine_link.replace('[query]', selected_text)
-    search_network = QAction(f'在 {engine_name} 中搜索“{selected_text}”', parent_label)
+    search_network = QAction(f'在 {engine_name} 中搜索“{funcs.cut_string(selected_text, 20)}”', parent_label)
     search_network.triggered.connect(lambda: funcs.open_url_in_browser(engine_link))
     if not selected_text:
         search_network.setVisible(False)
@@ -123,6 +125,24 @@ def set_widget_dark_mode(widget: QWidget):
         set_window_dark_mode(int(widget.winId()), is_dark)
 
 
+def update_placeholder_color(parent_widget, color_hex="#808080"):
+    """
+    递归遍历界面，设置所有输入框的占位符颜色
+    :param parent_widget: 顶层窗口或容器 (如 self)
+    :param color_hex: 目标占位符颜色的十六进制字符串
+    """
+    target_color = QColor(color_hex)
+
+    # 查找所有类型的输入框
+    input_widgets = parent_widget.findChildren((QLineEdit, QTextEdit, QPlainTextEdit))
+
+    for widget in input_widgets:
+        palette = widget.palette()
+        # 设置 PlaceholderText 角色
+        palette.setColor(QPalette.PlaceholderText, target_color)
+        widget.setPalette(palette)
+
+
 def set_theme_qss_as_cfg(widget, extended_qss=''):
     def replace_color_flags(qss: str):
         bg_color = profile_mgr.get_theme_color_string()
@@ -143,6 +163,7 @@ def set_theme_qss_as_cfg(widget, extended_qss=''):
     qss_list.append(replace_color_flags(profile_mgr.theme_qss['common']))
 
     widget.setStyleSheet('\n'.join(qss_list) + extended_qss)
+    update_placeholder_color(widget, '#666666' if policy == 2 else '#abb2bf')  # 为输入框专门设置占位符颜色
 
 
 def handle_native_event(widget, refreshThemeFunc, eventType, message):
@@ -178,6 +199,28 @@ def handle_native_event(widget, refreshThemeFunc, eventType, message):
                 return True
 
     return False
+
+
+class BaseQMenu(QMenu):
+    """所有上下文菜单引用的 QMenu 父类"""
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(self.windowFlags() | Qt.NoDropShadowWindowHint | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.set_theme_qss()
+
+    def set_theme_qss(self):
+        """载入标准样式主题"""
+        set_theme_qss_as_cfg(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
 
 
 class WindowBaseQWidget(QWidget):
@@ -364,15 +407,7 @@ class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
             self.frame.hide()
 
     def pop_selector(self, pos):
-        self.menu = QMenu()
-        self.menu.setObjectName('selectorContainerMenu')
-        self.menu.setStyleSheet(f"""
-            QMenu#selectorContainerMenu {{
-                background-color: {profile_mgr.get_theme_color_string()}; /* 设置背景色 */
-                border: 1px solid #CCCCCC; /* 设置边框 */
-                padding: 0px;   /* 去掉菜单整体的内边距 */
-                margin: 0px;    /* 去掉菜单整体的外边距 */
-            }}""")
+        self.menu = BaseQMenu()
 
         action = QWidgetAction(self)
         action.setDefaultWidget(self)

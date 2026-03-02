@@ -1,3 +1,7 @@
+QMainWindow {
+    background-color: BG_COLOR;
+}
+
 QDialog {
     background-color: BG_COLOR;
 }
@@ -12,6 +16,10 @@ QWidget#scrollAreaWidgetContents {
 
 QWidget {
     font-family: "微软雅黑";
+}
+
+QScrollArea {
+    background-color: BG_COLOR;
 }
 
 QLabel {
@@ -45,6 +53,7 @@ QRadioButton {
     color: FONT_COLOR;
 }
 
+
 QHeaderView {
     background-color: BG_COLOR;
     border: none;
@@ -59,22 +68,12 @@ QHeaderView::section {
     border: none;
 }
 
-QTabWidget {
-    background: transparent;
-    border: none;
-}
-
-QTabWidget::pane {
-    border: none;
-    margin: 0px;
-    padding: 0px;
-}
 
 QTextBrowser {
     background-color: BG_COLOR;
     color: FONT_COLOR;
     border: none;
-    selection-background-color: #0078d7;
+    selection-background-color: #5b44c8;
     selection-color: #ffffff;
 }
 
@@ -85,4 +84,65 @@ QTextBrowser:hover {
 QTextBrowser:focus {
     border: none;
     background-color: BG_COLOR;
+}
+
+
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background: none;
+}
+
+QScrollBar::add-line,
+QScrollBar::sub-line {
+    height: 0px;
+}
+
+
+QTabBar::tab:first {
+    border-top-left-radius: 7px;
+}
+
+QTabBar::tab:last {
+    border-top-right-radius: 7px;
+}
+
+QTabBar {
+    background-color: transparent;
+    qproperty-drawBase: false;
+}
+
+QTabWidget::pane {
+    border: none;
+    background-color: transparent;
+    top: 0px;
+}
+
+
+QComboBox:hover {
+    border: 1px solid #5b44c8;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 18px;
+    border-left: none;
+}
+
+
+QMenu::item {
+    background-color: transparent;
+    padding: 4px 5px;
+    margin: 2px 5px;
+    border-radius: 3px;
+    min-width: 110px;
+}
+
+QMenu::indicator {
+    subcontrol-origin: padding;
+    subcontrol-position: center left;
+
+    left: 4px;
+    width: 18px;
+    height: 18px;
 }

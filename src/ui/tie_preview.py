@@ -47,6 +47,7 @@ class Ui_Form(object):
         self.label_6.setObjectName("label_6")
         self.gridLayout.addWidget(self.label_6, 1, 0, 1, 4)
         self.label_5 = QtWidgets.QLabel(Form)
+        self.label_5.setMinimumSize(QtCore.QSize(0, 22))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
         font.setPointSize(13)

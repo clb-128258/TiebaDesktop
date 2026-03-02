@@ -159,6 +159,11 @@ class DayHistoryItem(base_ui.WindowBaseQWidget, view_history_item.Ui_Form):
             border: 1px solid {'rgba(255, 255, 255, 0.1)' if policy==2 else '#D3D3D3'};
         }}""")
 
+        # 设置列表内容的样式
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            widget.reset_theme()
+
     def init_shadow_effect(self):
         shadow_effect = QGraphicsDropShadowEffect()
         shadow_effect.setBlurRadius(10)  # 阴影模糊半径
