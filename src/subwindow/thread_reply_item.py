@@ -86,8 +86,16 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
         self.flash_timer.timeout.connect(self.handle_flash_timer_event)
 
     def reset_theme(self):
+        from subwindow.thread_picture_label import ThreadPictureLabel
+
         super().reset_theme()
         self.add_extend_qss(f'QPushButton{{color: {profile_mgr.get_theme_font_color_string()};}}')
+
+        # 设置列表内容的样式
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            if not isinstance(widget, ThreadPictureLabel):
+                widget.reset_theme()
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease and source in (
