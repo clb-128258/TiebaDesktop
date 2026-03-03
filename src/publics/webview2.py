@@ -133,8 +133,12 @@ class CSharpConverter:
         """
 
         def wait_thread():
-            task.Wait()
-            callback(task.Result)
+            try:
+                task.Wait()
+                callback(task.Result)
+            except Exception as e:
+                app_logger.log_WARN('waitCSharpAsyncFunction thread failed')
+                app_logger.log_exception(e)
 
         thread = Thread(ThreadStart(wait_thread))
         thread.ApartmentState = ApartmentState.STA
@@ -156,8 +160,8 @@ class CSharpConverter:
 
 class WebView2VersionScaner:
     """
-        用于扫描 WebView2 版本的工具类。
-        """
+    用于扫描 WebView2 版本的工具类。
+    """
 
     @classmethod
     def get_ver_CoreWebView2Environment(cls):
@@ -214,7 +218,7 @@ class HttpDataRewriter:
         捕捉到http响应时，会调用此方法
 
         Notes:
-            在重写该方法时，请注意返回 [statusCode, header, content] 三个字段，webview内部会使用这些返回值重写响应
+            目前还尚未支持http响应数据的重写，返回 [statusCode, header, content] 不会起作用
         """
         return statusCode, header, content
 
@@ -997,6 +1001,11 @@ class QWebView2View(QWidget):
             memoryStream = MemoryStream()
             content_cstream.CopyTo(memoryStream)
             content = bytes(memoryStream.ToArray())
+
+            # 读出字节数据后，释放资源
+            memoryStream.Dispose()
+            memoryStream.Close()
+
             handler.onResponseCaught(url, statusCode, header_dict, content)  # call custom method
 
         try:
@@ -1021,9 +1030,9 @@ class QWebView2View(QWidget):
                     header_iterator.MoveNext()
 
                 task = args.Response.GetContentAsync()
-                task.Wait()
-                stream = task.Result
-                on_content_loaded(url, statusCode, header_dict, stream)
+                CSharpConverter.waitCSharpAsyncFunction(task,
+                                                        lambda result: on_content_loaded(url, statusCode, header_dict,
+                                                                                         result))
         except Exception as e:
             app_logger.log_WARN(f'WebView2 Http Catcher failed')
             app_logger.log_exception(e)
@@ -1055,6 +1064,10 @@ class QWebView2View(QWidget):
                     memoryStream = MemoryStream()
                     args.Request.Content.CopyTo(memoryStream)
                     content = bytes(memoryStream.ToArray())
+
+                    # 读出字节数据后，释放资源
+                    memoryStream.Dispose()
+                    memoryStream.Close()
 
                 url, method, header, content = handler.onRequestCaught(url, method, header_dict,
                                                                        content)  # call custom method
