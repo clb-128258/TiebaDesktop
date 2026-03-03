@@ -12,8 +12,8 @@ def get_default_datapath():
 
 
 # 版本信息
-APP_VERSION_STR = '1.2.3-beta'
-APP_VERSION_NUM = 8
+APP_VERSION_STR = '1.3.0-release'
+APP_VERSION_NUM = 9
 
 # 其它全局信息
 enable_log_file = True
