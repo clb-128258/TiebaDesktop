@@ -1327,7 +1327,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.init_profile_menu()
         self.init_pages()
         self.stackedWidget.setCurrentIndex(
-            profile_mgr.local_config['other_settings'].get('mw_default_page', 0))  # 设置初始页面
+            get_dict_value_treely(profile_mgr.local_config, ['other_settings', 'mw_default_page'], 0))  # 设置初始页面
 
         self.notice_syncer.start_sync()
         self.refresh_all_datas()

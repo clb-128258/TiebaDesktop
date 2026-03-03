@@ -48,7 +48,9 @@ class Ui_Form(object):
 "    border: 1px soild #c0c4cc;\n"
 "    border-radius: 12px;\n"
 "    border-color: #67C23A;\n"
-"}")
+"}\n"
+"QLabel{color: black;}\n"
+"")
         self.frame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")

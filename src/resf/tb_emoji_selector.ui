@@ -90,7 +90,9 @@
     border: 1px soild #c0c4cc;
     border-radius: 12px;
     border-color: #67C23A;
-}</string>
+}
+QLabel{color: black;}
+</string>
      </property>
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>

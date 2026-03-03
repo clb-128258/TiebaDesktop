@@ -7,9 +7,9 @@ import yarl
 import pyperclip
 import os
 
-from PyQt5.QtCore import QSize, Qt, QEvent
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QWidgetAction, QTableWidgetItem, QDialog, QLineEdit, \
-    QTextEdit, QPlainTextEdit, QGraphicsDropShadowEffect
+    QTextEdit, QPlainTextEdit
 from PyQt5.QtGui import QTextDocumentFragment, QIcon, QPixmapCache, QPixmap, QColor, QPalette
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
@@ -183,17 +183,21 @@ def handle_native_event(widget, refreshThemeFunc, eventType, message):
         # 将指针转换为 MSG 结构体
         msg = wintypes.MSG.from_address(int(message))
 
+        # 获取 lParam
+        try:
+            change_area = ctypes.wstring_at(msg.lParam)
+        except:
+            change_area = ""
+
         # 监听是否修改系统设置
-        if msg.message == WM_SETTINGCHANGE:
-            is_darkmode = funcs.get_system_dark_mode_status()
+        if msg.message == WM_SETTINGCHANGE and change_area == "ImmersiveColorSet":
+            # 在修改了颜色设置时，才读取各种设置，避免不必要性能开销
             paths = ['theme_settings', 'bright_dark_policy']
             follow_sys_theme = funcs.get_dict_value_treely(profile_mgr.local_config, paths, 0) == 0
-            try:
-                change_area = ctypes.wstring_at(msg.lParam)
-            except:
-                change_area = ""
+            is_darkmode = funcs.get_system_dark_mode_status()
 
-            if follow_sys_theme and change_area == "ImmersiveColorSet" and is_darkmode != last_apps_dark_mode:
+            if follow_sys_theme and is_darkmode != last_apps_dark_mode:
+                # 执行主题切换
                 last_apps_dark_mode = is_darkmode
                 refreshThemeFunc()
                 return True

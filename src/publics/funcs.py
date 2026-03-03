@@ -7,6 +7,7 @@ import threading
 import time
 import datetime
 import ctypes
+import platform
 
 import aiohttp.client_exceptions
 
@@ -24,6 +25,9 @@ from publics import aes, profile_mgr, request_mgr, qt_window_mgr, qt_image
 import publics.app_logger as logging
 from publics.toasting import init_AUMID
 from ui import loading_amt, user_item
+
+if os.name == 'nt':
+    import winreg
 
 
 def cut_string(text: str, length: int, moretext: str = '...'):
@@ -526,13 +530,21 @@ def get_dict_value_treely(dict_data: dict, paths: list, default_value=None):
 
 
 def get_system_dark_mode_status():
-    """从注册表读取系统是否开启了应用深色模式"""
-    try:
-        import winreg
+    """
+    从注册表读取系统是否开启了应用深色模式
 
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
-        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-        return value == 0  # 0 表示深色模式
+    Notes:
+        该功能只支持 Windows 10 1809 (10.0.17763) 及以后的 Windows 系统\n
+        在不受支持的系统下，将始终返回 False
+    """
+    try:
+        if os.name == 'nt' and int(platform.version().split('.')[-1]) >= 17763:  # 先检查系统版本
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                 r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+            value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            return value == 0  # 0 表示深色模式
+        else:
+            return False
     except Exception as e:
         logging.log_exception(e)
         return False
