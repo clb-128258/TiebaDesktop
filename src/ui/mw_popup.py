@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\mw_popup.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\mw_popup.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -14,70 +14,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(140, 263)
-        Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
-"QWidget#Form{\n"
-"    background-color: rgb(255, 255, 255);\n"
-"}")
+        Form.resize(120, 292)
         self.gridLayout_3 = QtWidgets.QGridLayout(Form)
         self.gridLayout_3.setObjectName("gridLayout_3")
-        self.gridLayout_2 = QtWidgets.QGridLayout()
-        self.gridLayout_2.setObjectName("gridLayout_2")
-        self.label_2 = QtWidgets.QLabel(Form)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(13)
-        self.label_2.setFont(font)
-        self.label_2.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.label_2.setObjectName("label_2")
-        self.gridLayout_2.addWidget(self.label_2, 0, 1, 1, 1)
-        self.horizontalLayout = QtWidgets.QHBoxLayout()
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.label_3 = QtWidgets.QLabel(Form)
-        self.label_3.setObjectName("label_3")
-        self.horizontalLayout.addWidget(self.label_3)
-        self.toolButton_3 = QtWidgets.QToolButton(Form)
-        self.toolButton_3.setStyleSheet("QToolButton {\n"
-"                background-color: transparent;\n"
-"                border: none;\n"
-"                border-radius: 6px;\n"
-"                padding: 1px;\n"
-"                icon-size: 15px;\n"
-"                }\n"
-"\n"
-"                /* 鼠标悬停时：轻微灰色背景 */\n"
-"                QToolButton:hover {\n"
-"                background-color: rgba(0, 0, 0, 0.08);\n"
-"                }\n"
-"\n"
-"                /* 按下时：更深的背景色，模拟按下效果 */\n"
-"                QToolButton:pressed {\n"
-"                background-color: rgba(0, 0, 0, 0.15);\n"
-"                }\n"
-"\n"
-"                /* 禁用状态：半透明，显示不可点击 */\n"
-"                QToolButton:disabled {\n"
-"                background-color: transparent;\n"
-"                opacity: 0.4;\n"
-"                }\n"
-"\n"
-"                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
-"                QToolButton::menu-indicator {\n"
-"                image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */\n"
-"                subcontrol-position: right center;\n"
-"                subcontrol-origin: padding;\n"
-"                left: -4px;\n"
-"                }")
-        self.toolButton_3.setObjectName("toolButton_3")
-        self.horizontalLayout.addWidget(self.toolButton_3)
-        self.gridLayout_2.addLayout(self.horizontalLayout, 1, 1, 1, 1)
-        self.label = QtWidgets.QLabel(Form)
-        self.label.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setObjectName("label")
-        self.gridLayout_2.addWidget(self.label, 0, 0, 2, 1)
-        self.gridLayout_2.setColumnStretch(1, 1)
-        self.gridLayout_3.addLayout(self.gridLayout_2, 0, 0, 1, 1)
         self.frame = QtWidgets.QFrame(Form)
         self.frame.setObjectName("frame")
         self.gridLayout = QtWidgets.QGridLayout(self.frame)
@@ -203,7 +142,87 @@ class Ui_Form(object):
         self.label_11.setObjectName("label_11")
         self.verticalLayout_4.addWidget(self.label_11)
         self.gridLayout.addWidget(self.frame_2, 0, 1, 1, 1)
-        self.gridLayout_3.addWidget(self.frame, 1, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.frame, 3, 0, 1, 1)
+        self.gridLayout_2 = QtWidgets.QGridLayout()
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.label_2 = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(13)
+        self.label_2.setFont(font)
+        self.label_2.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.label_2.setObjectName("label_2")
+        self.gridLayout_2.addWidget(self.label_2, 0, 1, 1, 1)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.label_3 = QtWidgets.QLabel(Form)
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout.addWidget(self.label_3)
+        self.toolButton_3 = QtWidgets.QToolButton(Form)
+        self.toolButton_3.setStyleSheet("QToolButton {\n"
+"                background-color: transparent;\n"
+"                border: none;\n"
+"                border-radius: 6px;\n"
+"                padding: 1px;\n"
+"                icon-size: 15px;\n"
+"                }\n"
+"\n"
+"                /* 鼠标悬停时：轻微灰色背景 */\n"
+"                QToolButton:hover {\n"
+"                background-color: rgba(0, 0, 0, 0.08);\n"
+"                }\n"
+"\n"
+"                /* 按下时：更深的背景色，模拟按下效果 */\n"
+"                QToolButton:pressed {\n"
+"                background-color: rgba(0, 0, 0, 0.15);\n"
+"                }\n"
+"\n"
+"                /* 禁用状态：半透明，显示不可点击 */\n"
+"                QToolButton:disabled {\n"
+"                background-color: transparent;\n"
+"                opacity: 0.4;\n"
+"                }\n"
+"\n"
+"                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
+"                QToolButton::menu-indicator {\n"
+"                image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */\n"
+"                subcontrol-position: right center;\n"
+"                subcontrol-origin: padding;\n"
+"                left: -4px;\n"
+"                }")
+        self.toolButton_3.setObjectName("toolButton_3")
+        self.horizontalLayout.addWidget(self.toolButton_3)
+        self.gridLayout_2.addLayout(self.horizontalLayout, 1, 1, 1, 1)
+        self.label = QtWidgets.QLabel(Form)
+        self.label.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setObjectName("label")
+        self.gridLayout_2.addWidget(self.label, 0, 0, 2, 1)
+        self.gridLayout_2.setColumnStretch(1, 1)
+        self.gridLayout_3.addLayout(self.gridLayout_2, 1, 0, 1, 1)
+        self.frame_7 = QtWidgets.QFrame(Form)
+        self.frame_7.setStyleSheet("QFrame{\n"
+"    background-color: rgb(154, 154, 154);\n"
+"    border-radius: 7px;\n"
+"}\n"
+"QLabel{\n"
+"    color: black;\n"
+"}")
+        self.frame_7.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_7.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_7.setObjectName("frame_7")
+        self.gridLayout_5 = QtWidgets.QGridLayout(self.frame_7)
+        self.gridLayout_5.setContentsMargins(-1, 6, -1, 6)
+        self.gridLayout_5.setObjectName("gridLayout_5")
+        self.label_16 = QtWidgets.QLabel(self.frame_7)
+        self.label_16.setObjectName("label_16")
+        self.gridLayout_5.addWidget(self.label_16, 0, 0, 1, 1)
+        self.label_17 = QtWidgets.QLabel(self.frame_7)
+        self.label_17.setObjectName("label_17")
+        self.gridLayout_5.addWidget(self.label_17, 0, 1, 1, 1)
+        self.gridLayout_5.setColumnStretch(1, 1)
+        self.gridLayout_3.addWidget(self.frame_7, 0, 0, 1, 1)
+        self.gridLayout_3.setRowStretch(3, 1)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -211,11 +230,6 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "主窗口menu"))
-        self.label_2.setText(_translate("Form", "name"))
-        self.label_3.setText(_translate("Form", "tiebaid"))
-        self.toolButton_3.setToolTip(_translate("Form", "<html><head/><body><p>复制</p></body></html>"))
-        self.toolButton_3.setText(_translate("Form", "c"))
-        self.label.setText(_translate("Form", "icon"))
         self.label_14.setText(_translate("Form", "NA"))
         self.label_15.setText(_translate("Form", "收藏列表"))
         self.label_12.setText(_translate("Form", "NA"))
@@ -228,3 +242,10 @@ class Ui_Form(object):
         self.label_9.setText(_translate("Form", "获赞"))
         self.label_10.setText(_translate("Form", "NA"))
         self.label_11.setText(_translate("Form", "关注的吧"))
+        self.label_2.setText(_translate("Form", "name"))
+        self.label_3.setText(_translate("Form", "tiebaid"))
+        self.toolButton_3.setToolTip(_translate("Form", "<html><head/><body><p>复制</p></body></html>"))
+        self.toolButton_3.setText(_translate("Form", "c"))
+        self.label.setText(_translate("Form", "icon"))
+        self.label_16.setText(_translate("Form", "icon"))
+        self.label_17.setText(_translate("Form", "封禁信息"))

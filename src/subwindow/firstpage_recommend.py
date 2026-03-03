@@ -232,8 +232,11 @@ class RecommendWindow(QListWidget):
                     preview_pixmap.append(AsyncLoadImage(pic_addr))
 
             # 进一步获取用户信息
+            # 优先获取新版昵称，如果没有则使用旧版昵称或者用户名
             user_name = element['author'].get('user_nickname_v2',
-                                              element['author']['display_name'])  # 优先获取新版昵称，如果没有则使用旧版昵称或者用户名
+                                              element['author'].get('display_name',
+                                                                    element['author']['user_name'])
+                                              )
 
             # 进一步获取吧信息
             forum_name = element['forum']['forum_name']

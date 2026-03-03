@@ -410,6 +410,7 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             background-color: {color};
             border-color: #0078d7; /* 选中时的边框颜色 */
         }}""")
+        base_ui.update_placeholder_color(self.frame, '#666666' if policy == 2 else '#abb2bf')
 
         self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/back.png'))
         self.toolButton_2.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/forward.png'))

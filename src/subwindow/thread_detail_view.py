@@ -721,7 +721,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 emit_data['success'] = True
                 exp_text = f'经验 +{result.data.exp.inc}' if result.data.exp.inc not in ('0', '') else '本次回贴没有增加任何经验值'
                 emit_data['text'] = f'回贴成功，{exp_text}'
-            elif int(result.data.info.need_vcode):
+            elif result.data.info.need_vcode == '1':
                 emit_data['success'] = False
                 emit_data['is_captcha'] = True
                 emit_data['captcha_info']['md5'] = result.data.info.vcode_md5

@@ -1,12 +1,11 @@
 import asyncio
 
 import pyperclip
-from PyQt5.QtCore import pyqtSignal, QTimer, QEvent, QSize
+from PyQt5.QtCore import pyqtSignal, QTimer, QEvent, QSize, Qt
 from PyQt5.QtGui import QIcon, QResizeEvent
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import qApp, QMenu
 
-import consts
 from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image, app_logger
 from subwindow import base_ui
 from subwindow.history_list import HistoryViewWindow
@@ -26,6 +25,8 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
         self.setupUi(self)
 
         self.parent_menu = parent_menu
+        self.label_16.setPixmap(
+            QPixmap(f'ui/icon_black/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
 
         self.infoLoaded.connect(self._ui_set_self_info)
         self.toolButton_3.clicked.connect(self.copy_tieba_id)
@@ -125,7 +126,15 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
             self.label_4.setText(str(data['follow']))
             self.label_6.setText(str(data['fans']))
             self.label_14.setText(str(data['store_num']))
+
+            if data['is_banned']:
+                self.frame_7.show()
+                self.label_17.setText(
+                    f'该账号已被全吧{("封禁 " + str(data["unban_days"]) + " 天") if data["unban_days"] != 36500 else "永久封禁"}')
+            else:
+                self.frame_7.hide()
         else:
+            self.frame_7.hide()
             for i in widgets:
                 i.hide()
 
@@ -147,7 +156,9 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
                              'fans': 0,
                              'follow': 0,
                              'view_history_num': len(profile_mgr.view_history),
-                             'follow_forum_num': 0}
+                             'follow_forum_num': 0,
+                             'is_banned': False,
+                             'unban_days': 0}
 
                 if profile_mgr.current_bduss:
                     params = {
@@ -170,6 +181,8 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
                     emit_data['store_num'] = int(resp['user']['favorite_num'])
                     emit_data['fans'] = int(resp['user']['fans_num'])
                     emit_data['follow'] = int(resp['user']['concern_num'])
+                    emit_data['is_banned'] = bool(resp['anti_stat']['block_stat'])
+                    emit_data['unban_days'] = int(resp['anti_stat']['days_tofree'])
 
                     emit_data['follow_forum_num'] = int(resp['user']['my_like_num'])
                 else:

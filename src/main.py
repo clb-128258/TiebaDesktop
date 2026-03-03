@@ -739,7 +739,6 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
 
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.toolButton.setIcon(QIcon('ui/refresh.png'))
 
         self.qr_sign = ''
         self.tangram_guid = ''
@@ -763,6 +762,10 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
 
         self.start_looper()
         self.get_new_qr_code_async()
+
+    def reset_theme(self):
+        super().reset_theme()
+        self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/refresh.png'))
 
     def closeEvent(self, a0):
         def do_close():
