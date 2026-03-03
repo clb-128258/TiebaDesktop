@@ -27,10 +27,10 @@ def loadLibs():
     """
     global isload
     if not isload and os.name == 'nt':
-        isload = True
         self_path = os.getcwd() + '\\binres'
         if not os.path.exists(self_path):
-            raise RuntimeError(f"Error: WebView2 runtime not found at {self_path}.  Make sure the path is correct.")
+            app_logger.log_WARN(f"WebView2 runtime not found at {self_path}.  Make sure the path is correct.")
+            return
 
         clr.AddReference("System.Windows.Forms")
         clr.AddReference("System.Threading")
@@ -86,6 +86,7 @@ def loadLibs():
         globals()['CoreWebView2Environment'] = CoreWebView2Environment
         globals()['CoreWebView2CapturePreviewImageFormat'] = CoreWebView2CapturePreviewImageFormat
 
+        isload = True
         app_logger.log_INFO('WebView2 library has been loaded')
 
 
@@ -114,7 +115,7 @@ def isWebView2Installed():
         return bool(WebView2VersionScaner.get_ver_CoreWebView2Environment())
     else:
         logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
-        return True
+        return False
 
 
 class CSharpConverter:

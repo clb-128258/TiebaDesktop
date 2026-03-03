@@ -377,6 +377,8 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
     def _on_image_uploaded(self, msg):
         self.is_uploading = False
         if msg:
+            self.uploaded_image_list.clear()
+
             self.loading_widget.hide()
             msg = top_toast_widget.ToastMessage(msg,
                                                 icon_type=top_toast_widget.ToastIconType.ERROR)
@@ -391,39 +393,44 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
         funcs.start_background_thread(self.upload_images)
 
     def upload_single_img(self, image: WillUploadImage, process_queue: queue.Queue):
-        payloads = {
-            "BDUSS": profile_mgr.current_bduss,
-            "_client_type": "2",
-            "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
-            "alt": "json",
-            "chunkNo": "1",
-            "groupId": "1",
-            "height": str(image.origin_height),
-            "isFinish": "1",
-            "is_bjh": "0",
-            "resourceId": image.image_md5.upper(),
-            "saveOrigin": "1",
-            "stoken": profile_mgr.current_stoken,
-            "support_image": "jepgwebp",
-            "width": str(image.origin_width)
-        }
-        data = {
-            'chunk': (f'image_{image.image_md5}', image.image_binary)
-        }
+        try:
+            payloads = {
+                "BDUSS": profile_mgr.current_bduss,
+                "_client_type": "2",
+                "_client_version": request_mgr.TIEBA_CLIENT_VERSION,
+                "alt": "json",
+                "chunkNo": "1",
+                "groupId": "1",
+                "height": str(image.origin_height),
+                "isFinish": "1",
+                "is_bjh": "0",
+                "resourceId": image.image_md5.upper(),
+                "saveOrigin": "1",
+                "stoken": profile_mgr.current_stoken,
+                "support_image": "jepgwebp",
+                "width": str(image.origin_width)
+            }
+            data = {
+                'chunk': (f'image_{image.image_md5}', image.image_binary)
+            }
 
-        session = requests.Session()
-        session.trust_env = True
-        response = session.post(f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_APP_HOST}/c/s/uploadPicture',
-                                headers=request_mgr.header_android,
-                                data=payloads,
-                                files=data)
-        response.close()
-        session.close()
-        response.raise_for_status()
+            session = requests.Session()
+            session.trust_env = True
+            response = session.post(f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_APP_HOST}/c/s/uploadPicture',
+                                    headers=request_mgr.header_android,
+                                    data=payloads,
+                                    files=data)
+            response.close()
+            session.close()
+            response.raise_for_status()
 
-        jsonify = response.json()
-        uploaded_obj = UploadedImage(jsonify.get('picId', ''), image.origin_width, image.origin_height, jsonify)
-        process_queue.put(uploaded_obj)
+            jsonify = response.json()
+            uploaded_obj = UploadedImage(jsonify.get('picId', ''), image.origin_width, image.origin_height, jsonify)
+            process_queue.put(uploaded_obj)
+        except Exception as e:
+            app_logger.log_exception(e)
+            uploaded_obj = UploadedImage('', image.origin_width, image.origin_height, {'error_code': -1})
+            process_queue.put(uploaded_obj)
 
         return uploaded_obj
 

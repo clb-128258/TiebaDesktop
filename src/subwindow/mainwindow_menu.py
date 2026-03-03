@@ -18,6 +18,7 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
     """主窗口右上角菜单中个人信息条目"""
     infoLoaded = pyqtSignal(dict)
     followForumClicked = pyqtSignal()
+    loginAccountClicked = pyqtSignal()
     tieba_id = -1
 
     def __init__(self, parent_menu: QMenu):
@@ -69,7 +70,7 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease:
             if source in (self.label, self.label_2, self.label_8, self.label_9):
-                self.open_user_homepage()
+                self.open_user_homepage() if profile_mgr.current_bduss else self.loginAccountClicked.emit()
             elif source in (self.label_10, self.label_11):
                 self.followForumClicked.emit()
             elif source in (self.label_4, self.label_5):
@@ -83,10 +84,11 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
         return super(type(self), self).eventFilter(source, event)  # 照常处理事件
 
     def copy_tieba_id(self):
-        pyperclip.copy(str(self.tieba_id))
-        self.toolButton_3.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/checked.png'))
-        QTimer.singleShot(2000, lambda: self.toolButton_3.setIcon(
-            QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/content_copy.png')))
+        if self.tieba_id != -1:
+            pyperclip.copy(str(self.tieba_id))
+            self.toolButton_3.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/checked.png'))
+            QTimer.singleShot(2000, lambda: self.toolButton_3.setIcon(
+                QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/content_copy.png')))
 
     def open_history_window(self):
         history_window = HistoryViewWindow()
@@ -140,7 +142,7 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
 
             self.label.setPixmap(data['portrait_pixmap'])
             self.label_2.setText('未登录')
-            self.label_3.setText('登录后即可使用所有功能')
+            self.label_3.setText('点击头像以登录')
 
         self.resize_menu()
 
@@ -186,6 +188,8 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
 
                     emit_data['follow_forum_num'] = int(resp['user']['my_like_num'])
                 else:
+                    self.tieba_id = -1
+
                     pixmap = QPixmap()
                     pixmap.load('ui/default_user_image.png')
                     pixmap = qt_image.add_cover_for_pixmap(pixmap, 50)

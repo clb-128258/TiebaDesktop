@@ -28,7 +28,7 @@ def check_webview2():
     log_INFO(f'Checking webview2')
 
     webview2.loadLibs()
-    if not webview2.isWebView2Installed():
+    if not webview2.isWebView2Installed() and os.name == 'nt':
         msgbox = QMessageBox()
         msgbox.warning(None, '运行警告',
                        '你的电脑上似乎还未安装 WebView2 运行时。本程序的部分功能（如登录等）将不可用。',
@@ -884,7 +884,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
                 else:
                     # 正常上号
                     bduss = login_data['data']['session']['bduss']
-                    stoken = login_data['data']['session']['stoken']
+                    stoken = login_data['data']['session']['stokenList'].split('quot;')[1][3:]
                     result = self.write_user_info(bduss, stoken)
                     if result:
                         self.is_login_succeed = True
@@ -1532,16 +1532,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.user_info_widget = MainPopupMenu(self.popup_menu)
         self.user_info_widget_action = QWidgetAction(self)
         self.user_info_widget.followForumClicked.connect(self.switch_follow_forum_page)
+        self.user_info_widget.loginAccountClicked.connect(self.login_exec)
         self.user_info_widget_action.setDefaultWidget(self.user_info_widget)
         self.popup_menu.addAction(self.user_info_widget_action)
 
         self.my_agrees = QAction('我的点赞', self)
         self.my_agrees.triggered.connect(self.open_agreed_window)
         self.popup_menu.addAction(self.my_agrees)
-
-        self.login = QAction('登录账号', self)
-        self.login.triggered.connect(self.login_exec)
-        self.popup_menu.addAction(self.login)
 
         self.popup_menu.addSeparator()
 
@@ -1563,11 +1560,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         if self.user_data['bduss']:
             self.my_agrees.setVisible(True)
             self.exit_login_ac.setVisible(True)
-            self.login.setVisible(False)
         else:
             self.my_agrees.setVisible(False)
             self.exit_login_ac.setVisible(False)
-            self.login.setVisible(True)
 
     def exit_login(self):
         if QMessageBox.warning(self, '警告',
@@ -1584,9 +1579,15 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             shutil.rmtree(f'{datapath}/webview_data/{profile_mgr.current_uid}')
             self.refresh_all_datas()
 
+            toast = top_toast_widget.ToastMessage('账号退出成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.toast_widget.showToast(toast)
+
     def login_exec(self):
-        d = LoginWebView()
-        d.resize(1065, 680)
+        if webview2.isWebView2Installed():
+            d = LoginWebView()
+            d.resize(1065, 680)
+        else:
+            d = QRLoginDialog()
         d.exec()
 
     def handle_d2id_flag(self):
