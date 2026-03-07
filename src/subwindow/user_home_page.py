@@ -14,6 +14,7 @@ import publics.app_logger as logging
 
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
 from subwindow import base_ui
+from subwindow.base_ui import BaseQMenu
 
 from ui import user_home_page
 
@@ -129,7 +130,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.top_toaster.showToast(toast_msg)
 
     def init_user_action_menu(self):
-        menu = QMenu(self)
+        menu = BaseQMenu(self)
         menu.setToolTipsVisible(True)
 
         follow = QAction('关注', self)
@@ -159,7 +160,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
         menu.addSeparator()
 
-        copy_datas = QMenu(self)
+        copy_datas = BaseQMenu(self)
         copy_datas.setToolTipsVisible(True)
         copy_datas.setTitle('复制...')
 

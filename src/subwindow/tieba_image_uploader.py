@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QFileDialog, QApplication, QMenu, QAction, QMessageB
 
 from publics import request_mgr, top_toast_widget, funcs, profile_mgr, app_logger, qt_image
 from subwindow import base_ui
+from subwindow.base_ui import BaseQMenu
 from ui import tb_image_uploader
 
 
@@ -189,7 +190,7 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
         self.show_movie.frameChanged.connect(lambda: self.label_5.setPixmap(self.show_movie.currentPixmap()))
 
     def init_add_image_menu(self):
-        menu = QMenu(self)
+        menu = BaseQMenu(self)
 
         from_file = QAction('从本地文件上传', self)
         from_file.triggered.connect(self.ask_add_image)

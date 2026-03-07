@@ -1,19 +1,17 @@
-"""基础 UI 组件库，负责 UI 的主题管理"""
+"""基础 UI 组件库，负责 UI 的主题管理等"""
 import ctypes
-import gc
 from ctypes import wintypes
 
 import yarl
 import pyperclip
 import os
 
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QWidgetAction, QTableWidgetItem, QDialog, QLineEdit, \
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
     QTextEdit, QPlainTextEdit
-from PyQt5.QtGui import QTextDocumentFragment, QIcon, QPixmapCache, QPixmap, QColor, QPalette
+from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
-from ui import tb_emoji_selector
 
 # --- Windows API 常量与定义 ---
 WM_THEMECHANGED = 0x031A
@@ -54,7 +52,7 @@ def create_thread_content_menu(parent_label: QLabel):
     all_text = QTextDocumentFragment.fromHtml(parent_label.text()).toPlainText() if parent_label.text().startswith(
         '<') else parent_label.text()
 
-    menu = QMenu(parent_label)
+    menu = BaseQMenu(parent_label)
 
     copy_selected = QAction('复制所选', parent_label)
     copy_selected.triggered.connect(lambda: pyperclip.copy(selected_text))
@@ -208,7 +206,7 @@ def handle_native_event(widget, refreshThemeFunc, eventType, message):
 class BaseQMenu(QMenu):
     """所有上下文菜单引用的 QMenu 父类"""
 
-    def __init__(self):
+    def __init__(self, parent=None):
         super().__init__()
         self.setWindowFlags(self.windowFlags() | Qt.NoDropShadowWindowHint | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -291,134 +289,3 @@ class WindowBaseQDialog(QDialog):
     def reset_theme(self):
         """动态重载主题/使用自定义主题 时应当调用此方法"""
         self.set_theme_qss()
-
-
-class EmojiItem(QTableWidgetItem):
-    """基于 QTableWidgetItem 的表情条目"""
-
-    def __init__(self, emoji_name):
-        super().__init__()
-        self.emoji_name = emoji_name
-        self._is_img_loaded = False
-        self.current_icon = None
-
-        self.setSizeHint(QSize(35, 40))
-        self.setToolTip(profile_mgr.emoticons_list_inverted[self.emoji_name])
-
-    def __del__(self):
-        del self.emoji_name
-        del self._is_img_loaded
-        del self.current_icon
-
-    def load_emoji_img(self):
-        if not self._is_img_loaded:
-            file_path = f'./ui/emoticons/{self.emoji_name}.png'
-            if os.path.isfile(file_path):
-                self.current_icon = QIcon(file_path)
-                self.setIcon(self.current_icon)
-            else:
-                app_logger.log_WARN(f'emoticon {self.emoji_name} was not found')
-            self._is_img_loaded = True
-
-
-class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
-    """贴吧黄豆表情选择器组件"""
-
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-        self.setFixedSize(self.size())
-        self.tableWidget.setIconSize(QSize(30, 30))
-        self.label_2.setPixmap(
-            QPixmap('ui/icon_black/quiz.png').scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.frame.hide()
-
-        self.tableWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_images)
-        self.tableWidget.itemDoubleClicked.connect(self.on_emoji_selected)
-        self.lineEdit.textChanged.connect(lambda: self.load_emojis(True))
-        self.pushButton.clicked.connect(self.on_custom_emoticon_required)
-
-        self.selected_emoji = ''
-        self.emoji_items_list = []
-        self.menu = None
-
-        self.load_emojis()
-
-    def showEvent(self, a0):
-        super().showEvent(a0)
-        self.activateWindow()
-        self.scroll_load_images()
-
-    def on_emoji_selected(self, item):
-        self.selected_emoji = item.emoji_name
-        self.menu.close()
-
-    def on_custom_emoticon_required(self):
-        self.selected_emoji = self.lineEdit.text()
-        self.menu.close()
-
-    def clear_emojis(self):
-        self.emoji_items_list.clear()
-        self.tableWidget.clear()
-        self.tableWidget.setRowCount(0)
-        self.tableWidget.setColumnCount(0)
-        QPixmapCache.clear()
-        gc.collect()
-
-    def scroll_load_images(self):
-        items = funcs.tableWidget_get_visible_items(self.tableWidget)
-        for i in items:
-            i.load_emoji_img()
-
-    def load_emojis(self, load_image_after_add=False):
-        self.clear_emojis()
-
-        max_column_count = 8
-        current_row, current_column = 0, 0
-        emoticons_list_sorted = list(profile_mgr.emoticons_list_inverted.keys())
-        emoticons_list_sorted.sort(key=lambda e: len(e.encode()))
-        search_keyword_text = self.lineEdit.text()
-
-        self.tableWidget.insertRow(0)
-        for emoji_name in emoticons_list_sorted:
-            has_usable_text = bool(search_keyword_text)
-            is_kw_contained = search_keyword_text in emoji_name or search_keyword_text in \
-                              profile_mgr.emoticons_list_inverted[emoji_name]
-
-            if not has_usable_text or is_kw_contained:
-                if self.tableWidget.columnCount() < current_column + 1:
-                    self.tableWidget.insertColumn(current_column)
-
-                emoji_item = EmojiItem(emoji_name)
-                self.tableWidget.setItem(current_row, current_column, emoji_item)
-                self.tableWidget.resizeColumnToContents(current_column)
-                self.tableWidget.resizeRowToContents(current_row)
-                self.emoji_items_list.append(emoji_item)
-
-                # 跳转到下一行
-                current_column += 1
-                if current_column + 1 > max_column_count:
-                    current_column = 0
-                    current_row += 1
-                    self.tableWidget.insertRow(current_row)
-
-        if load_image_after_add:
-            self.scroll_load_images()
-
-        if not self.emoji_items_list:
-            self.frame.show()
-        else:
-            self.frame.hide()
-
-    def pop_selector(self, pos):
-        self.menu = BaseQMenu()
-
-        action = QWidgetAction(self)
-        action.setDefaultWidget(self)
-        self.menu.addAction(action)
-
-        self.menu.exec(pos)
-        self.clear_emojis()
-        self.menu.deleteLater()
-
-        return self.selected_emoji, profile_mgr.emoticons_list_inverted.get(self.selected_emoji, self.selected_emoji)

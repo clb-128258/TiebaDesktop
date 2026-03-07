@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QApplication, QMenu, QAction, QFileDialog
 import publics.app_logger as logging
 from publics import request_mgr, top_toast_widget, profile_mgr
 from subwindow import base_ui
+from subwindow.base_ui import BaseQMenu
 from ui import image_viewer
 
 
@@ -137,7 +138,7 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
             pass
 
     def init_menu(self):
-        menu = QMenu(self)
+        menu = BaseQMenu(self)
 
         self.action_pause_gif = QAction('暂停 GIF 播放', self)
         self.action_pause_gif.triggered.connect(self.pause_play_gif)
@@ -175,7 +176,7 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
 
         self.pushButton_2.setMenu(menu)
 
-        share_menu = QMenu(self)
+        share_menu = BaseQMenu(self)
 
         self.action_copyto = QAction('复制', self)
         self.action_copyto.triggered.connect(

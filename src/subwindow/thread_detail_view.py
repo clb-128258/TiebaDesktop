@@ -21,7 +21,7 @@ from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, q
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string
 import publics.app_logger as logging
-from subwindow import base_ui
+from subwindow import base_ui,tieba_emoji_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import tie_detail_view
 
@@ -618,7 +618,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION))
 
     def show_addpost_emoji_selector(self):
-        selector = base_ui.TiebaEmojiSelector()
+        selector = tieba_emoji_selector.TiebaEmojiSelector.get_instance()
 
         self.is_textedit_menu_poping = True
         bt_pos = self.pushButton_10.mapToGlobal(QPoint(0, 0))
