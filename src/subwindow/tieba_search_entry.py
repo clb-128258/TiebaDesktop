@@ -4,9 +4,9 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidget, QMessageBox, QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, profile_mgr
+from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget, app_logger
 from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
-    listWidget_get_visible_widgets
+    listWidget_get_visible_widgets, get_exception_string
 from subwindow import base_ui
 from ui import forum_search
 
@@ -14,12 +14,14 @@ from ui import forum_search
 class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
     """贴吧搜索窗口"""
     add_result = pyqtSignal(dict)
+    search_finished = pyqtSignal(dict)
 
     def __init__(self, bduss, stoken, forum_name=''):
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.init_top_toaster()
 
         self.bduss = bduss
         self.stoken = stoken
@@ -32,6 +34,7 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
 
         for i in self.listwidgets:
             i.verticalScrollBar().setSingleStep(20)
+            i.verticalScrollBar().valueChanged.connect(self.scroll_load_images)
 
         self.listWidget_2.verticalScrollBar().valueChanged.connect(
             lambda: self.scroll_load_more('thread', self.listWidget_2))
@@ -39,9 +42,6 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             lambda: self.scroll_load_more('thread_single_forum', self.listWidget_4))
         self.listWidget_5.verticalScrollBar().valueChanged.connect(
             lambda: self.scroll_load_more('reply_single_forum', self.listWidget_5))
-        self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_images(self.listWidget_2))
-        self.listWidget_4.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_images(self.listWidget_4))
-        self.listWidget_5.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_images(self.listWidget_5))
 
         if forum_name:
             self.lineEdit_2.setText(forum_name)
@@ -49,8 +49,10 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         self.handle_search_type_switch(self.comboBox.currentIndex())
 
         self.add_result.connect(self._ui_add_search_result)
+        self.search_finished.connect(self._on_search_finished)
         self.comboBox.currentIndexChanged.connect(self.handle_search_type_switch)
         self.pushButton.clicked.connect(self.start_search)
+        self.tabWidget.currentChanged.connect(self.scroll_load_images)
 
     def reset_theme(self):
         super().reset_theme()
@@ -78,15 +80,34 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         a0.accept()
         qt_window_mgr.del_window(self)
 
-    def scroll_load_images(self, lw: QListWidget):
+    def init_top_toaster(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
+
+    def scroll_load_images(self):
         from subwindow.thread_preview_item import ThreadView
         from subwindow.thread_reply_item import ReplyItem
-        widgets = listWidget_get_visible_widgets(lw)  # 获取可见的widget列表
+        from subwindow.forum_item import ForumItem
+
+        listwidget = None
+        for lw in self.listwidgets:
+            if lw.parent() is self.tabWidget.currentWidget():
+                listwidget = lw
+                break
+        if not listwidget:
+            return
+
+        widgets = listWidget_get_visible_widgets(listwidget)  # 获取可见的widget列表
         for i in widgets:
+            # 异步加载里面的图片
             if isinstance(i, ThreadView):
-                i.load_all_AsyncImage()  # 异步加载里面的图片
+                i.load_all_AsyncImage()
             elif isinstance(i, ReplyItem):
-                i.load_images()  # 异步加载里面的图片
+                i.load_images()
+            elif isinstance(i, ForumItem):
+                i.load_avatar()
+            elif isinstance(i, UserItem):
+                i.get_portrait()
 
     def scroll_load_more(self, type, listw: QListWidget):
         if listw.verticalScrollBar().value() == listw.verticalScrollBar().maximum():
@@ -97,7 +118,10 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
 
     def handle_search_type_switch(self, index):
         if not self.clear_list_all():
-            QMessageBox.information(self, '提示', '列表还在加载中，请稍后再尝试切换搜索范围。', QMessageBox.Ok)
+            toast = top_toast_widget.ToastMessage('列表还在加载中，请稍后再尝试切换搜索范围',
+                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
+            self.top_toaster.showToast(toast)
+
             self.comboBox.blockSignals(True)  # 暂时阻塞信号
             self.comboBox.setCurrentIndex(0 if index == 1 else 1)
             self.comboBox.blockSignals(False)  # 解除阻塞信号
@@ -137,6 +161,12 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                          'reply_single_forum': {'loading': False, 'page': 1}}
         return flag
 
+    def _on_search_finished(self, data):
+        if data['toast']:
+            self.top_toaster.showToast(data['toast'])
+
+        self.scroll_load_images()
+
     def _ui_add_search_result(self, datas):
         if datas['type'] == 'thread':
             from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
@@ -153,12 +183,14 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             item.setSizeHint(widget.size())
             self.listWidget_2.addItem(item)
             self.listWidget_2.setItemWidget(item, widget)
-            self.scroll_load_images(self.listWidget_2)
         elif datas['type'] == 'forum':
             from subwindow.forum_item import ForumItem
             item = QListWidgetItem()
             widget = ForumItem(datas['forum_id'], True, self.bduss, self.stoken, datas['forum_name'])
+
+            widget.load_by_callback = True
             widget.set_info(datas['avatar'], datas['forum_name'] + '吧', datas['desp'])
+
             widget.pushButton_2.hide()
             item.setSizeHint(widget.size())
             self.listWidget.addItem(item)
@@ -166,9 +198,12 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         elif datas['type'] == 'user':
             item = QListWidgetItem()
             widget = UserItem(self.bduss, self.stoken)
+
+            widget.load_by_callback = True
             widget.user_portrait_id = datas['portrait']
             widget.show_homepage_by_click = True
             widget.setdatas(datas['portrait'], datas['name'], datas['tieba_id'], is_tieba_uid=True)
+
             item.setSizeHint(widget.size())
             self.listWidget_3.addItem(item)
             self.listWidget_3.setItemWidget(item, widget)
@@ -187,7 +222,6 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             item.setSizeHint(widget.size())
             self.listWidget_4.addItem(item)
             self.listWidget_4.setItemWidget(item, widget)
-            self.scroll_load_images(self.listWidget_4)
         elif datas['type'] == 'reply_single_forum':
             from subwindow.thread_reply_item import ReplyItem
             item = QListWidgetItem()
@@ -207,14 +241,17 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             item.setSizeHint(widget.size())
             self.listWidget_5.addItem(item)
             self.listWidget_5.setItemWidget(item, widget)
-            self.scroll_load_images(self.listWidget_5)
 
     def start_search(self):
         index = self.comboBox.currentIndex()
         if not self.lineEdit.text():
-            QMessageBox.critical(self, '填写错误', '请先输入搜索关键字再搜索。', QMessageBox.Ok)
+            toast = top_toast_widget.ToastMessage('请先输入搜索关键字再搜索',
+                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
+            self.top_toaster.showToast(toast)
         elif index == 1 and not self.lineEdit_2.text():
-            QMessageBox.critical(self, '填写错误', '请先输入你要搜索的吧名再搜索。', QMessageBox.Ok)
+            toast = top_toast_widget.ToastMessage('请先输入你要搜索的吧名再搜索',
+                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
+            self.top_toaster.showToast(toast)
         elif self.clear_list_all():
             if index == 0:
                 self.search_global_async('thread')
@@ -229,6 +266,7 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             start_background_thread(self.search_forum, (self.lineEdit.text(), search_area, self.lineEdit_2.text()))
 
     def search_forum(self, query, search_area, forum_name):
+        finish_emit_data = {'toast': None}
         try:
             self.page[search_area]['loading'] = True
 
@@ -326,7 +364,9 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
 
                         self.add_result.emit(data)
         except Exception as e:
-            print(f'{type(e)}\n{e}')
+            app_logger.log_exception(e)
+            finish_emit_data['toast'] = top_toast_widget.ToastMessage(
+                f'error in {search_area}: {get_exception_string(e)}')
         else:
             if response['data']['has_more']:
                 self.page[search_area]['page'] += 1
@@ -334,12 +374,14 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 self.page[search_area]['page'] = -1
         finally:
             self.page[search_area]['loading'] = False
+            self.search_finished.emit(finish_emit_data)
 
     def search_global_async(self, search_area):
         if not self.page[search_area]['loading'] and not self.page[search_area]['page'] == -1:
             start_background_thread(self.search_global, (self.lineEdit.text(), search_area))
 
     def search_global(self, query, search_area):
+        finish_emit_data = {'toast': None}
         try:
             self.page[search_area]['loading'] = True
             if search_area == 'thread':
@@ -449,7 +491,9 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                         else:
                             self.add_result.emit(data)
         except Exception as e:
-            print(f'{type(e)}\n{e}')
+            app_logger.log_exception(e)
+            finish_emit_data['toast'] = top_toast_widget.ToastMessage(
+                f'error in {search_area}: {get_exception_string(e)}')
         else:
             if response['data'].get('has_more', False):
                 self.page[search_area]['page'] += 1
@@ -457,3 +501,4 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 self.page[search_area]['page'] = -1
         finally:
             self.page[search_area]['loading'] = False
+            self.search_finished.emit(finish_emit_data)
