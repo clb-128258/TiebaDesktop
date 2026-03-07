@@ -161,7 +161,7 @@ class ClipboardSyncer(QObject):
             except Exception as e:
                 logging.log_exception(e)
             finally:
-                time.sleep(1)
+                time.sleep(2)
 
 
 class TiebaMsgSyncer(QObject):

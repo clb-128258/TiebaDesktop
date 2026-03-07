@@ -667,6 +667,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.checkBox_23.setChecked(profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"])
             self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
             self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
+            self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
             self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
             self.comboBox_6.setCurrentIndex(self.brightDarkPolicyFlag)
 
