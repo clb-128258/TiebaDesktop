@@ -47,6 +47,11 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
                                       f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
                                       f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
 
+        # 设置列表内容的样式
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            widget.reset_theme()
+
     def closeEvent(self, a0):
         self.listWidget.clear()
         a0.accept()

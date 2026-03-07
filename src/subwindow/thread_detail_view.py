@@ -404,6 +404,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.get_sub_thread_async()
 
     def reset_theme(self):
+        from subwindow.thread_picture_label import ThreadPictureLabel
         super().reset_theme()
 
         listwidgets = [self.listWidget, self.listWidget_4]
@@ -417,10 +418,12 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             lw.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             lw.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # 设置回复列表内容的样式
-        for i in range(self.listWidget_4.count()):
-            widget = self.listWidget_4.itemWidget(self.listWidget_4.item(i))
-            widget.reset_theme()
+            # 设置列表内容的样式
+            for i in range(lw.count()):
+                widget = lw.itemWidget(lw.item(i))
+                if not isinstance(widget, ThreadPictureLabel):
+                    widget.reset_theme()
+
         for btn in flat_buttons:
             btn.setStyleSheet(f'QPushButton{{color: {font_color};}}')
 

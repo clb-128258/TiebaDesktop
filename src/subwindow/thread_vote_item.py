@@ -56,6 +56,11 @@ class ThreadVoteItem(base_ui.WindowBaseQWidget, thread_vote_info.Ui_Form):
         vote_icon = vote_icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.label.setPixmap(vote_icon)
 
+        # 设置列表内容的样式
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            widget.reset_theme()
+
     def _on_poll_finish(self, datas):
         for widget in self.vote_item:
             widget.pushButton.setEnabled(True)
