@@ -1029,8 +1029,7 @@ QPushButton:pressed {
          <item row="0" column="0">
           <widget class="QPushButton" name="pushButton_5">
            <property name="toolTip">
-            <string>向输入框内插入图片富文本标签。
-将会在文本光标处插入富文本标签，如果选择了文本，那么选择的文本会被替换为富文本标签。</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;向输入框内插入图片富文本标签。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string>图片</string>
@@ -1053,8 +1052,7 @@ QPushButton:pressed {
          <item row="0" column="2">
           <widget class="QPushButton" name="pushButton_6">
            <property name="toolTip">
-            <string>向输入框内插入提及信息富文本标签，可以通过该方法@他人。
-将会在文本光标处插入富文本标签，如果选择了文本，那么选择的文本会被替换为富文本标签。</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;向输入框内插入提及信息富文本标签，可以通过该方法@他人。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string>@他人</string>
@@ -1064,8 +1062,7 @@ QPushButton:pressed {
          <item row="0" column="1">
           <widget class="QPushButton" name="pushButton_10">
            <property name="toolTip">
-            <string>向输入框内插入表情富文本标签，可以插入贴吧的黄豆表情。
-将会在文本光标处插入富文本标签，如果选择了文本，那么选择的文本会被替换为富文本标签。</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;向输入框内插入表情富文本标签，可以插入贴吧的黄豆表情。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string>表情</string>

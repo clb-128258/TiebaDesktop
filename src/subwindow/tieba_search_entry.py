@@ -266,7 +266,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             start_background_thread(self.search_forum, (self.lineEdit.text(), search_area, self.lineEdit_2.text()))
 
     def search_forum(self, query, search_area, forum_name):
-        finish_emit_data = {'toast': None}
+        finish_emit_data = {'toast': None, 'has_any_result': False}
+        response = None
         try:
             self.page[search_area]['loading'] = True
 
@@ -284,6 +285,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 response = request_mgr.run_get_api('/mo/q/search/thread', bduss=self.bduss, stoken=self.stoken,
                                                    params=params, use_mobile_header=True)
                 if response['no'] == 0:
+                    finish_emit_data['has_any_result'] = len(response['data']['post_list']) != 0
+
                     for thread in response['data']['post_list']:
                         data = {'type': search_area,
                                 'user_name': thread['user']['show_nickname'],
@@ -319,6 +322,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                                     data['picture'].append(url)
 
                         self.add_result.emit(data)
+                else:
+                    raise ValueError(f'{response["error"]} (错误代码 {response["no"]})')
             elif search_area == 'reply_single_forum':
                 params = {
                     'st': "5",
@@ -333,6 +338,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 response = request_mgr.run_get_api('/mo/q/search/thread', bduss=self.bduss, stoken=self.stoken,
                                                    params=params, use_mobile_header=True)
                 if response['no'] == 0:
+                    finish_emit_data['has_any_result'] = len(response['data']['post_list']) != 0
+
                     for thread in response['data']['post_list']:
                         data = {'type': search_area,
                                 'user_name': thread['user']['show_nickname'],
@@ -363,15 +370,22 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                         data['time_str'] = timestr
 
                         self.add_result.emit(data)
+                else:
+                    raise ValueError(f'{response["error"]} (错误代码 {response["no"]})')
         except Exception as e:
             app_logger.log_exception(e)
             finish_emit_data['toast'] = top_toast_widget.ToastMessage(
-                f'error in {search_area}: {get_exception_string(e)}')
+                f'error in {search_area}: {get_exception_string(e)}', icon_type=top_toast_widget.ToastIconType.ERROR)
         else:
             if response['data']['has_more']:
                 self.page[search_area]['page'] += 1
             else:
                 self.page[search_area]['page'] = -1
+
+            if not finish_emit_data['has_any_result']:
+                finish_emit_data['toast'] = top_toast_widget.ToastMessage(
+                    f'未在 {search_area} 搜索范围内搜索到任何结果',
+                    icon_type=top_toast_widget.ToastIconType.INFORMATION)
         finally:
             self.page[search_area]['loading'] = False
             self.search_finished.emit(finish_emit_data)
@@ -381,7 +395,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             start_background_thread(self.search_global, (self.lineEdit.text(), search_area))
 
     def search_global(self, query, search_area):
-        finish_emit_data = {'toast': None}
+        finish_emit_data = {'toast': None, 'has_any_result': False}
+        response = None
         try:
             self.page[search_area]['loading'] = True
             if search_area == 'thread':
@@ -397,6 +412,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 response = request_mgr.run_get_api('/mo/q/search/thread', bduss=self.bduss, stoken=self.stoken,
                                                    params=params, use_mobile_header=True)
                 if response['no'] == 0:
+                    finish_emit_data['has_any_result'] = len(response['data']['post_list']) != 0
+
                     for thread in response['data']['post_list']:
                         data = {'type': search_area,
                                 'user_name': thread['user']['show_nickname'],
@@ -432,6 +449,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                                     data['picture'].append(url)
 
                         self.add_result.emit(data)
+                else:
+                    raise ValueError(f'{response["error"]} (错误代码 {response["no"]})')
             elif search_area == 'forum':
                 params = {
                     'word': query,
@@ -441,6 +460,9 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 response = request_mgr.run_get_api('/mo/q/search/forum', bduss=self.bduss, stoken=self.stoken,
                                                    params=params, use_mobile_header=True)
                 if response['no'] == 0:
+                    finish_emit_data['has_any_result'] = bool(response['data']['exactMatch']) or len(
+                        response['data']['fuzzyMatch']) != 0
+
                     if response['data']['exactMatch']:
                         # 准确吧结果
                         data = {'type': search_area,
@@ -452,6 +474,7 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                                 'post_num': response['data']['exactMatch']['post_num_ori']}
 
                         self.add_result.emit(data)
+
                     for forum in response['data']['fuzzyMatch']:  # 相似结果
                         data = {'type': search_area,
                                 'avatar': forum['avatar'],
@@ -462,6 +485,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                                 'post_num': forum['post_num_ori']}
 
                         self.add_result.emit(data)
+                else:
+                    raise ValueError(f'{response["error"]} (错误代码 {response["no"]})')
             elif search_area == 'user':
                 params = {
                     'word': query
@@ -469,6 +494,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 response = request_mgr.run_get_api('/mo/q/search/user', bduss=self.bduss, stoken=self.stoken,
                                                    params=params, use_mobile_header=True)
                 if response['no'] == 0:
+                    finish_emit_data['has_any_result'] = bool(response['data']['exactMatch']) or len(
+                        response['data']['fuzzyMatch']) != 0
                     if response['data']['exactMatch']:
                         # 准确用户结果
                         data = {'type': search_area,
@@ -490,15 +517,22 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                                 self.add_result.emit(data)
                         else:
                             self.add_result.emit(data)
+                else:
+                    raise ValueError(f'{response["error"]} (错误代码 {response["no"]})')
         except Exception as e:
             app_logger.log_exception(e)
             finish_emit_data['toast'] = top_toast_widget.ToastMessage(
-                f'error in {search_area}: {get_exception_string(e)}')
+                f'error in {search_area}: {get_exception_string(e)}', icon_type=top_toast_widget.ToastIconType.ERROR)
         else:
             if response['data'].get('has_more', False):
                 self.page[search_area]['page'] += 1
             else:
                 self.page[search_area]['page'] = -1
+
+            if not finish_emit_data['has_any_result']:
+                finish_emit_data['toast'] = top_toast_widget.ToastMessage(
+                    f'未在 {search_area} 搜索范围内搜索到任何结果',
+                    icon_type=top_toast_widget.ToastIconType.INFORMATION)
         finally:
             self.page[search_area]['loading'] = False
             self.search_finished.emit(finish_emit_data)
