@@ -247,7 +247,7 @@ class WebViewProfile:
         disable_web_safe (bool): 是否禁用 Web 安全策略。谨慎使用，仅用于受信任环境或调试。
         font_family (list[str]|None): 注入页面的字体优先级列表，会把这些字体通过 CSS 注入到每个页面以覆盖默认字体。
         http_rewriter (dict[str, HttpDataRewriter]|None): HTTP 请求/响应重写器映射。键为匹配模式，值为继承或实现了 HttpDataRewriter 接口的对象，用于对请求或响应进行处理。
-
+        enable_transparent_bg (bool): 是否启用透明背景。开启后，WebView 的背景将与父 QWidget 的相同。否则将使用纯白色背景。
     Behavior:
         - 这些字段仅作配置使用；具体在 WebView2 初始化过程中由 `QWebView2View` 读取并应用。
         - `http_rewriter` 的匹配逻辑：代码会遍历映射中的键，当 `k.replace('*','')` 在请求 URL 中被包含时，会选择该重写器。
@@ -255,7 +255,7 @@ class WebViewProfile:
     """
 
     def __init__(self,
-                 data_folder: str = os.getenv("TEMP", '.') + "/TiebaDesktopWebviewCache",
+                 data_folder: str = os.getenv("TEMP", '.') + "/TiebaDesktopWebViewCache",
                  private_mode=False,
                  user_agent: str = None,
                  enable_error_page: bool = True,
@@ -270,6 +270,7 @@ class WebViewProfile:
                  disable_web_safe: bool = False,
                  font_family: list[str] = None,
                  http_rewriter: dict[str, HttpDataRewriter] = None,
+                 enable_transparent_bg: bool = False
                  ):
         self.data_folder = data_folder
         self.private_mode = private_mode
@@ -286,6 +287,7 @@ class WebViewProfile:
         self.disable_web_safe = disable_web_safe
         self.font_family = font_family
         self.http_rewriter = http_rewriter
+        self.enable_transparent_bg = enable_transparent_bg
 
     def clone(self):
         """
@@ -308,7 +310,8 @@ class WebViewProfile:
                               ignore_all_render_argvs=self.ignore_all_render_argvs,
                               disable_web_safe=self.disable_web_safe,
                               font_family=self.font_family,
-                              http_rewriter=self.http_rewriter)
+                              http_rewriter=self.http_rewriter,
+                              enable_transparent_bg=self.enable_transparent_bg)
 
 
 class WebViewCoverLabel(QLabel):
@@ -387,7 +390,6 @@ class QWebView2View(QWidget):
         self.__frozen_view_label.hide()
         self.__update_frozen_view.connect(self.__set_frozen_pixmap)
 
-        self.__set_background()
         self.newtabSignal.connect(self.createWindow)
 
     def resizeEvent(self, a0):
@@ -842,9 +844,6 @@ class QWebView2View(QWidget):
             else:
                 app_logger.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
 
-    def __set_background(self):
-        self.setStyleSheet("QWidget{background-color: white;}")
-
     def __run(self):
         try:
             args = ''
@@ -864,7 +863,7 @@ class QWebView2View(QWidget):
             webview_properties.IsInPrivateModeEnabled = self.__profile.private_mode
             webview_properties.AdditionalBrowserArguments = args
             webview.CreationProperties = webview_properties
-            webview.DefaultBackgroundColor = Color.Transparent
+            webview.DefaultBackgroundColor = Color.Transparent if self.profile().enable_transparent_bg else Color.White
             webview.Dock = DockStyle.Fill  # 设置停靠属性
 
             webview.CoreWebView2InitializationCompleted += self.__on_webview_ready

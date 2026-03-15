@@ -19,9 +19,9 @@ from proto.AddPost import AddPostReqIdl_pb2, AddPostResIdl_pb2
 
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image, webview2
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
-    timestamp_to_string, cut_string, large_num_to_string, get_exception_string
+    timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely
 import publics.app_logger as logging
-from subwindow import base_ui,tieba_emoji_selector
+from subwindow import base_ui, tieba_emoji_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import tie_detail_view
 
@@ -263,7 +263,10 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
                                                enable_keyboard_keys=True,
                                                handle_newtab_byuser=False,
                                                http_rewriter={
-                                                   '*://seccaptcha.baidu.com/v1/webapi/verint/verify/*': self.http_catcher})
+                                                   '*://seccaptcha.baidu.com/v1/webapi/verint/verify/*': self.http_catcher},
+                                               enable_transparent_bg=get_dict_value_treely(
+                                                   profile_mgr.local_config,
+                                                   ['webview_settings', 'transparent_bg_color'], False))
         self.webview.setProfile(self.profile)
         self.webview.loadAfterRender(h5_link)
         self.webview.initRender()
@@ -1215,7 +1218,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 self.horizontalLayout_2.removeWidget(self.label_12)
             if not self.label_8.isVisible() and not self.label_12.isVisible() and not self.label_13.isVisible():
                 self.gridLayout.setHorizontalSpacing(0)
-            if datas['content_statement']:
+            if datas['content_statement'] and get_dict_value_treely(profile_mgr.local_config,
+                                                                    ['thread_view_settings', 'show_statement'], True):
                 self.frame_3.show()
                 self.label_20.setText('内容声明：' + datas['content_statement'])
 

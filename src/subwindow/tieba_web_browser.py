@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, 
 
 from consts import datapath, APP_VERSION_STR
 from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
-from publics.funcs import open_url_in_browser, cut_string, start_background_thread
+from publics.funcs import open_url_in_browser, cut_string, start_background_thread, get_dict_value_treely
 from subwindow import base_ui
 
 from ui import tb_browser
@@ -309,6 +309,9 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
                                                        disable_web_safe=False,
                                                        font_family=font_family,
                                                        user_agent=f'[default_ua] CLBTiebaDesktop/{APP_VERSION_STR}',
+                                                       enable_transparent_bg=get_dict_value_treely(
+                                                           profile_mgr.local_config,
+                                                           ['webview_settings', 'transparent_bg_color'], False)
                                                        )
 
         self.tabWidget.tabCloseRequested.connect(self.remove_widget)

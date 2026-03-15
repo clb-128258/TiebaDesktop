@@ -291,6 +291,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["webview_settings"]["view_frozen"] = self.checkBox_21.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"] = self.checkBox_23.isChecked()
             profile_mgr.local_config["theme_settings"]["bright_dark_policy"] = self.comboBox_6.currentIndex()
+            profile_mgr.local_config["thread_view_settings"]["show_statement"] = self.checkBox_24.isChecked()
+            profile_mgr.local_config["webview_settings"]["transparent_bg_color"] = self.checkBox_25.isChecked()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -653,23 +655,29 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         try:
             self.brightDarkPolicyFlag = profile_mgr.local_config["theme_settings"]["bright_dark_policy"]
 
+            self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
             self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
             self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
             self.checkBox_12.setChecked(profile_mgr.local_config['thread_view_settings']['play_gif'])
-            self.checkBox_13.setChecked(profile_mgr.local_config["notify_settings"]["enable_interact_notify"])
+            self.checkBox_24.setChecked(profile_mgr.local_config["thread_view_settings"]["show_statement"])
+            self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
             (self.radioButton if profile_mgr.local_config['thread_view_settings'][
                                      'tb_emoticon_size'] == 0 else self.radioButton_2).setChecked(True)
-            self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
-            self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
-            self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
-            self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
+
+            self.checkBox_13.setChecked(profile_mgr.local_config["notify_settings"]["enable_interact_notify"])
             self.checkBox_17.setChecked(profile_mgr.local_config["notify_settings"]["offline_notify"])
             self.checkBox_23.setChecked(profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"])
-            self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
-            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
-            self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
+
+            self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
+
+            self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
             self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
             self.comboBox_6.setCurrentIndex(self.brightDarkPolicyFlag)
+
+            self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
+            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
+            self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
+            self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
 
             search_engine_settings = profile_mgr.local_config["other_settings"]["context_menu_search_engine"]
             if search_engine_settings['preset']:
@@ -1206,7 +1214,10 @@ class LoginWebView(base_ui.WindowBaseQDialog):
                                                enable_context_menu=False,
                                                enable_keyboard_keys=False,
                                                handle_newtab_byuser=False,
-                                               http_rewriter={'*://tieba.baidu.com/*': self.http_catcher})
+                                               http_rewriter={'*://tieba.baidu.com/*': self.http_catcher},
+                                               enable_transparent_bg=get_dict_value_treely(
+                                                   profile_mgr.local_config,
+                                                   ['webview_settings', 'transparent_bg_color'], False))
         self.webview.setProfile(self.profile)
         self.webview.loadAfterRender('https://passport.baidu.com/v2/?login&u=https%3A%2F%2Ftieba.baidu.com')
         self.webview.initRender()

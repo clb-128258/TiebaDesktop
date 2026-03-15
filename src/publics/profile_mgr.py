@@ -12,7 +12,8 @@ local_config_model = {
         'tb_emoticon_size': 1,
         'default_sort': 0,
         'enable_lz_only': False,
-        'play_gif': True
+        'play_gif': True,
+        'show_statement': True
     },
     'forum_view_settings': {
         'default_sort': 0
@@ -37,7 +38,8 @@ local_config_model = {
     },
     "webview_settings": {
         "disable_font_cover": False,
-        'view_frozen': False
+        'view_frozen': False,
+        "transparent_bg_color": False
     },
     "theme_settings": {
         "bright_dark_policy": 0
