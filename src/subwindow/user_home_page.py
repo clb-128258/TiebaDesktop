@@ -160,7 +160,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
         menu.addSeparator()
 
-        copy_datas = BaseQMenu(self)
+        copy_datas = QMenu(self)
         copy_datas.setToolTipsVisible(True)
         copy_datas.setTitle('复制...')
 
@@ -203,29 +203,30 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
         menu.addMenu(copy_datas)
 
-        open_in_browser = QAction('在浏览器内打开', self)
-        open_in_browser.triggered.connect(
-            lambda: open_url_in_browser(f'https://tieba.baidu.com/home/main?id={self.real_portrait}'))
-        menu.addAction(open_in_browser)
-
         show_follow_forum_strongly_menu = QMenu(self)
-        show_follow_forum_strongly_menu.setTitle('查询该用户关注的吧')
-
-        chengqing = QAction('澄清·工具箱', self)
-        chengqing.triggered.connect(lambda: open_url_in_browser(f'http://chengqing.cc/'))
-        show_follow_forum_strongly_menu.addAction(chengqing)
-
-        buer = QAction('不二的贴吧工具箱', self)
-        buer.triggered.connect(
-            lambda: open_url_in_browser(f'https://www.82cat.com/tieba/forum/{self.real_baidu_user_name}/1'))
-        show_follow_forum_strongly_menu.addAction(buer)
+        show_follow_forum_strongly_menu.setTitle('第三方工具箱')
+        show_follow_forum_strongly_menu.setToolTip('在第三方工具箱中查询该用户关注列表。')
 
         ouotool = QAction('ouo 工具箱', self)
         ouotool.triggered.connect(
             lambda: open_url_in_browser(f'https://ouotool.com/tb?un={self.real_baidu_user_name}'))
         show_follow_forum_strongly_menu.addAction(ouotool)
 
+        eztb = QAction('eztb 工具箱', self)
+        eztb.triggered.connect(
+            lambda: open_url_in_browser(f'https://www.eztb.org/likeforum?method=id&id=%22{self.real_user_id}%22'))
+        show_follow_forum_strongly_menu.addAction(eztb)
+
+        chengqing = QAction('澄清·工具箱', self)
+        chengqing.triggered.connect(lambda: open_url_in_browser(f'http://chengqing.cc/'))
+        show_follow_forum_strongly_menu.addAction(chengqing)
+
         menu.addMenu(show_follow_forum_strongly_menu)
+
+        open_in_browser = QAction('浏览器打开', self)
+        open_in_browser.triggered.connect(
+            lambda: open_url_in_browser(f'https://tieba.baidu.com/home/main?id={self.real_portrait}'))
+        menu.addAction(open_in_browser)
 
         if self.real_user_id == profile_mgr.current_uid or not self.bduss:
             follow.setEnabled(False)

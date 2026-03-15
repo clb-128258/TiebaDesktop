@@ -1098,7 +1098,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
         except Exception as e:
             logging.log_exception(e)
             emit_data['success'] = False
-            emit_data['info'] = str(e)
+            emit_data['info'] = get_exception_string(e)
             self.is_qr_loading = False
         else:
             emit_data['success'] = True
