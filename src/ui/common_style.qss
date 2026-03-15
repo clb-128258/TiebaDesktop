@@ -41,10 +41,6 @@ QTreeWidget {
     color: FONT_COLOR;
 }
 
-QGroupBox {
-    color: FONT_COLOR;
-}
-
 QCheckBox {
     color: FONT_COLOR;
 }
@@ -145,4 +141,31 @@ QMenu::indicator {
     left: 4px;
     width: 18px;
     height: 18px;
+}
+
+
+QGroupBox {
+    background-color: transparent;
+    border: 1px solid #9c9c9c;
+    border-radius: 8px;
+    margin-top: 7px; 
+    padding-top: 5px;
+    color: FONT_COLOR;
+}
+
+/* 标题样式定制 */
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 6px;
+    padding: 0 2px;
+}
+
+/* 针对特定状态的微调 */
+QGroupBox:flat {
+    border: none;
+    border-top: 1px solid #9c9c9c;
+    border-radius: 0px;
+    margin-top: 20px;
+    font-size: 12px;
 }
