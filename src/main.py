@@ -179,16 +179,23 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.init_login_button_menu()
         self.listWidget.currentRowChanged.connect(self.stackedWidget.setCurrentIndex)
         self.listWidget_3.currentRowChanged.connect(self.scroll_common_settings)
-        self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{datapath}/logs'))
+
         self.pushButton.clicked.connect(self.clear_account_list)
         self.pushButton_11.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
-        self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
         self.pushButton_12.clicked.connect(self.scan_use_detail_async)
         self.pushButton_4.clicked.connect(self.clear_caches_async)
         self.pushButton_6.clicked.connect(self.open_proxy_settings)
         self.pushButton_7.clicked.connect(self.select_all_caches)
         self.pushButton_5.clicked.connect(self.add_search_engine)
         self.pushButton_8.clicked.connect(self.reset_local_config)
+
+        self.commandLinkButton.clicked.connect(
+            lambda: self.open_web_link('https://www.github.com/clb-128258/TiebaDesktop'))
+        self.commandLinkButton_2.clicked.connect(
+            lambda: self.open_web_link('https://www.github.com/clb-128258/TiebaDesktop?tab=MIT-1-ov-file'))
+        self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{datapath}/logs'))
+        self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
+
         self.scanFinish.connect(self._set_use_detail_ui)
         self.clearFinish.connect(self._on_caches_cleared)
 
@@ -257,6 +264,12 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         menu.addAction(bduss_directly_login)
 
         self.pushButton_2.setMenu(menu)
+
+    def open_web_link(self, url):
+        open_url_in_browser(url)
+        policy = profile_mgr.local_config['web_browser_settings']['url_open_policy']
+        if policy == 0:
+            self.close()
 
     def scroll_common_settings(self, row):
         groupbox_map = [self.groupBox_8, self.groupBox_4, self.groupBox_7, self.groupBox_5, self.groupBox_9]
@@ -352,7 +365,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             QMessageBox.information(self, '提示', '该功能暂不支持你的系统，请手动调整系统的代理设置。', QMessageBox.Ok)
 
     def set_debug_info(self):
-        self.label_8.setText(f'版本 {consts.APP_VERSION_STR}')
+        self.label_8.setText(f'版本 {consts.APP_VERSION_STR} ({consts.APP_VERSION_NUM})')
         self.label_23.setText(f'Qt 版本：{QT_VERSION_STR} ({QT_VERSION})')
         self.label_22.setText(f'用户数据目录：{consts.datapath}')
         self.label_21.setText(f'内部版本信息：version {consts.APP_VERSION_NUM} '
