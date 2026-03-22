@@ -474,10 +474,22 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         self.flash_shower.hide()
         a0.accept()
+
         self.forum_avatar.destroyImage()
         self.lz_portrait.destroyImage()
-        self.listWidget.clear()
-        self.listWidget_4.clear()
+
+        lw_list = [self.listWidget, self.listWidget_4]
+        for lw in lw_list:
+            for i in range(lw.count()):
+                widget = lw.itemWidget(lw.item(i))
+                if widget:
+                    widget.destroy()
+                    widget.deleteLater()
+                    item = lw.takeItem(i)
+                    del widget
+                    del item
+        gc.collect()
+
         qt_window_mgr.del_window(self)
 
     def init_load_flash(self):
@@ -1236,10 +1248,12 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
             self.label_9.setStyleSheet(qss)  # 为不同等级设置qss
 
-            if (not datas['view_pixmap']
-                    and not datas['video_info']['have_video']
-                    and not datas['voice_info']['have_voice']
-                    and not datas['repost_info']['have_repost']):
+            no_rich_content_flags = [bool(datas['view_pixmap']),
+                                     datas['video_info']['have_video'],
+                                     datas['voice_info']['have_voice'],
+                                     datas['repost_info']['have_repost'],
+                                     datas['manager_election_info']['have_manager_election']]
+            if True not in no_rich_content_flags:
                 self.listWidget.hide()
             else:
                 if datas['video_info']['have_video']:
@@ -1320,6 +1334,21 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     self.listWidget.addItem(item)
                     self.listWidget.setItemWidget(item, vote_widget)
                     self.update_listwidget_size(vote_widget.height())
+
+                if datas['manager_election_info']['have_manager_election']:
+                    from subwindow.thread_election_item import ThreadManagerElectionItem
+
+                    election_widget = ThreadManagerElectionItem()
+                    election_widget.set_info(datas['manager_election_info']['can_vote'],
+                                             datas['manager_election_info']['status'],
+                                             datas['manager_election_info']['vote_num'],
+                                             datas['manager_election_info']['vote_start_time'])
+
+                    item = QListWidgetItem()
+                    item.setSizeHint(election_widget.size())
+                    self.listWidget.addItem(item)
+                    self.listWidget.setItemWidget(item, election_widget)
+                    self.update_listwidget_size(election_widget.height())
 
     def get_thread_head_info_async(self):
         start_background_thread(self.get_thread_head_info)
@@ -1449,6 +1478,14 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                                'current_num': o.num}
                                 vote_info['options'].append(vote_option)
 
+                        manager_election_info = {
+                            'have_manager_election': bool(proto_response.data.manager_election.status),
+                            'can_vote': bool(proto_response.data.manager_election.can_vote),
+                            'vote_num': int(proto_response.data.manager_election.vote_num),
+                            'vote_start_time': int(
+                                proto_response.data.manager_election.begin_vote_time),
+                            'status': int(proto_response.data.manager_election.status)}
+
                         for j in thread_info.thread.contents.imgs:
                             # width, height, src, view_src
                             src = j.origin_src
@@ -1485,7 +1522,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                  'forum_slogan': forum_slogan,  # 吧标语
                                  'vote_info': vote_info,  # 投票信息
                                  'draft_text': draft_text,  # 草稿文本
-                                 'content_statement': content_statement  # 内容提示，如 "疑似含AI内容"
+                                 'content_statement': content_statement,  # 内容提示，如 "疑似含AI内容"
+                                 'manager_election_info': manager_election_info  # 吧主竞选信息
                                  }
 
                         logging.log_INFO(

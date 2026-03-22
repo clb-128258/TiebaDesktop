@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\thread_vote_info.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\thread_vote_info.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -22,7 +22,7 @@ class Ui_Form(object):
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setContentsMargins(-1, 9, -1, 0)
-        self.gridLayout.setHorizontalSpacing(10)
+        self.gridLayout.setHorizontalSpacing(7)
         self.gridLayout.setObjectName("gridLayout")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem, 0, 2, 1, 1)
