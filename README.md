@@ -1,9 +1,50 @@
+<p align="center">
+<img height="300" width="300" src="./docs/appicon-transparent.png" alt="APP Logo"/>
+</p>
+<div align="center">
+
 # 贴吧桌面
 
-## 简介
+![STARS](https://img.shields.io/github/stars/clb-128258/TiebaDesktop?style=round-square&logo=github&color=yellow) ![FORKS](https://img.shields.io/github/forks/clb-128258/TiebaDesktop?style=round-square)
 
-贴吧桌面是一个非官方的百度贴吧电脑客户端，目前支持 Windows 系统。理论上它也支持 Linux 和 Mac。  
-使用 Python + PyQt5 的方案开发。
+一个非官方的百度贴吧电脑客户端, 使用 PyQt5 开发
+</div>
+
+> [!note]
+>
+> 由于学业原因，更新会较为缓慢，一些 Bug 可能无法及时修复，还请谅解。  
+> 如对本项目有任何建议或问题，欢迎提交 Issues。
+
+## 如何使用
+
+在本仓库的 `Releases` 找到最新的版本，可以下载到最新版的 `.zip` 压缩包和 `.exe` 安装程序。
+
+### 登录
+
+进入软件后，点击右上角的箭头按钮，再点击头像或 `未登录` 字样即可启动登录流程。  
+此时可以使用任意百度系软件扫码登录。  
+
+<img src="./docs/app-ui-grabs/1.png" alt="App UI grab image"/>
+
+在 WebView2 可用的系统下，软件会弹出百度账号的登录页面；
+
+<img src="./docs/app-ui-grabs/2.png" alt="App UI grab image"/>
+
+否则会弹出原生的扫码登录界面。
+
+<img src="./docs/app-ui-grabs/3.png" alt="App UI grab image"/>
+
+当然，本软件也支持多种登录方式，任君选择。
+
+<img src="./docs/app-ui-grabs/4.png" alt="App UI grab image"/>
+
+> [!note]
+> 
+> 如果你有对本项目进行二次开发的需求，请参阅：
+> * [如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)  
+> * [主程序构建指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
+
+
 
 ## 功能实现
 
@@ -65,30 +106,19 @@
     - [x] 跟随系统设置自动切换主题
 - 等等...
 
-# 如何使用
-
-## 对于普通用户
-
-在本项目主页点击右侧的 Releases，并在 Releases 界面找到最新的版本，可以下载到最新版的 `.zip` 压缩包和 `.exe` 安装程序。
-
-## 对于高级用户
-
-请参阅这篇教程：[如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)  
-如果想要编译出可执行文件，请参阅：[主程序编译指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
-
-# 致谢
+## 致谢
 
 另外要特别感谢以下开源仓库：  
 [lumina37/aiotieba - 贴吧 API 的 Python 实现](https://github.com/lumina37/aiotieba)，没有这个仓库就没有本软件的诞生。  
 [n0099/tbclient.protobuf - 贴吧 .proto 定义合集](https://github.com/n0099/tbclient.protobuf)，该仓库为本项目的 protobuf
 开发提供了很大的便利.
 
-# 友情链接
+## 友情链接
 
 [TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)  
 [NeoTieBa - 一个基于 Tauri2.0 + Vue3 + TypeScript 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)
 
-# 许可声明
+## 许可声明
 
 本软件遵循 MIT License 发布，请在遵守 MIT License 的前提下使用本软件。  
 本软件仅供学习交流使用，请勿用于任何商业或非法用途，使用本软件所产生的任何后果都与作者无关。

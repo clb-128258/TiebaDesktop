@@ -1,12 +1,12 @@
 """
-主程序编译脚本
+主程序构建脚本
 
 Args:
-    -m, --makefile: 指定编译配置文件的路径
+    -m, --makefile: 指定构建配置文件的路径
 Notes:
     makefile 是一个 json 文件，用于指定各种配置选项，具体 json 架构可参考 ./build_config.json 文件\n
-    在执行编译脚本前，请先删除本目录下的 work_temp 与 work_out 目录（如果有）\n
-    编译执行完后，可以在 work_out 目录下找到生成的发行压缩包与安装程序文件。
+    在执行构建脚本前，请先删除本目录下的 work_temp 与 work_out 目录（如果有）\n
+    构建执行完后，可以在 work_out 目录下找到生成的发行压缩包与安装程序文件。
 """
 import subprocess
 import argparse
