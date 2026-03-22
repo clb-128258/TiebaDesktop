@@ -168,7 +168,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.setupUi(self)
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.label_6.setPixmap(QPixmap('ui/tieba_logo_small.png'))
+        self.label_6.setPixmap(
+            QPixmap('ui/tieba_logo_big_transparent.png').scaled(55, 55, transformMode=Qt.SmoothTransformation))
         self.groupBox_3.hide()
         self.init_top_toaster()
         self.init_load_animation()
