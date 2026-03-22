@@ -19,7 +19,7 @@ from publics.funcs import start_background_thread, system_has_network, open_url_
 import publics.app_logger as logging
 
 
-def download_toast_icon(link):
+def download_toast_icon(link, need_round_cover=True):
     """下载通知缓存图标"""
     if link.startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
         portrait = link.split('/')[-1].replace('.jpg', '')
@@ -27,13 +27,16 @@ def download_toast_icon(link):
         if not os.path.isfile(cache_path):
             cache_mgr.save_portrait(portrait)
     else:
-        timestr = time.strftime("%Y%m%d_%H%M%S", time.localtime(time.time()))
-        cache_path = f'{consts.datapath}/image_caches/ToastNotifyIconCache_{timestr}.png'
+        timestr = str(time.time() * 10 ** 6)
+        cache_path = f'{consts.datapath}/image_caches/ToastNotifyImageCache_{timestr}.png'
         icon_response = requests.get(link, headers=request_mgr.header)
         if icon_response.content and icon_response.status_code == 200:
             image = QImage()
             image.loadFromData(icon_response.content)
-            image = qt_image.add_round_cover(image, 150 if max(image.width(), image.height()) >= 150 else -1)
+
+            if need_round_cover:
+                image = qt_image.add_round_cover(image, 150 if max(image.width(), image.height()) >= 150 else -1)
+
             image.save(cache_path)
 
     return cache_path
@@ -91,6 +94,9 @@ class ClipboardSyncer(QObject):
 
         Notes:
             当 type_ 为 user_tbid 时，只会返回对应用户的portrait，而不是完整信息
+
+        Return:
+            除 type_==user_tbidtext 情况之外, 返回 icon, poster_image
         """
 
         async def func():
@@ -98,15 +104,15 @@ class ClipboardSyncer(QObject):
                 if type_ == 'thread':
                     original_data = await client.get_posts(int(value))
                     img_src = original_data.thread.contents.imgs[0].src if original_data.thread.contents.imgs else ''
-                    return f'来自 {original_data.forum.fname}吧 的贴子：\n{cut_string(original_data.thread.title, 20)}', img_src
+                    return f'主题贴 [{original_data.forum.fname}吧]：\n{cut_string(original_data.thread.title, 30)}', '', img_src
                 elif type_ == 'user':
                     original_data = await client.get_user_info(value)
                     portrait_link = f'http://tb.himg.baidu.com/sys/portrait/item/{original_data.portrait}'
-                    user_desp = ('\n简介：' + cut_string(original_data.sign, 20)) if original_data.sign else ''
-                    return f'{original_data.nick_name_new}{user_desp}', portrait_link
+                    user_desp = ('\n简介：' + cut_string(original_data.sign, 30)) if original_data.sign else ''
+                    return f'{original_data.nick_name_new}{user_desp}', portrait_link, ''
                 elif type_ == 'forum':
-                    original_data = await client.get_forum_detail(value)
-                    return f'{original_data.fname}吧\n标语：{cut_string(original_data.slogan, 20)}', original_data.small_avatar
+                    original_data = await client.get_forum(value)
+                    return f'{original_data.fname}吧\n{cut_string(original_data.slogan, 30)}', original_data.small_avatar, original_data.background_image_url
                 elif type_ == 'user_tbid':
                     original_data = await client.tieba_uid2user_info(int(value))
                     return original_data.portrait
@@ -122,8 +128,8 @@ class ClipboardSyncer(QObject):
         profile_mgr.local_config["notify_settings"][ntype] = False
         profile_mgr.save_local_config()
 
-    def show_msg(self, text, icon, url):
-        toasting.showMessage('剪切板中有可跳转的内容',
+    def show_msg(self, text, icon, url, poster):
+        toasting.showMessage('来自剪切板的内容',
                              text,
                              icon=icon,
                              buttons=[toasting.Button('打开页面',
@@ -131,7 +137,7 @@ class ClipboardSyncer(QObject):
                                       toasting.Button('关闭此类通知',
                                                       lambda: self.save_toast_settings('enable_clipboard_notify'))],
                              callback=lambda: self.clipboardActived.emit(url),
-                             lowerText='剪切板跳转通知')
+                             topicon=poster)
 
     def query_cboard(self):
         """执行一次对剪切板的查询"""
@@ -144,10 +150,11 @@ class ClipboardSyncer(QObject):
             is_startswith = cb_text.startswith(k) if not k.startswith('[end]') else cb_text.endswith(k[5:])
             if is_startswith and (value := v[1](cb_text)):
                 internal_link = v[0].replace('[value]', value)
-                text, icon = self.get_tb_data(v[2], value)
+                text, icon, poster_img = self.get_tb_data(v[2], value)
                 icon_cache_path = download_toast_icon(icon) if icon else ''
+                poster_cache_path = download_toast_icon(poster_img, need_round_cover=False) if poster_img else ''
 
-                self.show_msg(text, icon_cache_path, internal_link)
+                self.show_msg(text, icon_cache_path, internal_link, poster_cache_path)
                 break
 
     def cboard_looper(self):

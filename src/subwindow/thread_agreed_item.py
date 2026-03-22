@@ -1,4 +1,5 @@
 from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QCursor
 
 from publics import qt_window_mgr, qt_image, profile_mgr
 from publics.funcs import open_url_in_browser
@@ -25,6 +26,8 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
         self.label_6.linkActivated.connect(self.handle_link_event)
         self.label_10.linkActivated.connect(self.handle_link_event)
         self.pushButton.clicked.connect(self.show_subcomment_window)
+        self.label_6.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_6.customContextMenuRequested.connect(self.show_content_menu)
         self.label_3.installEventFilter(self)  # 重写事件过滤器
         self.label_4.installEventFilter(self)  # 重写事件过滤器
 
@@ -45,6 +48,10 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
                 self.label_3, self.label_4):
             self.open_user_homepage(self.portrait)
         return super(AgreedThreadItem, self).eventFilter(source, event)  # 照常处理事件
+
+    def show_content_menu(self):
+        menu = base_ui.create_thread_content_menu(self.label_6)
+        menu.exec(QCursor.pos())
 
     def load_images(self):
         self.portrait_image.loadImage()
