@@ -19,9 +19,10 @@ from proto.AddPost import AddPostReqIdl_pb2, AddPostResIdl_pb2
 
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image, webview2
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
-    timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely
+    timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
+    cleanup_listWidget
 import publics.app_logger as logging
-from subwindow import base_ui, tieba_emoji_selector
+from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import tie_detail_view
 
@@ -480,15 +481,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         lw_list = [self.listWidget, self.listWidget_4]
         for lw in lw_list:
-            for i in range(lw.count()):
-                widget = lw.itemWidget(lw.item(i))
-                if widget:
-                    widget.destroy()
-                    widget.deleteLater()
-                    item = lw.takeItem(i)
-                    del widget
-                    del item
-        gc.collect()
+            cleanup_listWidget(lw)
 
         qt_window_mgr.del_window(self)
 
@@ -632,8 +625,15 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         dialog.deleteLater()
 
     def show_addpost_atuser_selector(self):
-        self.top_toaster.showToast(top_toast_widget.ToastMessage('该功能尚未实现，敬请期待',
-                                                                 icon_type=top_toast_widget.ToastIconType.INFORMATION))
+        selector = tieba_user_selector.TiebaUserSelector.get_instance()
+
+        self.is_textedit_menu_poping = True
+        bt_pos = self.pushButton_6.mapToGlobal(QPoint(0, 0))
+        show_pos = QPoint(bt_pos.x(), bt_pos.y() - selector.height() - 8)
+        selected_user = selector.pop_selector(show_pos)
+        if selected_user:
+            self.textEdit.insertPlainText(f"#(at, {selected_user['portrait']}, {selected_user['user_name']})")
+        self.is_textedit_menu_poping = False
 
     def show_addpost_emoji_selector(self):
         selector = tieba_emoji_selector.TiebaEmojiSelector.get_instance()

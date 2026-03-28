@@ -146,4 +146,8 @@ class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
             action.setDefaultWidget(cls.emoji_selector_instance)
             cls.emoji_selector_menu_instance.addAction(action)
 
+        # 懒更新主题
+        cls.emoji_selector_instance.reset_theme()
+        cls.emoji_selector_menu_instance.reset_theme()
+
         return cls.emoji_selector_instance

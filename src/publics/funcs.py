@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import os
 import pathlib
 import socket
@@ -172,6 +173,21 @@ def tableWidget_get_visible_items(tableWidget: QTableWidget):
                 result.append(item)
 
     return result
+
+
+def cleanup_listWidget(lw: QListWidget):
+    """清理 QListWidget 的所有条目，并释放内存"""
+    for i in range(lw.count()):
+        widget = lw.itemWidget(lw.item(i))
+        if widget:
+            widget.destroy()
+            widget.deleteLater()
+            item = lw.takeItem(i)
+            del widget
+            del item
+
+    gc.collect()
+    lw.clear()
 
 
 def large_num_to_string(num: int, prespace=False, endspace=False):
