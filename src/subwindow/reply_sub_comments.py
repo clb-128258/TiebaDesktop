@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, top_toast_widget, profile_mgr
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
-    listWidget_get_visible_widgets, get_exception_string
+    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget
 import publics.app_logger as logging
 from subwindow import base_ui
 
@@ -63,7 +63,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
             widget.reset_theme()
 
     def closeEvent(self, a0):
-        self.listWidget.clear()
+        cleanup_listWidget(self.listWidget)
         a0.accept()
         qt_window_mgr.del_window(self)
 
@@ -84,7 +84,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
     def refresh_comments(self):
         if not self.isLoading:
             # 清理内存
-            self.listWidget.clear()
+            cleanup_listWidget(self.listWidget)
             QPixmapCache.clear()
             gc.collect()
 

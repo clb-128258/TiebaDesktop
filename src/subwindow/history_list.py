@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from publics.funcs import cleanup_listWidget
 from subwindow import base_ui
 from ui import view_history, view_history_item, view_history_single_item
 from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, top_toast_widget, qt_image
@@ -281,8 +282,8 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
 
         # 清理内存
         for i in range(self.listWidget_2.count()):
-            self.listWidget_2.itemWidget(self.listWidget_2.item(i)).listWidget.clear()
-        self.listWidget_2.clear()
+            cleanup_listWidget(self.listWidget_2.itemWidget(self.listWidget_2.item(i)).listWidget)
+        cleanup_listWidget(self.listWidget_2)
         self.widget_list.clear()
         self.read_index = 0
         self.widget_total_height = 0

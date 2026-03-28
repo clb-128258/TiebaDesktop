@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
-    get_exception_string
+    get_exception_string, cleanup_listWidget
 import publics.app_logger as logging
 
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
@@ -111,7 +111,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.flash_shower.hide()
         self.portrait_image.destroyImage()
         for i in self.listwidgets.values():
-            i.clear()
+            cleanup_listWidget(i)
 
         a0.accept()
         qt_window_mgr.del_window(self)

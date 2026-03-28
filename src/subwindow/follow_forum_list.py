@@ -7,7 +7,8 @@ from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import request_mgr, top_toast_widget
-from publics.funcs import start_background_thread, listWidget_get_visible_widgets, get_exception_string
+from publics.funcs import start_background_thread, listWidget_get_visible_widgets, get_exception_string, \
+    cleanup_listWidget
 from subwindow import base_ui
 from ui import follow_ba
 
@@ -81,7 +82,7 @@ class FollowForumList(base_ui.WindowBaseQWidget, follow_ba.Ui_Form):
         self.scroll_load_images()
 
     def get_bars_async(self):
-        self.listWidget.clear()
+        cleanup_listWidget(self.listWidget)
         QPixmapCache.clear()
         gc.collect()
 

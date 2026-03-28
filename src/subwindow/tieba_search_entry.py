@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QListWidget, QMessageBox, QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget, app_logger
 from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
-    listWidget_get_visible_widgets, get_exception_string
+    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget
 from subwindow import base_ui
 from ui import forum_search
 
@@ -73,7 +73,7 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
 
     def closeEvent(self, a0):
         for i in self.listwidgets:
-            i.clear()
+            cleanup_listWidget(i)
         QPixmapCache.clear()
         gc.collect()
 
@@ -151,7 +151,7 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                 break
         if flag:
             for i in self.listwidgets:
-                i.clear()
+                cleanup_listWidget(i)
             QPixmapCache.clear()
             gc.collect()
             self.page = {'thread': {'loading': False, 'page': 1},

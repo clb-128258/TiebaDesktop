@@ -1,6 +1,5 @@
 import asyncio
 import gc
-import consts
 
 import publics.app_logger as logging
 import aiotieba
@@ -11,7 +10,7 @@ from bs4 import BeautifulSoup
 
 from publics import request_mgr, profile_mgr, top_toast_widget
 from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string, \
-    listWidget_get_visible_widgets, large_num_to_string
+    listWidget_get_visible_widgets, large_num_to_string, cleanup_listWidget
 from subwindow import base_ui
 
 
@@ -105,7 +104,7 @@ class RecommendWindow(QListWidget):
             if self.is_first_load:
                 self.loading_widget.show()
                 # 清理内存
-                self.clear()
+                cleanup_listWidget(self)
                 QPixmapCache.clear()
                 gc.collect()
 

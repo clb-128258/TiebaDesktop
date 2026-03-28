@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, request_mgr, qt_image, top_toast_widget
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
-    make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string
+    make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
+    cleanup_listWidget
 import publics.app_logger as logging
 from subwindow import base_ui
 
@@ -90,7 +91,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.forum_avatar.destroyImage()
         self.forum_admin_portrait.destroyImage()
         for i in self.listwidgets:
-            i.clear()
+            cleanup_listWidget(i)
 
         a0.accept()
         qt_window_mgr.del_window(self)
@@ -261,7 +262,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         if not self.isloading:
             # 清理内存
             for i in self.listwidgets:
-                i.clear()
+                cleanup_listWidget(i)
             QPixmapCache.clear()
             gc.collect()
 

@@ -908,7 +908,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def load_sub_threads_refreshly(self, reset_page=True):
         if not self.is_getting_replys:
             # 清理内存
-            self.listWidget_4.clear()
+            cleanup_listWidget(self.listWidget_4)
             QPixmapCache.clear()
             gc.collect()
             self.height_count_replies = 0

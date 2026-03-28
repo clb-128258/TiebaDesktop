@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, profile_mgr
-from publics.funcs import start_background_thread, listWidget_get_visible_widgets
+from publics.funcs import start_background_thread, listWidget_get_visible_widgets, cleanup_listWidget
 import publics.app_logger as logging
 from subwindow import base_ui
 from ui import star_list
@@ -49,7 +49,7 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
             widget.reset_theme()
 
     def closeEvent(self, a0):
-        self.listWidget.clear()
+        cleanup_listWidget(self.listWidget)
         a0.accept()
         qt_window_mgr.del_window(self)
 

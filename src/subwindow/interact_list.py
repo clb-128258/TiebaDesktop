@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import request_mgr, top_toast_widget, profile_mgr
 from publics.funcs import start_background_thread, timestamp_to_string, listWidget_get_visible_widgets, \
-    get_exception_string
+    get_exception_string, cleanup_listWidget
 import publics.app_logger as logging
 from subwindow import base_ui
 
@@ -65,9 +65,9 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
 
     def refresh_list(self):
         if not self.is_at_loading and not self.is_reply_loading and not self.is_agree_loading:
-            self.listWidget.clear()
-            self.listWidget_2.clear()
-            self.listWidget_3.clear()
+            cleanup_listWidget(self.listWidget)
+            cleanup_listWidget(self.listWidget_2)
+            cleanup_listWidget(self.listWidget_3)
             QPixmapCache.clear()
             gc.collect()
             self.reply_page = 1
