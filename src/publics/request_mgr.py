@@ -88,6 +88,9 @@ def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
         use_https (bool): 是否使用https请求
     """
+    scheme = SCHEME_HTTPS if use_https else SCHEME_HTTP
+    host_name = TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST
+    final_header = header_android if use_mobile_header else header
     if cookies:
         cookie = cookies
     elif bduss:
@@ -95,28 +98,20 @@ def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict
     else:
         cookie = {}
 
-    if use_mobile_header:
-        final_header = header_android
-    else:
-        final_header = header
     session = requests.Session()
     session.trust_env = True
-    host_name = ''
-    if host_type == 1:
-        host_name = TIEBA_WEB_HOST
-    elif host_type == 2:
-        host_name = TIEBA_APP_HOST
-    if use_https:
-        scheme = SCHEME_HTTPS
-    else:
-        scheme = SCHEME_HTTP
     response = session.get(f'{scheme}{host_name}{api}',
                            headers=final_header,
-                           cookies=cookie, params=params)
+                           cookies=cookie,
+                           params=params,
+                           timeout=30)
+
     if encoding:
         response.encoding = encoding
     response.raise_for_status()
+    response.close()
     session.close()
+
     if return_json:
         return response.json()
     else:
@@ -142,6 +137,9 @@ def run_post_api(api: str, payloads: dict, bduss='', encoding='', stoken: str = 
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
         use_https (bool): 是否使用https请求
     """
+    scheme = SCHEME_HTTPS if use_https else SCHEME_HTTP
+    host_name = TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST
+    final_header = header_android if use_mobile_header else header
     if cookies:
         cookie = cookies
     elif bduss:
@@ -149,29 +147,21 @@ def run_post_api(api: str, payloads: dict, bduss='', encoding='', stoken: str = 
     else:
         cookie = {}
 
-    if use_mobile_header:
-        final_header = header_android
-    else:
-        final_header = header
     session = requests.Session()
     session.trust_env = True
-    host_name = ''
-    if host_type == 1:
-        host_name = TIEBA_WEB_HOST
-    elif host_type == 2:
-        host_name = TIEBA_APP_HOST
-    if use_https:
-        scheme = SCHEME_HTTPS
-    else:
-        scheme = SCHEME_HTTP
-
     response = session.post(f'{scheme}{host_name}{api}',
                             headers=final_header,
-                            cookies=cookie, params=params, data=payloads)
+                            cookies=cookie,
+                            params=params,
+                            data=payloads,
+                            timeout=30)
+
     if encoding:
         response.encoding = encoding
     response.raise_for_status()
+    response.close()
     session.close()
+
     if return_json:
         return response.json()
     else:
@@ -195,26 +185,17 @@ def run_protobuf_api(api: str, payloads: bytes, cmd_id: int, bduss='', stoken: s
     Return:
         已序列化的protobuf二进制数据
     """
+
     if cookies:
         cookie = cookies
     elif bduss:
         cookie = {'BDUSS': bduss, 'STOKEN': stoken}
     else:
         cookie = {}
-
+    scheme = SCHEME_HTTPS if use_https else SCHEME_HTTP
+    host_name = TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST
     final_header = header_protobuf
-
     params = {'cmd': str(cmd_id), 'format': 'protobuf'}
-
-    host_name = ''
-    if host_type == 1:
-        host_name = TIEBA_WEB_HOST
-    elif host_type == 2:
-        host_name = TIEBA_APP_HOST
-    if use_https:
-        scheme = SCHEME_HTTPS
-    else:
-        scheme = SCHEME_HTTP
     data = {
         'data': ('file', payloads)
     }
@@ -225,8 +206,11 @@ def run_protobuf_api(api: str, payloads: bytes, cmd_id: int, bduss='', stoken: s
                             headers=final_header,
                             cookies=cookie,
                             params=params,
-                            files=data)
+                            files=data,
+                            timeout=30)
+
     response.raise_for_status()
+    response.close()
     session.close()
 
     return response.content
