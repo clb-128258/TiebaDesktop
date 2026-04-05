@@ -1319,26 +1319,6 @@ QLabel{
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="stackedWidgetPage8">
-      <layout class="QGridLayout" name="gridLayout_4">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_15">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;很抱歉，出于加载时的性能问题，该功能已被停用。&lt;br/&gt;该页面将在将来的版本中删除。&lt;/p&gt;&lt;p&gt;你可以到 &lt;a href=&quot;https://tieba.baidu.com/f/like/furank?kw=xxx&amp;amp;ie=utf-8&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;牛人排行榜&lt;/span&gt;&lt;/a&gt; 中查看吧等级排行榜。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-         <property name="openExternalLinks">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
     </widget>
    </item>
    <item row="1" column="0">
@@ -1362,7 +1342,7 @@ QLabel{
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="currentRow">
-      <number>0</number>
+      <number>-1</number>
      </property>
      <item>
       <property name="text">
@@ -1397,11 +1377,6 @@ QLabel{
      <item>
       <property name="text">
        <string>吧务信息</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>等级排行榜</string>
       </property>
      </item>
     </widget>

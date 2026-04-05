@@ -129,6 +129,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.refresh_button = base_ui.FloatingButton(self)
         self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
         self.refresh_button.move_button()
+        self.refresh_button.hide()
 
     def threadList_load_image(self):
         for lw in self.listwidgets:
@@ -518,7 +519,9 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             elif datas['is_followed'] == 2:
                 self.pushButton.setText('登录后即可关注')
                 self.pushButton.setEnabled(False)
+
             self.flash_shower.hide()
+            self.refresh_button.show()
 
     def load_info(self):
         def frs_bottom(kw):

@@ -10,9 +10,9 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
     QTableWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
+from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image, top_toast_widget
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
-    open_url_in_browser, large_num_to_string, get_exception_string
+    large_num_to_string, get_exception_string
 import publics.app_logger as logging
 
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
@@ -42,7 +42,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         self.tableWidget.setEditTriggers(QListWidget.NoEditTriggers)
         self.tableWidget.verticalHeader().setVisible(False)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.init_load_flash()
+        self.init_ui_elements()
 
         self.listWidget_2.currentRowChanged.connect(lambda row: self.stackedWidget.setCurrentIndex(row))
         self.set_main_info_signal.connect(self.ui_set_main_info)
@@ -54,7 +54,6 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         self.pushButton.clicked.connect(lambda: self.do_action_async('unfollow' if self.is_followed else 'follow'))
         self.pushButton_2.clicked.connect(lambda: self.do_action_async('sign'))
         self.pushButton_8.clicked.connect(self.refresh_main_data)
-        self.label_15.linkActivated.connect(open_url_in_browser)
 
         self.forum_atavar = qt_image.MultipleImage()
         self.forum_atavar.currentPixmapChanged.connect(self.label.setPixmap)
@@ -70,9 +69,16 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         a0.accept()
         qt_window_mgr.del_window(self)
 
-    def init_load_flash(self):
+    def reset_theme(self):
+        super().reset_theme()
+        self.loading_widget.reset_theme()
+
+    def init_ui_elements(self):
         self.loading_widget = LoadingFlashWidget()
         self.loading_widget.cover_widget(self)
+
+        self.toast_widget = top_toast_widget.TopToaster()
+        self.toast_widget.setCoverWidget(self)
 
     def refresh_main_data(self):
         self.loading_widget.set_caption(True, '正在重新加载数据...')
@@ -99,11 +105,14 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         qt_window_mgr.add_window(opic_view)
 
     def action_ok_slot(self, data):
+        toast = top_toast_widget.ToastMessage(data['text'])
         if data['success']:
-            QMessageBox.information(self, data['title'], data['text'], QMessageBox.Ok)
+            toast.icon_type = top_toast_widget.ToastIconType.SUCCESS
             self.refresh_main_data()
         else:
-            QMessageBox.critical(self, data['title'], data['text'], QMessageBox.Ok)
+            toast.icon_type = top_toast_widget.ToastIconType.ERROR
+
+        self.toast_widget.showToast(toast)
 
     def do_action_async(self, action_type=""):
         run_flag = True
@@ -117,7 +126,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
 
     def do_action(self, action_type=""):
         async def doaction():
-            turn_data = {'success': False, 'title': '', 'text': ''}
+            turn_data = {'success': False, 'text': ''}
             try:
                 logging.log_INFO(f'do forum {self.forum_id} action type {action_type}')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
@@ -125,21 +134,17 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                         r = await client.follow_forum(self.forum_id)
                         if r:
                             turn_data['success'] = True
-                            turn_data['title'] = '关注成功'
-                            turn_data['text'] = f'已成功关注 {self.forum_name}吧。'
+                            turn_data['text'] = f'关注成功！欢迎加入 {self.forum_name}吧'
                         else:
                             turn_data['success'] = False
-                            turn_data['title'] = '关注失败'
                             turn_data['text'] = f'{r.err}'
                     elif action_type == 'unfollow':
                         r = await client.unfollow_forum(self.forum_id)
                         if r:
                             turn_data['success'] = True
-                            turn_data['title'] = '取消关注成功'
-                            turn_data['text'] = f'已成功取消关注 {self.forum_name}吧。'
+                            turn_data['text'] = f'取消关注 {self.forum_name}吧 成功'
                         else:
                             turn_data['success'] = False
-                            turn_data['title'] = '取消关注失败'
                             turn_data['text'] = f'{r.err}'
                     elif action_type == 'sign':
                         tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
@@ -167,17 +172,14 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                             sign_bonus_point = r['user_info']['sign_bonus_point']
 
                             turn_data['success'] = True
-                            turn_data['title'] = '签到成功'
                             turn_data[
-                                'text'] = f'{self.forum_name}吧 已签到成功。\n本次签到经验 +{sign_bonus_point}，你是今天本吧第 {user_sign_rank} 个签到的用户。'
+                                'text'] = f'已在 {self.forum_name}吧 签到成功，经验 +{sign_bonus_point}，你是今天第 {user_sign_rank} 个签到的人'
                         else:
                             turn_data['success'] = False
-                            turn_data['title'] = '签到失败'
                             turn_data['text'] = f'{r["error_msg"]} (错误代码 {r["error_code"]})'
             except Exception as e:
                 logging.log_exception(e)
                 turn_data['success'] = False
-                turn_data['title'] = '程序内部错误'
                 turn_data['text'] = str(e)
             finally:
                 self.action_ok_signal.emit(turn_data)
@@ -201,11 +203,6 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
             self.label_12.setText(datas['forum_volume'])
             self.label_13.setText(large_num_to_string(datas['main_thread_c']))
             self.textBrowser.setHtml(datas['forum_rule_html'])
-            self.label_15.setText(f'<html><body>'
-                                  f'<p>很抱歉，出于加载时的性能问题，该功能已被停用。<br/>该页面将在将来的版本中删除。<br>'
-                                  f'你可以到 <a href="https://tieba.baidu.com/f/like/furank?kw={self.forum_name}&ie=utf-8">牛人排行榜</a> '
-                                  f'中查看{self.forum_name}吧的等级排行榜。</p>'
-                                  f'</body></html>')
 
             self.forum_atavar.destroyImage()
             self.forum_atavar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
@@ -216,9 +213,9 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
 
             forum_desp_text = ''
             if datas['forum_desp']:
-                forum_desp_text += datas['forum_desp']
+                forum_desp_text += f"<h3>{datas['forum_desp']}</h3>"
             if datas['forum_desp_ex']:
-                forum_desp_text += '\n' + datas['forum_desp_ex']
+                forum_desp_text += f"\n<p>{datas['forum_desp_ex']}</p>"
             if not forum_desp_text:
                 self.label_5.hide()
             else:
@@ -230,8 +227,8 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                     self.pushButton.setText('取消关注')
                 else:
                     self.pushButton.setText('关注')
-                self.label_6.setText(f'你已经关注了本吧。' if datas['follow_info'][
-                    'isfollow'] else f'你还没有关注{self.forum_name}吧，不妨考虑一下？')
+                self.label_6.setText(f'你已经关注了 {self.forum_name}吧' if datas['follow_info'][
+                    'isfollow'] else f'你还没有关注 {self.forum_name}吧，不妨考虑一下？')
 
                 if datas['follow_info']['isfollow']:
                     ts = time.time() - datas["follow_info"]["follow_day"] * 86400
@@ -271,7 +268,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                 self.label_28.setText(f'{datas["follow_info"]["today_sign_rank"]}')
             else:
                 self.pushButton.hide()
-                self.label_6.setText('你还没有登录，登录后即可查看自己的信息。')
+                self.label_6.setText('你还没有登录，登录后就可以查看等级信息了~')
                 self.groupBox.hide()
 
             if datas['bg_pic_info']['pixmap']:
@@ -317,7 +314,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
             self.tableWidget.setHorizontalHeaderLabels(('等级', '头衔', '所需经验值'))
 
         else:
-            QMessageBox.critical(self, '吧信息加载异常', datas['err_info'], QMessageBox.Ok)
+            QMessageBox.critical(self, '吧信息加载失败', datas['err_info'], QMessageBox.Ok)
             self.close()
 
     def get_main_info_async(self):
