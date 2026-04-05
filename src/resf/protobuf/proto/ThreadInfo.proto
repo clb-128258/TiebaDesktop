@@ -68,4 +68,6 @@ message ThreadInfo {
     string content_statement = 265;
     int32 is_vote = 11;
     int32 storecount = 68;
+    uint32 collect_num = 190;
+    int32 collect_status = 50;
 }

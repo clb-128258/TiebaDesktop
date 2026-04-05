@@ -14,7 +14,7 @@ from ui import tb_browser
 toolbutton_qss = """QToolButton {
         background-color: transparent;
         border: none;
-        border-radius: 17px;
+        border-radius: 18px;
         padding: 4px;
         /* 设置图标大小 */
         icon-size: 26px;

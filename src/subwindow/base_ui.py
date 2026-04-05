@@ -1,5 +1,6 @@
 """基础 UI 组件库，负责 UI 的主题管理等"""
 import ctypes
+import enum
 from ctypes import wintypes
 
 import yarl
@@ -8,8 +9,8 @@ import os
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
-    QTextEdit, QPlainTextEdit
-from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette
+    QTextEdit, QPlainTextEdit, QToolButton, QGraphicsDropShadowEffect
+from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
 
@@ -203,6 +204,11 @@ def handle_native_event(widget, refreshThemeFunc, eventType, message):
     return False
 
 
+class NarrowButtonStatus(enum.Enum):
+    ArrowLeft = enum.auto()
+    ArrowRight = enum.auto()
+
+
 class BaseQMenu(QMenu):
     """所有上下文菜单引用的 QMenu 父类"""
 
@@ -289,3 +295,56 @@ class WindowBaseQDialog(QDialog):
     def reset_theme(self):
         """动态重载主题/使用自定义主题 时应当调用此方法"""
         self.set_theme_qss()
+
+
+class FloatingNarrowButton(QToolButton):
+    """在 QWidget 上方悬浮的导航按钮"""
+
+    def __init__(self, parent):
+        super().__init__()
+        self.setParent(parent)
+
+        self.setToolTip('点击切换到另一页面')
+        self.init_ui()
+
+    def init_ui(self):
+        self.setFixedSize(39, 39)
+
+        shadow_effect = QGraphicsDropShadowEffect()
+        shadow_effect.setBlurRadius(30)  # 阴影模糊半径
+        shadow_effect.setColor(QColor(0, 0, 0, 50))  # 阴影颜色和透明度
+        shadow_effect.setOffset(2, 2)  # 阴影偏移量
+        self.setGraphicsEffect(shadow_effect)
+
+        self.setStyleSheet(f"""QToolButton {{
+            background-color: #5b44c8;
+            border: none;
+            border-radius: 19px;
+            padding: 4px;
+            icon-size: 30px;
+        }}
+        QToolButton:hover {{
+            background-color: #6a50ea;
+        }}
+        QToolButton:pressed {{
+            background-color: #6969ff;
+        }}""")
+
+    def set_button_status(self, status: NarrowButtonStatus):
+        icon_path = ''
+        move_value = 20
+        x, y = 0, 0
+
+        if status == NarrowButtonStatus.ArrowRight:
+            icon_path = f'ui/icon_white/forward.png'
+        elif status == NarrowButtonStatus.ArrowLeft:
+            icon_path = f'ui/icon_white/back.png'
+        self.setIcon(QIcon(icon_path))
+
+        if status == NarrowButtonStatus.ArrowRight:
+            x = self.parent().width() - self.width() - move_value
+            y = self.parent().height() - self.height() - move_value
+        elif status == NarrowButtonStatus.ArrowLeft:
+            x = move_value
+            y = self.parent().height() - self.height() - move_value
+        self.move(x, y)

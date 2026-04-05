@@ -44,12 +44,14 @@ class PrivReply(enum.IntEnum):
     Note:
         ALL 允许所有人\n
         FANS 仅允许我的粉丝\n
-        FOLLOW 仅允许我的关注
+        FOLLOW 仅允许我的关注\n
+        SELF 只允许自己评论
     """
 
     ALL = 1
     FANS = 5
     FOLLOW = 6
+    SELF = 7
 
 
 class ReqUInfo(enum.Flag):

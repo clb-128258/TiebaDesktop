@@ -26,6 +26,8 @@ from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import tie_detail_view
 
+narrow_status_map = {1: base_ui.NarrowButtonStatus.ArrowRight, 2: base_ui.NarrowButtonStatus.ArrowLeft}
+
 
 def get_item_top(list_widget, index):
     """获取某个条目的顶部纵坐标"""
@@ -313,8 +315,13 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     reply_total_pages = 0  # 回复列表总页数
     agree_num = 0  # 点赞数
     reply_num = 0  # 回贴数
+    store_num = 0  # 收藏数
     is_getting_replys = False  # 是否正在加载回复列表
     is_textedit_menu_poping = False  # 是否在发贴textedit上右键
+    narrow_mode_index = 1  # 窄布局模式下的显示页面
+    has_agreed = False  # 是否已点赞
+    has_stored = False  # 是否已收藏
+
     head_data_signal = pyqtSignal(dict)
     add_reply = pyqtSignal(dict)
     show_reply_end_text = pyqtSignal(int)
@@ -335,25 +342,25 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.lz_portrait = qt_image.MultipleImage()
         self.forum_avatar = qt_image.MultipleImage()
 
-        self.pushButton_2.setIconSize(QSize(20, 20))
-        self.verticalFrame.hide()
         self.label_2.hide()
         self.label_8.hide()
         self.label_11.hide()
         self.label_12.hide()
         self.label_13.hide()
         self.frame_3.hide()
+        self.frame_7.hide()
         self.collapse_text_area()
 
-        self.label_19.setPixmap(
-            QPixmap('ui/icon_black/warning.png').scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.toolButton_2.setIcon(QIcon('ui/icon_black/close.png'))
+        icon_size = QSize(23, 23)
+        self.pushButton_4.setIconSize(icon_size)
+        self.pushButton_11.setIconSize(icon_size)
+        self.pushButton.setIconSize(icon_size)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.toolButton.setIcon(QIcon('ui/icon_white/close.png'))
 
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
         self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
         self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
+        self.init_narrow_switch_button()
         self.init_load_flash()
         self.init_top_toaster()
 
@@ -375,18 +382,20 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.comboBox.currentIndexChanged.connect(lambda: self.load_sub_threads_refreshly())
         self.checkBox.stateChanged.connect(lambda: self.load_sub_threads_refreshly())
         self.label_2.linkActivated.connect(self.end_label_link_event)
-        self.pushButton_4.clicked.connect(self.agree_thread_async)
+        self.pushButton_4.clicked.connect(lambda: self.agree_thread_async())
         self.pushButton_3.clicked.connect(lambda: self.add_post_async())
         self.pushButton_7.clicked.connect(self.submit_pagejump)
         self.pushButton_9.clicked.connect(self.jump_prev_page)
         self.pushButton_8.clicked.connect(self.jump_first_page)
-        self.toolButton.clicked.connect(self.verticalFrame.hide)
+        self.toolButton.clicked.connect(self.frame_7.hide)
         self.lz_portrait.currentPixmapChanged.connect(self.label_4.setPixmap)
-        self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.pushButton_2.setIcon(QIcon(pixmap)))
+        self.forum_avatar.currentPixmapChanged.connect(self.label_14.setPixmap)
         self.toolButton_2.clicked.connect(self.frame_3.hide)
         self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
         self.pushButton_10.clicked.connect(self.show_addpost_emoji_selector)
         self.pushButton_6.clicked.connect(self.show_addpost_atuser_selector)
+        self.pushButton_11.clicked.connect(lambda: self.store_thread_async())
+        self.toolButton_3.clicked.connect(self.show_pagejump_bar)
 
         # 重写事件过滤器
         add_post_area_widgets = [self.label_3, self.label_4,
@@ -405,6 +414,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         else:
             self.flash_shower.show()
         self.get_thread_head_info_async()
+
+        self.post_area_flash_shower.show()
         self.get_sub_thread_async()
 
     def reset_theme(self):
@@ -412,9 +423,10 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         super().reset_theme()
 
         listwidgets = [self.listWidget, self.listWidget_4]
-        flat_buttons = [self.pushButton, self.pushButton_4]
+        flat_buttons = [self.pushButton, self.pushButton_4, self.pushButton_11]
         color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
+        bg_policy, font_policy = profile_mgr.get_theme_policy_string()
         for lw in listwidgets:
             lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
                              f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
@@ -431,6 +443,19 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         for btn in flat_buttons:
             btn.setStyleSheet(f'QPushButton{{color: {font_color};}}')
 
+        self.post_area_flash_shower.reset_theme()
+        self.flash_shower.reset_theme()
+        self.scrollAreaWidgetContents_2.setStyleSheet(
+            f'QWidget#scrollAreaWidgetContents_2 {{background-color: {color};}}')
+
+        self.label_19.setPixmap(
+            QPixmap(f'ui/icon_{font_policy}/warning.png').scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.toolButton_2.setIcon(QIcon(f'ui/icon_{font_policy}/close.png'))
+        self.toolButton.setIcon(QIcon(f'ui/icon_{font_policy}/close.png'))
+        self.toolButton_3.setIcon(QIcon(f'ui/icon_{font_policy}/page.png'))
+        self.pushButton.setIcon(QIcon(f'ui/icon_{font_policy}/share.png'))
+        self.update_agree_button_status()
+
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonRelease:
             if source in (self.label_3, self.label_4):
@@ -442,16 +467,10 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 self.is_textedit_menu_poping = False
                 self.lay_text_area()
         elif event.type() == QEvent.Type.FocusOut:
-            if (source == self.textEdit
-                    and not self.is_textedit_menu_poping
-                    and not QRect(0, self.height() - 135, self.width(), 135).contains(
-                        self.mapFromGlobal(QCursor.pos()))):
-                self.collapse_text_area()
-            elif (source in (self.pushButton_3, self.pushButton_5,
-                             self.pushButton_6, self.pushButton_10)
-                  and not self.is_textedit_menu_poping
-                  and not QRect(0, self.height() - 135, self.width(), 135).contains(
-                        self.mapFromGlobal(QCursor.pos()))):
+            local_pos = self.frame.mapFromGlobal(QCursor.pos())
+            is_mouse_contained = self.frame.rect().contains(local_pos)
+
+            if source == self.textEdit and not self.is_textedit_menu_poping and not is_mouse_contained:
                 self.collapse_text_area()
         elif event.type() == QEvent.Type.ContextMenu:
             if source in (
@@ -485,9 +504,15 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         qt_window_mgr.del_window(self)
 
+    def resizeEvent(self, a0):
+        self.adjust_narrow_button()
+
     def init_load_flash(self):
         self.flash_shower = LoadingFlashWidget()
         self.flash_shower.cover_widget(self)
+
+        self.post_area_flash_shower = LoadingFlashWidget()
+        self.post_area_flash_shower.cover_widget(self.scrollArea)
 
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
@@ -505,44 +530,66 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         menu = base_ui.create_thread_content_menu(plabel)
         menu.exec(QCursor.pos())
 
+    def adjust_narrow_button(self):
+        if self.width() <= 800:
+            if self.narrow_mode_index == 1:
+                self.scrollArea_2.show()
+                self.frame_5.hide()
+                self.gridLayout_11.setColumnStretch(0, 1)
+                self.gridLayout_11.setColumnStretch(1, 0)
+            elif self.narrow_mode_index == 2:
+                self.scrollArea_2.hide()
+                self.frame_5.show()
+                self.gridLayout_11.setColumnStretch(0, 0)
+                self.gridLayout_11.setColumnStretch(1, 1)
+
+            self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
+            self.narrow_switch_button.show()
+        else:
+            self.gridLayout_11.setColumnStretch(0, 1)
+            self.gridLayout_11.setColumnStretch(1, 1)
+            self.scrollArea_2.show()
+            self.frame_5.show()
+            self.narrow_switch_button.hide()
+
+    def switch_narrow_button_status(self):
+        if self.narrow_mode_index == 1:
+            self.gridLayout_11.setColumnStretch(0, 0)
+            self.gridLayout_11.setColumnStretch(1, 1)
+            self.scrollArea_2.hide()
+            self.frame_5.show()
+            self.narrow_mode_index = 2
+        elif self.narrow_mode_index == 2:
+            self.gridLayout_11.setColumnStretch(0, 1)
+            self.gridLayout_11.setColumnStretch(1, 0)
+            self.scrollArea_2.show()
+            self.frame_5.hide()
+            self.narrow_mode_index = 1
+
+        self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
+
+    def init_narrow_switch_button(self):
+        self.narrow_switch_button = base_ui.FloatingNarrowButton(self)
+        self.narrow_switch_button.clicked.connect(self.switch_narrow_button_status)
+
     def init_more_menu(self):
         url = f'https://tieba.baidu.com/p/{self.thread_id}'
 
         menu = base_ui.BaseQMenu()
-
-        jump_page = QAction('跳页', self)
-        jump_page.triggered.connect(self.show_pagejump_bar)
-        menu.addAction(jump_page)
-
-        menu.addSeparator()
 
         copy_id = QAction('复制贴子 ID', self)
         copy_id.triggered.connect(lambda: pyperclip.copy(str(self.thread_id)))
         copy_id.triggered.connect(self.show_copy_success_toast)
         menu.addAction(copy_id)
 
-        copy_link = QAction('复制贴子链接', self)
+        copy_link = QAction('复制链接', self)
         copy_link.triggered.connect(lambda: pyperclip.copy(url))
         copy_link.triggered.connect(self.show_copy_success_toast)
         menu.addAction(copy_link)
 
-        open_link = QAction('在浏览器中打开贴子', self)
+        open_link = QAction('浏览器打开', self)
         open_link.triggered.connect(lambda: open_url_in_browser(url))
         menu.addAction(open_link)
-
-        menu.addSeparator()
-
-        store_thread = QAction('收藏', self)
-        store_thread.triggered.connect(self.store_thread_async)
-        menu.addAction(store_thread)
-
-        cancel_store_thread = QAction('取消收藏', self)
-        cancel_store_thread.triggered.connect(lambda: self.store_thread_async(True))
-        menu.addAction(cancel_store_thread)
-
-        if not self.bduss:  # 在未登录时不显示收藏按钮
-            store_thread.setVisible(False)
-            cancel_store_thread.setVisible(False)
 
         bt_pos = self.pushButton.mapToGlobal(QPoint(0, 0))
         menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.pushButton.height()))
@@ -589,7 +636,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
         else:
             self.update_pagejump_num()
-            self.verticalFrame.show()
+            self.frame_7.show()
 
     def jump_prev_page(self):
         self.spinBox.setValue(self.spinBox.value() - 1)
@@ -626,10 +673,12 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
     def show_addpost_atuser_selector(self):
         selector = tieba_user_selector.TiebaUserSelector.get_instance()
+        self.lay_text_area()
 
         self.is_textedit_menu_poping = True
-        bt_pos = self.pushButton_6.mapToGlobal(QPoint(0, 0))
-        show_pos = QPoint(bt_pos.x(), bt_pos.y() - selector.height() - 8)
+        btn = self.pushButton_6
+        bt_pos = btn.mapToGlobal(QPoint(0, 0))
+        show_pos = QPoint(bt_pos.x(), bt_pos.y() + btn.height() + 8)
         selected_user = selector.pop_selector(show_pos)
         if selected_user:
             self.textEdit.insertPlainText(f"#(at, {selected_user['portrait']}, {selected_user['user_name']})")
@@ -637,10 +686,13 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
     def show_addpost_emoji_selector(self):
         selector = tieba_emoji_selector.TiebaEmojiSelector.get_instance()
+        self.lay_text_area()
 
         self.is_textedit_menu_poping = True
-        bt_pos = self.pushButton_10.mapToGlobal(QPoint(0, 0))
-        show_pos = QPoint(bt_pos.x(), bt_pos.y() - selector.height() - 8)
+        btn = self.pushButton_10
+        bt_pos = btn.mapToGlobal(QPoint(0, 0))
+        show_pos = QPoint(bt_pos.x(), bt_pos.y() + btn.height() + 8)
+
         emoji_id, emoji_text = selector.pop_selector(show_pos)
         if emoji_text:
             self.textEdit.insertPlainText(emoji_text)
@@ -649,7 +701,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def lay_text_area(self):
         self.frame_2.show()
         self.textEdit.setPlaceholderText('来都来了，说两句吧\n'
-                                         '提示：按 Enter 可换行，按 Ctrl+Enter 键可发送回复')
+                                         'Ctrl+Enter 可快速发送回复')
         self.textEdit.setFont(QFont('微软雅黑', 10))
         self.textEdit.setFixedHeight(100)
         self.textEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -657,6 +709,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
     def collapse_text_area(self):
         self.frame_2.hide()
+        self.frame_2.close()
         self.textEdit.setPlaceholderText('来都来了，说两句吧')
         self.textEdit.setFont(QFont('微软雅黑', 9))
         self.textEdit.setFixedHeight(28)
@@ -680,7 +733,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             toast.icon_type = top_toast_widget.ToastIconType.ERROR
 
         self.top_toaster.showToast(toast)
-        self.frame1.setEnabled(True)
+        self.frame.setEnabled(True)
         self.pushButton_3.setText('发贴')
 
         # 验证码模式特判
@@ -722,7 +775,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 flag = True
 
             if flag:
-                self.frame1.setEnabled(False)
+                self.frame.setEnabled(False)
                 self.pushButton_3.setText('发送中...')
                 start_background_thread(self.add_post, args=(captcha_md5, captcha_json_info))
 
@@ -756,7 +809,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.add_post_signal.emit(emit_data)
 
     def agree_thread_ok_action(self, isok):
-        self.pushButton_4.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
+        self.update_agree_button_status()
+
         if isok == '[ALREADY_AGREE]':
             if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
@@ -765,8 +819,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             toast = top_toast_widget.ToastMessage(isok, 2000, top_toast_widget.ToastIconType.INFORMATION)
             self.top_toaster.showToast(toast)
 
-    def agree_thread_async(self, is_cancel=False):
-        start_background_thread(self.agree_thread, (is_cancel,))
+    def agree_thread_async(self, is_cancel: bool = None):
+        start_background_thread(self.agree_thread, (self.has_agreed if is_cancel is None else is_cancel,))
 
     def agree_thread(self, iscancel=False):
         logging.log_INFO(f'agree thread {self.thread_id}')
@@ -805,6 +859,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     if int(response['error_code']) == 0:
                         self.agree_num -= 1
                         self.agree_thread_signal.emit('取消点赞成功')
+                        self.has_agreed = False
                     else:
                         self.agree_thread_signal.emit(response['error_msg'])
                 else:
@@ -830,8 +885,10 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                         self.agree_num += 1
                         is_expa2 = bool(int(response["data"].get("agree", {"is_first_agree": False})["is_first_agree"]))
                         self.agree_thread_signal.emit("点赞成功 首赞经验 +2" if is_expa2 else "点赞成功")
+                        self.has_agreed = True
                     elif int(response['error_code']) == 3280001:
                         self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                        self.has_agreed = True
                     else:
                         self.agree_thread_signal.emit(response['error_msg'])
 
@@ -840,10 +897,12 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.agree_thread_signal.emit(get_exception_string(e))
 
     def store_thread_ok_action(self, isok):
+        self.update_agree_button_status()
+
         toast = top_toast_widget.ToastMessage(isok, 2000, top_toast_widget.ToastIconType.INFORMATION)
         self.top_toaster.showToast(toast)
 
-    def store_thread_async(self, is_cancel=False):
+    def store_thread_async(self, is_cancel: bool = None):
         item = self.listWidget_4.currentItem()
         if not item:
             # 没有回贴就使用第一楼的pid
@@ -853,13 +912,15 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             reply_widget = self.listWidget_4.itemWidget(item)
             pid = reply_widget.post_id
             floor = reply_widget.floor
-        start_background_thread(self.store_thread, (pid, is_cancel, floor))
+        start_background_thread(self.store_thread, (pid, self.has_stored if is_cancel is None else is_cancel, floor))
 
     def store_thread(self, current_post_id: int, is_cancel=False, floor=-1):
         async def dosign():
             logging.log_INFO(f'store thread {self.thread_id}')
             try:
-                if not is_cancel:
+                if not self.bduss:
+                    self.store_thread_signal.emit('登录后即可收藏贴子')
+                elif not is_cancel:
                     # 客户端收藏接口
                     data = "[{\"tid\":\"[tid]\",\"pid\":\"[pid]\",\"status\":1}]"
                     data = data.replace('[tid]', str(self.thread_id))
@@ -876,6 +937,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                                       stoken=self.stoken, use_mobile_header=True, host_type=2)
                     if result['error_code'] == '0':
                         self.store_thread_signal.emit(f'贴子已收藏到第 {floor} 楼')
+                        self.has_stored = True
+                        self.store_num += 1
                     else:
                         self.store_thread_signal.emit(result['error_msg'])
                 else:
@@ -892,6 +955,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                                       stoken=self.stoken, use_mobile_header=True)
                     if result['no'] == 0:
                         self.store_thread_signal.emit('取消收藏成功')
+                        self.has_stored = False
+                        self.store_num -= 1
                     else:
                         self.store_thread_signal.emit(result['error'])
             except Exception as e:
@@ -922,6 +987,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     self.reply_page = 1
 
             # 启动刷新
+            self.post_area_flash_shower.show()
             self.get_sub_thread_async()
 
     def load_sub_thread_images(self):
@@ -989,9 +1055,10 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.label_2.setText('服务器开小差了，请试试 <a href="reload_replies">重新加载</a>')
 
     def on_reply_loaded(self):
-        self.label_7.setText(f'共 {self.reply_num} 条回复')
+        self.label_7.setText(f'回复区 ({self.reply_num} 条回复)')
         self.update_pagejump_num()
         self.load_sub_thread_images()
+        self.post_area_flash_shower.hide()
 
     def add_reply_ui(self, datas):
         # tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
@@ -1136,14 +1203,13 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                         if not thread_info.page.has_more:
                             self.reply_page = -1
                             self.show_reply_end_text.emit(0)
-
-                        self.reply_loaded_signal.emit()
             except Exception as e:
                 logging.log_exception(e)
                 if not isinstance(e, RuntimeError):
                     self.show_reply_end_text.emit(2)
             finally:
                 self.is_getting_replys = False
+                self.reply_loaded_signal.emit()
 
         def start_async():
             new_loop = asyncio.new_event_loop()
@@ -1152,20 +1218,34 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         start_async()
 
+    def update_agree_button_status(self):
+        bg_color, font_color = profile_mgr.get_theme_policy_string()
+
+        self.pushButton_4.setText(' ' + large_num_to_string(self.agree_num))
+        self.pushButton_11.setText(' ' + large_num_to_string(self.store_num))
+
+        icon = f'ui/thumb_up_filled.png' if self.has_agreed else f'ui/icon_{font_color}/thumb_up.png'
+        self.pushButton_4.setIcon(QIcon(icon))
+
+        icon = f'ui/star_filled.png' if self.has_stored else f'ui/icon_{font_color}/star.png'
+        self.pushButton_11.setIcon(QIcon(icon))
+
     def set_ui_head_preview(self, datas: ThreadPreview):
         if datas.forum_name.startswith(('最近回复于', '发布于')):
             datas.forum_name = '未知贴吧'
 
         self.setWindowTitle(datas.title + ' - ' + datas.forum_name)
-        self.pushButton_2.setText(datas.forum_name)
-        self.pushButton_2.setToolTip("点击进入此吧")
+        self.label_15.setText(datas.forum_name)
+        self.label_14.hide()
+        self.label_21.hide()
+
         self.pushButton_4.setText(large_num_to_string(datas.agree_num, endspace=True) + '个赞')
         self.label_3.setText(datas.user_name)
         if datas.send_time:
             self.label.setText(timestamp_to_string(datas.send_time))
         self.label_5.setText(datas.title)
         self.label_6.setText(datas.text)
-        self.label_7.setText('共 {n} 条回复'.format(n=str(datas.reply_num)))
+        self.label_7.setText('回复区 ({n} 条回复)'.format(n=str(datas.reply_num)))
         if self.is_treasure:
             self.label_13.show()
         else:
@@ -1183,21 +1263,28 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.flash_shower.hide()
             if self.forum_id != 0:
                 self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
-                self.pushButton_2.setText(datas['forum_name'] + '吧')
-                self.pushButton_2.setToolTip(datas['forum_slogan'] if datas['forum_slogan'] else "点击进入此吧")
+                self.label_15.setText(datas['forum_name'] + '吧')
+                if datas['forum_slogan']:
+                    self.label_21.show()
+                    self.label_21.setText(datas['forum_slogan'])
+                else:
+                    self.label_21.hide()
+
+                self.label_14.clear()
+                self.label_14.show()
                 self.forum_avatar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
                                                datas['forum_avatar'],
-                                               qt_image.ImageCoverType.RoundCover)
+                                               qt_image.ImageCoverType.RoundCover,
+                                               (50, 50))
                 self.forum_avatar.loadImage()
             else:
                 self.setWindowTitle(datas['title'] + ' - 贴吧动态')
-                self.pushButton_2.hide()
-            self.pushButton_4.setText(large_num_to_string(datas['agree_count'], endspace=True) + '个赞')
-            self.label_3.setText(datas['user_name'])
+                self.frame_4.hide()
+
             self.lz_portrait.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
                                           datas['author_portrait'],
                                           qt_image.ImageCoverType.RoundCover,
-                                          (40, 40))
+                                          (50, 50))
             self.lz_portrait.loadImage()
 
             if profile_mgr.local_config['thread_view_settings']['hide_ip']:
@@ -1206,9 +1293,11 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 self.label.setText('{time} | IP 属地 {ip}'.format(time=datas['create_time_str'], ip=datas['user_ip']))
             self.label_5.setText(datas['title'])
             self.label_6.setText(datas['content'])
+            self.label_3.setText(datas['user_name'])
             self.label_10.setText('Lv.' + str(datas['user_grow_level']))
-            self.label_7.setText('共 {n} 条回复'.format(n=str(datas['post_num'])))
+            self.label_7.setText('回复区 ({n} 条回复)'.format(n=str(datas['post_num'])))
             self.textEdit.setText(datas['draft_text'])
+            self.update_agree_button_status()
             if datas['is_forum_manager']:
                 self.label_11.show()
             if not datas['title']:
@@ -1229,7 +1318,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             else:
                 self.horizontalLayout_2.removeWidget(self.label_12)
             if not self.label_8.isVisible() and not self.label_12.isVisible() and not self.label_13.isVisible():
-                self.gridLayout.setHorizontalSpacing(0)
+                self.frame_8.hide()
             if datas['content_statement'] and get_dict_value_treely(profile_mgr.local_config,
                                                                     ['thread_view_settings', 'show_statement'], True):
                 self.frame_3.show()
@@ -1383,152 +1472,152 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
                     if proto_response.error.errorno != 0:
                         raise Exception(f'{proto_response.error.errmsg} (错误代码 {proto_response.error.errorno})')
+
+                    self.forum_id = forum_id = thread_info.forum.fid
+                    if self.forum_id != 0:
+                        forum_proto = proto_response.data.forum
+                        forum_name = forum_proto.name
+                        forum_pic_url = forum_proto.avatar
+                        forum_slogan = (f'{large_num_to_string(forum_proto.member_num, endspace=True)}人关注 | '
+                                        f'{large_num_to_string(forum_proto.post_num, endspace=True)}条贴子')
                     else:
-                        self.forum_id = forum_id = thread_info.forum.fid
+                        forum_name = ''
+                        forum_pic_url = ''
+                        forum_slogan = ''
 
-                        if self.forum_id != 0:
-                            forum_proto = proto_response.data.forum
-                            forum_name = forum_proto.name
-                            forum_pic_url = forum_proto.avatar
-                            forum_slogan = (f'{large_num_to_string(forum_proto.member_num, endspace=True)}人关注，'
-                                            f'{large_num_to_string(forum_proto.post_num, endspace=True)}条贴子')
-                        else:
-                            forum_name = ''
-                            forum_pic_url = ''
-                            forum_slogan = ''
+                    preview_pixmap = []
+                    self.has_agreed = bool(proto_response.data.thread.agree.has_agree)
+                    self.has_stored = proto_response.data.thread.collect_status == 2
+                    self.agree_num = thread_info.thread.agree
+                    self.store_num = proto_response.data.thread.collect_num
+                    self.user_id = thread_info.thread.user.user_id
+                    self.first_floor_pid = thread_info.thread.pid
+                    self.reply_num = post_num = thread_info.thread.reply_num - 1
+                    title = thread_info.thread.title
+                    content = make_thread_content(thread_info.thread.contents.objs)
+                    portrait = thread_info.thread.user.portrait
+                    user_name = thread_info.thread.user.nick_name_new
+                    time_str = timestamp_to_string(thread_info.thread.create_time)
+                    user_ip = thread_info.thread.user.ip
+                    user_ip = user_ip if user_ip else '未知'
+                    is_help = thread_info.thread.is_help
+                    user_forum_level = thread_info.thread.user.level
+                    user_grow_level = thread_info.thread.user.glevel
+                    is_forum_manager = bool(thread_info.thread.user.is_bawu)
+                    content_statement = proto_response.data.thread.content_statement
 
-                        preview_pixmap = []
-                        self.user_id = thread_info.thread.user.user_id
-                        self.first_floor_pid = thread_info.thread.pid
-                        title = thread_info.thread.title
-                        content = make_thread_content(thread_info.thread.contents.objs)
-                        portrait = thread_info.thread.user.portrait
-                        user_name = thread_info.thread.user.nick_name_new
-                        self.agree_num = agree_num = thread_info.thread.agree
-                        time_str = timestamp_to_string(thread_info.thread.create_time)
-                        _user_ip = thread_info.thread.user.ip
-                        user_ip = _user_ip if _user_ip else '未知'
-                        is_help = thread_info.thread.is_help
-                        user_forum_level = thread_info.thread.user.level
-                        user_grow_level = thread_info.thread.user.glevel
-                        is_forum_manager = bool(thread_info.thread.user.is_bawu)
-                        self.reply_num = post_num = thread_info.thread.reply_num - 1
-                        self.reply_total_pages = thread_info.page.total_page
-                        content_statement = proto_response.data.thread.content_statement
+                    video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0}
+                    if thread_info.thread.contents.video:
+                        video_info['have_video'] = True
+                        video_info['src'] = proto_response.data.thread.video_info.video_url  # 获取带参数的正确链接
+                        video_info['length'] = thread_info.thread.contents.video.duration
+                        video_info['view'] = thread_info.thread.contents.video.view_num
+                        video_info['cover_src'] = proto_response.data.thread.video_info.thumbnail_url
 
-                        video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0}
-                        if thread_info.thread.contents.video:
-                            video_info['have_video'] = True
-                            video_info['src'] = proto_response.data.thread.video_info.video_url  # 获取带参数的正确链接
-                            video_info['length'] = thread_info.thread.contents.video.duration
-                            video_info['view'] = thread_info.thread.contents.video.view_num
-                            video_info['cover_src'] = proto_response.data.thread.video_info.thumbnail_url
+                    voice_info = {'have_voice': False, 'src': '', 'length': 0}
+                    if thread_info.thread.contents.voice:
+                        voice_info['have_voice'] = True
+                        voice_info[
+                            'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={thread_info.thread.contents.voice.md5}&play_from=pb_voice_play'
+                        voice_info['length'] = thread_info.thread.contents.voice.duration
 
-                        voice_info = {'have_voice': False, 'src': '', 'length': 0}
-                        if thread_info.thread.contents.voice:
-                            voice_info['have_voice'] = True
-                            voice_info[
-                                'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={thread_info.thread.contents.voice.md5}&play_from=pb_voice_play'
-                            voice_info['length'] = thread_info.thread.contents.voice.duration
+                    repost_info = {'have_repost': thread_info.thread.is_share,
+                                   'author_portrait_pixmap': None,
+                                   'author_name': '',
+                                   'title': '',
+                                   'content': '',
+                                   'thread_id': -1,
+                                   'forum_id': -1,
+                                   'forum_name': ''}
+                    if thread_info.thread.is_share:
+                        repost_user_info = await client.get_user_info(thread_info.thread.share_origin.author_id,
+                                                                      aiotieba.enums.ReqUInfo.PORTRAIT | aiotieba.enums.ReqUInfo.NICK_NAME)
+                        repost_info['author_portrait'] = repost_user_info.portrait
+                        repost_info['author_name'] = repost_user_info.nick_name_new
 
-                        repost_info = {'have_repost': thread_info.thread.is_share,
-                                       'author_portrait_pixmap': None,
-                                       'author_name': '',
-                                       'title': '',
-                                       'content': '',
-                                       'thread_id': -1,
-                                       'forum_id': -1,
-                                       'forum_name': ''}
-                        if thread_info.thread.is_share:
-                            repost_user_info = await client.get_user_info(thread_info.thread.share_origin.author_id,
-                                                                          aiotieba.enums.ReqUInfo.PORTRAIT | aiotieba.enums.ReqUInfo.NICK_NAME)
-                            repost_info['author_portrait'] = repost_user_info.portrait
-                            repost_info['author_name'] = repost_user_info.nick_name_new
+                        repost_info['title'] = thread_info.thread.share_origin.title
+                        repost_info['content'] = cut_string(
+                            make_thread_content(thread_info.thread.share_origin.contents, True), 150)
+                        repost_info['thread_id'] = thread_info.thread.share_origin.tid
+                        repost_info['forum_id'] = thread_info.thread.share_origin.fid
+                        repost_info['forum_name'] = thread_info.thread.share_origin.fname
 
-                            repost_info['title'] = thread_info.thread.share_origin.title
-                            repost_info['content'] = cut_string(
-                                make_thread_content(thread_info.thread.share_origin.contents, True), 150)
-                            repost_info['thread_id'] = thread_info.thread.share_origin.tid
-                            repost_info['forum_id'] = thread_info.thread.share_origin.fid
-                            repost_info['forum_name'] = thread_info.thread.share_origin.fname
+                    vote_info = {'have_vote': bool(thread_info.thread.vote_info.title),
+                                 'title': '',
+                                 'vote_num': 0,
+                                 'vt_user_num': 0,
+                                 'is_multi': False,
+                                 'chose_option_index': 0,
+                                 'options': []}
+                    if vote_info['have_vote']:
+                        vote_info_proto = proto_response.data.thread.origin_thread_info.poll_info
+                        vote_info['title'] = thread_info.thread.vote_info.title
+                        vote_info['vote_num'] = thread_info.thread.vote_info.total_vote
+                        vote_info['vt_user_num'] = thread_info.thread.vote_info.total_user
+                        vote_info['is_multi'] = thread_info.thread.vote_info.is_multi
+                        vote_info['chose_option_index'] = int(
+                            vote_info_proto.polled_value if vote_info_proto.polled_value else -1)
 
-                        vote_info = {'have_vote': bool(thread_info.thread.vote_info.title),
-                                     'title': '',
-                                     'vote_num': 0,
-                                     'vt_user_num': 0,
-                                     'is_multi': False,
-                                     'chose_option_index': 0,
-                                     'options': []}
-                        if vote_info['have_vote']:
-                            vote_info_proto = proto_response.data.thread.origin_thread_info.poll_info
-                            vote_info['title'] = thread_info.thread.vote_info.title
-                            vote_info['vote_num'] = thread_info.thread.vote_info.total_vote
-                            vote_info['vt_user_num'] = thread_info.thread.vote_info.total_user
-                            vote_info['is_multi'] = thread_info.thread.vote_info.is_multi
-                            vote_info['chose_option_index'] = int(
-                                vote_info_proto.polled_value if vote_info_proto.polled_value else -1)
+                        vote_options_proto = vote_info_proto.options
+                        for o in vote_options_proto:
+                            vote_option = {'id': o.id,
+                                           'text': o.text,
+                                           'is_chosen': bool(vote_info_proto.is_polled),
+                                           'is_current_chose': o.id == vote_info['chose_option_index'],
+                                           'total_num': thread_info.thread.vote_info.total_vote,
+                                           'current_num': o.num}
+                            vote_info['options'].append(vote_option)
 
-                            vote_options_proto = vote_info_proto.options
-                            for o in vote_options_proto:
-                                vote_option = {'id': o.id,
-                                               'text': o.text,
-                                               'is_chosen': bool(vote_info_proto.is_polled),
-                                               'is_current_chose': o.id == vote_info['chose_option_index'],
-                                               'total_num': thread_info.thread.vote_info.total_vote,
-                                               'current_num': o.num}
-                                vote_info['options'].append(vote_option)
+                    manager_election_info = {
+                        'have_manager_election': bool(proto_response.data.manager_election.status),
+                        'can_vote': bool(proto_response.data.manager_election.can_vote),
+                        'vote_num': int(proto_response.data.manager_election.vote_num),
+                        'vote_start_time': int(
+                            proto_response.data.manager_election.begin_vote_time),
+                        'status': int(proto_response.data.manager_election.status)}
 
-                        manager_election_info = {
-                            'have_manager_election': bool(proto_response.data.manager_election.status),
-                            'can_vote': bool(proto_response.data.manager_election.can_vote),
-                            'vote_num': int(proto_response.data.manager_election.vote_num),
-                            'vote_start_time': int(
-                                proto_response.data.manager_election.begin_vote_time),
-                            'status': int(proto_response.data.manager_election.status)}
+                    for j in thread_info.thread.contents.imgs:
+                        # width, height, src, view_src
+                        src = j.origin_src
+                        view_src = j.big_src
+                        height = j.show_height
+                        width = j.show_width
+                        preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
-                        for j in thread_info.thread.contents.imgs:
-                            # width, height, src, view_src
-                            src = j.origin_src
-                            view_src = j.big_src
-                            height = j.show_height
-                            width = j.show_width
-                            preview_pixmap.append({'width': width, 'height': height, 'src': src, 'view_src': view_src})
+                    draft_text = profile_mgr.get_post_draft(self.thread_id)
+                    profile_mgr.add_view_history(1,
+                                                 {"thread_id": self.thread_id,
+                                                  "title": f'{title} - {forum_name}吧'})
 
-                        draft_text = profile_mgr.get_post_draft(self.thread_id)
-                        profile_mgr.add_view_history(1,
-                                                     {"thread_id": self.thread_id,
-                                                      "title": f'{title} - {forum_name}吧'})
+                    tdata = {'forum_id': forum_id,  # 吧id
+                             'title': title,  # 标题
+                             'content': content,  # 正文内容
+                             'author_portrait': portrait,  # 作者portrait
+                             'user_name': user_name,  # 作者昵称
+                             'forum_name': forum_name,  # 吧名称
+                             'forum_avatar': forum_pic_url,  # 吧头像链接
+                             'view_pixmap': preview_pixmap,  # 主题内图片列表
+                             'create_time_str': time_str,  # 发布时间字符串
+                             'user_ip': user_ip,  # 作者ip属地
+                             'is_help': is_help,  # 是否为求助贴
+                             'uf_level': user_forum_level,  # 吧等级
+                             'err_info': '',  # 错误信息
+                             'video_info': video_info,  # 视频贴信息
+                             'voice_info': voice_info,  # 语音内容信息
+                             'user_grow_level': user_grow_level,  # 用户成长等级
+                             'is_forum_manager': is_forum_manager,  # 是否为吧务
+                             'post_num': post_num,  # 回贴数
+                             'repost_info': repost_info,  # 转发贴信息
+                             'forum_slogan': forum_slogan,  # 吧标语
+                             'vote_info': vote_info,  # 投票信息
+                             'draft_text': draft_text,  # 草稿文本
+                             'content_statement': content_statement,  # 内容提示，如 "疑似含AI内容"
+                             'manager_election_info': manager_election_info,  # 吧主竞选信息
+                             }
 
-                        tdata = {'forum_id': forum_id,  # 吧id
-                                 'title': title,  # 标题
-                                 'content': content,  # 正文内容
-                                 'author_portrait': portrait,  # 作者portrait
-                                 'user_name': user_name,  # 作者昵称
-                                 'forum_name': forum_name,  # 吧名称
-                                 'forum_avatar': forum_pic_url,  # 吧头像链接
-                                 'view_pixmap': preview_pixmap,  # 主题内图片列表
-                                 'agree_count': agree_num,  # 点赞数
-                                 'create_time_str': time_str,  # 发布时间字符串
-                                 'user_ip': user_ip,  # 作者ip属地
-                                 'is_help': is_help,  # 是否为求助贴
-                                 'uf_level': user_forum_level,  # 吧等级
-                                 'err_info': '',  # 错误信息
-                                 'video_info': video_info,  # 视频贴信息
-                                 'voice_info': voice_info,  # 语音内容信息
-                                 'user_grow_level': user_grow_level,  # 用户成长等级
-                                 'is_forum_manager': is_forum_manager,  # 是否为吧务
-                                 'post_num': post_num,  # 回贴数
-                                 'repost_info': repost_info,  # 转发贴信息
-                                 'forum_slogan': forum_slogan,  # 吧标语
-                                 'vote_info': vote_info,  # 投票信息
-                                 'draft_text': draft_text,  # 草稿文本
-                                 'content_statement': content_statement,  # 内容提示，如 "疑似含AI内容"
-                                 'manager_election_info': manager_election_info  # 吧主竞选信息
-                                 }
-
-                        logging.log_INFO(
-                            f'load thread {self.thread_id} main info ok, send to qt side')
-                        self.head_data_signal.emit(tdata)
+                    logging.log_INFO(
+                        f'load thread {self.thread_id} main info ok, send to qt side')
+                    self.head_data_signal.emit(tdata)
             except Exception as e:
                 self.head_data_signal.emit({'err_info': get_exception_string(e)})
                 logging.log_exception(e)
