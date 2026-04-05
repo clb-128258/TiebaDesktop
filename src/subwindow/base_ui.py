@@ -207,6 +207,7 @@ def handle_native_event(widget, refreshThemeFunc, eventType, message):
 class NarrowButtonStatus(enum.Enum):
     ArrowLeft = enum.auto()
     ArrowRight = enum.auto()
+    Refresh = enum.auto()
 
 
 class BaseQMenu(QMenu):
@@ -297,15 +298,14 @@ class WindowBaseQDialog(QDialog):
         self.set_theme_qss()
 
 
-class FloatingNarrowButton(QToolButton):
-    """在 QWidget 上方悬浮的导航按钮"""
+class FloatingButton(QToolButton):
+    """在 QWidget 上方悬浮的按钮"""
 
     def __init__(self, parent):
         super().__init__()
         self.setParent(parent)
-
-        self.setToolTip('点击切换到另一页面')
         self.init_ui()
+        self.status = None
 
     def init_ui(self):
         self.setFixedSize(39, 39)
@@ -331,20 +331,34 @@ class FloatingNarrowButton(QToolButton):
         }}""")
 
     def set_button_status(self, status: NarrowButtonStatus):
+        self.status = status
         icon_path = ''
-        move_value = 20
-        x, y = 0, 0
+
+        tool_tip = '悬浮按钮'
+        if status in (NarrowButtonStatus.ArrowRight, NarrowButtonStatus.ArrowLeft):
+            tool_tip = '点击切换到另一页面'
+        elif status == NarrowButtonStatus.Refresh:
+            tool_tip = '刷新'
+        self.setToolTip(tool_tip)
 
         if status == NarrowButtonStatus.ArrowRight:
             icon_path = f'ui/icon_white/forward.png'
         elif status == NarrowButtonStatus.ArrowLeft:
             icon_path = f'ui/icon_white/back.png'
+        elif status == NarrowButtonStatus.Refresh:
+            icon_path = f'ui/icon_white/refresh.png'
         self.setIcon(QIcon(icon_path))
 
-        if status == NarrowButtonStatus.ArrowRight:
+        self.move_button()
+
+    def move_button(self):
+        move_value = 20
+        x, y = 0, 0
+
+        if self.status in (NarrowButtonStatus.ArrowRight, NarrowButtonStatus.Refresh):
             x = self.parent().width() - self.width() - move_value
             y = self.parent().height() - self.height() - move_value
-        elif status == NarrowButtonStatus.ArrowLeft:
+        elif self.status == NarrowButtonStatus.ArrowLeft:
             x = move_value
             y = self.parent().height() - self.height() - move_value
         self.move(x, y)

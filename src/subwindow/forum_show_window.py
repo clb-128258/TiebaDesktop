@@ -3,7 +3,7 @@ import gc
 import time
 
 import aiotieba
-from PyQt5.QtCore import pyqtSignal, Qt, QTimer
+from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 
@@ -21,7 +21,6 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
     """吧入口窗口，显示基础吧信息和吧内贴子等"""
     forum_name = ''
     page = {'latest_reply': 1, 'latest_send': 1, 'hot': 1, 'top': 1, 'treasure': 1}
-    added_thread_count = 0
     isloading = False
     update_signal = pyqtSignal(dict)
     add_thread = pyqtSignal(dict)
@@ -54,13 +53,19 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
 
         self.init_elements()
         self.label_9.hide()
-        self.pushButton.hide()
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+
+        self.flat_buttons=[self.pushButton_4,self.pushButton_5,self.pushButton_3]
+        icon_size = QSize(23, 23)
+        for b in self.flat_buttons:
+            b.setIconSize(icon_size)
+
         self.tabWidget.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
+
         self.update_signal.connect(self.update_info_ui)
         self.add_thread.connect(self.add_thread_)
         self.thread_refresh_ok.connect(self.show_load_ok_msg)
-        self.pushButton_2.clicked.connect(self.refresh_all)
+        self.refresh_button.clicked.connect(self.refresh_all)
         self.follow_forum_ok.connect(self.show_follow_result)
         self.pushButton.clicked.connect(self.do_follow_forum)
         self.pushButton_3.clicked.connect(self.open_detail_window)
@@ -71,7 +76,12 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
 
     def reset_theme(self):
         super().reset_theme()
+        self.thread_area_flash_shower.reset_theme()
+
         color = profile_mgr.get_theme_color_string()
+        font_color = profile_mgr.get_theme_font_color_string()
+        bg_policy, font_policy = profile_mgr.get_theme_policy_string()
+
         for lw in self.listwidgets:
             lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
                              f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
@@ -81,6 +91,13 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             for i in range(lw.count()):
                 widget = lw.itemWidget(lw.item(i))
                 widget.reset_theme()
+
+        for btn in self.flat_buttons:
+            btn.setStyleSheet(f'QPushButton{{color: {font_color};}}')
+
+        self.pushButton_5.setIcon(QIcon(f'ui/icon_{font_policy}/search.png'))
+        self.pushButton_4.setIcon(QIcon(f'ui/icon_{font_policy}/os_browser.png'))
+        self.pushButton_3.setIcon(QIcon(f'ui/icon_{font_policy}/info.png'))
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5:
@@ -96,12 +113,22 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         a0.accept()
         qt_window_mgr.del_window(self)
 
+    def resizeEvent(self, a0):
+        self.refresh_button.move_button()
+
     def init_elements(self):
         self.flash_shower = LoadingFlashWidget()
         self.flash_shower.cover_widget(self)
 
+        self.thread_area_flash_shower = LoadingFlashWidget()
+        self.thread_area_flash_shower.cover_widget(self.tabWidget)
+
         self.toast_widget = top_toast_widget.TopToaster()
         self.toast_widget.setCoverWidget(self)
+
+        self.refresh_button = base_ui.FloatingButton(self)
+        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
+        self.refresh_button.move_button()
 
     def threadList_load_image(self):
         for lw in self.listwidgets:
@@ -244,19 +271,9 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             self.listWidget_2.addItem(item)
             self.listWidget_2.setItemWidget(item, widget)
 
-        self.added_thread_count += 1
-
     def show_load_ok_msg(self):
-        # 初始化计时器
-        self.text_timer = QTimer(self)
-        self.text_timer.setSingleShot(True)
-        self.text_timer.setInterval(5000)
-        self.text_timer.timeout.connect(self.label_5.clear)
-
-        self.label_5.setText(f'贴子刷新成功，已为你推荐 {self.added_thread_count} 条内容')
-        self.text_timer.start()
-        self.added_thread_count = 0
         self.threadList_load_image()
+        self.thread_area_flash_shower.hide()
 
     def refresh_all(self):
         if not self.isloading:
@@ -290,10 +307,13 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                 self.get_threads_async(thread_type="treasure")
 
     def get_threads_async(self, thread_type="all"):
-        if not self.isloading:
-            if thread_type == 'all':
-                self.label_5.setText('贴子刷新中...')
-            start_background_thread(self.get_threads, (thread_type,))
+        if self.isloading:
+            return
+
+        if thread_type == 'all':
+            self.refresh_button.move_button()
+            self.thread_area_flash_shower.show()
+        start_background_thread(self.get_threads, (thread_type,))
 
     def get_threads(self, thread_type="all"):
         try:
@@ -401,15 +421,15 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             thread_list = []
             self.isloading = True
 
-            if thread_type == 'latest_reply' or thread_type == 'all':
+            if thread_type in ('latest_reply', 'all'):
                 thread_list.append(start_background_thread(run_a_async, (get_latest_reply_detail,)))
-            if thread_type == 'latest_send' or thread_type == 'all':
+            if thread_type in ('latest_send', 'all'):
                 thread_list.append(start_background_thread(run_a_async, (get_latest_send_detail,)))
-            if thread_type == 'hot' or thread_type == 'all':
+            if thread_type in ('hot', 'all'):
                 thread_list.append(start_background_thread(run_a_async, (get_hot_detail,)))
-            if thread_type == 'top' or thread_type == 'all':
+            if thread_type in ('top', 'all'):
                 thread_list.append(start_background_thread(run_a_async, (get_top_detail,)))
-            if thread_type == 'treasure' or thread_type == 'all':
+            if thread_type in ('treasure', 'all'):
                 thread_list.append(start_background_thread(run_a_async, (get_treasure_detail,)))
 
             for i in thread_list:
@@ -422,8 +442,6 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                 self.page[thread_type] += 1
             if thread_type == "all":
                 self.thread_refresh_ok.emit()
-            else:
-                self.added_thread_count = 0
             self.isloading = False
 
         start_all_process()
@@ -438,18 +456,23 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             self.close()
         else:
             self.setWindowTitle(datas['name'] + '吧')
-            self.label_3.setText('{0}人关注，{1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
-                                                              large_num_to_string(datas['postnum'], endspace=True)))
+            self.label_3.setText('{0}人关注 | {1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
+                                                                large_num_to_string(datas['postnum'], endspace=True)))
             self.label_2.setText(datas['name'] + '吧')
             self.forum_avatar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
                                            datas['avatar'],
                                            qt_image.ImageCoverType.RoundCover,
-                                           (50, 50))
+                                           (65, 65))
             self.forum_avatar.loadImage()
 
             if datas['is_followed'] == 1:
-                qss = ('QLabel{color: rgb(255,255,255);background-color: [color];border-width: 1px 4px;border-style: '
-                       'solid;border-color: [color]; border-radius: 5px;}')
+                qss = ('QLabel{color: rgb(255, 255, 255);'
+                       'background-color: [color];'
+                       'border-width: 5px 5px;'
+                       'border-height: 1px 1px;'
+                       'border-style: solid;'
+                       'border-color: [color];'
+                       'border-radius: 8px;}')
                 if 1 <= datas['uf_level'] <= 3:  # 绿牌
                     qss = qss.replace('[color]', 'rgb(101, 211, 171)')
                 elif 4 <= datas['uf_level'] <= 9:  # 蓝牌
@@ -468,7 +491,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                 self.forum_admin_portrait.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait,
                                                        datas['admin_portrait'],
                                                        qt_image.ImageCoverType.RoundCover,
-                                                       (20, 20))
+                                                       (25, 25))
                 self.forum_admin_portrait.loadImage()
             else:
                 self.label_6.hide()
@@ -495,7 +518,6 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             elif datas['is_followed'] == 2:
                 self.pushButton.setText('登录后即可关注')
                 self.pushButton.setEnabled(False)
-            self.pushButton.show()
             self.flash_shower.hide()
 
     def load_info(self):
@@ -536,25 +558,26 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                                 level_value = resp["forum"]["user_level"]
                         else:
                             isFollowed = 2
+
                         self.forum_name = forum_name = resp["forum"]["name"]
                         forum_slogan = resp["forum"]["slogan"]
                         follow_count = resp["forum"]["member_num"]
                         post_count = resp["forum"]["post_num"]
                         forum_sign_info = resp['forum'].get('sign_in_info', {'user_info': None})['user_info']
+                        forum_avatar = resp['forum']["avatar"]
                         if admin_info := resp["forum"].get("managers"):
                             forum_admin_name = admin_info[0]["show_name"]
                             forum_admin_portrait = admin_info[0]["portrait"].split('?')[0]
                         else:
                             forum_admin_name = ''
                             forum_admin_portrait = ''
-                        forum_avatar = resp['forum']["avatar"]
 
                         md5v = cache_mgr.save_md5_ico(forum_avatar)
                         profile_mgr.add_view_history(3, {"icon_md5": md5v, "forum_id": self.forum_id,
                                                          "forum_name": self.forum_name})
 
                         logging.log_INFO(
-                            f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok, sending to qt thread')
+                            f'forum (id {self.forum_id}, name {forum_name}) head_info all load ok')
                 except Exception as e:
                     logging.log_exception(e)
                     tdata = {'error': get_exception_string(e)}

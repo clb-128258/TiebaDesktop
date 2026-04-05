@@ -427,6 +427,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
         bg_policy, font_policy = profile_mgr.get_theme_policy_string()
+
         for lw in listwidgets:
             lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
                              f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
@@ -543,7 +544,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 self.gridLayout_11.setColumnStretch(0, 0)
                 self.gridLayout_11.setColumnStretch(1, 1)
 
-            self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
+            self.narrow_switch_button.move_button()
             self.narrow_switch_button.show()
         else:
             self.gridLayout_11.setColumnStretch(0, 1)
@@ -569,7 +570,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
 
     def init_narrow_switch_button(self):
-        self.narrow_switch_button = base_ui.FloatingNarrowButton(self)
+        self.narrow_switch_button = base_ui.FloatingButton(self)
         self.narrow_switch_button.clicked.connect(self.switch_narrow_button_status)
 
     def init_more_menu(self):

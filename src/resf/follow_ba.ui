@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1052</width>
-    <height>530</height>
+    <width>989</width>
+    <height>586</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,6 +57,11 @@
      </item>
      <item row="1" column="0" colspan="3">
       <widget class="QLabel" name="label_2">
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string>登录后即可查看关注的吧</string>
        </property>

@@ -155,7 +155,6 @@ QPushButton[flat="false"] {
     border: 1px solid #505050;
     border-radius: 6px;
     padding: 2px 9px;
-    font-size: 12px;
     min-width: 50px;
 }
 
