@@ -102,9 +102,13 @@ class TiebaUserSelector(WindowBaseQWidget, tb_user_selector.Ui_Form):
 
     def reset_theme(self):
         super().reset_theme()
+
+        self.loading_widget.reset_theme()
+
         # apply theme to listWidget
         color = profile_mgr.get_theme_color_string()
         self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}')
+
         # reset theme for existing widgets
         for i in range(self.listWidget.count()):
             widget = self.listWidget.itemWidget(self.listWidget.item(i))
@@ -196,8 +200,11 @@ class TiebaUserSelector(WindowBaseQWidget, tb_user_selector.Ui_Form):
     def pop_selector(self, pos):
         """Show the selector as a modal menu at position `pos` and return the selected user info dict or None."""
         self.selected_user = None
+
         # execute the menu modally
         self.user_selector_menu_instance.exec(pos)
+
+        self.lineEdit.clear()
         return self.selected_user
 
     @classmethod
