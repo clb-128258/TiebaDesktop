@@ -13,38 +13,14 @@
 > [!note]
 >
 > 由于学业原因，更新会较为缓慢，一些 Bug 可能无法及时修复，还请谅解。  
-> 如对本项目有任何建议或问题，欢迎提交 Issues。
+> 如对本项目有任何建议或问题，欢迎提交 Issues 或 PR。
 
-## 如何使用
+## UI 展示
 
-在本仓库的 `Releases` 找到最新的版本，可以下载到最新版的 `.zip` 压缩包和 `.exe` 安装程序。
-
-### 登录
-
-进入软件后，点击右上角的箭头按钮，再点击头像或 `未登录` 字样即可启动登录流程。  
-此时可以使用任意百度系软件扫码登录。  
-
-<img src="./docs/app-ui-grabs/1.png" alt="App UI grab image"/>
-
-在 WebView2 可用的系统下，软件会弹出百度账号的登录页面；
-
-<img src="./docs/app-ui-grabs/2.png" alt="App UI grab image"/>
-
-否则会弹出原生的扫码登录界面。
-
-<img src="./docs/app-ui-grabs/3.png" alt="App UI grab image"/>
-
-当然，本软件也支持多种登录方式，任君选择。
-
-<img src="./docs/app-ui-grabs/4.png" alt="App UI grab image"/>
-
-> [!note]
-> 
-> 如果你有对本项目进行二次开发的需求，请参阅：
-> * [如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)  
-> * [主程序构建指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
-
-
+![1](./docs/app-ui-grabs/1.png)
+![2](./docs/app-ui-grabs/2.png)
+![3](./docs/app-ui-grabs/3.png)
+![4](./docs/app-ui-grabs/4.png)
 
 ## 功能实现
 
@@ -62,28 +38,26 @@
     - [x] 查看富媒体（图片、视频、语音等）
     - [x] 保存贴内视频
     - [x] 跳页功能
-- 社区功能
-    - 吧
-        - [x] 查看自己关注的吧
-        - [x] 查看吧详情信息
-        - [x] 吧内关注、签到
-        - [x] 一键签到、成长等级签到
-        - [x] [命令行参数签到](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
-        - [x] 首页进吧页签到
-    - 用户
-        - [x] 个人主页
-        - [x] 查看用户的 主题贴 / 回复贴 / 关注的吧 / 关注列表 / 粉丝列表
-        - [x] 关注 / 拉黑 / 禁言用户
-    - 互动
-        - [x] 点赞
-        - [ ] 点踩
-        - [x] 收藏
-        - [x] 查看 点赞 / 回复 / @ 我的人
-        - [x] 互动消息推送
-    - 发贴（不建议使用，可能导致封号）
-        - [ ] 发主题
-        - [x] 发回复
-        - [ ] 回复楼层 / 楼中楼
+- 发贴（不建议使用，可能导致 `封号` `发贴秒删` 等后果）
+    - [ ] 发主题
+    - [x] 发回复
+    - [ ] 回复楼层 / 楼中楼
+- 吧
+    - [x] 查看自己关注的吧
+    - [x] 查看吧详情信息
+    - [x] 吧内关注、签到
+    - [x] 一键签到、成长等级签到
+    - [x] [命令行启动参数签到](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
+    - [x] 首页进吧页签到
+- 用户
+    - [x] 个人主页
+    - [x] 关注 / 拉黑 / 禁言用户
+- 社区互动
+    - [x] 点赞
+    - [ ] 点踩
+    - [x] 收藏
+    - [x] 查看 点赞 / 回复 / @ 我的人
+    - [x] 互动消息推送
 - 足迹
     - [x] 收藏列表
     - [x] 点赞历史列表
@@ -106,6 +80,31 @@
     - [x] 跟随系统设置自动切换主题
 - 等等...
 
+## 项目结构
+
+```text
+TiebaDesktop
+├─ aiotieba-fix-files/  # aiotieba 修补文件
+├─ build-tools/  # 构建工具
+└─ src/  # 源代码
+   ├─ binres/  # 二进制依赖
+   ├─ proto/  # protobuf 相关文件
+   ├─ publics/  # 公用组件代码库
+   ├─ resf/  # 原始资源文件，原始 `.proto` 文件
+   ├─ subwindow/  # 核心业务代码，包含了主要的子窗口类
+   ├─ ui/  # UI 资源文件
+   │  └─ js_player/  # 前端视频播放器
+   ├─ consts.py  # 常量定义文件
+   ├─ main.py  # 主程序入口点
+   └─ requirements.txt  # 依赖列表
+```
+
+> [!note]
+>
+> 如果你有对本项目进行二次开发的需求，请参阅：
+> * [如何配置贴吧桌面的开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)
+> * [主程序构建指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
+
 ## 致谢
 
 另外要特别感谢以下开源仓库：  
@@ -115,10 +114,14 @@
 
 ## 友情链接
 
-[TiebaLite - 一个第三方安卓贴吧客户端](https://github.com/HuanCheng65/TiebaLite)  
-[NeoTieBa - 一个基于 Tauri2.0 + Vue3 + TypeScript 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)
+[TiebaLite - 一个第三方安卓贴吧客户端，已停更](https://github.com/HuanCheng65/TiebaLite)  
+[TiebaLite (zzc10086) - 由第三方维护的 TiebaLite](https://github.com/zzc10086/TiebaLite)  
+[NeoTieBa - 一个基于 Tauri2.0 + Vue3 + TypeScript 构建的非官方贴吧客户端](https://github.com/Vkango/NeoTieBa)  
+[eazy-tieba - 一个强大且开源的百度贴吧工具箱](https://github.com/Dilettante258/eazy-tieba)
 
-## 许可声明
+## 免责声明
 
-本软件遵循 MIT License 发布，请在遵守 MIT License 的前提下使用本软件。  
-本软件仅供学习交流使用，请勿用于任何商业或非法用途，使用本软件所产生的任何后果都与作者无关。
+1) 本软件不会收集你的任何个人信息，也不会收集你的任何账号数据。
+2) 本软件遵循 MIT License 发布，请在遵守 MIT License 的前提下使用本软件。
+3) 本软件仅供学习交流使用，请勿用于任何商业或非法用途。使用本软件所产生的任何后果都与作者无关。
+
