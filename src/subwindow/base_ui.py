@@ -2,10 +2,10 @@
 import ctypes
 import enum
 from ctypes import wintypes
-
 import yarl
 import pyperclip
 import os
+import re
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
@@ -13,6 +13,9 @@ from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit,
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
+
+# 邮箱判别正则
+email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 # --- Windows API 常量与定义 ---
 WM_THEMECHANGED = 0x031A
@@ -44,7 +47,7 @@ def create_thread_content_menu(parent_label: QLabel):
                 return profile_mgr.sep_name_map_inverted[settings['preset']], profile_mgr.search_engine_presets[
                     settings['preset']]
             else:
-                return '自定义引擎', settings['custom_url']
+                return '自定义搜索引擎', settings['custom_url']
         except Exception as e:
             app_logger.log_exception(e)
             return 'Bing', profile_mgr.search_engine_presets['bing']
@@ -71,18 +74,24 @@ def create_thread_content_menu(parent_label: QLabel):
 
     menu.addSeparator()
 
+    # 邮箱地址识别
+    if re.match(email_regex, selected_text):
+        jump_mailapp = QAction(f'向 {selected_text} 发送电子邮件', parent_label)
+        jump_mailapp.triggered.connect(lambda: funcs.open_url_in_browser('mailto://' + selected_text))
+        menu.addAction(jump_mailapp)
+
+    # 链接直接跳转
+    if selected_text.startswith((request_mgr.SCHEME_HTTP, request_mgr.SCHEME_HTTPS)):
+        url = yarl.URL(selected_text)
+        jump_webpage = QAction(f'打开网页 {url.host}', parent_label)
+        jump_webpage.triggered.connect(lambda: funcs.open_url_in_browser(selected_text))
+        menu.addAction(jump_webpage)
+
     search_tb = QAction(f'在贴吧内搜索“{funcs.cut_string(selected_text, 20)}”', parent_label)
     search_tb.triggered.connect(lambda: open_search_window(selected_text))
     if not selected_text:
         search_tb.setVisible(False)
     menu.addAction(search_tb)
-
-    # 链接直接跳转
-    if selected_text.startswith((request_mgr.SCHEME_HTTP, request_mgr.SCHEME_HTTPS)):
-        url = yarl.URL(selected_text)
-        jump_webpage = QAction(f'跳转到网页 {url.host}', parent_label)
-        jump_webpage.triggered.connect(lambda: funcs.open_url_in_browser(selected_text))
-        menu.addAction(jump_webpage)
 
     engine_name, engine_link = get_search_engine_link()
     engine_link = engine_link.replace('[query]', selected_text)
