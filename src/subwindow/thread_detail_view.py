@@ -572,6 +572,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def init_narrow_switch_button(self):
         self.narrow_switch_button = base_ui.FloatingButton(self)
         self.narrow_switch_button.clicked.connect(self.switch_narrow_button_status)
+        self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
 
     def init_more_menu(self):
         url = f'https://tieba.baidu.com/p/{self.thread_id}'
