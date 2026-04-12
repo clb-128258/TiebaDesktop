@@ -5,9 +5,9 @@
 
 # 贴吧桌面
 
-![STARS](https://img.shields.io/github/stars/clb-128258/TiebaDesktop?style=round-square&logo=github&color=yellow) ![FORKS](https://img.shields.io/github/forks/clb-128258/TiebaDesktop?style=round-square)
+![STARS](https://img.shields.io/github/stars/clb-128258/TiebaDesktop?style=round-square&logo=github&color=yellow) ![FORKS](https://img.shields.io/github/forks/clb-128258/TiebaDesktop?style=round-square) ![License](https://img.shields.io/badge/License-MIT-purple)
 
-一个非官方的百度贴吧电脑客户端, 使用 PyQt5 开发
+一个第三方百度贴吧电脑客户端, 使用 PyQt5 开发
 </div>
 
 > [!note]
@@ -15,12 +15,21 @@
 > 由于学业原因，更新会较为缓慢，一些 Bug 可能无法及时修复，还请谅解。  
 > 如对本项目有任何建议或问题，欢迎提交 Issues 或 PR。
 
+## 项目特色
+
+* 基于 Qt5 开发，原生框架性能开销低，兼容旧版系统
+* 现代化的 UI 设计，针对电脑设备优化的 UI 布局
+* 支持多种账号登录方式
+* 丰富的个性化设置选项
+* [启动参数调用功能](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
+* 更多强大且实用的贴吧功能...
+
 ## UI 展示
 
-![1](./docs/app-ui-grabs/1.png)
-![2](./docs/app-ui-grabs/2.png)
-![3](./docs/app-ui-grabs/3.png)
-![4](./docs/app-ui-grabs/4.png)
+![Show Image 1](./docs/app-ui-grabs/1.png)
+![Show Image 2](./docs/app-ui-grabs/2.png)
+![Show Image 3](./docs/app-ui-grabs/3.png)
+![Show Image 4](./docs/app-ui-grabs/4.png)
 
 ## 功能实现
 
@@ -47,7 +56,7 @@
     - [x] 查看吧详情信息
     - [x] 吧内关注、签到
     - [x] 一键签到、成长等级签到
-    - [x] [命令行启动参数签到](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
+    - [x] [命令行启动参数签到](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md#%E7%AD%BE%E5%88%B0%E6%89%80%E6%9C%89%E5%85%B3%E6%B3%A8%E7%9A%84%E5%90%A7)
     - [x] 首页进吧页签到
 - 用户
     - [x] 个人主页
