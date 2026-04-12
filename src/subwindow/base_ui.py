@@ -308,20 +308,20 @@ class FloatingButton(QToolButton):
         self.status = None
 
     def init_ui(self):
-        self.setFixedSize(39, 39)
+        self.setFixedSize(45, 45)
 
         shadow_effect = QGraphicsDropShadowEffect()
-        shadow_effect.setBlurRadius(30)  # 阴影模糊半径
-        shadow_effect.setColor(QColor(0, 0, 0, 50))  # 阴影颜色和透明度
-        shadow_effect.setOffset(2, 2)  # 阴影偏移量
+        shadow_effect.setBlurRadius(20)  # 阴影模糊半径
+        shadow_effect.setColor(QColor(0, 0, 0, 120))  # 阴影颜色和透明度
+        shadow_effect.setOffset(4, 4)  # 阴影偏移量
         self.setGraphicsEffect(shadow_effect)
 
         self.setStyleSheet(f"""QToolButton {{
-            background-color: #5b44c8;
+            background-color: rgba(91, 68, 200, 210);
             border: none;
-            border-radius: 19px;
+            border-radius: 22px;
             padding: 4px;
-            icon-size: 30px;
+            icon-size: 32px;
         }}
         QToolButton:hover {{
             background-color: #6a50ea;
