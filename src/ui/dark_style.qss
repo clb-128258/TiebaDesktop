@@ -217,3 +217,11 @@ QMenu::right-arrow {
 QMenu::indicator:non-exclusive:checked {
     image: url(./ui/icon_white/checked.png);
 }
+
+
+QToolButton:hover {
+    background-color: rgba(255, 255, 255, 0.16);
+}
+QToolButton:pressed {
+    background-color: rgba(255, 255, 255, 0.35);
+}

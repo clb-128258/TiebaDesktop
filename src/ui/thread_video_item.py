@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\thread_video_item.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\thread_video_item.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -14,39 +14,58 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(247, 68)
+        Form.resize(248, 140)
         Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "")
-        self.gridLayout_2 = QtWidgets.QGridLayout(Form)
-        self.gridLayout_2.setContentsMargins(6, 6, 6, 6)
-        self.gridLayout_2.setHorizontalSpacing(9)
-        self.gridLayout_2.setVerticalSpacing(6)
-        self.gridLayout_2.setObjectName("gridLayout_2")
         self.label = QtWidgets.QLabel(Form)
+        self.label.setGeometry(QtCore.QRect(10, 10, 131, 16))
+        self.label.setText("")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName("label")
-        self.gridLayout_2.addWidget(self.label, 0, 0, 1, 1)
-        self.gridLayout = QtWidgets.QGridLayout()
-        self.gridLayout.setSpacing(6)
+        self.frame = QtWidgets.QFrame(Form)
+        self.frame.setGeometry(QtCore.QRect(10, 100, 231, 31))
+        self.frame.setStyleSheet("QFrame#frame{\n"
+"    background-color: rgba(0, 0, 0, 0.3);\n"
+"    border-radius: 17px;\n"
+"}")
+        self.frame.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
+        self.gridLayout = QtWidgets.QGridLayout(self.frame)
+        self.gridLayout.setContentsMargins(11, 6, 8, 6)
         self.gridLayout.setObjectName("gridLayout")
-        self.label_3 = QtWidgets.QLabel(Form)
+        self.label_3 = QtWidgets.QLabel(self.frame)
         self.label_3.setObjectName("label_3")
-        self.gridLayout.addWidget(self.label_3, 1, 0, 1, 1)
-        self.label_2 = QtWidgets.QLabel(Form)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(13)
-        self.label_2.setFont(font)
-        self.label_2.setObjectName("label_2")
-        self.gridLayout.addWidget(self.label_2, 0, 0, 1, 1)
-        self.pushButton_2 = QtWidgets.QPushButton(Form)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.gridLayout.addWidget(self.pushButton_2, 0, 1, 1, 1)
-        self.pushButton = QtWidgets.QPushButton(Form)
-        self.pushButton.setObjectName("pushButton")
-        self.gridLayout.addWidget(self.pushButton, 1, 1, 1, 1)
-        self.gridLayout.setColumnStretch(0, 1)
-        self.gridLayout_2.addLayout(self.gridLayout, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.label_3, 0, 0, 1, 1)
+        self.toolButton_3 = QtWidgets.QToolButton(self.frame)
+        self.toolButton_3.setText("")
+        self.toolButton_3.setObjectName("toolButton_3")
+        self.gridLayout.addWidget(self.toolButton_3, 0, 2, 1, 1)
+        self.toolButton = QtWidgets.QToolButton(self.frame)
+        self.toolButton.setText("")
+        self.toolButton.setObjectName("toolButton")
+        self.gridLayout.addWidget(self.toolButton, 0, 3, 1, 1)
+        self.toolButton_2 = QtWidgets.QToolButton(Form)
+        self.toolButton_2.setGeometry(QtCore.QRect(10, 40, 60, 60))
+        self.toolButton_2.setStyleSheet("QToolButton {\n"
+"    border: none;\n"
+"    border-radius: 30px;\n"
+"    padding: 1px;\n"
+"    icon-size: 50px;\n"
+"    background-color: rgba(0, 0, 0, 0.20);\n"
+"}\n"
+"QToolButton:disabled {\n"
+"    background-color: transparent;\n"
+"    opacity: 0.4;\n"
+"}\n"
+"QToolButton:hover {\n"
+"    background-color: rgba(0, 0, 0, 0.30);\n"
+"}\n"
+"QToolButton:pressed {\n"
+"    background-color: rgba(0, 0, 0, 0.40);\n"
+"}")
+        self.toolButton_2.setText("")
+        self.toolButton_2.setObjectName("toolButton_2")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -54,8 +73,6 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.label.setText(_translate("Form", "icon"))
         self.label_3.setText(_translate("Form", "时间，浏览数"))
-        self.label_2.setText(_translate("Form", "这是一篇视频贴"))
-        self.pushButton_2.setText(_translate("Form", "播放视频"))
-        self.pushButton.setText(_translate("Form", "保存视频"))
+        self.toolButton_3.setToolTip(_translate("Form", "在单独页面中打开"))
+        self.toolButton.setToolTip(_translate("Form", "保存视频"))

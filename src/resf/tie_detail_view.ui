@@ -73,38 +73,6 @@
             <property name="toolTip">
              <string>关闭此提示</string>
             </property>
-            <property name="styleSheet">
-             <string notr="true">QToolButton {
-                background-color: transparent;
-                border: none;
-                border-radius: 6px;
-                padding: 1px;
-				icon-size: 17px;
-                }
-
-                /* 鼠标悬停时：轻微灰色背景 */
-                QToolButton:hover {
-                background-color: rgba(0, 0, 0, 0.1);
-                }
-
-                /* 按下时：更深的背景色，模拟按下效果 */
-                QToolButton:pressed {
-                background-color: rgba(0, 0, 0, 0.24);
-                }
-
-                /* 禁用状态：半透明，显示不可点击 */
-                QToolButton:disabled {
-                background-color: transparent;
-                opacity: 0.4;
-                }
-
-                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */
-                QToolButton::menu-indicator {
-                subcontrol-position: right center;
-                subcontrol-origin: padding;
-                left: -4px;
-                }</string>
-            </property>
             <property name="text">
              <string>x</string>
             </property>
@@ -884,38 +852,6 @@
            <property name="toolTip">
             <string>关闭此悬浮条</string>
            </property>
-           <property name="styleSheet">
-            <string notr="true">QToolButton {
-                background-color: transparent;
-                border: none;
-                border-radius: 6px;
-                padding: 1px;
-				icon-size: 17px;
-                }
-
-                /* 鼠标悬停时：轻微灰色背景 */
-                QToolButton:hover {
-                background-color: rgba(0, 0, 0, 0.1);
-                }
-
-                /* 按下时：更深的背景色，模拟按下效果 */
-                QToolButton:pressed {
-                background-color: rgba(0, 0, 0, 0.24);
-                }
-
-                /* 禁用状态：半透明，显示不可点击 */
-                QToolButton:disabled {
-                background-color: transparent;
-                opacity: 0.4;
-                }
-
-                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */
-                QToolButton::menu-indicator {
-                subcontrol-position: right center;
-                subcontrol-origin: padding;
-                left: -4px;
-                }</string>
-           </property>
            <property name="text">
             <string>x</string>
            </property>
@@ -1256,25 +1192,6 @@
           </property>
           <property name="toolTip">
            <string>跳页</string>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">QToolButton {
-    background-color: transparent;
-    border: none;
-    border-radius: 5px;
-    padding: 1px;
-    icon-size: 19px;
-}
-QToolButton:hover {
-    background-color: rgba(0, 0, 0, 0.15);
-}
-QToolButton:pressed {
-    background-color: rgba(0, 0, 0, 0.34);
-}
-QToolButton:disabled {
-    background-color: transparent;
-    opacity: 0.4;
-}</string>
           </property>
           <property name="text">
            <string>j</string>

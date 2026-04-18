@@ -169,3 +169,17 @@ QGroupBox:flat {
     margin-top: 20px;
     font-size: 12px;
 }
+
+
+QToolButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 5px;
+    padding: 1px;
+    icon-size: 19px;
+    color: FONT_COLOR;
+}
+QToolButton:disabled {
+    background-color: transparent;
+    opacity: 0.4;
+}

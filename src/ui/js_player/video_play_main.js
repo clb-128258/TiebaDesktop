@@ -27,7 +27,7 @@ function resizePlayer() {
 }
 
 function initPlayer(video_url, cover_url) {
-    const player = new Player({
+    window.videoPlayer = new Player({
         id: "videoArea",
         keyShortcut: "on",
         url: video_url,  // 视频链接

@@ -490,6 +490,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         return super(ThreadDetailView, self).eventFilter(source, event)  # 照常处理事件
 
     def closeEvent(self, a0):
+        from subwindow.thread_video_item import ThreadVideoItem
+
         inputted_text = self.textEdit.toPlainText()
         profile_mgr.add_post_draft(self.thread_id, inputted_text)
 
@@ -498,6 +500,13 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         self.forum_avatar.destroyImage()
         self.lz_portrait.destroyImage()
+
+        # 显式销毁视频webview
+        for i in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(i))
+            if isinstance(widget, ThreadVideoItem):
+                widget.on_destroyed()
+                break
 
         lw_list = [self.listWidget, self.listWidget_4]
         for lw in lw_list:
@@ -1508,13 +1517,15 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     is_forum_manager = bool(thread_info.thread.user.is_bawu)
                     content_statement = proto_response.data.thread.content_statement
 
-                    video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0}
+                    video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0,
+                                  'is_vertical': False}
                     if thread_info.thread.contents.video:
                         video_info['have_video'] = True
                         video_info['src'] = proto_response.data.thread.video_info.video_url  # 获取带参数的正确链接
                         video_info['length'] = thread_info.thread.contents.video.duration
                         video_info['view'] = thread_info.thread.contents.video.view_num
-                        video_info['cover_src'] = proto_response.data.thread.video_info.thumbnail_url
+                        video_info['cover_src'] = proto_response.data.thread.video_info.small_thumbnail_url
+                        video_info['is_vertical'] = bool(proto_response.data.thread.video_info.is_vertical)
 
                     voice_info = {'have_voice': False, 'src': '', 'length': 0}
                     if thread_info.thread.contents.voice:

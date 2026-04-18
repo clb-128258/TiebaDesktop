@@ -611,6 +611,20 @@ class QWebView2View(QWidget):
             return self.__get_value_ui_thread(lambda: self.__webview.CoreWebView2.IsMuted)
         return False
 
+    def runJavaScriptAsync(self, js_code: str):
+        """
+        异步在浏览器内执行 JavaScript 代码
+
+        Args:
+            js_code (str): 要执行的 JS 代码
+        """
+        if self.__render_completed and self.__webview is not None:
+            def _run():
+                task = self.__webview.CoreWebView2.ExecuteScriptWithResultAsync(js_code)
+            self.__run_on_ui_thread(_run)
+        else:
+            raise Warning('WebView has not inited')
+
     def setAudioMuted(self, ismuted: bool):
         """
         设置页面静音状态。
@@ -1120,7 +1134,7 @@ class QWebView2View(QWidget):
     def __on_webview_ready(self, webview_instance, args):
         if not args.IsSuccess:
             app_logger.log_WARN('WebView2 initialization failed')
-            logging.log_WARN(str(args.InitializationException))
+            app_logger.log_WARN(str(args.InitializationException))
             return
 
         configuration = self.__profile
