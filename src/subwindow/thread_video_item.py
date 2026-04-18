@@ -9,6 +9,7 @@ from publics import qt_image, webview2, profile_mgr, funcs
 from subwindow import base_ui
 from ui import thread_video_item
 import base64
+import os
 
 
 class VideoWebView(webview2.QWebView2View):
@@ -180,6 +181,9 @@ class ThreadVideoItem(base_ui.WindowBaseQWidget, thread_video_item.Ui_Form):
             self.on_webview_crashed()
 
     def start_video_webview(self):
+        if os.name != 'nt':
+            return
+
         if self.webview:
             self.webview.show()
             self.webview.reload()

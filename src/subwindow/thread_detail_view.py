@@ -636,7 +636,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.spinBox.setValue(final_current_page)
             self.label_17.setText(f'页，共有 {self.reply_total_pages} 页')
         else:
-            self.verticalFrame.hide()
+            self.frame_7.hide()
 
     def show_pagejump_bar(self):
         if self.reply_num == 0:

@@ -4,8 +4,8 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QMessageBox
 
-from publics import request_mgr, qt_window_mgr, qt_image, top_toast_widget
-from publics.funcs import start_background_thread
+from publics import request_mgr, qt_window_mgr, qt_image, top_toast_widget, profile_mgr
+from publics.funcs import start_background_thread, get_dict_value_treely
 from subwindow import base_ui
 from ui import ba_item
 
@@ -81,6 +81,9 @@ class ForumItem(base_ui.WindowBaseQWidget, ba_item.Ui_Form):
                                                 host_type=2)
             tbs = tsb_resp["anti"]["tbs"]
 
+            from_widget = '1' if get_dict_value_treely(profile_mgr.local_config,
+                                                       ['sign_settings', 'use_widget_sign_flag'],
+                                                       False) else '0'
             payload = {
                 'BDUSS': self.bduss,
                 '_client_type': "2",
@@ -89,12 +92,15 @@ class ForumItem(base_ui.WindowBaseQWidget, ba_item.Ui_Form):
                 'kw': self.forum_name,
                 'stoken': self.stoken,
                 'tbs': tbs,
+                'from': 'frs',
+                'from_widget': from_widget,
+                'subapp_type': 'hybrid',
             }
             r = request_mgr.run_post_api('/c/c/forum/sign',
                                          payloads=request_mgr.calc_sign(payload),
                                          bduss=self.bduss, stoken=self.stoken,
                                          use_mobile_header=True,
-                                         host_type=2)
+                                         host_type=1)
             if r['error_code'] == '0':
                 user_sign_rank = r['user_info']['user_sign_rank']
                 sign_bonus_point = r['user_info']['sign_bonus_point']

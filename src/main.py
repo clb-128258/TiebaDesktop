@@ -273,7 +273,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.close()
 
     def scroll_common_settings(self, row):
-        groupbox_map = [self.groupBox_8, self.groupBox_4, self.groupBox_7, self.groupBox_5, self.groupBox_9]
+        groupbox_map = [self.groupBox_8, self.groupBox_4,
+                        self.groupBox_7, self.groupBox_5,
+                        self.groupBox_10, self.groupBox_9]
         self.scrollArea.ensureWidgetVisible(groupbox_map[row])
 
     def reset_local_config(self):
@@ -307,6 +309,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["theme_settings"]["bright_dark_policy"] = self.comboBox_6.currentIndex()
             profile_mgr.local_config["thread_view_settings"]["show_statement"] = self.checkBox_24.isChecked()
             profile_mgr.local_config["webview_settings"]["transparent_bg_color"] = self.checkBox_25.isChecked()
+            profile_mgr.local_config['sign_settings']['use_widget_sign_flag'] = self.checkBox_26.isChecked()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -692,6 +695,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
             self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
+
+            self.checkBox_26.setChecked(profile_mgr.local_config['sign_settings']['use_widget_sign_flag'])
 
             search_engine_settings = profile_mgr.local_config["other_settings"]["context_menu_search_engine"]
             if search_engine_settings['preset']:

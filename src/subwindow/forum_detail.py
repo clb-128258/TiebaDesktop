@@ -10,9 +10,9 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
     QTableWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image, top_toast_widget
+from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image, top_toast_widget, profile_mgr
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
-    large_num_to_string, get_exception_string
+    large_num_to_string, get_exception_string, get_dict_value_treely
 import publics.app_logger as logging
 
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
@@ -153,6 +153,9 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                                                             host_type=2)
                         tbs = tsb_resp["anti"]["tbs"]
 
+                        from_widget = '1' if get_dict_value_treely(profile_mgr.local_config,
+                                                                   ['sign_settings', 'use_widget_sign_flag'],
+                                                                   False) else '0'
                         payload = {
                             'BDUSS': self.bduss,
                             '_client_type': "2",
@@ -161,12 +164,15 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                             'kw': self.forum_name,
                             'stoken': self.stoken,
                             'tbs': tbs,
+                            'from': 'frs',
+                            'from_widget': from_widget,
+                            'subapp_type': 'hybrid',
                         }
                         r = request_mgr.run_post_api('/c/c/forum/sign',
                                                      payloads=request_mgr.calc_sign(payload),
                                                      bduss=self.bduss, stoken=self.stoken,
                                                      use_mobile_header=True,
-                                                     host_type=2)
+                                                     host_type=1)
                         if r['error_code'] == '0':
                             user_sign_rank = r['user_info']['user_sign_rank']
                             sign_bonus_point = r['user_info']['sign_bonus_point']

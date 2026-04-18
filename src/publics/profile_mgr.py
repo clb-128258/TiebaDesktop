@@ -43,6 +43,9 @@ local_config_model = {
     },
     "theme_settings": {
         "bright_dark_policy": 0
+    },
+    "sign_settings": {
+        "use_widget_sign_flag": False
     }
 }
 
