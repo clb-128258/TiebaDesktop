@@ -1,5 +1,6 @@
-const VERSION_STR = "1.2.0";
+const VERSION_STR = "1.2.1";
 const THEME_COLOR = "#5b44c8";
+
 console.info("CLB TiebaDesktop HTML5 Video Player Version " + VERSION_STR);
 console.info("Video play engine made by xgplayer.js, website: https://h5player.bytedance.com/");
 
@@ -26,13 +27,17 @@ function resizePlayer() {
     video_area.style.width = window.innerWidth + 'px';
 }
 
+function onWebViewClosing(event) {
+    saveVolume(window.videoPlayer.volume);
+}
+
 function initPlayer(video_url, cover_url) {
     window.videoPlayer = new Player({
         id: "videoArea",
         keyShortcut: "on",
         url: video_url,  // 视频链接
         poster: cover_url,  // 封面链接
-        volume: 0.5,  // 默认音量
+        volume: getVolume(),  // 默认音量
         leavePlayerTime: 600,  // 鼠标离开后，隐藏控件栏的延时时间
         pip: true,  // 画中画窗口
         enableContextmenu: false,  // webview右键菜单，这里禁用
@@ -53,12 +58,14 @@ function initPlayer(video_url, cover_url) {
     });
 
     window.addEventListener('resize', resizePlayer);
+    window.addEventListener('beforeunload', onWebViewClosing);
     resizePlayer();  // 初始化后立刻设置大小
 }
 
 function runMain() {
     let url = getValueFromParams('url');
     let cover_url = getValueFromParams('cover');
+
     if (!(url.startsWith("http://") || url.startsWith("https://"))) {
         showToastInPythonClient("你的视频链接不合法，请提供一个有效的视频链接", ToastIconType.ERROR);
         setTimeout(() => { closeCurrentPage(); }, 2400);
@@ -66,5 +73,4 @@ function runMain() {
     else {
         initPlayer(url, cover_url);
     }
-
 }
