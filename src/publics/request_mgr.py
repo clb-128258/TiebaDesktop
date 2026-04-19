@@ -71,8 +71,16 @@ def calc_sign(str_dict: dict):
     return str_dict
 
 
-def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict = None, return_json=True,
-                params: dict = None, use_mobile_header=False, host_type: int = 1, use_https: bool = False):
+def run_get_api(api: str,
+                bduss='',
+                encoding='',
+                stoken: str = '',
+                cookies: dict = None,
+                return_json=True,
+                params: dict = None,
+                use_mobile_header=False,
+                host_type: int = 1,
+                use_https: bool = True):
     """
     执行GET请求
 
@@ -118,9 +126,17 @@ def run_get_api(api: str, bduss='', encoding='', stoken: str = '', cookies: dict
         return response.text
 
 
-def run_post_api(api: str, payloads: dict, bduss='', encoding='', stoken: str = '', cookies: dict = None,
+def run_post_api(api: str,
+                 payloads: dict,
+                 bduss='',
+                 encoding='',
+                 stoken: str = '',
+                 cookies: dict = None,
                  return_json=True,
-                 params: dict = None, use_mobile_header=False, host_type: int = 1, use_https: bool = False):
+                 params: dict = None,
+                 use_mobile_header=False,
+                 host_type: int = 1,
+                 use_https: bool = True):
     """
     执行POST请求
 
@@ -168,8 +184,14 @@ def run_post_api(api: str, payloads: dict, bduss='', encoding='', stoken: str = 
         return response.text
 
 
-def run_protobuf_api(api: str, payloads: bytes, cmd_id: int, bduss='', stoken: str = '', cookies: dict = None,
-                     host_type: int = 1, use_https: bool = False):
+def run_protobuf_api(api: str,
+                     payloads: bytes,
+                     cmd_id: int,
+                     bduss='',
+                     stoken: str = '',
+                     cookies: dict = None,
+                     host_type: int = 1,
+                     use_https: bool = True):
     """
     执行protobuf格式的POST请求
 

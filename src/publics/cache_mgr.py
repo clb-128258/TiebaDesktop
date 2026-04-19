@@ -84,7 +84,7 @@ def save_bd_hash_img(bd_hash: str, original=False) -> bytes:
     Return:
         图像字节数据
     """
-    head_url = f'http://imgsrc.baidu.com/forum/{"pic/item" if original else "w=720;q=60;g=0/sign=__"}/{bd_hash}.jpg'
+    head_url = f'https://imgsrc.baidu.com/forum/{"pic/item" if original else "w=720;q=60;g=0/sign=__"}/{bd_hash}.jpg'
     ex_header = request_mgr.header
     ex_header['Referer'] = 'tieba.baidu.com'
 

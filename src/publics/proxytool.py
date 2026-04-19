@@ -23,7 +23,7 @@ class WindowsProxyServer:
                         'http=', '')
                     ip, port = addr.split(':')
             except Exception as err:
-                logging.log_exception(err)
+                app_logger.log_exception(err)
         return ip, port
 
     def is_open_proxy_from_Win(self):
@@ -55,9 +55,9 @@ def set_proxy():
             if profile_mgr.local_config['proxy_settings']['enabled_scheme']['http']:
                 os.environ['HTTP_PROXY'] = f'http://{ip}:{port}'
             if profile_mgr.local_config['proxy_settings']['enabled_scheme']['https']:
-                os.environ['HTTPS_PROXY'] = f'https://{ip}:{port}'
+                os.environ['HTTPS_PROXY'] = f'http://{ip}:{port}'
         else:
             os.environ['no_proxy'] = '*'
     except Exception as e:
-        logging.log_WARN('Warning: proxy settings was not set')
+        app_logger.log_WARN('Warning: proxy settings was not set')
         app_logger.log_exception(e)
