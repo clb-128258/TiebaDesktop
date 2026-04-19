@@ -126,7 +126,8 @@ TiebaDesktop
 另外要特别感谢以下开源仓库：  
 [lumina37/aiotieba - 贴吧 API 的 Python 实现](https://github.com/lumina37/aiotieba)，没有这个仓库就没有本软件的诞生。  
 [n0099/tbclient.protobuf - 贴吧 .proto 定义合集](https://github.com/n0099/tbclient.protobuf)，该仓库为本项目的 protobuf
-开发提供了很大的便利.
+开发提供了很大的便利.  
+[bytedance/xgplayer - 西瓜播放器](https://h5player.bytedance.com/)，本项目的视频播放器基于 `xgplayer` 开发。
 
 ## 友情链接
 
