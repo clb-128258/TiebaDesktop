@@ -1,0 +1,7 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message ScoreLevelLimit {
+    int32 score_level_limit = 1;
+    string score_level_limit_toast = 2;
+}

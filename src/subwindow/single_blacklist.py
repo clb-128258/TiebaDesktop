@@ -3,15 +3,13 @@ import asyncio
 import aiotieba
 from PyQt5.QtGui import QIcon, QPixmap
 
-# 引入protobuf
-from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
-
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QMessageBox
 
-from publics import qt_window_mgr, profile_mgr, cache_mgr, request_mgr, qt_image
+from publics import qt_window_mgr, profile_mgr, cache_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, get_exception_string
 import publics.app_logger as logging
+from publics.tieba_apis import get_user_black_info
 from subwindow import base_ui
 from ui import user_blacklist_setter
 
@@ -143,22 +141,7 @@ class SingleUserBlacklistWindow(base_ui.WindowBaseQWidget, user_blacklist_setter
                         turn_data['head'] = user_head_pixmap
                         turn_data['name'] = user_info.nick_name_new
 
-                        payload = GetUserBlackInfoReqIdl_pb2.GetUserBlackInfoReqIdl()
-
-                        payload.data.common._client_type = 2
-                        payload.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
-                        payload.data.common.BDUSS = self.bduss
-                        payload.data.common.stoken = self.stoken
-
-                        payload.data.black_uid = user_info.user_id
-
-                        response = request_mgr.run_protobuf_api('/c/u/user/getUserBlackInfo',
-                                                                payloads=payload.SerializeToString(),
-                                                                cmd_id=309698,
-                                                                bduss=self.bduss, stoken=self.stoken,
-                                                                host_type=2)
-                        final_response = GetUserBlackInfoResIdl_pb2.GetUserBlackInfoResIdl()
-                        final_response.ParseFromString(response)
+                        final_response = get_user_black_info(self.bduss, self.stoken, user_info.user_id)
 
                         if final_response.error.errorno == 0:
                             turn_data['black_state'][0] = bool(int(final_response.data.perm_list.interact))

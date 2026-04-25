@@ -9,6 +9,7 @@ import "proto/SimpleForum.proto";
 import "proto/ThreadInfo.proto";
 import "proto/User.proto";
 import "proto/ManagerElection.proto";
+import "proto/ThreadScoreInfo.proto";
 
 message DataRes_PbPage {
     User user = 1;
@@ -26,6 +27,8 @@ message DataRes_PbPage {
     repeated User user_list = 13;
     string pb_notice = 67;
     ManagerElection manager_election = 51;
+    int32 use_hybrid_pb = 112;
+    ThreadScoreInfo score_info = 241;
 }
 
 

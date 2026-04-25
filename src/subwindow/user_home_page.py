@@ -13,6 +13,7 @@ from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread,
 import publics.app_logger as logging
 
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
+from publics.tieba_apis import get_user_profile
 from subwindow import base_ui
 from subwindow.base_ui import BaseQMenu
 
@@ -481,29 +482,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                 if self.user_id_portrait in ('00000000', 0):
                     data['error'] = '无法加载匿名用户的个人主页信息。'
                 else:
-                    request_body_proto = ProfileReqIdl_pb2.ProfileReqIdl()
-
-                    request_body_proto.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
-                    request_body_proto.data.common._client_type = 2
-                    request_body_proto.data.common.BDUSS = self.bduss
-                    request_body_proto.data.common.stoken = self.stoken
-
-                    request_body_proto.data.need_post_count = 1
-                    request_body_proto.data.page = 1
-                    request_body_proto.data.is_from_usercenter = 1
-                    if isinstance(self.user_id_portrait, int):
-                        request_body_proto.data.uid = self.user_id_portrait
-                    else:
-                        request_body_proto.data.friend_uid_portrait = self.user_id_portrait
-
-                    response_origin = request_mgr.run_protobuf_api('/c/u/user/profile',
-                                                                   payloads=request_body_proto.SerializeToString(),
-                                                                   cmd_id=303012,
-                                                                   host_type=2)
-
-                    response_proto = ProfileResIdl_pb2.ProfileResIdl()
-                    response_proto.ParseFromString(response_origin)
-
+                    response_proto = get_user_profile(self.bduss, self.stoken, self.user_id_portrait)
                     user_info = aiotieba.profile.UserInfo_pf.from_tbdata(response_proto.data)  # 向下兼容
 
                     # 判断是否出错

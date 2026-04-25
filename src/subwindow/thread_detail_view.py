@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import gc
 import sys
 import time
@@ -15,13 +14,13 @@ from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
 import consts
 from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
-from proto.AddPost import AddPostReqIdl_pb2, AddPostResIdl_pb2
 
 from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image, webview2
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
     cleanup_listWidget
 import publics.app_logger as logging
+from publics.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread
 from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import tie_detail_view
@@ -64,147 +63,6 @@ def find_last_at_or_above(list_widget, y):
         else:
             high = mid - 1
     return low
-
-
-def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json_info):
-    async def get_tbs():
-        tsb_resp = request_mgr.run_post_api('/c/s/login',
-                                            request_mgr.calc_sign({'_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                                                                   'bdusstoken': bduss}),
-                                            use_mobile_header=True,
-                                            host_type=2)
-        tbs = tsb_resp["anti"]["tbs"]
-        return tbs
-
-    async def get_access_info(aiotieba_client) -> tuple[str, str, str, str, str]:
-        """
-        获取贴吧风控信息
-
-        Return:
-            以下风控字段值，均为字符串类型：z_id, client_id, sample_id, show_name, tbs
-        """
-        aiotieba_http_core = aiotieba_client._http_core
-
-        # 并发执行，提高性能
-        result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
-                                      aiotieba.sync.request(aiotieba_http_core),
-                                      aiotieba_client.get_self_info(),
-                                      get_tbs()
-                                      )
-        z_id = result[0]
-        client_id, sample_id = result[1][0], result[1][1]
-        show_name = result[2].show_name
-        tbs = result[3]
-
-        return z_id, client_id, sample_id, show_name, tbs
-
-    async def run():
-        logging.log_INFO(f'add post in thread {thread_id}')
-        async with aiotieba.Client(bduss, stoken, proxy=True) as client:
-            access_info = await get_access_info(client)
-            z_id, client_id, sample_id, show_name, tbs = access_info[0], access_info[1], access_info[2], access_info[3], \
-                access_info[4]
-
-            # aiotieba.api.add_post.pack_proto function
-            request_body_proto = AddPostReqIdl_pb2.AddPostReqIdl()
-            request_body_proto.data.common.BDUSS = bduss
-            request_body_proto.data.common._client_type = 2
-            request_body_proto.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
-            request_body_proto.data.common._client_id = client_id
-            request_body_proto.data.common._phone_imei = "000000000000000"
-            request_body_proto.data.common._from = "ad_wandoujia"
-            request_body_proto.data.common.cuid = client.account.cuid_galaxy2
-            current_ts = time.time()
-            current_tsms = int(current_ts * 1000)
-            current_dt = datetime.datetime.fromtimestamp(current_ts)
-            request_body_proto.data.common._timestamp = current_tsms
-            request_body_proto.data.common.model = "PFGM00"
-            request_body_proto.data.common.tbs = tbs
-            request_body_proto.data.common.net_type = 1
-            request_body_proto.data.common.pversion = "1.0.3"
-            request_body_proto.data.common._os_version = '12'
-            request_body_proto.data.common.brand = "oppo"
-            request_body_proto.data.common.lego_lib_version = "3.0.0"
-            request_body_proto.data.common.applist = ""
-            request_body_proto.data.common.stoken = stoken
-            request_body_proto.data.common.z_id = z_id
-            request_body_proto.data.common.cuid_galaxy2 = client.account.cuid_galaxy2
-            request_body_proto.data.common.cuid_gid = ""
-            request_body_proto.data.common.c3_aid = client.account.c3_aid
-            request_body_proto.data.common.sample_id = sample_id
-            request_body_proto.data.common.scr_w = 900
-            request_body_proto.data.common.scr_h = 1600
-            request_body_proto.data.common.scr_dip = 1.5
-            request_body_proto.data.common.q_type = 0
-            request_body_proto.data.common.is_teenager = 0
-            request_body_proto.data.common.sdk_ver = "3.36.0"
-            request_body_proto.data.common.framework_ver = "3340042"
-            request_body_proto.data.common.naws_game_ver = "1030000"
-            request_body_proto.data.common.active_timestamp = current_tsms - 86400 * 30
-            request_body_proto.data.common.first_install_time = current_tsms - 86400 * 30
-            request_body_proto.data.common.last_update_time = current_tsms - 86400 * 30
-            request_body_proto.data.common.event_day = f"{current_dt.year}{current_dt.month}{current_dt.day}"
-            request_body_proto.data.common.android_id = client.account.android_id
-            request_body_proto.data.common.cmode = 1
-            request_body_proto.data.common.start_scheme = ""
-            request_body_proto.data.common.start_type = 1
-            request_body_proto.data.common.idfv = "0"
-            request_body_proto.data.common.extra = ""
-            request_body_proto.data.common.user_agent = request_mgr.header_protobuf['User-Agent']
-            request_body_proto.data.common.personalized_rec_switch = 1
-            request_body_proto.data.common.device_score = "0.4"
-
-            request_body_proto.data.anonymous = "1"
-            request_body_proto.data.can_no_forum = "0"
-            request_body_proto.data.is_feedback = "0"
-            request_body_proto.data.takephoto_num = "0"
-            request_body_proto.data.entrance_type = "0"
-            request_body_proto.data.vcode_tag = "12"
-            request_body_proto.data.new_vcode = "1"
-            request_body_proto.data.content = text
-            request_body_proto.data.fid = str(forum_id)
-            request_body_proto.data.v_fid = ""
-            request_body_proto.data.v_fname = ""
-            request_body_proto.data.kw = str(await client.get_fname(forum_id))
-            request_body_proto.data.is_barrage = "0"
-            request_body_proto.data.from_fourm_id = str(forum_id)
-            request_body_proto.data.tid = str(thread_id)
-            request_body_proto.data.is_ad = "0"
-            request_body_proto.data.post_from = "3"
-            request_body_proto.data.name_show = show_name
-            request_body_proto.data.is_pictxt = "0"
-            request_body_proto.data.show_custom_figure = 0
-            request_body_proto.data.is_show_bless = 0
-            request_body_proto.data.with_tail = 1
-            request_body_proto.data.score_id = 0
-            request_body_proto.data.score = 0
-
-            # 验证码特判
-            if captcha_json_info and captcha_md5:
-                vcode_stringify = json.dumps(captcha_json_info, separators=(',', ':'))
-                request_body_proto.data.vcode_type = "6"
-                request_body_proto.data.vcode_md5 = captcha_md5
-                request_body_proto.data.vcode = vcode_stringify
-
-            response_bin = request_mgr.run_protobuf_api('/c/c/post/add',
-                                                        payloads=request_body_proto.SerializeToString(),
-                                                        cmd_id=309731,
-                                                        bduss=bduss,
-                                                        stoken=stoken,
-                                                        host_type=2
-                                                        )
-
-            response_proto = AddPostResIdl_pb2.AddPostResIdl()
-            response_proto.ParseFromString(response_bin)
-
-            return response_proto
-
-    def start_async():
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        return asyncio.run(run())
-
-    return start_async()
 
 
 class ThreadPreview:
@@ -841,68 +699,24 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             elif self.user_id == 0:
                 self.agree_thread_signal.emit('不能给匿名用户点赞')
             else:
-                account = aiotieba.Account()  # 实例化account以便计算一些数据
-                # 拿tbs
-                tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
-                    {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
-                                                    use_mobile_header=True, host_type=2)
-                tbs = tsb_resp["anti"]["tbs"]
-
-                if iscancel:
-                    payload = {
-                        'BDUSS': self.bduss,
-                        '_client_type': "2",
-                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                        'agree_type': "5",  # 2点赞 5取消点赞
-                        'cuid': account.cuid_galaxy2,
-                        'forum_id': str(self.forum_id),
-                        'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
-                        'op_type': "1",  # 0点赞 1取消点赞
-                        'post_id': str(self.first_floor_pid),
-                        'stoken': self.stoken,
-                        'tbs': tbs,
-                        'thread_id': str(self.thread_id),
-                    }
-
-                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                        host_type=2)
-                    if int(response['error_code']) == 0:
-                        self.agree_num -= 1
-                        self.agree_thread_signal.emit('取消点赞成功')
-                        self.has_agreed = False
-                    else:
-                        self.agree_thread_signal.emit(response['error_msg'])
-                else:
-                    payload = {
-                        'BDUSS': self.bduss,
-                        '_client_type': "2",
-                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                        'agree_type': "2",  # 2点赞 5取消点赞
-                        'cuid': account.cuid_galaxy2,
-                        'forum_id': str(self.forum_id),
-                        'obj_type': "3",  # 1回复贴 2楼中楼 3主题贴
-                        'op_type': "0",  # 0点赞 1取消点赞
-                        'post_id': str(self.first_floor_pid),
-                        'stoken': self.stoken,
-                        'tbs': tbs,
-                        'thread_id': str(self.thread_id),
-                    }
-
-                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                        host_type=2)
-                    if int(response['error_code']) == 0:
+                response = agree_thread_or_post(self.bduss, self.stoken, self.thread_id, self.first_floor_pid, iscancel,
+                                                OpAgreeObjectType.Thread)
+                if int(response['error_code']) == 0:
+                    if iscancel:
                         self.agree_num += 1
+                        self.has_agreed = True
                         is_expa2 = bool(int(response["data"].get("agree", {"is_first_agree": False})["is_first_agree"]))
                         self.agree_thread_signal.emit("点赞成功 首赞经验 +2" if is_expa2 else "点赞成功")
-                        self.has_agreed = True
-                    elif int(response['error_code']) == 3280001:
-                        self.agree_thread_signal.emit('[ALREADY_AGREE]')
-                        self.has_agreed = True
                     else:
-                        self.agree_thread_signal.emit(response['error_msg'])
-
+                        self.agree_num -= 1
+                        self.has_agreed = False
+                        self.agree_thread_signal.emit('取消点赞成功')
+                elif int(response['error_code']) == 3280001:
+                    self.agree_num += 1
+                    self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                    self.has_agreed = True
+                else:
+                    self.agree_thread_signal.emit(response['error_msg'])
         except Exception as e:
             logging.log_exception(e)
             self.agree_thread_signal.emit(get_exception_string(e))
@@ -931,21 +745,10 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             try:
                 if not self.bduss:
                     self.store_thread_signal.emit('登录后即可收藏贴子')
-                elif not is_cancel:
-                    # 客户端收藏接口
-                    data = "[{\"tid\":\"[tid]\",\"pid\":\"[pid]\",\"status\":1}]"
-                    data = data.replace('[tid]', str(self.thread_id))
-                    data = data.replace('[pid]', str(current_post_id))
-                    payload = {
-                        'BDUSS': self.bduss,
-                        '_client_type': "2",
-                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                        'data': data,
-                        'stoken': self.stoken,
-                    }
-                    result = request_mgr.run_post_api('/c/c/post/addstore', request_mgr.calc_sign(payload),
-                                                      bduss=self.bduss,
-                                                      stoken=self.stoken, use_mobile_header=True, host_type=2)
+                    return
+
+                if not is_cancel:
+                    result = store_thread(self.bduss, self.stoken, self.thread_id, current_post_id)
                     if result['error_code'] == '0':
                         self.store_thread_signal.emit(f'贴子已收藏到第 {floor} 楼')
                         self.has_stored = True
@@ -953,17 +756,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     else:
                         self.store_thread_signal.emit(result['error_msg'])
                 else:
-                    # wap版取消收藏接口
-                    payload = {
-                        '_client_type': "2",
-                        '_client_version': "12.64.0",
-                        'subapp_type': "newwise",
-                        'tid': str(self.thread_id),
-                        'pid': str(current_post_id)
-                    }
-                    result = request_mgr.run_post_api('/mo/q/post_rmstore', request_mgr.calc_sign(payload),
-                                                      bduss=self.bduss,
-                                                      stoken=self.stoken, use_mobile_header=True)
+                    result = cancel_store_thread(self.bduss, self.stoken, self.thread_id, current_post_id)
                     if result['no'] == 0:
                         self.store_thread_signal.emit('取消收藏成功')
                         self.has_stored = False

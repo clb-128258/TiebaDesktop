@@ -1,11 +1,11 @@
-import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
 from PyQt5.QtGui import QPixmap, QCursor
 from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 from typing import Union
-from publics import request_mgr, qt_window_mgr, profile_mgr, qt_image
+from publics import qt_window_mgr, profile_mgr, qt_image
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string
 import publics.app_logger as logging
+from publics.tieba_apis import agree_thread_or_post, OpAgreeObjectType
 from subwindow import base_ui
 
 from ui import comment_view
@@ -146,62 +146,24 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
             elif self.portrait == '00000000':
                 self.agree_thread_signal.emit('不能给匿名用户点赞')
             else:
-                account = aiotieba.Account()  # 实例化account以便计算一些数据
-                # 拿tbs
-                tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
-                    {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
-                                                    use_mobile_header=True, host_type=2)
-                tbs = tsb_resp["anti"]["tbs"]
-
-                if iscancel:
-                    payload = {
-                        'BDUSS': self.bduss,
-                        '_client_type': "2",
-                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                        'agree_type': "5",  # 2点赞 5取消点赞
-                        'cuid': account.cuid_galaxy2,
-                        'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
-                        'op_type': "1",  # 0点赞 1取消点赞
-                        'post_id': str(self.post_id),
-                        'stoken': self.stoken,
-                        'tbs': tbs,
-                        'thread_id': str(self.thread_id),
-                    }
-
-                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                        host_type=2)
-                    if int(response['error_code']) == 0:
+                response = agree_thread_or_post(self.bduss,
+                                                self.stoken,
+                                                self.thread_id,
+                                                self.post_id,
+                                                iscancel,
+                                                OpAgreeObjectType.SubComment if self.is_comment else OpAgreeObjectType.FloorPost)
+                if int(response['error_code']) == 0:
+                    if iscancel:
                         self.agree_num -= 1
                         self.agree_thread_signal.emit('取消点赞成功')
                     else:
-                        self.agree_thread_signal.emit(response['error_msg'])
-                else:
-                    payload = {
-                        'BDUSS': self.bduss,
-                        '_client_type': "2",
-                        '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                        'agree_type': "2",  # 2点赞 5取消点赞
-                        'cuid': account.cuid_galaxy2,
-                        'obj_type': 2 if self.is_comment else 1,  # 1回复贴 2楼中楼 3主题贴
-                        'op_type': "0",  # 0点赞 1取消点赞
-                        'post_id': str(self.post_id),
-                        'stoken': self.stoken,
-                        'tbs': tbs,
-                        'thread_id': str(self.thread_id),
-                    }
-
-                    response = request_mgr.run_post_api('/c/c/agree/opAgree', payloads=request_mgr.calc_sign(payload),
-                                                        use_mobile_header=True, bduss=self.bduss, stoken=self.stoken,
-                                                        host_type=2)
-                    if int(response['error_code']) == 0:
                         self.agree_num += 1
                         is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
                         self.agree_thread_signal.emit("点赞成功 首赞经验 +2" if is_expa2 else "点赞成功")
-                    elif int(response['error_code']) == 3280001:
-                        self.agree_thread_signal.emit('[ALREADY_AGREE]')
-                    else:
-                        self.agree_thread_signal.emit(response['error_msg'])
+                elif int(response['error_code']) == 3280001:
+                    self.agree_thread_signal.emit('[ALREADY_AGREE]')
+                else:
+                    self.agree_thread_signal.emit(response['error_msg'])
 
         except Exception as e:
             logging.log_exception(e)

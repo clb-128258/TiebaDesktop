@@ -1,0 +1,14 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/ScoreLevelLimit.proto";
+import "proto/ThreadScoreItem.proto";
+
+message ThreadScoreInfo {
+    uint32 total_items_count = 1;
+    repeated ThreadScoreItem items = 2;
+    uint64 total_user_count = 3;
+    uint32 show_index = 4;
+    ScoreLevelLimit score_level_limit = 5;
+    repeated uint64 score_item_ids = 6;
+}

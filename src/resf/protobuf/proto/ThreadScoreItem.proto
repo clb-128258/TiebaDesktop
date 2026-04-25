@@ -1,0 +1,18 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/FeedKV.proto";
+import "proto/Post.proto";
+
+message ThreadScoreItem {
+    uint64 id = 1;
+    string pic = 2;
+    string title = 3;
+    string content = 4;
+    Post hot_comment = 5;
+    repeated FeedKV score_user_num = 6;
+    uint64 total_user_num = 7;
+    string avg_score = 8;
+    uint32 my_score = 9;
+    Post my_comment = 10;
+}

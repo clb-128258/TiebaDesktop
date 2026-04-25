@@ -15,7 +15,7 @@ from publics.funcs import LoadingFlashWidget, start_background_thread, http_down
     large_num_to_string, get_exception_string, get_dict_value_treely
 import publics.app_logger as logging
 
-from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
+from publics.tieba_apis import get_forum_level_info, sign_forum
 from subwindow import base_ui
 
 from ui import forum_detail
@@ -147,32 +147,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                             turn_data['success'] = False
                             turn_data['text'] = f'{r.err}'
                     elif action_type == 'sign':
-                        tsb_resp = request_mgr.run_post_api('/c/s/login', request_mgr.calc_sign(
-                            {'_client_version': request_mgr.TIEBA_CLIENT_VERSION, 'bdusstoken': self.bduss}),
-                                                            use_mobile_header=True,
-                                                            host_type=2)
-                        tbs = tsb_resp["anti"]["tbs"]
-
-                        from_widget = '1' if get_dict_value_treely(profile_mgr.local_config,
-                                                                   ['sign_settings', 'use_widget_sign_flag'],
-                                                                   False) else '0'
-                        payload = {
-                            'BDUSS': self.bduss,
-                            '_client_type': "2",
-                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                            'fid': self.forum_id,
-                            'kw': self.forum_name,
-                            'stoken': self.stoken,
-                            'tbs': tbs,
-                            'from': 'frs',
-                            'from_widget': from_widget,
-                            'subapp_type': 'hybrid',
-                        }
-                        r = request_mgr.run_post_api('/c/c/forum/sign',
-                                                     payloads=request_mgr.calc_sign(payload),
-                                                     bduss=self.bduss, stoken=self.stoken,
-                                                     use_mobile_header=True,
-                                                     host_type=1)
+                        r = sign_forum(self.bduss, self.stoken, self.forum_id, self.forum_name)
                         if r['error_code'] == '0':
                             user_sign_rank = r['user_info']['user_sign_rank']
                             sign_bonus_point = r['user_info']['sign_bonus_point']
@@ -521,23 +496,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
 
                     async def get_forum_level_map_proto():
                         if not self.bduss:
-                            payload = GetLevelInfoReqIdl_pb2.GetLevelInfoReqIdl()
-
-                            payload.data.common._client_type = 2
-                            payload.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
-                            payload.data.common.BDUSS = self.bduss
-                            payload.data.common.stoken = self.stoken
-
-                            payload.data.forum_id = self.forum_id
-
-                            resp_binary = request_mgr.run_protobuf_api('/c/f/forum/getLevelInfo',
-                                                                       payloads=payload.SerializeToString(),
-                                                                       cmd_id=301005,
-                                                                       bduss=self.bduss, stoken=self.stoken,
-                                                                       host_type=2)
-
-                            final_response = GetLevelInfoResIdl_pb2.GetLevelInfoResIdl()
-                            final_response.ParseFromString(resp_binary)
+                            final_response = get_forum_level_info(self.bduss, self.stoken, self.forum_id)
 
                             forum_level_value_index = []
                             for level in final_response.data.level_info:
