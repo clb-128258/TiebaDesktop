@@ -161,7 +161,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
             except Exception as e:
                 logging.log_exception(e)
                 turn_data['success'] = False
-                turn_data['text'] = str(e)
+                turn_data['text'] = get_exception_string(e)
             finally:
                 self.action_ok_signal.emit(turn_data)
 

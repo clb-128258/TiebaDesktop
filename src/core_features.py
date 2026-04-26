@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QMessageBox, QAction, QMainWindow, QApplication, QWidgetAction, QCheckBox, \
     QInputDialog
 
-from publics import profile_mgr, webview2, qt_image
+from publics import profile_mgr, webview2, qt_image, tieba_apis
 from publics import proxytool
 from publics.funcs import *
 from publics.app_logger import init_log

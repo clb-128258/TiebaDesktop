@@ -303,7 +303,7 @@ def agree_thread_or_post(bduss: str,
 
 def store_thread(bduss, stoken, thread_id, post_id):
     # 客户端收藏接口
-    data = json.dumps({'tid': str(thread_id), 'pid': str(post_id), 'status': 1}, separators=(',', ':'))
+    data = json.dumps([{'tid': str(thread_id), 'pid': str(post_id), 'status': 1}], separators=(',', ':'))
     payload = {
         'BDUSS': bduss,
         '_client_type': "2",
@@ -357,3 +357,7 @@ def fetch_frs_bottom(bduss, stoken, forum_name):
                                     use_mobile_header=True)
 
     return resp
+
+
+def newmoindex(bduss):
+    return request_mgr.run_get_api('/mo/q/newmoindex', bduss)

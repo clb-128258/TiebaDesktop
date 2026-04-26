@@ -94,23 +94,25 @@ def handle_command_events():
 
     async def sign_all():
         bduss, stoken = get_current_user()
+        signed_count = 0
+
         if not bduss:
             msgbox('请先登录账号再签到。')
             return
-        signed_count = 0
 
         async with aiotieba.Client(bduss, stoken, proxy=True) as client:
             await client.sign_forums()  # 先一键签到
 
-            bars = request_mgr.run_get_api('/mo/q/newmoindex', bduss)['data']['like_forum']
+            bars = tieba_apis.newmoindex(bduss)['data']['like_forum']
             bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
 
             for forum in bars:
                 if forum["is_sign"] != 1:
                     fid = forum['forum_id']
-                    r = await client.sign_forum(fid)
-                    if r:
-                        signed_count += 1  # 签到成功了加一
+                    fname = forum['forum_name']
+                    r = tieba_apis.sign_forum(bduss, stoken, fid, fname)['error_code'] == '0'
+
+                    signed_count += (1 if r else 0)
                     await asyncio.sleep(0.3)  # 休眠0.3秒，防止贴吧服务器抽风
                 else:
                     # 已签到的直接跳过

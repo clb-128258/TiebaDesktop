@@ -226,7 +226,7 @@
             <x>0</x>
             <y>0</y>
             <width>662</width>
-            <height>1397</height>
+            <height>1399</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -1820,7 +1820,7 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
 </string>
                   </property>
                   <property name="text">
-                   <string>勾选后，在 进吧页、吧首页和吧详情页 签到时，会调用官方的小组件签到模式，签到经验可翻倍。</string>
+                   <string>勾选后，在调用签到功能时，会调用官方的小组件签到模式，签到经验可翻倍</string>
                   </property>
                  </widget>
                 </item>
@@ -1847,7 +1847,7 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
                    <string/>
                   </property>
                   <property name="text">
-                   <string>使用官方小组件模式签到</string>
+                   <string>使用双倍经验模式签到</string>
                   </property>
                  </widget>
                 </item>

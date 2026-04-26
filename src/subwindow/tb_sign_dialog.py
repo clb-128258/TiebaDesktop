@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
 
-from publics import request_mgr, top_toast_widget
+from publics import top_toast_widget, tieba_apis, app_logger, profile_mgr
 from publics.funcs import start_background_thread, get_exception_string
 from subwindow import base_ui
 from ui import sign
@@ -31,6 +31,7 @@ class SignAllDialog(base_ui.WindowBaseQDialog, sign.Ui_Dialog):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.lineEdit.setText(f'\"{sys.executable}\" --sign-all-forums --sign-grows')
         self.init_top_toaster()
+        self.init_window_position()
 
         self.update_label_count.connect(lambda text: self.label_3.setText(text))
         self.sign_grow_ok.connect(self.show_grow_sign_msg)
@@ -40,6 +41,23 @@ class SignAllDialog(base_ui.WindowBaseQDialog, sign.Ui_Dialog):
 
         self.bduss = bduss
         self.stoken = stoken
+
+    def closeEvent(self, a0):
+        self.save_window_position()
+
+    def init_window_position(self):
+        window_rect = profile_mgr.get_window_rects(type(self))
+        if window_rect:
+            self.setGeometry(window_rect[0],
+                             window_rect[1],
+                             window_rect[2],
+                             window_rect[3])
+
+    def save_window_position(self):
+        profile_mgr.add_window_rects(type(self),
+                                     self.x() + 1, self.y() + 31,
+                                     self.width(), self.height(),
+                                     False)
 
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
@@ -94,44 +112,63 @@ class SignAllDialog(base_ui.WindowBaseQDialog, sign.Ui_Dialog):
 
     def sign_all_forum_async(self):
         if not self.is_signing_forums:
-            self.update_label_count.emit('正在开始签到...')
             start_background_thread(self.sign_all_forum)
 
     def sign_all_forum(self):
         async def dosign():
             self.is_signing_forums = True
             signed_count = 0
+
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    self.update_label_count.emit('正在进行官方一键签到...')
                     await client.sign_forums()  # 先一键签到
 
-                    bars = request_mgr.run_get_api('/mo/q/newmoindex', self.bduss)['data']['like_forum']
+                    self.update_label_count.emit('进入逐个签到模式，正在获取关注吧列表...')
+                    bars = tieba_apis.newmoindex(self.bduss)['data']['like_forum']
                     bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
 
-                    for forum in bars:
-                        if forum["is_sign"] != 1:
-                            forum_name = forum['forum_name']
-                            self.update_label_count.emit(
-                                f'正在签到 {forum_name}吧\n已签到 {signed_count + 1} / 总吧数 {len(bars)}')
+                    self.update_label_count.emit('吧列表获取完成，已签到的吧将会被跳过，签到即将开始...')
+                    await asyncio.sleep(1)
 
-                            fid = forum['forum_id']
-                            r = await client.sign_forum(fid)
-                            if r:
-                                signed_count += 1  # 签到成功了加一
-                            elif r.err.code == 160002:
-                                signed_count += 1  # 之前签到过了也加一
-                            await asyncio.sleep(0.3)  # 休眠0.3秒，防止贴吧服务器抽风
-                        else:
+                    for forum in bars:
+                        if forum["is_sign"]:
                             # 已签到的直接跳过
                             signed_count += 1
+                            continue
 
-                self.update_label_count.emit(
-                    f'签到完成，已签到 {signed_count} 个吧，{len(bars) - signed_count} 个吧签到失败。')
+                        forum_name = forum['forum_name']
+                        fid = forum['forum_id']
+
+                        self.update_label_count.emit(f'正在签到 {forum_name}吧\n'
+                                                     f'已签到 {signed_count} / 总吧数 {len(bars)}')
+                        r = tieba_apis.sign_forum(self.bduss, self.stoken, fid, forum_name)
+
+                        if r['error_code'] == '0':
+                            user_sign_rank = r['user_info']['user_sign_rank']
+                            sign_bonus_point = r['user_info']['sign_bonus_point']
+                            sign_show_msg = f'√ 今日第 {user_sign_rank} 个签到 | 经验 +{sign_bonus_point}'
+
+                            signed_count += 1  # 签到成功了加一
+                        elif r['error_code'] == '160002':
+                            sign_show_msg = f'* 已签到过此吧'
+                            signed_count += 1  # 之前签到过了也加一
+                        else:
+                            sign_show_msg = f'× {r["error_msg"]} (错误代码 {r["error_code"]})'
+
+                        self.update_label_count.emit(f'正在签到 {forum_name}吧\n'
+                                                     f'{sign_show_msg}\n'
+                                                     f'已签到 {signed_count} / 总吧数 {len(bars)}')
+
+                        await asyncio.sleep(0.3)
+
+                    self.update_label_count.emit(f'签到完成，已签到 {signed_count} 个吧，'
+                                                 f'{len(bars) - signed_count} 个吧签到失败。')
 
             except Exception as e:
-                self.update_label_count.emit('签到时发生异常错误，请再试一次。')
-                print(type(e))
-                print(e)
+                app_logger.log_exception(e)
+                self.update_label_count.emit(f'签到时发生如下错误：\n'
+                                             f'{get_exception_string(e)}')
             finally:
                 if os.name == 'nt':
                     win32api.MessageBeep(win32con.MB_ICONASTERISK)
