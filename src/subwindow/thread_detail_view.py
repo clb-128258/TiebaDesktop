@@ -13,14 +13,14 @@ from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
 from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
 import consts
-from proto.PbPage import PbPageResIdl_pb2, PbPageReqIdl_pb2
 
-from publics import profile_mgr, qt_window_mgr, request_mgr, top_toast_widget, qt_image, webview2
+from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image, webview2
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
     cleanup_listWidget
 import publics.app_logger as logging
-from publics.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread
+from publics.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread, \
+    pb_page
 from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import tie_detail_view
@@ -166,29 +166,34 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     first_floor_pid = -1  # 首楼回复id
     forum_id = -1  # 吧id
     user_id = -1  # 楼主用户id
-    height_count = 0  # 首楼展示部分所有碎片组件的高度
-    height_count_replies = 0  # 回复列表内所有组件的高度
-    width_count_replies = 0  # 回复列表内所有组件的宽度
+    last_post_id = 0  # 回复列表中最新的pid，用于拉取回复列表
+
     reply_page = 1  # 当前回复页数
     reply_total_pages = 0  # 回复列表总页数
+    first_loaded_page = 0  # 首次加载回复时的页码
+
     agree_num = 0  # 点赞数
     reply_num = 0  # 回贴数
     store_num = 0  # 收藏数
-    is_getting_replys = False  # 是否正在加载回复列表
-    is_textedit_menu_poping = False  # 是否在发贴textedit上右键
-    narrow_mode_index = 1  # 窄布局模式下的显示页面
     has_agreed = False  # 是否已点赞
     has_stored = False  # 是否已收藏
 
+    is_getting_replys = False  # 是否正在加载回复列表
+    is_textedit_menu_poping = False  # 是否在发贴textedit上右键
+    narrow_mode_index = 1  # 窄布局模式下的显示页面
+    height_count = 0  # 首楼展示部分所有内容组件的高度
+    height_count_replies = 0  # 回复列表内所有组件的高度
+    width_count_replies = 0  # 回复列表内所有组件的宽度
+
     head_data_signal = pyqtSignal(dict)
     add_reply = pyqtSignal(dict)
-    show_reply_end_text = pyqtSignal(int)
+    show_reply_end_text = pyqtSignal(dict)
     store_thread_signal = pyqtSignal(str)
     agree_thread_signal = pyqtSignal(str)
     add_post_signal = pyqtSignal(dict)
     reply_loaded_signal = pyqtSignal()
 
-    def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False, preview_info=None):
+    def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False, preview_info=None, last_post_id=0):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
@@ -207,12 +212,19 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.label_13.hide()
         self.frame_3.hide()
         self.frame_7.hide()
+        self.pushButton_12.hide()
+        self.pushButton_13.hide()
         self.collapse_text_area()
 
         icon_size = QSize(23, 23)
         self.pushButton_4.setIconSize(icon_size)
         self.pushButton_11.setIconSize(icon_size)
         self.pushButton.setIconSize(icon_size)
+
+        icon_size_large = QSize(30, 30)
+        self.pushButton_12.setIconSize(icon_size_large)
+        self.pushButton_13.setIconSize(icon_size_large)
+
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
 
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
@@ -243,7 +255,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.pushButton_4.clicked.connect(lambda: self.agree_thread_async())
         self.pushButton_3.clicked.connect(lambda: self.add_post_async())
         self.pushButton_7.clicked.connect(self.submit_pagejump)
-        self.pushButton_9.clicked.connect(self.jump_prev_page)
+        self.pushButton_12.clicked.connect(self.jump_prev_page)
+        self.pushButton_13.clicked.connect(self.jump_next_page)
         self.pushButton_8.clicked.connect(self.jump_first_page)
         self.toolButton.clicked.connect(self.frame_7.hide)
         self.lz_portrait.currentPixmapChanged.connect(self.label_4.setPixmap)
@@ -271,17 +284,16 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.set_ui_head_preview(preview_info)
         else:
             self.flash_shower.show()
-        self.get_thread_head_info_async()
 
-        self.post_area_flash_shower.show()
-        self.get_sub_thread_async()
+        self.get_thread_head_info_async()
+        self.load_sub_threads_refreshly(last_post_id=last_post_id)
 
     def reset_theme(self):
         from subwindow.thread_picture_label import ThreadPictureLabel
         super().reset_theme()
 
         listwidgets = [self.listWidget, self.listWidget_4]
-        flat_buttons = [self.pushButton, self.pushButton_4, self.pushButton_11]
+        flat_buttons = [self.pushButton, self.pushButton_4, self.pushButton_11, self.pushButton_13, self.pushButton_12]
         color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
         bg_policy, font_policy = profile_mgr.get_theme_policy_string()
@@ -313,6 +325,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.toolButton.setIcon(QIcon(f'ui/icon_{font_policy}/close.png'))
         self.toolButton_3.setIcon(QIcon(f'ui/icon_{font_policy}/page.png'))
         self.pushButton.setIcon(QIcon(f'ui/icon_{font_policy}/share.png'))
+        self.pushButton_12.setIcon(QIcon(f'ui/icon_{font_policy}/arrow_warm_up.png'))
+        self.pushButton_13.setIcon(QIcon(f'ui/icon_{font_policy}/arrow_cool_down.png'))
         self.update_agree_button_status()
 
     def eventFilter(self, source, event):
@@ -483,7 +497,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def update_pagejump_num(self):
         if self.reply_page == -1:  # 最后1页
             final_current_page = 1 if self.comboBox.currentIndex() == 1 else self.reply_total_pages
-        elif self.reply_num == 0 or self.reply_page == -2:  # 没有回复，倒序未加载
+        elif self.reply_num == 0 or self.reply_page == -2:  # 没有回复，页数未加载
             final_current_page = -1
         else:
             # 加载线程会把页数加一，方便下次加载，真正的当前页数为 self.reply_page-1，倒序则反之
@@ -501,7 +515,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title='该主题还没有任何回复，没有页面可以跳转',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
         elif self.reply_page == -2:  # 请求倒序加载，但最后页面还未获取
-            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='倒序查看模式下，必须先加载出总页数才可跳页',
+            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='必须先加载出总页数才可跳页',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
         else:
             self.update_pagejump_num()
@@ -510,6 +524,11 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def jump_prev_page(self):
         self.spinBox.setValue(self.spinBox.value() - 1)
         self.submit_pagejump()
+
+    def jump_next_page(self):
+        self.pushButton_13.setEnabled(False)
+        self.pushButton_13.setText('正在加载下一页...')
+        self.get_sub_thread_async()
 
     def jump_first_page(self):
         self.spinBox.setValue(1)
@@ -528,8 +547,6 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         else:
             self.reply_page = self.spinBox.value()
             self.load_sub_threads_refreshly(reset_page=False)
-            self.top_toaster.showToast(top_toast_widget.ToastMessage(title='已发起跳页操作',
-                                                                     icon_type=top_toast_widget.ToastIconType.SUCCESS))
 
     def show_addpost_image_switcher(self):
         dialog = TiebaImageUploader()
@@ -703,14 +720,15 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                                 OpAgreeObjectType.Thread)
                 if int(response['error_code']) == 0:
                     if iscancel:
+                        self.agree_num -= 1
+                        self.has_agreed = False
+                        self.agree_thread_signal.emit('取消点赞成功')
+                    else:
                         self.agree_num += 1
                         self.has_agreed = True
                         is_expa2 = bool(int(response["data"].get("agree", {"is_first_agree": False})["is_first_agree"]))
                         self.agree_thread_signal.emit("点赞成功 首赞经验 +2" if is_expa2 else "点赞成功")
-                    else:
-                        self.agree_num -= 1
-                        self.has_agreed = False
-                        self.agree_thread_signal.emit('取消点赞成功')
+
                 elif int(response['error_code']) == 3280001:
                     self.agree_num += 1
                     self.agree_thread_signal.emit('[ALREADY_AGREE]')
@@ -774,23 +792,28 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         start_async()
 
-    def load_sub_threads_refreshly(self, reset_page=True):
+    def load_sub_threads_refreshly(self, reset_page=True, last_post_id=0):
         if not self.is_getting_replys:
             # 清理内存
             cleanup_listWidget(self.listWidget_4)
             QPixmapCache.clear()
             gc.collect()
+
+            self.pushButton_12.hide()
+            self.listWidget_4.show()
             self.height_count_replies = 0
             self.width_count_replies = 0
 
             # 初始化页数
+            sort_type = self.comboBox.currentIndex()
             if reset_page:
-                if self.comboBox.currentIndex() == 1:
-                    self.reply_page = -2
-                else:
-                    self.reply_page = 1
+                self.reply_page = -2 if sort_type == 1 else 1
+
+            self.last_post_id = last_post_id
+            self.first_loaded_page = self.reply_page
 
             # 启动刷新
+            self.scrollArea.verticalScrollBar().setValue(0)
             self.post_area_flash_shower.show()
             self.get_sub_thread_async()
 
@@ -847,29 +870,42 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.height_count += h
         self.listWidget.setFixedHeight(self.height_count)
 
-    def show_end_reply_ui(self, v):
+    def show_end_reply_ui(self, data):
         self.label_2.show()
+        self.post_area_flash_shower.hide()
         if self.listWidget_4.count() == 0:
-            self.listWidget_4.setMinimumHeight(0)
-        if v == 0:
-            self.label_2.setText('你已经到达了贴子的尽头')
-        elif v == 1:
-            self.label_2.setText('还没有人回贴，别让楼主寂寞太久')
-        elif v == 2:
-            self.label_2.setText('服务器开小差了，请试试 <a href="reload_replies">重新加载</a>')
+            self.listWidget_4.hide()
+
+        self.label_2.setText(f"———  {data['text']}  ———")
+        if data['toast']:
+            self.top_toaster.showToast(data['toast'])
 
     def on_reply_loaded(self):
         self.label_7.setText(f'回复区 ({self.reply_num} 条回复)')
         self.update_pagejump_num()
         self.load_sub_thread_images()
+        self.pushButton_13.hide()
+
+        sort_type = self.comboBox.currentIndex()
+
+        # 获取当前页面，带末页判断和抵消子线程加减
+        current_page = self.reply_total_pages if self.reply_page == -1 else \
+            (self.reply_page + 1 if sort_type == 1 else self.reply_page - 1)
+        if self.first_loaded_page == current_page:
+            show_next_page_btn = self.listWidget_4.minimumHeight() <= self.scrollArea.height() and self.reply_page != -1
+            show_prev_page_btn_asc = current_page > 1 and sort_type in (0, 2)
+            show_prev_page_btn_desc = self.reply_total_pages - current_page > 0 and sort_type == 1
+
+            if show_next_page_btn:
+                self.pushButton_13.setEnabled(True)
+                self.pushButton_13.setText('加载下一页内容')
+                self.pushButton_13.show()
+            if show_prev_page_btn_asc or show_prev_page_btn_desc:
+                self.pushButton_12.show()
+
         self.post_area_flash_shower.hide()
 
     def add_reply_ui(self, datas):
-        # tdata = {'content': content, 'portrait': portrait, 'user_name': user_name,
-        #          'user_portrait_pixmap': user_head_pixmap, 'view_pixmap': preview_pixmap,
-        #          'agree_count': agree_num,
-        #          'create_time_str': time_str, 'user_ip': user_ip, 'is_author': is_author,
-        #          'floor': floor, 'reply_num': reply_num}
         item = QListWidgetItem()
         from subwindow.thread_reply_item import ReplyItem
         widget = ReplyItem(self.bduss, self.stoken)
@@ -904,123 +940,123 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             start_background_thread(self.get_sub_thread)
 
     def get_sub_thread(self):
-        async def dosign():
-            logging.log_INFO(f'loading thread {self.thread_id} replies list page {self.reply_page}')
-            self.is_getting_replys = True
-            try:
-                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    sort_type = aiotieba.PostSortType.ASC if self.comboBox.currentIndex() == 0 else (
-                        aiotieba.PostSortType.DESC if self.comboBox.currentIndex() == 1 else aiotieba.PostSortType.HOT)
+        self.is_getting_replys = True
+        logging.log_INFO(f'loading thread {self.thread_id} replies list page {self.reply_page}')
 
-                    if self.reply_page == -2:
-                        # 倒序查看时要从总页数开始
-                        page_thread_info = await client.get_posts(self.thread_id,
-                                                                  pn=1,
-                                                                  sort=sort_type,
-                                                                  only_thread_author=self.checkBox.isChecked(),
-                                                                  comment_rn=0)
-                        if page_thread_info.err:
-                            raise Exception(page_thread_info.err)
-                        else:
-                            self.reply_page = page_thread_info.page.total_page
-                            self.reply_total_pages = page_thread_info.page.total_page
+        try:
+            sort_type = self.comboBox.currentIndex()
+            if self.reply_page == -2:
+                page_pbinfo = pb_page(self.bduss, self.stoken,
+                                      self.thread_id, 1, 30,
+                                      only_see_lz=self.checkBox.isChecked())
+                if page_pbinfo.error.errorno != 0:
+                    raise Exception(f'获取最新页数失败: {page_pbinfo.error.errmsg} '
+                                    f'(错误代码 {page_pbinfo.error.errorno})')
+                else:
+                    # 在获取到最大页数后也更新 first_loaded_page 的值
+                    self.reply_page = page_pbinfo.data.page.total_page
+                    self.first_loaded_page = self.reply_page
 
-                    thread_info = await client.get_posts(self.thread_id,
-                                                         pn=self.reply_page,
-                                                         sort=sort_type,
-                                                         only_thread_author=self.checkBox.isChecked(),
-                                                         comment_rn=0)
-                    if thread_info.err:
-                        raise Exception(thread_info.err)
-                    else:
-                        # 更新回复数量
-                        self.reply_total_pages = thread_info.page.total_page
-                        self.reply_num = thread_info.thread.reply_num - 1
+            proto_response = pb_page(self.bduss, self.stoken,
+                                     self.thread_id,
+                                     self.reply_page, 30,
+                                     sort_type, self.checkBox.isChecked(),
+                                     self.last_post_id)
+            thread_info = aiotieba.get_posts.Posts.from_tbdata(proto_response.data)
 
-                    if thread_info.thread.reply_num == 1:
-                        self.reply_page = -1
-                        self.show_reply_end_text.emit(1)
-                    else:
-                        logging.log_INFO(
-                            f'itering thread {self.thread_id} replies list page {self.reply_page}')
-                        for t in thread_info.objs:
-                            if t.floor == 1:  # 跳过第一楼
-                                continue
+            if proto_response.error.errorno != 0:
+                raise Exception(f'回复加载失败: {proto_response.error.errmsg} '
+                                f'(错误代码 {proto_response.error.errorno})')
+            else:
+                self.reply_num = thread_info.thread.reply_num - 1
+                self.reply_total_pages = thread_info.page.total_page
 
-                            content = make_thread_content(t.contents.objs)
-                            floor = t.floor
-                            reply_num = t.reply_num
-                            portrait = t.user.portrait
-                            user_name = t.user.nick_name_new
-                            agree_num = t.agree
-                            time_str = timestamp_to_string(t.create_time)
-                            user_ip = t.user.ip
-                            user_level = t.user.level
-                            user_ip = user_ip if user_ip else '未知'
-                            is_author = t.is_thread_author
-                            post_id = t.pid
-                            is_bawu = t.user.is_bawu
-                            grow_level = t.user.glevel
+                if self.last_post_id:
+                    # 带回复 id 加载一定是刷新式的加载，因此也要更新 first_loaded_page
+                    self.reply_page = thread_info.page.current_page
+                    self.first_loaded_page = self.reply_page
 
-                            voice_info = {'have_voice': False, 'src': '', 'length': 0}
-                            if t.contents.voice:
-                                voice_info['have_voice'] = True
-                                voice_info[
-                                    'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}&play_from=pb_voice_play'
-                                voice_info['length'] = t.contents.voice.duration
+            if thread_info.thread.reply_num == 1:
+                self.reply_page = -1
 
-                            preview_pixmap = []
-                            for j in t.contents.imgs:
-                                # width, height, src, view_src
-                                src = j.origin_src
-                                view_src = j.big_src
-                                height = j.show_height
-                                width = j.show_width
-                                preview_pixmap.append(
-                                    {'width': width, 'height': height, 'src': src, 'view_src': view_src})
+                endtext_data = {'text': '还没有人回贴，别让楼主寂寞太久', 'toast': None}
+                self.show_reply_end_text.emit(endtext_data)
+            else:
+                for t in thread_info.objs:
+                    if t.floor == 1:  # 跳过第一楼
+                        continue
 
-                            tdata = {'content': content,
-                                     'portrait': portrait,
-                                     'user_name': user_name,
-                                     'view_pixmap': preview_pixmap,
-                                     'agree_count': agree_num,
-                                     'create_time_str': time_str,
-                                     'user_ip': user_ip,
-                                     'is_author': is_author,
-                                     'floor': floor,
-                                     'reply_num': reply_num,
-                                     'ulevel': user_level,
-                                     'post_id': post_id,
-                                     'is_bawu': is_bawu,
-                                     'grow_level': grow_level,
-                                     'voice_info': voice_info}
+                    content = make_thread_content(t.contents.objs)
+                    floor = -1 if sort_type == 2 else t.floor
+                    reply_num = t.reply_num
+                    portrait = t.user.portrait
+                    user_name = t.user.nick_name_new
+                    agree_num = t.agree
+                    time_str = timestamp_to_string(t.create_time)
+                    user_ip = t.user.ip
+                    user_level = t.user.level
+                    user_ip = user_ip if user_ip else ''
+                    is_author = t.is_thread_author
+                    is_bawu = t.user.is_bawu
+                    grow_level = t.user.glevel
+                    post_id = t.pid
 
-                            self.add_reply.emit(tdata)
+                    voice_info = {'have_voice': False, 'src': '', 'length': 0}
+                    if t.contents.voice:
+                        voice_info['have_voice'] = True
+                        voice_info['src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}'
+                        voice_info['length'] = t.contents.voice.duration
 
-                        logging.log_INFO(
-                            f'load thread {self.thread_id} replies list page {self.reply_page} ok')
+                    preview_pixmap = []
+                    for j in t.contents.imgs:
+                        # width, height, src, view_src
+                        src = j.origin_src
+                        view_src = j.big_src
+                        height = j.show_height
+                        width = j.show_width
+                        preview_pixmap.append({'width': width, 'height': height,
+                                               'src': src, 'view_src': view_src})
 
-                        if sort_type == aiotieba.PostSortType.DESC:  # 在倒序查看时要递减页数
-                            self.reply_page -= 1
-                        else:
-                            self.reply_page += 1
-                        if not thread_info.page.has_more:
-                            self.reply_page = -1
-                            self.show_reply_end_text.emit(0)
-            except Exception as e:
-                logging.log_exception(e)
-                if not isinstance(e, RuntimeError):
-                    self.show_reply_end_text.emit(2)
-            finally:
-                self.is_getting_replys = False
-                self.reply_loaded_signal.emit()
+                    tdata = {'content': content,
+                             'portrait': portrait,
+                             'user_name': user_name,
+                             'view_pixmap': preview_pixmap,
+                             'agree_count': agree_num,
+                             'create_time_str': time_str,
+                             'user_ip': user_ip,
+                             'is_author': is_author,
+                             'floor': floor,
+                             'reply_num': reply_num,
+                             'ulevel': user_level,
+                             'post_id': post_id,
+                             'is_bawu': is_bawu,
+                             'grow_level': grow_level,
+                             'voice_info': voice_info}
 
-        def start_async():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            asyncio.run(dosign())
+                    self.add_reply.emit(tdata)
 
-        start_async()
+                logging.log_INFO(
+                    f'load thread {self.thread_id} replies list page {self.reply_page} ok')
+
+                if sort_type == 1:  # 在倒序查看时要递减页数
+                    self.reply_page -= 1
+                else:
+                    self.reply_page += 1
+                if not thread_info.page.has_more:
+                    self.reply_page = -1
+
+                    endtext_data = {'text': '你已经到达了贴子的尽头', 'toast': None}
+                    self.show_reply_end_text.emit(endtext_data)
+        except Exception as e:
+            logging.log_exception(e)
+
+            toast = top_toast_widget.ToastMessage(get_exception_string(e),
+                                                  icon_type=top_toast_widget.ToastIconType.ERROR)
+            endtext_data = {'text': '服务器开小差了，请试试 <a href="reload_replies">重新加载</a>', 'toast': toast}
+            self.show_reply_end_text.emit(endtext_data)
+        finally:
+            self.is_getting_replys = False
+            self.reply_loaded_signal.emit()
 
     def update_agree_button_status(self):
         bg_color, font_color = profile_mgr.get_theme_policy_string()
@@ -1252,26 +1288,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     logging.log_INFO(f'loading thread {self.thread_id} main info')
 
-                    proto_request = PbPageReqIdl_pb2.PbPageReqIdl()
-                    proto_request.data.common._client_type = 2
-                    proto_request.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
-                    proto_request.data.common.BDUSS = self.bduss
-                    proto_request.data.common.stoken = self.stoken
-                    proto_request.data.kz = int(self.thread_id)  # 贴子id
-                    proto_request.data.pn = 1  # 页数
-                    proto_request.data.rn = 2  # 条目数
-                    proto_request.data.r = 0  # 排序类型 此处为正序
-                    proto_request.data.lz = 0  # 只看楼主
-
-                    byte_response = request_mgr.run_protobuf_api('/c/f/pb/page',
-                                                                 payloads=proto_request.SerializeToString(),
-                                                                 cmd_id=302001,
-                                                                 bduss=self.bduss,
-                                                                 stoken=self.stoken,
-                                                                 host_type=2)
-
-                    proto_response = PbPageResIdl_pb2.PbPageResIdl()
-                    proto_response.ParseFromString(byte_response)
+                    proto_response = pb_page(self.bduss, self.stoken,
+                                             self.thread_id, 1, 2)
                     thread_info = aiotieba.get_posts.Posts.from_tbdata(proto_response.data)
 
                     if proto_response.error.errorno != 0:

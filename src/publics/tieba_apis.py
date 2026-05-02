@@ -7,6 +7,7 @@ import aiotieba
 import enum
 
 from proto.AddPost import AddPostReqIdl_pb2, AddPostResIdl_pb2
+from proto.PbPage import PbPageReqIdl_pb2, PbPageResIdl_pb2
 from publics import request_mgr, app_logger, profile_mgr
 from publics.funcs import get_dict_value_treely
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
@@ -361,3 +362,35 @@ def fetch_frs_bottom(bduss, stoken, forum_name):
 
 def newmoindex(bduss):
     return request_mgr.run_get_api('/mo/q/newmoindex', bduss)
+
+
+def pb_page(bduss, stoken, thread_id, pn=1, rn=30, sort_type=0, only_see_lz=False, pos_pid=0):
+    proto_request = PbPageReqIdl_pb2.PbPageReqIdl()
+    proto_request.data.common._client_type = 2
+    proto_request.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+    proto_request.data.common.BDUSS = bduss
+    proto_request.data.common.stoken = stoken
+
+    proto_request.data.kz = int(thread_id)  # 贴子id
+    proto_request.data.r = sort_type  # 排序类型
+    proto_request.data.lz = 1 if only_see_lz else 0  # 只看楼主
+    proto_request.data.rn = rn  # 条目数
+
+    # 页数
+    if pos_pid:
+        proto_request.data.mark = 1
+        proto_request.data.pid = pos_pid
+    else:
+        proto_request.data.pn = pn
+
+    byte_response = request_mgr.run_protobuf_api('/c/f/pb/page',
+                                                 payloads=proto_request.SerializeToString(),
+                                                 cmd_id=302001,
+                                                 bduss=bduss,
+                                                 stoken=stoken,
+                                                 host_type=2)
+
+    proto_response = PbPageResIdl_pb2.PbPageResIdl()
+    proto_response.ParseFromString(byte_response)
+
+    return proto_response

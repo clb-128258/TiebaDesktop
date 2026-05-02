@@ -41,7 +41,6 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
     floor = -1
     thread_id = -1
     post_id = -1
-    flash_timer_count = 0
     allow_home_page = True
     subcomment_show_thread_button = False
     agree_num = 0
@@ -81,10 +80,6 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
             lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
         self.destroyed.connect(self.portrait_image.destroyImage)
 
-        self.flash_timer = QTimer(self)
-        self.flash_timer.setInterval(200)
-        self.flash_timer.timeout.connect(self.handle_flash_timer_event)
-
     def reset_theme(self):
         from subwindow.thread_picture_label import ThreadPictureLabel
 
@@ -102,12 +97,6 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
                 self.label_3, self.label_4) and self.allow_home_page:
             self.open_user_homepage(self.portrait)
         return super(ReplyItem, self).eventFilter(source, event)  # 照常处理事件
-
-    def mouseDoubleClickEvent(self, a0):
-        if not self.flash_timer_count:
-            self.flash_timer_count = 1
-            self.flash_timer.start()
-            self.label_6.setStyleSheet('QLabel{background-color: rgb(71, 71, 255);}')
 
     def show_content_menu(self):
         menu = base_ui.create_thread_content_menu(self.label_6)
@@ -168,16 +157,6 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
         except Exception as e:
             logging.log_exception(e)
             self.agree_thread_signal.emit(get_exception_string(e))
-
-    def handle_flash_timer_event(self):
-        if self.flash_timer_count == 6:
-            self.flash_timer.stop()
-            self.flash_timer_count = -1
-        elif self.flash_timer_count % 2 == 1:
-            self.label_6.setStyleSheet('')
-        else:
-            self.label_6.setStyleSheet('QWidget{background-color: rgb(71, 71, 255);}')
-        self.flash_timer_count += 1
 
     def show_subcomment_window(self):
         if self.c_count != 0:
@@ -258,9 +237,9 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
 
         text_ = ''
         is_high_agree = floor == 0
-        if floor != -1 and floor:
+        if floor != -1:
             self.floor = floor
-            text_ += f'第 {"高赞回答楼" if is_high_agree else floor} 楼 | '
+            text_ += ("置顶高赞回答" if is_high_agree else f'第 {floor} 楼') + ' | '
         if timestr:
             text_ += f'{timestr} | '
         if ip and not profile_mgr.local_config['thread_view_settings']['hide_ip']:

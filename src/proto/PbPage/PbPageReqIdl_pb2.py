@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from proto import CommonReq_pb2 as proto_dot_CommonReq__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fproto/PbPage/PbPageReqIdl.proto\x12\x0cTiebaDesktop\x1a\x15proto/CommonReq.proto\"\xc0\x01\n\x0e\x44\x61taReq_PbPage\x12\'\n\x06\x63ommon\x18\x19 \x01(\x0b\x32\x17.TiebaDesktop.CommonReq\x12\n\n\x02kz\x18\x04 \x01(\x03\x12\n\n\x02lz\x18\x05 \x01(\x05\x12\t\n\x01r\x18\x06 \x01(\x05\x12\x0b\n\x03pid\x18\x07 \x01(\x03\x12\x12\n\nwith_floor\x18\x08 \x01(\x05\x12\x10\n\x08\x66loor_rn\x18\t \x01(\x05\x12\n\n\x02rn\x18\r \x01(\x05\x12\n\n\x02pn\x18\x12 \x01(\x05\x12\x17\n\x0f\x66loor_sort_type\x18J \x01(\x05\":\n\x0cPbPageReqIdl\x12*\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1c.TiebaDesktop.DataReq_PbPageb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fproto/PbPage/PbPageReqIdl.proto\x12\x0cTiebaDesktop\x1a\x15proto/CommonReq.proto\"\x9b\x02\n\x0e\x44\x61taReq_PbPage\x12\'\n\x06\x63ommon\x18\x19 \x01(\x0b\x32\x17.TiebaDesktop.CommonReq\x12\x0c\n\x04mark\x18\x02 \x01(\x05\x12\n\n\x02kz\x18\x04 \x01(\x03\x12\n\n\x02lz\x18\x05 \x01(\x05\x12\t\n\x01r\x18\x06 \x01(\x05\x12\x0b\n\x03pid\x18\x07 \x01(\x03\x12\x12\n\nwith_floor\x18\x08 \x01(\x05\x12\x10\n\x08\x66loor_rn\x18\t \x01(\x05\x12\n\n\x02rn\x18\r \x01(\x05\x12\n\n\x02pn\x18\x12 \x01(\x05\x12\x17\n\x0f\x66loor_sort_type\x18J \x01(\x05\x12\x10\n\x08last_pid\x18Q \x01(\x03\x12\x0c\n\x04\x62\x61\x63k\x18\x03 \x01(\x05\x12\x14\n\x0cis_jumpfloor\x18\" \x01(\x05\x12\x15\n\rjumpfloor_num\x18# \x01(\x05\":\n\x0cPbPageReqIdl\x12*\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1c.TiebaDesktop.DataReq_PbPageb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.PbPage.PbPageReqIdl_pb2', globals())
@@ -22,7 +22,7 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _DATAREQ_PBPAGE._serialized_start=73
-  _DATAREQ_PBPAGE._serialized_end=265
-  _PBPAGEREQIDL._serialized_start=267
-  _PBPAGEREQIDL._serialized_end=325
+  _DATAREQ_PBPAGE._serialized_end=356
+  _PBPAGEREQIDL._serialized_start=358
+  _PBPAGEREQIDL._serialized_end=416
 # @@protoc_insertion_point(module_scope)

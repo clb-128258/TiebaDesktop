@@ -73,7 +73,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
     def open_thread_detail(self):
         from subwindow.thread_detail_view import ThreadDetailView
-        thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id))
+        thread_window = ThreadDetailView(self.bduss, self.stoken, int(self.thread_id), last_post_id=self.post_id)
         qt_window_mgr.add_window(thread_window)
 
     def load_item_images(self):
@@ -147,16 +147,16 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         async def dosign():
             self.isLoading = True
             try:
-                logging.log_INFO(
-                    f'loading sub-replies (thread_id {self.thread_id} post_id {self.post_id} page {self.page})')
+                logging.log_INFO(f'loading sub-replies '
+                                 f'(thread_id {self.thread_id} '
+                                 f'post_id {self.post_id} '
+                                 f'page {self.page})')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     comments = await client.get_comments(self.thread_id, self.post_id, self.page)
                     if comments.err:
                         raise Exception(comments.err)
                     if self.floor_num == -1 and self.comment_count == -2:
                         self.set_floor_info.emit((comments.post.floor, comments.page.total_count))
-                    logging.log_INFO(
-                        f'itering sub-replies (thread_id {self.thread_id} post_id {self.post_id} floor {comments.post.floor} page {self.page})')
 
                     if self.page == 1:
                         # 获取当前楼层信息
@@ -169,14 +169,14 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                         is_bawu = floor_thread.user.is_bawu
                         thread_id = floor_thread.tid
                         post_id = floor_thread.pid
-                        floor = floor_thread.floor
+                        floor = floor_thread.floor if floor_thread.floor != 0 else -1
                         reply_num = comments.page.total_count
 
                         voice_info = {'have_voice': False, 'src': '', 'length': 0}
                         if floor_thread.contents.voice:
                             voice_info['have_voice'] = True
                             voice_info[
-                                'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={floor_thread.contents.voice.md5}&play_from=pb_voice_play'
+                                'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={floor_thread.contents.voice.md5}'
                             voice_info['length'] = floor_thread.contents.voice.duration
 
                         preview_pixmap = []
@@ -189,10 +189,19 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                             preview_pixmap.append(
                                 {'width': width, 'height': height, 'src': src, 'view_src': view_src})
 
-                        tdata = {'is_floor': True, 'content': content, 'portrait': portrait, 'user_name': user_name,
-                                 'create_time_str': time_str, 'ulevel': user_level, 'is_bawu': is_bawu,
-                                 'thread_id': thread_id, 'post_id': post_id, 'voice_info': voice_info,
-                                 'pictures': preview_pixmap, 'floor': floor, 'reply_num': reply_num}
+                        tdata = {'is_floor': True,
+                                 'content': content,
+                                 'portrait': portrait,
+                                 'user_name': user_name,
+                                 'create_time_str': time_str,
+                                 'ulevel': user_level,
+                                 'is_bawu': is_bawu,
+                                 'thread_id': thread_id,
+                                 'post_id': post_id,
+                                 'voice_info': voice_info,
+                                 'pictures': preview_pixmap,
+                                 'floor': floor,
+                                 'reply_num': reply_num}
 
                         self.add_comment.emit(tdata)
 
@@ -221,11 +230,20 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                                 'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}&play_from=pb_voice_play'
                             voice_info['length'] = t.contents.voice.duration
 
-                        tdata = {'is_floor': False, 'content': content, 'portrait': portrait, 'user_name': user_name,
+                        tdata = {'is_floor': False,
+                                 'content': content,
+                                 'portrait': portrait,
+                                 'user_name': user_name,
                                  'agree_count': agree_num,
-                                 'create_time_str': time_str, 'is_author': is_author, 'ulevel': user_level,
-                                 'replyobj': be_replied_user, 'reply_uid': replyer_uid, 'is_bawu': is_bawu,
-                                 'thread_id': thread_id, 'post_id': post_id, 'voice_info': voice_info}
+                                 'create_time_str': time_str,
+                                 'is_author': is_author,
+                                 'ulevel': user_level,
+                                 'replyobj': be_replied_user,
+                                 'reply_uid': replyer_uid,
+                                 'is_bawu': is_bawu,
+                                 'thread_id': thread_id,
+                                 'post_id': post_id,
+                                 'voice_info': voice_info}
 
                         self.add_comment.emit(tdata)
             except Exception as e:

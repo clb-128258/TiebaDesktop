@@ -5,6 +5,7 @@ import "proto/CommonReq.proto";
 
 message DataReq_PbPage {
     CommonReq common = 25;
+    int32 mark = 2;
     int64 kz = 4;
     int32 lz = 5;
     int32 r = 6;
@@ -14,8 +15,12 @@ message DataReq_PbPage {
     int32 rn = 13;
     int32 pn = 18;
     int32 floor_sort_type = 74;
+    int64 last_pid = 81;
+    int32 back = 3;
+    int32 is_jumpfloor = 34;
+    int32 jumpfloor_num = 35;
+    int64 pid = 7;
 }
-
 
 message PbPageReqIdl {
     DataReq_PbPage data = 1;
