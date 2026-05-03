@@ -53,20 +53,20 @@ class TiebaClientType(enum.IntEnum):
     ANDROID = 2  # 安卓客户端
 
 
-def generate_sign_key(str_dict: dict):
-    """贴吧表单签名的纯python实现"""
+def generate_sign_key(str_dict: dict, key: str = 'tiebaclient!!!'):
+    """计算贴吧表单签名"""
     form_content = ''
     for k, v in str_dict.items():
         form_content += f'{k}={v}'
-    form_content += 'tiebaclient!!!'
+    form_content += key
     md5_key = hashlib.md5(form_content.encode()).hexdigest().upper()
 
     return md5_key
 
 
 def calc_sign(str_dict: dict):
-    """生成待提交数据的签名，并把签名添加到表单字典中"""
-    signkey = generate_sign_key(str_dict)
+    """生成待提交数据的手机端签名，并把签名添加到表单字典中"""
+    signkey = generate_sign_key(str_dict, 'tiebaclient!!!')
     str_dict['sign'] = signkey
     return str_dict
 

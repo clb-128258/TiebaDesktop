@@ -22,10 +22,6 @@ QScrollArea {
     background-color: BG_COLOR;
 }
 
-QLabel {
-    color: FONT_COLOR;
-}
-
 QListWidget {
     background-color: BG_COLOR;
     color: FONT_COLOR;
@@ -182,4 +178,26 @@ QToolButton {
 QToolButton:disabled {
     background-color: transparent;
     opacity: 0.4;
+}
+
+
+QLabel {
+    color: FONT_COLOR;
+    selection-background-color: #5b44c8;
+    selection-color: #ffffff;
+}
+
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-position: top right;
+    border-top-right-radius: 6px;
+}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-position: bottom right;
+    border-bottom-right-radius: 6px;
+}
+
+QSpinBox:hover, QDoubleSpinBox:hover {
+    border: 1px solid #5b44c8;
 }

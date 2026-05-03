@@ -226,3 +226,58 @@ QToolButton:hover {
 QToolButton:pressed {
     background-color: rgba(0, 0, 0, 0.30);
 }
+
+
+QSpinBox, QDoubleSpinBox, QDateTimeEdit {
+    background-color: BG_COLOR;
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    padding: 1px 3px;
+    color: FONT_COLOR;
+    selection-background-color: #5b44c8;
+}
+
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border: 1px solid #5b44c8;
+}
+
+QSpinBox::up-button, QSpinBox::down-button,
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 18px;
+    border-left: 1px solid #dcdfe6;
+    background: BG_COLOR;
+}
+
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {
+    background: #e4e7ed;
+}
+
+QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed {
+    background: #c3c6cc;
+}
+
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background: #e4e7ed;
+}
+
+QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed {
+    background: #c3c6cc;
+}
+
+QSpinBox::up-arrow {
+    image: url(./ui/icon_black/keyboard_arrow_up.png);
+    width: 15px;
+    height: 15px;
+}
+
+QSpinBox::down-arrow {
+    image: url(./ui/icon_black/keyboard_arrow_down.png);
+    width: 15px;
+    height: 15px;
+}
+
+QSpinBox:disabled {
+    background-color: #adadad;
+    color: #afafaf;
+}
