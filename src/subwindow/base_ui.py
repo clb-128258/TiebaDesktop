@@ -255,9 +255,9 @@ class WindowBaseQWidget(QWidget):
             self.reset_theme()
 
     def nativeEvent(self, eventType, message):
-        is_changed = handle_native_event(self, self.reset_theme, eventType, message)
-        if is_changed:
-            qt_window_mgr.refresh_all_windows_theme()
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
         return super().nativeEvent(eventType, message)
 
     def set_theme_qss(self):
@@ -288,9 +288,9 @@ class WindowBaseQDialog(QDialog):
             self.reset_theme()
 
     def nativeEvent(self, eventType, message):
-        is_changed = handle_native_event(self, self.reset_theme, eventType, message)
-        if is_changed:
-            qt_window_mgr.refresh_all_windows_theme()
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
         return super().nativeEvent(eventType, message)
 
     def set_theme_qss(self):
