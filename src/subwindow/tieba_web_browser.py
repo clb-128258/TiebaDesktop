@@ -26,7 +26,7 @@ toolbutton_qss = """QToolButton {
     /* 禁用状态：半透明，显示不可点击 */
     QToolButton:disabled {
         background-color: transparent;
-        opacity: 0.1;
+        opacity: 0;
     }"""
 
 moved_out_tabs = {}
@@ -104,8 +104,10 @@ class ExtTabBar(QTabBar):
         }}
         QTabBar::close-button {{
             image: url(./ui/icon_{profile_mgr.get_theme_policy_string()[1]}/close.png);
-            width: 21px;
-            height: 21px;
+            width: 26px;
+            height: 26px;
+            padding: 1px;
+            border-radius: 8px;
         }}
         QTabBar::close-button:hover {{
             background-color: {'rgba(255, 255, 255, 0.15)' if policy == 2 else 'rgba(0, 0, 0, 0.1)'};
