@@ -200,7 +200,11 @@ class RecommendWindow(QListWidget):
     def get_recommand_v2(self):
         """手机网页版贴吧的首页推荐接口"""
         from subwindow.thread_preview_item import AsyncLoadImage
+
         def judge_filler(element):
+            if len(str(element['tid'])) >= 16 and element['title'].startswith('回复：'):
+                # 小卖部回复贴过滤检测
+                return False
             if profile_mgr.local_config['thread_view_settings']['hide_video'] and element.get('video_info'):
                 # 视频贴过滤检测
                 return False
