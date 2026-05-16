@@ -22,7 +22,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
     add_comment = pyqtSignal(dict)
     set_floor_info = pyqtSignal(tuple)
 
-    def __init__(self, bduss, stoken, thread_id, post_id, floor, comment_count, show_thread_button=False):
+    def __init__(self, bduss, stoken, thread_id, post_id, floor, comment_count, show_thread_button=False,
+                 is_subfloor=False):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
@@ -31,6 +32,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.post_id = post_id
         self.floor_num = floor
         self.comment_count = comment_count
+        self.is_postId_from_subFloor = is_subfloor
 
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
         self.init_top_toaster()
@@ -125,7 +127,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                             datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
         else:
             widget.is_comment = False
-            widget.set_reply_text(f'当前楼层信息')
+            widget.set_reply_text(f'主楼层信息')
             widget.setdatas(datas['portrait'], datas['user_name'], False, datas['content'],
                             datas['pictures'],
                             datas['floor'],
@@ -152,7 +154,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                                  f'post_id {self.post_id} '
                                  f'page {self.page})')
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    comments = await client.get_comments(self.thread_id, self.post_id, self.page)
+                    comments = await client.get_comments(self.thread_id, self.post_id,
+                                                         self.page, is_comment=self.is_postId_from_subFloor)
                     if comments.err:
                         raise Exception(comments.err)
                     if self.floor_num == -1 and self.comment_count == -2:
@@ -171,6 +174,15 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                         post_id = floor_thread.pid
                         floor = floor_thread.floor if floor_thread.floor != 0 else -1
                         reply_num = comments.page.total_count
+
+                        from_subfloor = False
+                        if self.is_postId_from_subFloor:
+                            old_pid = self.post_id
+                            self.post_id = post_id
+                            self.is_postId_from_subFloor = False
+
+                            from_subfloor = True
+                            logging.log_INFO(f'sub floor pid {old_pid} changed into floor pid {post_id}')
 
                         voice_info = {'have_voice': False, 'src': '', 'length': 0}
                         if floor_thread.contents.voice:
@@ -201,7 +213,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                                  'voice_info': voice_info,
                                  'pictures': preview_pixmap,
                                  'floor': floor,
-                                 'reply_num': reply_num}
+                                 'reply_num': reply_num,
+                                 'load_from_subfloor': from_subfloor}
 
                         self.add_comment.emit(tdata)
 
@@ -254,8 +267,10 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                     self.page += 1
                 else:
                     self.page = -1
-                logging.log_INFO(
-                    f'load sub-replies (thread_id {self.thread_id} post_id {self.post_id}) finished and page changed to {self.page}')
+                logging.log_INFO(f'load sub-replies (thread_id '
+                                 f'{self.thread_id} '
+                                 f'post_id {self.post_id}) '
+                                 f'finished and page changed to {self.page}')
             finally:
                 self.isLoading = False
 

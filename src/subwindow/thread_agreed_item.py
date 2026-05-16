@@ -13,7 +13,7 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
     portrait = ''
     thread_id = -1
     post_id = -1
-    is_post = False
+    item_type = 0  # 1回复 2楼中楼 3主题
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -59,26 +59,20 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
             self.left_image.loadImage()
 
     def show_subcomment_window(self):
-        if self.is_post:
+        if self.item_type == 2:
             from subwindow.reply_sub_comments import ReplySubComments
-            fwindow = ReplySubComments(self.bduss, self.stoken, self.thread_id, self.post_id, -1, -1,
-                                       show_thread_button=True)
-        else:
-            from subwindow.thread_detail_view import ThreadDetailView
-            fwindow = ThreadDetailView(self.bduss, self.stoken, self.thread_id)
-        qt_window_mgr.add_window(fwindow)
+            fwindow = ReplySubComments(self.bduss, self.stoken, self.thread_id, self.post_id, -1, -2,
+                                       show_thread_button=True, is_subfloor=True)
+            qt_window_mgr.add_window(fwindow)
+        elif self.item_type == 1:
+            self.open_thread_window(self.thread_id, self.post_id)
+        elif self.item_type == 3:
+            self.open_thread_window(self.thread_id)
 
-    def open_ba_detail(self, fid):
-        from subwindow.forum_show_window import ForumShowWindow
-        forum_window = ForumShowWindow(self.bduss, self.stoken, int(fid))
-        qt_window_mgr.add_window(forum_window)
-        forum_window.load_info_async()
-        forum_window.get_threads_async()
-
-    def open_thread(self, tid):
+    def open_thread_window(self, thread_id, pos_pid=0):
         from subwindow.thread_detail_view import ThreadDetailView
-        third_party_thread = ThreadDetailView(self.bduss, self.stoken, int(tid))
-        qt_window_mgr.add_window(third_party_thread)
+        fwindow = ThreadDetailView(self.bduss, self.stoken, thread_id, last_post_id=pos_pid)
+        qt_window_mgr.add_window(fwindow)
 
     def open_user_homepage(self, uid):
         from subwindow.user_home_page import UserHomeWindow
@@ -89,7 +83,6 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
         open_url_in_browser(url)
 
     def setdatas(self, uicon: str, uname: str, text: str, pixmap_link: str, timestr: str, toptext: str):
-
         self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, uicon,
                                          qt_image.ImageCoverType.RoundCover, (20, 20))
         self.label_3.setText(uname)

@@ -578,17 +578,31 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             widget.allow_home_page = False
             widget.subcomment_show_thread_button = True
             widget.load_by_callback = True
+            widget.is_comment = datas['is_subfloor']
+
             forum_link_html = '<a href=\"tieba_forum://{fid}\">{fname}吧</a>'.format(fname=datas['forum_name'],
                                                                                      fid=datas['forum_id'])
             forum_link_html = forum_link_html if datas['forum_name'] else '贴吧动态'
             widget.set_reply_text(
-                '{sub_floor}在 {forum_link} 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下回复：'.format(
+                '{sub_floor}在 '
+                '{forum_link} 的主题贴 '
+                '<a href=\"tieba_thread://{tid}\">{tname}</a> '
+                '下回复：'.format(
                     tname=datas['thread_title'],
                     tid=datas['thread_id'],
                     sub_floor='[楼中楼] ' if datas['is_subfloor'] else '[回复贴] ',
-                    forum_link=forum_link_html))
-            widget.setdatas(datas['portrait'], datas['user_name'], False, datas['content'],
-                            [], -1, datas['post_time_str'], '', -2, -1, -1, False)
+                    forum_link=forum_link_html)
+            )
+
+            widget.setdatas(datas['portrait'],
+                            datas['user_name'],
+                            False,
+                            datas['content'],
+                            [],
+                            -1,
+                            datas['post_time_str'],
+                            '', -2, -1, -1,
+                            False)
 
             item.setSizeHint(widget.size())
             self.listWidget_2.addItem(item)
@@ -677,24 +691,13 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                                 forum_name = ''
 
                             # 获取贴子标题
-                            thread_title = f'贴子 ID: {thread.tid}'
+                            thread_title = f'贴子 {thread.tid}'
 
                             # 发布时间字符串
                             timestr = timestamp_to_string(thread.create_time)
 
-                            # 是楼中楼获取对应的pid
-                            if thread.is_comment:
-                                thread_info = await client.get_comments(thread.tid, thread.pid, pn=1, is_comment=True)
-                                pid = thread_info.post.pid
-                            else:
-                                pid = thread.pid
-
-                            # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
-                            # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复贴
                             data = {'thread_id': thread.tid,
-                                    'real_post_id': thread.pid,
-                                    'post_id': pid,
+                                    'post_id': thread.pid,
                                     'is_subfloor': thread.is_comment,
                                     'forum_id': thread.fid,
                                     'forum_name': forum_name,

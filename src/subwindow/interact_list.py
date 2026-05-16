@@ -111,7 +111,9 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
             widget.post_id = data['post_id']
             widget.subcomment_show_thread_button = True
             widget.set_reply_text(
-                '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下{ptype}了你：'.format(
+                '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> '
+                '的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> '
+                '下{ptype}了你：'.format(
                     fname=data['forum_name'],
                     tname=data['thread_title'],
                     tid=data['thread_id'],
@@ -119,19 +121,26 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
                     sub_floor='[楼中楼] ' if data['is_subfloor'] else '[回复贴] ',
                     ptype='回复' if data['type'] == 'reply' else '@')
             )
-            widget.setdatas(data['portrait'], data['user_name'], False, data['content'],
-                            [], -1, data['post_time_str'], '', -2, -1, -1, False)
+            widget.setdatas(data['portrait'],
+                            data['user_name'],
+                            False, data['content'],
+                            [],
+                            -1,
+                            data['post_time_str'],
+                            '', -2,-1, -1, False)
         else:
             from subwindow.thread_agreed_item import AgreedThreadItem
             widget = AgreedThreadItem(self.bduss, self.stoken)
 
-            widget.is_post = False
+            widget.item_type=data['item_type']
             widget.portrait = data['portrait']
             widget.thread_id = data['thread_id']
             widget.post_id = data['post_id']
             widget.setdatas(data['portrait'], data['user_name'], data['content'],
                             data['pic_link'], data['post_time_str'],
-                            '在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 内为你发布的以下内容点了赞：'.format(
+                            '在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> '
+                            '的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> '
+                            '内为你发布的以下内容点了赞：'.format(
                                 fname=data['forum_name'],
                                 tname=data['thread_title'],
                                 tid=data['thread_id'],
@@ -201,19 +210,9 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
                             # 发布时间字符串
                             timestr = timestamp_to_string(int(thread['time']))
 
-                            # 是楼中楼获取对应的pid
-                            if bool(int(thread['is_floor'])):
-                                pid = int(thread['quote_pid'])
-                            else:
-                                pid = int(thread["post_id"])
-
-                            # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
-                            # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复贴
                             data = {'type': type_,
                                     'thread_id': int(thread["thread_id"]),
-                                    'real_post_id': int(thread["post_id"]),
-                                    'post_id': pid,
+                                    'post_id': int(thread["post_id"]),
                                     'is_subfloor': bool(int(thread['is_floor'])),
                                     'forum_id': forum_id,
                                     'forum_name': thread["fname"],
@@ -242,20 +241,9 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
                             # 发布时间字符串
                             timestr = timestamp_to_string(thread.create_time)
 
-                            # 是楼中楼获取对应的pid
-                            if thread.is_comment:
-                                thread_info = await client.get_comments(thread.tid, thread.pid, pn=1, is_comment=True)
-                                pid = thread_info.post.pid
-                            else:
-                                pid = thread.pid
-
-                            # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
-                            # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复贴
                             data = {'type': type_,
                                     'thread_id': thread.tid,
-                                    'real_post_id': thread.pid,
-                                    'post_id': pid,
+                                    'post_id': thread.pid,
                                     'is_subfloor': thread.is_comment,
                                     'forum_id': forum_id,
                                     'forum_name': thread.fname,
@@ -319,9 +307,6 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
                             else:
                                 pid = int(thread["post_id"])
 
-                            # post_id 一定不是楼中楼，real_post_id 视情况而定，可能会指向楼中楼
-                            # 如果 real_post_id 不是楼中楼，那么 post_id = real_post_id
-                            # 如果 real_post_id 是楼中楼，则 post_id 指向这个楼中楼所在的回复贴
                             data = {'type': type_,
                                     'thread_id': int(thread["thread_id"]),
                                     'post_id': pid,

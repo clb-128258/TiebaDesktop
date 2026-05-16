@@ -168,7 +168,8 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
                                                self.post_id,
                                                self.floor,
                                                self.c_count,
-                                               show_thread_button=self.subcomment_show_thread_button)
+                                               show_thread_button=self.subcomment_show_thread_button,
+                                               is_subfloor=self.is_comment)
                 qt_window_mgr.add_window(replyWindow)
         else:
             if self.show_msg_outside:
