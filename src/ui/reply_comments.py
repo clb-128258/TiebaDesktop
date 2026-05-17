@@ -17,9 +17,6 @@ class Ui_Dialog(object):
         Dialog.resize(481, 573)
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
-        self.pushButton_2 = QtWidgets.QPushButton(Dialog)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.gridLayout.addWidget(self.pushButton_2, 1, 2, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem, 1, 1, 1, 1)
         self.label = QtWidgets.QLabel(Dialog)
@@ -29,9 +26,6 @@ class Ui_Dialog(object):
         self.label.setFont(font)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 1, 0, 1, 1)
-        self.pushButton = QtWidgets.QPushButton(Dialog)
-        self.pushButton.setObjectName("pushButton")
-        self.gridLayout.addWidget(self.pushButton, 1, 3, 1, 1)
         self.listWidget = QtWidgets.QListWidget(Dialog)
         self.listWidget.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.listWidget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
@@ -40,7 +34,10 @@ class Ui_Dialog(object):
         self.listWidget.setResizeMode(QtWidgets.QListView.Adjust)
         self.listWidget.setWordWrap(True)
         self.listWidget.setObjectName("listWidget")
-        self.gridLayout.addWidget(self.listWidget, 2, 0, 1, 4)
+        self.gridLayout.addWidget(self.listWidget, 2, 0, 1, 3)
+        self.pushButton = QtWidgets.QPushButton(Dialog)
+        self.pushButton.setObjectName("pushButton")
+        self.gridLayout.addWidget(self.pushButton, 1, 2, 1, 1)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -48,6 +45,5 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "楼中楼回复"))
-        self.pushButton_2.setText(_translate("Dialog", "刷新"))
         self.label.setText(_translate("Dialog", "第 x 楼的回复，共 x 条"))
         self.pushButton.setText(_translate("Dialog", "查看主题贴"))

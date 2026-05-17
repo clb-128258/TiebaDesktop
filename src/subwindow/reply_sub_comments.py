@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, top_toast_widget, profile_mgr
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
-    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget
+    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, LoadingFlashWidget
 import publics.app_logger as logging
 from subwindow import base_ui
 
@@ -21,8 +21,13 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
     page = 1
     add_comment = pyqtSignal(dict)
     set_floor_info = pyqtSignal(tuple)
+    comment_load_finished = pyqtSignal(str)
 
-    def __init__(self, bduss, stoken, thread_id, post_id, floor, comment_count, show_thread_button=False,
+    def __init__(self,
+                 bduss, stoken,
+                 thread_id, post_id,
+                 floor, comment_count,
+                 show_thread_button=False,
                  is_subfloor=False):
         super().__init__()
         self.setupUi(self)
@@ -35,13 +40,14 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.is_postId_from_subFloor = is_subfloor
 
         self.setWindowFlags(Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint)
-        self.init_top_toaster()
         self.listWidget.verticalScrollBar().setSingleStep(25)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.init_ui_elements()
 
         self.add_comment.connect(self.ui_add_comment)
         self.set_floor_info.connect(self.ui_set_floor_info)
-        self.pushButton_2.clicked.connect(self.refresh_comments)
+        self.comment_load_finished.connect(self.on_load_finished)
+        self.refresh_button.clicked.connect(self.refresh_comments)
         self.pushButton.clicked.connect(self.open_thread_detail)
         self.listWidget.verticalScrollBar().valueChanged.connect(self.load_from_scroll)
         if not show_thread_button:
@@ -49,7 +55,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         if self.floor_num == -1 and self.comment_count == -2:
             self.label.setText('楼中楼回复')
         else:
-            self.label.setText(f'第 {self.floor_num} 楼的回复，共 {self.comment_count} 条')
+            self.label.setText(f'第 {self.floor_num} 楼的回复 ({self.comment_count} 条)')
+            self.setWindowTitle(f'第 {self.floor_num} 楼的回复')
 
         self.load_comments_async()
 
@@ -66,12 +73,24 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
     def closeEvent(self, a0):
         cleanup_listWidget(self.listWidget)
+        self.top_toaster.deleteLater()
+        self.loading_widget.deleteLater()
+
         a0.accept()
         qt_window_mgr.del_window(self)
 
-    def init_top_toaster(self):
+    def resizeEvent(self, a0):
+        self.refresh_button.move_button()
+
+    def init_ui_elements(self):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
+
+        self.loading_widget = LoadingFlashWidget()
+        self.loading_widget.cover_widget(self.listWidget)
+
+        self.refresh_button = base_ui.FloatingButton(self)
+        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
 
     def open_thread_detail(self):
         from subwindow.thread_detail_view import ThreadDetailView
@@ -85,6 +104,9 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
     def refresh_comments(self):
         if not self.isLoading:
+            # 显示页面
+            self.loading_widget.show()
+
             # 清理内存
             cleanup_listWidget(self.listWidget)
             QPixmapCache.clear()
@@ -99,12 +121,15 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         if self.listWidget.verticalScrollBar().value() == self.listWidget.verticalScrollBar().maximum():
             self.load_comments_async()
 
+    def on_load_finished(self, result_msg):
+        if result_msg:
+            toast = top_toast_widget.ToastMessage(result_msg, 2000, top_toast_widget.ToastIconType.ERROR)
+            self.top_toaster.showToast(toast)
+        self.loading_widget.hide()
+
     def ui_set_floor_info(self, datas):
-        if datas[0] == -1:
-            self.top_toaster.showToast(
-                top_toast_widget.ToastMessage(datas[1], 2000, top_toast_widget.ToastIconType.ERROR))
-        else:
-            self.label.setText(f'第 {datas[0]} 楼的回复，共 {datas[1]} 条')
+        self.label.setText(f'第 {datas[0]} 楼的回复 ({datas[1]} 条)')
+        self.setWindowTitle(f'第 {datas[0]} 楼的回复')
 
     def ui_add_comment(self, datas):
         from subwindow.thread_reply_item import ReplyItem
@@ -146,7 +171,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
             start_background_thread(self.load_comments)
 
     def load_comments(self):
-        async def dosign():
+        async def run_task():
             self.isLoading = True
             try:
                 logging.log_INFO(f'loading sub-replies '
@@ -158,8 +183,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                                                          self.page, is_comment=self.is_postId_from_subFloor)
                     if comments.err:
                         raise Exception(comments.err)
-                    if self.floor_num == -1 and self.comment_count == -2:
-                        self.set_floor_info.emit((comments.post.floor, comments.page.total_count))
+
+                    self.set_floor_info.emit((comments.post.floor, comments.page.total_count))
 
                     if self.page == 1:
                         # 获取当前楼层信息
@@ -229,12 +254,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                         is_bawu = t.user.is_bawu
                         thread_id = t.tid
                         post_id = t.pid
-                        be_replied_user = ''
-                        replyer_uid = 0
-                        if t.reply_to_id != 0:
-                            uinfo = await client.get_user_info(t.reply_to_id, aiotieba.ReqUInfo.NICK_NAME)
-                            be_replied_user = uinfo.nick_name_new
-                            replyer_uid = t.reply_to_id
+                        be_replied_user = t.reply_to_nick_name_new
+                        replyer_uid = t.reply_to_id
 
                         voice_info = {'have_voice': False, 'src': '', 'length': 0}
                         if t.contents.voice:
@@ -261,7 +282,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                         self.add_comment.emit(tdata)
             except Exception as e:
                 logging.log_exception(e)
-                self.set_floor_info.emit((-1, get_exception_string(e)))
+                self.comment_load_finished.emit(get_exception_string(e))
             else:
                 if comments.has_more:
                     self.page += 1
@@ -271,12 +292,13 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                                  f'{self.thread_id} '
                                  f'post_id {self.post_id}) '
                                  f'finished and page changed to {self.page}')
+                self.comment_load_finished.emit('')
             finally:
                 self.isLoading = False
 
         def start_async():
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)
-            asyncio.run(dosign())
+            asyncio.run(run_task())
 
         start_async()
