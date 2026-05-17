@@ -14,6 +14,7 @@ from subwindow import base_ui
 class ThreadPictureLabel(QLabel):
     """嵌入在列表的贴子图片"""
     opic_view = None
+    is_img_load_failed = False
 
     def __init__(self, width, height, src, view_src):
         super().__init__()
@@ -45,6 +46,7 @@ class ThreadPictureLabel(QLabel):
             self.opic_view.close()
 
     def on_img_loaded(self, success):
+        self.is_img_load_failed = not success
         if success:
             self.setToolTip('')
             if not profile_mgr.local_config['thread_view_settings']['play_gif'] and self.image_loader.isDynamicImage():
@@ -61,6 +63,7 @@ class ThreadPictureLabel(QLabel):
 
     def load_picture_async(self):
         self.image_loader.loadImage()
+        self.is_img_load_failed = False
 
     def pause_play_gif(self):
         if self.image_loader.isDynamicImage():
@@ -72,15 +75,22 @@ class ThreadPictureLabel(QLabel):
     def init_picture_contextmenu(self):
         menu = base_ui.BaseQMenu()
 
+        if self.is_img_load_failed:
+            try_again = QAction('重新尝试加载', self)
+            try_again.triggered.connect(self.load_picture_async)
+            menu.addAction(try_again)
+
+            menu.addSeparator()
+
         action_pause_gif = QAction(self)
         action_pause_gif.triggered.connect(self.pause_play_gif)
         if not self.image_loader.isDynamicImage():
             action_pause_gif.setVisible(False)
         else:
             if not self.image_loader.isDynamicPlaying():
-                action_pause_gif.setText('恢复 GIF/WEBP 播放')
+                action_pause_gif.setText('恢复动图播放')
             else:
-                action_pause_gif.setText('暂停 GIF/WEBP 播放')
+                action_pause_gif.setText('暂停动图播放')
         menu.addAction(action_pause_gif)
 
         show_o = QAction('显示大图', self)

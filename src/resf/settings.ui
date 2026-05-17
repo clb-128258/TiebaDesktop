@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>906</width>
-    <height>578</height>
+    <width>921</width>
+    <height>625</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -87,7 +87,16 @@
        <item row="3" column="0" colspan="3">
         <widget class="QListWidget" name="listWidget_2">
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QAbstractScrollArea::AdjustToContents</enum>
+         </property>
+         <property name="verticalScrollMode">
+          <enum>QAbstractItemView::ScrollPerPixel</enum>
+         </property>
+         <property name="horizontalScrollMode">
+          <enum>QAbstractItemView::ScrollPerPixel</enum>
          </property>
         </widget>
        </item>
@@ -225,7 +234,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>662</width>
+            <width>641</width>
             <height>1399</height>
            </rect>
           </property>
