@@ -295,6 +295,8 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
 
         self.setAcceptDrops(True)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.tabWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tabWidget.customContextMenuRequested.connect(self.onMenuShow)
 
         font_family = ["Microsoft YaHei",
                        "MS Shell Dlg 2",
@@ -424,6 +426,45 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         self.toolButton_6.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/jumpto.png'))
         self.toolButton_4.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/download.png'))
         self.toolButton_7.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/more_horiz.png'))
+
+    def onMenuShow(self, pos):
+        index = self.tab_bar.tabAt(pos)
+        if index == -1:
+            return
+        widget = self.tabWidget.widget(index)
+
+        tabMenu = base_ui.BaseQMenu(self)
+
+        close_this_page = QAction('关闭标签页', tabMenu)
+        close_this_page.triggered.connect(lambda: self.remove_widget(index))
+        tabMenu.addAction(close_this_page)
+
+        close_other_page = QAction('关闭其它标签页', tabMenu)
+        close_other_page.triggered.connect(lambda: self.remove_other_pages(index))
+        if self.tabWidget.count() == 1:
+            close_other_page.setEnabled(False)
+        tabMenu.addAction(close_other_page)
+
+        close_window = QAction('关闭窗口', tabMenu)
+        close_window.triggered.connect(self.close)
+        tabMenu.addAction(close_window)
+
+        if isinstance(widget, ExtWebView2) and widget.isRenderInitOk():
+            tabMenu.addSeparator()
+
+            froze_tab = QAction('冻结标签页', tabMenu)
+            froze_tab.setCheckable(True)
+            froze_tab.setChecked(widget.isFrozenModeEnabled())
+            froze_tab.triggered.connect(lambda: widget.setFrozenModeEnabled(not widget.isFrozenModeEnabled()))
+            tabMenu.addAction(froze_tab)
+
+            mute_tab = QAction('静音标签页', tabMenu)
+            mute_tab.setCheckable(True)
+            mute_tab.setChecked(widget.isAudioMuted())
+            mute_tab.triggered.connect(lambda: widget.setAudioMuted(not widget.isAudioMuted()))
+            tabMenu.addAction(mute_tab)
+
+        tabMenu.exec(QCursor.pos())
 
     def parse_weburl_to_tburl(self):
         tb_url = ''
@@ -649,11 +690,22 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             if isinstance(widget, ExtWebView2):
                 widget.destroyWebviewUntilComplete()
                 widget.show_movie.stop()
+                del widget.show_movie
+                del widget.default_icon
             widget.deleteLater()
             del widget
 
         if self.tabWidget.count() == 0:
             self.close()
+
+    def remove_other_pages(self, index):
+        widget = self.tabWidget.widget(index)
+        self.tabWidget.setCurrentIndex(0)
+        while self.tabWidget.count() != 1:
+            if self.tabWidget.currentWidget() != widget:
+                self.remove_widget(self.tabWidget.currentIndex())
+            elif self.tabWidget.currentIndex() != self.tabWidget.count() - 1:
+                self.tabWidget.setCurrentIndex(self.tabWidget.currentIndex() + 1)
 
 
 class ExtWebView2(webview2.QWebView2View):
@@ -664,8 +716,9 @@ class ExtWebView2(webview2.QWebView2View):
 
         self.tab_container = None
 
-        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
+        self.default_icon = QIcon('ui/tieba_logo_small.png')
         self.setWindowTitle('正在加载...')
+        self.setWindowIcon(self.default_icon)
 
         self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
         self.show_movie.setScaledSize(QSize(50, 50))
@@ -690,6 +743,7 @@ class ExtWebView2(webview2.QWebView2View):
 
         self.setProfile(profile)
         self.loadAfterRender(url)
+        self.show_movie.start()
 
     def parse_js_msg(self, jsonify_text):
         app_logger.log_INFO(f'received text from jsbridge: {jsonify_text}')
@@ -712,13 +766,19 @@ class ExtWebView2(webview2.QWebView2View):
         profile_mgr.add_view_history(4, {"web_icon_md5": md5, "web_title": title, "web_url": url})
 
     def start_ani(self):
-        self.show_movie.start()
+        if self.show_movie.state() != self.show_movie.Running:
+            self.show_movie.start()
         self.setWindowTitle('正在加载...')
 
     def stop_ani(self, isok):
+        # 停止加载动画
         self.show_movie.stop()
-        self.setWindowIcon(self.icon())
-        self.setWindowTitle(self.title())
+
+        # 设置标题与图标
+        self.setWindowIcon(self.icon() if bool(self.iconBinary()) else self.default_icon)
+        self.setWindowTitle(self.title() if self.title() else "无标题网页")
+
+        # 写入历史记录
         if isok:
             start_background_thread(self.record_history, (self.iconBinary(), self.title(), self.url()))
         else:
