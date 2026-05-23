@@ -396,7 +396,10 @@ class QWebView2View(QWidget):
         """重写 QWidget.resizeEvent，确保 WebView2 控件随窗口大小调整。"""
         if self.__render_completed and self.__webview is not None:
             hwnd = self.__webview.Handle.ToInt32()
-            MoveWindow(hwnd, 0, 0, self.width(), self.height(), True)
+
+            real_width = int(self.width() * self.devicePixelRatioF())
+            real_height = int(self.height() * self.devicePixelRatioF())
+            MoveWindow(hwnd, 0, 0, real_width, real_height, True)
 
             if self.__frozen_enabled:
                 self.__frozen_view_label.setGeometry(0, 0, self.width(), self.height())
@@ -621,6 +624,7 @@ class QWebView2View(QWidget):
         if self.__render_completed and self.__webview is not None:
             def _run():
                 task = self.__webview.CoreWebView2.ExecuteScriptWithResultAsync(js_code)
+
             self.__run_on_ui_thread(_run)
         else:
             raise Warning('WebView has not inited')
