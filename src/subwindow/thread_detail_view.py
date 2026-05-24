@@ -1,5 +1,7 @@
 import asyncio
 import gc
+import os
+import platform
 import sys
 import time
 import typing
@@ -15,6 +17,7 @@ from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 import consts
 
 from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image, webview2
+from publics.winrt_url_share import winrt_share
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
     cleanup_listWidget
@@ -460,15 +463,21 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         menu = base_ui.BaseQMenu()
 
+        copy_link = QAction('复制链接', self)
+        copy_link.triggered.connect(lambda: pyperclip.copy(url))
+        copy_link.triggered.connect(self.show_copy_success_toast)
+        menu.addAction(copy_link)
+
         copy_id = QAction('复制贴子 ID', self)
         copy_id.triggered.connect(lambda: pyperclip.copy(str(self.thread_id)))
         copy_id.triggered.connect(self.show_copy_success_toast)
         menu.addAction(copy_id)
 
-        copy_link = QAction('复制链接', self)
-        copy_link.triggered.connect(lambda: pyperclip.copy(url))
-        copy_link.triggered.connect(self.show_copy_success_toast)
-        menu.addAction(copy_link)
+        menu.addSeparator()
+
+        os_share = QAction('系统分享...', self)
+        os_share.triggered.connect(self.show_os_share_window)
+        menu.addAction(os_share)
 
         open_link = QAction('浏览器打开', self)
         open_link.triggered.connect(lambda: open_url_in_browser(url))
@@ -490,6 +499,23 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         from subwindow.forum_detail import ForumDetailWindow
         forum_detail_page = ForumDetailWindow(self.bduss, self.stoken, self.forum_id, 2)
         qt_window_mgr.add_window(forum_detail_page)
+
+    def show_os_share_window(self):
+        share_url = f'https://tieba.baidu.com/p/{self.thread_id}'
+        toast = None
+
+        if os.name == 'nt':
+            if int(platform.version().split('.')[-1]) >= 10240:
+                winrt_share.execute_share_window_for_qwidget(self, share_url, '分享贴子')
+            else:
+                toast = top_toast_widget.ToastMessage('系统分享仅支持 Windows 10 及以上系统',
+                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION)
+        else:
+            toast = top_toast_widget.ToastMessage('你的系统暂不支持该功能',
+                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
+
+        if toast:
+            self.top_toaster.showToast(toast)
 
     def handle_link_event(self, url):
         open_url_in_browser(url)

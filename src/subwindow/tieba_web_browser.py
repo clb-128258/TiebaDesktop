@@ -1,3 +1,7 @@
+import os
+import platform
+
+import pyperclip
 import yarl
 import json
 from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent
@@ -7,6 +11,7 @@ from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, 
 from consts import datapath, APP_VERSION_STR
 from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread, get_dict_value_treely
+from publics.winrt_url_share import winrt_share
 from subwindow import base_ui
 
 from ui import tb_browser
@@ -464,7 +469,9 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             mute_tab.triggered.connect(lambda: widget.setAudioMuted(not widget.isAudioMuted()))
             tabMenu.addAction(mute_tab)
 
+        self.has_context_menu = True
         tabMenu.exec(QCursor.pos())
+        self.has_context_menu = False
 
     def parse_weburl_to_tburl(self):
         tb_url = ''
@@ -551,6 +558,16 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
 
             menu.addSeparator()
 
+            copy_link = QAction('复制网页链接', self)
+            copy_link.triggered.connect(lambda: pyperclip.copy(widget.url()))
+            menu.addAction(copy_link)
+
+            os_share = QAction('系统分享网页...', self)
+            os_share.triggered.connect(lambda: self.show_os_share_window(widget.url()))
+            menu.addAction(os_share)
+
+            menu.addSeparator()
+
             print_page = QAction('打印网页', self)
             print_page.triggered.connect(widget.openPrintDialog)
             menu.addAction(print_page)
@@ -577,6 +594,22 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             bt_pos = self.toolButton_7.mapToGlobal(QPoint(0, 0))
             menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.toolButton_7.height()))
             self.has_context_menu = False
+
+    def show_os_share_window(self, share_url):
+        toast = None
+
+        if os.name == 'nt':
+            if int(platform.version().split('.')[-1]) >= 10240:
+                winrt_share.execute_share_window_for_qwidget(self, share_url, '分享网页')
+            else:
+                toast = top_toast_widget.ToastMessage('系统分享仅支持 Windows 10 及以上系统',
+                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION)
+        else:
+            toast = top_toast_widget.ToastMessage('你的系统暂不支持该功能',
+                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
+
+        if toast:
+            self.top_toaster.showToast(toast)
 
     def button_back(self):
         widget = self.tabWidget.currentWidget()

@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QMessageBox, QAction, QMainWindow, QApplication, QWi
 
 from publics import profile_mgr, webview2, qt_image, tieba_apis
 from publics import proxytool
+from publics.winrt_url_share import winrt_share
 from publics.funcs import *
 from publics.app_logger import init_log
 from publics.app_logger import log_exception, log_INFO, log_WARN

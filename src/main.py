@@ -1709,6 +1709,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     translates = set_qt_languages()
     log_INFO('Qt init complete')
+
+    winrt_share.init_library()
     check_webview2()
 
     log_INFO('Initing main window')

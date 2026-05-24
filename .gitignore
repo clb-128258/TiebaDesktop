@@ -4,3 +4,5 @@
 /src/resf/change_index.json
 /src/proto/__pycache__
 /src/ui/__pycache__
+/src/publics/winrt_url_share/build
+/src/binres/ShareBridge.dll
