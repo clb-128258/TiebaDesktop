@@ -45,8 +45,6 @@ pip install -r project/src/requirements.txt   // 安装依赖
 下载 ffmpeg 的二进制文件，  
 并使用下载到的 `ffmpeg.exe` 替换掉项目中的的占位文件 `project/src/binres/ffmpeg.exe`。
 
-至此，本项目的环境全部配置完成。
-
 ## 编译 WinrtShareBridge
 
 > [!note]
@@ -73,6 +71,8 @@ pip install -r project/src/requirements.txt   // 安装依赖
 > [!warning]
 >
 > 如果 `project/src/publics/winrt_url_share/build` 目录存在，请先删掉这个目录，否则编译会出错。
+
+至此，本项目的环境全部配置完成。
 
 ## 最后一步 - 运行！
 
