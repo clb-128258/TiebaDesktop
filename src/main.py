@@ -312,6 +312,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["thread_view_settings"]["show_statement"] = self.checkBox_24.isChecked()
             profile_mgr.local_config["webview_settings"]["transparent_bg_color"] = self.checkBox_25.isChecked()
             profile_mgr.local_config['sign_settings']['use_widget_sign_flag'] = self.checkBox_26.isChecked()
+            profile_mgr.local_config["other_settings"]["disable_ssl_verify"] = self.checkBox_27.isChecked()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -696,6 +697,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
             self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
+            self.checkBox_27.setChecked(profile_mgr.local_config["other_settings"]["disable_ssl_verify"])
             self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
 
             self.checkBox_26.setChecked(profile_mgr.local_config['sign_settings']['use_widget_sign_flag'])
@@ -715,15 +717,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.checkBox_14.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['http'])
             self.checkBox_15.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['https'])
         except KeyError:
-            if QMessageBox.critical(self, '本地设置加载失败',
-                                    '本地存储的设置文件缺少某些关键字段，设置项无法被加载。\n'
-                                    '一些设置项不会被正确显示。\n'
-                                    '将设置文件恢复到默认状态可解决该问题，是否要重置为默认设置？\n\n'
-                                    '注意：如果你最近更新了本软件，那么本问题是因为旧版本的配置文件没有新版本所需的字段所导致的。'
-                                    '此时请点击“否”按钮，并在“通用设置”中保存设置即可使配置文件恢复正常。',
-                                    QMessageBox.No | QMessageBox.Yes) == QMessageBox.Yes:
-                profile_mgr.fix_local_config()
-                self.load_local_config()
+            logging.log_WARN('settings profile load failed, use default settings')
 
     def get_logon_accounts(self):
         # 清空数据
@@ -759,7 +753,6 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
 class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
     """扫码登录对话框"""
-    BAIDU_PASSPORT_HOST = 'passport.baidu.com'
     qr_code_loaded = pyqtSignal(dict)
     qr_status_changed = pyqtSignal(dict)
 
@@ -881,7 +874,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
             "callback": "bd__cbs__iou0dl"
         }
 
-        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{self.BAIDU_PASSPORT_HOST}/v3/login/main/qrbdusslogin',
+        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/v3/login/main/qrbdusslogin',
                                     headers=header, params=params)
         response.raise_for_status()
         json_text = self.parse_response_qrbdusslogin(response.text)
@@ -951,7 +944,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
             '_': str(timestamp_ms),
         }
 
-        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{self.BAIDU_PASSPORT_HOST}/channel/unicast',
+        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/channel/unicast',
                                     headers=header, params=params)
         response.raise_for_status()
         json_text = self.parse_response(response.text)
@@ -1091,7 +1084,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
                 "callback": self.tangram_guid
             }
 
-            response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{self.BAIDU_PASSPORT_HOST}/v2/api/getqrcode',
+            response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/v2/api/getqrcode',
                                         headers=header, params=params)
             response.raise_for_status()
             json_text = self.parse_response(response.text)

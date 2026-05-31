@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize, QRect, Qt
 from PyQt5.QtGui import QImage, QPixmap, QMovie, QBrush, QPainter, QPixmapCache
 import requests
-from publics import request_mgr, cache_mgr, funcs, app_logger
+from publics import request_mgr, cache_mgr, funcs, app_logger, profile_mgr
 from typing import Union, Tuple
 import os
 import enum
@@ -247,7 +247,7 @@ class MultipleImage(QObject):
             self.__image_type = ImageType.OtherStatic
 
     def __load_from_httpurl(self):
-        response = requests.get(self.__image_source, headers=request_mgr.header)
+        response = requests.get(self.__image_source, headers=request_mgr.header, verify=request_mgr.is_ssl_required())
         if response.status_code == 200 and response.content:
             self.__image_original_binary = response.content
 

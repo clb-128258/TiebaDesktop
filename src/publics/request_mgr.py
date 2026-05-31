@@ -4,53 +4,32 @@ import consts
 import hashlib
 import enum
 
-SCHEME_HTTP = 'http://'
-SCHEME_HTTPS = 'https://'
-TIEBA_APP_HOST = 'tiebac.baidu.com'
-TIEBA_WEB_HOST = 'tieba.baidu.com'
-TIEBA_CLIENT_VERSION = '22.1.1.0'
+from publics import profile_mgr, funcs
 
-header = {
-    'User-Agent': f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 CLBTiebaDesktop/{consts.APP_VERSION_STR}',
-    'sec-ch-ua': "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': "\"Windows\"",
-    'sec-fetch-dest': 'empty',
-    'sec-fetch-mode': 'cors',
-    'sec-fetch-site': 'same-origin',
-    'Accept-Language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-    'Accept-Encoding': "gzip, deflate, br, zstd",
-    'Accept': '*/*',
-    'Connection': 'close',
-    'x-requested-with': 'XMLHttpRequest'
-}
-header_android = {
-    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/{TIEBA_CLIENT_VERSION} skin/default CLBTiebaDesktop/{consts.APP_VERSION_STR}",
-    'Accept': "application/json, text/plain, */*",
-    'Accept-Encoding': "gzip, deflate",
-    'x-requested-with': "XMLHttpRequest",
-    'Subapp-Type': "hybrid",
-    'Sec-Fetch-Site': "same-origin",
-    'Sec-Fetch-Mode': "cors",
-    'Sec-Fetch-Dest': "empty",
-    'Accept-Language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-}
-header_protobuf = {
-    'User-Agent': f"Mozilla/5.0 (Linux; Android 12; PFGM00 Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/{TIEBA_CLIENT_VERSION} skin/default CLBTiebaDesktop/{consts.APP_VERSION_STR}",
-    'Accept': "*/*",
-    'Accept-Encoding': "gzip, deflate",
-    'Sec-Fetch-Site': "same-origin",
-    'Sec-Fetch-Mode': "cors",
-    'Sec-Fetch-Dest': "empty",
-    'Accept-Language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-    "x_bd_data_type": "protobuf"
-}
+# 保留变量以便向下兼容
+SCHEME_HTTP = consts.SCHEME_HTTP
+SCHEME_HTTPS = consts.SCHEME_HTTPS
+TIEBA_APP_HOST = consts.TIEBA_APP_HOST
+TIEBA_WEB_HOST = consts.TIEBA_APP_HOST
+TIEBA_CLIENT_VERSION = consts.TIEBA_CLIENT_VERSION
+
+header = consts.http_header
+header_android = consts.http_header_android
+header_protobuf = consts.http_header_protobuf
 
 
 class TiebaClientType(enum.IntEnum):
     """贴吧客户端类型"""
     IPHONE = 1  # ios版客户端
     ANDROID = 2  # 安卓客户端
+
+
+def is_ssl_required():
+    """是否需要使用 SSL 验证"""
+    need_verify = funcs.get_dict_value_treely(profile_mgr.local_config,
+                                              ['other_settings', 'disable_ssl_verify'],
+                                              False)
+    return not need_verify
 
 
 def generate_sign_key(str_dict: dict, key: str = 'tiebaclient!!!'):
@@ -92,7 +71,7 @@ def run_get_api(api: str,
         cookies (dict): 要传入请求的cookies字典，该参数会覆盖前面的bduss和stoken参数
         return_json (bool): 是否将报文作为json文本解析，当此项为True时返回解析后的json字典，为False时返回编码后的报文文本
         params (dict): url参数字典
-        use_mobile_header (bool): 是否使用手机版header进行请求 (安卓版贴吧 12.87.1.1)
+        use_mobile_header (bool): 是否使用手机版header进行请求
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
         use_https (bool): 是否使用https请求
     """
@@ -108,6 +87,8 @@ def run_get_api(api: str,
 
     session = requests.Session()
     session.trust_env = True
+    session.verify = is_ssl_required()
+
     response = session.get(f'{scheme}{host_name}{api}',
                            headers=final_header,
                            cookies=cookie,
@@ -149,7 +130,7 @@ def run_post_api(api: str,
         cookies (dict): 要传入请求的cookies字典，该参数会覆盖前面的bduss和stoken参数
         return_json (bool): 是否将报文作为json文本解析，当此项为True时返回解析后的json字典，为False时返回编码后的报文文本
         params (dict): url参数字典
-        use_mobile_header (bool): 是否使用手机版header进行请求 (安卓版贴吧 12.87.1.1)
+        use_mobile_header (bool): 是否使用手机版header进行请求
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
         use_https (bool): 是否使用https请求
     """
@@ -165,6 +146,8 @@ def run_post_api(api: str,
 
     session = requests.Session()
     session.trust_env = True
+    session.verify = is_ssl_required()
+
     response = session.post(f'{scheme}{host_name}{api}',
                             headers=final_header,
                             cookies=cookie,
@@ -224,6 +207,8 @@ def run_protobuf_api(api: str,
 
     session = requests.Session()
     session.trust_env = True
+    session.verify = is_ssl_required()
+
     response = session.post(f'{scheme}{host_name}{api}',
                             headers=final_header,
                             cookies=cookie,

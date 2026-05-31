@@ -990,8 +990,8 @@ class QWebView2View(QWidget):
         if not self.profile().handle_newtab_byuser:
             args.Handled = False
         else:
-            args.Handled = True
             self.newtabSignal.emit(args.Uri)
+            args.Handled = True
 
     def __on_window_close(self, _, args):
         self.windowCloseRequested.emit()

@@ -234,8 +234,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>641</width>
-            <height>1399</height>
+            <width>676</width>
+            <height>1450</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -568,23 +568,23 @@
                  <property name="bottomMargin">
                   <number>9</number>
                  </property>
-                 <item row="1" column="0">
+                 <item row="3" column="0">
                   <widget class="QGroupBox" name="groupBox_6">
                    <property name="title">
-                    <string>网络代理设置</string>
+                    <string>代理设置</string>
                    </property>
                    <property name="flat">
                     <bool>true</bool>
                    </property>
                    <layout class="QGridLayout" name="gridLayout_16">
                     <property name="leftMargin">
-                     <number>9</number>
+                     <number>0</number>
                     </property>
                     <property name="topMargin">
                      <number>9</number>
                     </property>
                     <property name="rightMargin">
-                     <number>9</number>
+                     <number>0</number>
                     </property>
                     <property name="bottomMargin">
                      <number>0</number>
@@ -610,6 +610,18 @@
                       </item>
                       <item>
                        <widget class="QLineEdit" name="lineEdit">
+                        <property name="minimumSize">
+                         <size>
+                          <width>140</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="baseSize">
+                         <size>
+                          <width>0</width>
+                          <height>0</height>
+                         </size>
+                        </property>
                         <property name="placeholderText">
                          <string>代理服务器 IP 地址</string>
                         </property>
@@ -663,6 +675,9 @@
                         <property name="text">
                          <string>使用系统代理设置</string>
                         </property>
+                        <property name="checked">
+                         <bool>true</bool>
+                        </property>
                        </widget>
                       </item>
                       <item>
@@ -707,12 +722,18 @@
                         <property name="text">
                          <string>HTTP</string>
                         </property>
+                        <property name="checked">
+                         <bool>true</bool>
+                        </property>
                        </widget>
                       </item>
                       <item>
                        <widget class="QCheckBox" name="checkBox_15">
                         <property name="text">
                          <string>HTTPS</string>
+                        </property>
+                        <property name="checked">
+                         <bool>false</bool>
                         </property>
                        </widget>
                       </item>
@@ -793,6 +814,63 @@
                     </widget>
                    </item>
                   </layout>
+                 </item>
+                 <item row="2" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_38" stretch="0,0,0">
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <spacer name="horizontalSpacer_51">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>17</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_52">
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{color: grey;}
+</string>
+                     </property>
+                     <property name="text">
+                      <string>可解决在某些情况下 SSL 无法正常校验的问题，但是会导致连接安全性下降。一般情况下不建议开启此选项</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_52">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QCheckBox" name="checkBox_27">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>禁用 SSL 证书验证</string>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>
@@ -920,7 +998,10 @@
                       <string/>
                      </property>
                      <property name="text">
-                      <string>无网络通知提示</string>
+                      <string>无网络通知</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -994,7 +1075,10 @@
                       <string/>
                      </property>
                      <property name="text">
-                      <string>互动消息通知推送</string>
+                      <string>互动消息通知</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -1022,6 +1106,9 @@
                      </property>
                      <property name="text">
                       <string>剪切板跳转通知</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -1337,6 +1424,9 @@
                    <property name="text">
                     <string>在回复列表内播放 GIF 动图</string>
                    </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
                   </widget>
                  </item>
                  <item row="9" column="0">
@@ -1376,6 +1466,9 @@
                     <widget class="QRadioButton" name="radioButton_2">
                      <property name="text">
                       <string>大（与贴吧网页版上的一样大）</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -1458,6 +1551,9 @@
                    <property name="text">
                     <string>默认显示贴子内容声明</string>
                    </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
                   </widget>
                  </item>
                 </layout>
@@ -1495,7 +1591,7 @@
                    <string/>
                   </property>
                   <property name="text">
-                   <string>文字右键菜单默认搜索引擎：</string>
+                   <string>默认搜索引擎：</string>
                   </property>
                  </widget>
                 </item>
@@ -1696,6 +1792,9 @@
                   </property>
                   <property name="text">
                    <string>退出软件时要求用户确认</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>

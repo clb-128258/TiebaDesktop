@@ -22,7 +22,7 @@ import consts
 import aiotieba
 import json
 
-from publics import aes, profile_mgr, request_mgr, qt_window_mgr, qt_image
+from publics import aes, profile_mgr, qt_window_mgr, qt_image
 import publics.app_logger as logging
 from publics.toasting import init_AUMID
 from ui import loading_amt, user_item
@@ -268,7 +268,7 @@ def http_downloader(path, src):
         src (str): 源文件url
     """
     logging.log_INFO(f'start download {src} to local file {path}.')
-    resp = requests.get(src, headers=request_mgr.header, stream=True)
+    resp = requests.get(src, headers=consts.http_header, stream=True)
     if resp.status_code == 200:
         logging.log_INFO(f'server returned status code 200, start to write data.')
         f = open(path + '.crdownload', 'wb')
@@ -325,7 +325,7 @@ def open_url_in_browser(url, always_os_browser=False):
         'https://tiebac.baidu.com',
         'http://c.tieba.baidu.com',
         'https://c.tieba.baidu.com')
-    is_http = url.startswith((request_mgr.SCHEME_HTTP, request_mgr.SCHEME_HTTPS))
+    is_http = url.startswith((consts.SCHEME_HTTP, consts.SCHEME_HTTPS))
     is_tieba_link = url.startswith(url_list)
 
     def open_ba_detail(fname_id):
