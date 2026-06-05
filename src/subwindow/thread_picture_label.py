@@ -129,7 +129,8 @@ class ThreadPictureLabel(QLabel):
         file_type_text_index = {ImageType.Gif: 'GIF 动图文件 (*.gif)',
                                 ImageType.Webp: 'Webp 图片文件 (*.webp)',
                                 ImageType.OtherStatic: 'JPG 图片文件 (*.jpg;*.jpeg)'}
-        file_type_text = file_type_text_index.get(self.image_loader.imageType(), ImageType.OtherStatic)
+        file_type_text = file_type_text_index.get(self.image_loader.imageType(),
+                                                  file_type_text_index[ImageType.OtherStatic])
 
         path, type_ = QFileDialog.getSaveFileName(self, '选择图片保存位置', '', file_type_text)
         if path:
