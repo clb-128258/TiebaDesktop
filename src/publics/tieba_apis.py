@@ -5,12 +5,14 @@ import json
 import time
 import aiotieba
 import enum
+import consts
 
 from proto.AddPost import AddPostReqIdl_pb2, AddPostResIdl_pb2
 from proto.PbPage import PbPageReqIdl_pb2, PbPageResIdl_pb2
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
 from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
+
 from publics import request_mgr, app_logger, profile_mgr
 from publics.funcs import get_dict_value_treely
 
@@ -394,3 +396,23 @@ def pb_page(bduss, stoken, thread_id, pn=1, rn=30, sort_type=0, only_see_lz=Fals
     proto_response.ParseFromString(byte_response)
 
     return proto_response
+
+
+def thread_store(bduss, stoken, offset=0, rn=20):
+    payload = {
+        'BDUSS': bduss,
+        '_client_type': "2",
+        '_client_version': consts.TIEBA_CLIENT_VERSION,
+        'offset': str(offset),
+        'rn': str(rn),
+        'stoken': stoken,
+    }
+
+    resp = request_mgr.run_post_api('/c/f/post/threadstore',
+                                    request_mgr.calc_sign(payload),
+                                    bduss=bduss,
+                                    stoken=stoken,
+                                    host_type=2,
+                                    use_mobile_header=True)
+
+    return resp

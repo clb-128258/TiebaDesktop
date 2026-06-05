@@ -6,9 +6,9 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, profile_mgr
+from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets, \
-    cleanup_listWidget
+    cleanup_listWidget, LoadingFlashWidget, get_exception_string
 from subwindow import base_ui
 from ui import star_list
 
@@ -17,6 +17,7 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
     """点赞的贴子列表，和最新版贴吧一样，可查看点赞过的贴子\n
     由于和收藏列表一样都是贴子列表，所以直接继承star_list.Ui_Dialog来写"""
     add_thread = pyqtSignal(dict)
+    thread_load_finished = pyqtSignal(dict)
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -27,19 +28,20 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.page = 1
         self.isloading = False
 
+        self.init_ui_elements()
         self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowTitle('点赞列表')
-        self.label.setText('这里可以查看你点过赞的贴子。')
         self.resize(720, 520)
 
         self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_list_info)
         self.listWidget.verticalScrollBar().setSingleStep(25)
 
         self.add_thread.connect(self.add_agreed_threads_ui)
-        self.pushButton.clicked.connect(self.refresh_agreed_threads)
+        self.refresh_button.clicked.connect(self.refresh_agreed_threads)
+        self.thread_load_finished.connect(self.on_load_finished)
 
-        self.get_agreed_threads_async()
+        self.refresh_agreed_threads()
 
     def reset_theme(self):
         super().reset_theme()
@@ -55,8 +57,32 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
 
     def closeEvent(self, a0):
         cleanup_listWidget(self.listWidget)
+        self.top_toaster.deleteLater()
+        self.loading_widget.deleteLater()
+        self.refresh_button.deleteLater()
+
         a0.accept()
         qt_window_mgr.del_window(self)
+
+    def resizeEvent(self, a0):
+        self.refresh_button.move_button()
+
+    def init_ui_elements(self):
+        self.top_toaster = top_toast_widget.TopToaster()
+        self.top_toaster.setCoverWidget(self)
+
+        self.loading_widget = LoadingFlashWidget()
+        self.loading_widget.cover_widget(self.listWidget)
+
+        self.refresh_button = base_ui.FloatingButton(self)
+        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
+
+    def on_load_finished(self, result):
+        self.loading_widget.hide()
+        self.refresh_button.show()
+
+        if result['toast']:
+            self.top_toaster.showToast(result['toast'])
 
     def load_item_images(self):
         for thread in listWidget_get_visible_widgets(self.listWidget):
@@ -112,92 +138,98 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
 
     def refresh_agreed_threads(self):
         if not self.isloading:
-            self.listWidget.clear()
+            self.loading_widget.show()
+            self.refresh_button.hide()
+
+            cleanup_listWidget(self.listWidget)
             QPixmapCache.clear()
             gc.collect()
             self.page = 1
 
-        self.get_agreed_threads_async()
+            self.get_agreed_threads_async()
 
     def get_agreed_threads_async(self):
         if not self.isloading and self.page != -1:
             start_background_thread(self.get_agreed_threads)
 
     def get_agreed_threads(self):
-        async def run_func():
-            try:
-                self.isloading = True
-                logging.log_INFO(f'loading userAgreedThreadsList page {self.page}')
-                payload = {
-                    'BDUSS': self.bduss,
-                    'stoken': self.stoken,
-                    'tab_id': "0",
-                    'pn': str(self.page),
-                    'rn': "20",
-                }
-                resp = request_mgr.run_post_api(f'/c/u/feed/userAgree', payloads=payload, bduss=self.bduss,
-                                                stoken=self.stoken, use_mobile_header=True)
+        logging.log_INFO(f'loading userAgreedThreadsList page {self.page}')
 
-                for thread in resp['data']["thread_list"]:
-                    # 贴子类型0为主题，1为回复
-                    data = {'type': 1 if thread.get('top_agree_post') else 0,
-                            'user_name': thread['author']['name_show'],
-                            'thread_id': thread['tid'],
-                            'post_id': 0,
-                            'forum_id': thread['forum_info']['id'],
-                            'forum_name': thread['forum_info']['name'],
-                            'title': thread["title"],
-                            'text': cut_string(thread['abstract'][0]['text'], 50),
-                            'picture': [],
-                            'timestamp': thread['create_time'],
-                            'thread_data': {'vn': thread["view_num"], 'ag': thread["agree_num"],
-                                            'rpy': thread["reply_num"], 'rpt': thread["share_num"]},
-                            'portrait': thread["author"]["portrait"].split('?')[0],
-                            'forum_head_avatar': ''}
+        result = {'toast': None}
+        self.isloading = True
 
-                    # 获取回复贴数据
-                    if postinfo := thread.get('top_agree_post'):
-                        data['post_id'] = postinfo['id']
-                        data['timestamp'] = postinfo["time"]
-                        data['thread_data']['ag'] = postinfo["agree"]['agree_num']
-                        data['user_name'] = postinfo['author']['name_show']
-                        data['portrait'] = postinfo["author"]["portrait"].split('?')[0]
-                        text = ''
-                        for i in postinfo['content']:
-                            if i['type'] == 0:  # 是文本
-                                text += i['text']
-                            elif i['type'] == 3:  # 是图片
-                                data['picture'].append(
-                                    {'width': int(i['bsize'].split(',')[0]), 'height': int(i['bsize'].split(',')[1]),
-                                     'src': i['origin_src'], 'view_src': i['src']})
-                        data['text'] = cut_string(text, 50)
+        try:
+            payload = {
+                'BDUSS': self.bduss,
+                'stoken': self.stoken,
+                'tab_id': "0",
+                'pn': str(self.page),
+                'rn': "20",
+            }
+            resp = request_mgr.run_post_api(f'/c/u/feed/userAgree',
+                                            payloads=payload,
+                                            bduss=self.bduss,
+                                            stoken=self.stoken,
+                                            use_mobile_header=True)
 
-                    # 获取吧头像
-                    data['forum_head_avatar'] = thread["forum_info"]["avatar"]
+            for thread in resp['data']["thread_list"]:
+                # 贴子类型0为主题，1为回复
+                data = {'type': 1 if thread.get('top_agree_post') else 0,
+                        'user_name': thread['author']['name_show'],
+                        'thread_id': thread['tid'],
+                        'post_id': 0,
+                        'forum_id': thread['forum_info']['id'],
+                        'forum_name': thread['forum_info']['name'],
+                        'title': thread["title"],
+                        'text': cut_string(thread['abstract'][0]['text'], 50),
+                        'picture': [],
+                        'timestamp': thread['create_time'],
+                        'thread_data': {'vn': thread["view_num"], 'ag': thread["agree_num"],
+                                        'rpy': thread["reply_num"], 'rpt': thread["share_num"]},
+                        'portrait': thread["author"]["portrait"].split('?')[0],
+                        'forum_head_avatar': ''}
 
-                    # 获取主题贴图片
-                    if thread.get("media") and data['type'] == 0:
-                        for m in thread['media']:
-                            if m["type"] == 3:  # 是图片
-                                url = m["small_pic"]
-                                data['picture'].append(url)
+                # 获取回复贴数据
+                if postinfo := thread.get('top_agree_post'):
+                    data['post_id'] = postinfo['id']
+                    data['timestamp'] = postinfo["time"]
+                    data['thread_data']['ag'] = postinfo["agree"]['agree_num']
+                    data['user_name'] = postinfo['author']['name_show']
+                    data['portrait'] = postinfo["author"]["portrait"].split('?')[0]
+                    text = ''
+                    for i in postinfo['content']:
+                        if i['type'] == 0:  # 是文本
+                            text += i['text']
+                        elif i['type'] == 3:  # 是图片
+                            data['picture'].append(
+                                {'width': int(i['bsize'].split(',')[0]), 'height': int(i['bsize'].split(',')[1]),
+                                 'src': i['origin_src'], 'view_src': i['src']})
+                    data['text'] = cut_string(text, 50)
 
-                    self.add_thread.emit(data)
-            except Exception as e:
-                logging.log_exception(e)
+                # 获取吧头像
+                data['forum_head_avatar'] = thread["forum_info"]["avatar"]
+
+                # 获取主题贴图片
+                if thread.get("media") and data['type'] == 0:
+                    for m in thread['media']:
+                        if m["type"] == 3:  # 是图片
+                            url = m["small_pic"]
+                            data['picture'].append(url)
+
+                self.add_thread.emit(data)
+        except Exception as e:
+            logging.log_exception(e)
+
+            toast = top_toast_widget.ToastMessage(get_exception_string(e),
+                                                  icon_type=top_toast_widget.ToastIconType.ERROR)
+            result['toast'] = toast
+        else:
+            logging.log_INFO(
+                f'load userAgreedThreadsList page {self.page} successful')
+            if not resp['data']['has_more']:
+                self.page = -1
             else:
-                logging.log_INFO(
-                    f'load userAgreedThreadsList page {self.page} successful')
-                if not resp['data']['has_more']:
-                    self.page = -1
-                else:
-                    self.page += 1
-            finally:
-                self.isloading = False
-
-        def start_async():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            asyncio.run(run_func())
-
-        start_async()
+                self.page += 1
+        finally:
+            self.thread_load_finished.emit(result)
+            self.isloading = False

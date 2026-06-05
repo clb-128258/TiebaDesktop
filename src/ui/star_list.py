@@ -14,22 +14,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(440, 520)
+        Dialog.resize(439, 520)
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName("gridLayout")
-        self.horizontalLayout = QtWidgets.QHBoxLayout()
-        self.horizontalLayout.setContentsMargins(6, 6, 6, 6)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.label = QtWidgets.QLabel(Dialog)
-        self.label.setObjectName("label")
-        self.horizontalLayout.addWidget(self.label)
-        self.pushButton = QtWidgets.QPushButton(Dialog)
-        self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout.addWidget(self.pushButton)
-        self.horizontalLayout.setStretch(0, 1)
-        self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
         self.listWidget = QtWidgets.QListWidget(Dialog)
         self.listWidget.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.listWidget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
@@ -38,7 +27,7 @@ class Ui_Dialog(object):
         self.listWidget.setResizeMode(QtWidgets.QListView.Adjust)
         self.listWidget.setWordWrap(True)
         self.listWidget.setObjectName("listWidget")
-        self.gridLayout.addWidget(self.listWidget, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.listWidget, 0, 0, 1, 1)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -46,5 +35,3 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "收藏列表"))
-        self.label.setText(_translate("Dialog", "这里可以查看你收藏的贴子。"))
-        self.pushButton.setText(_translate("Dialog", "刷新"))
