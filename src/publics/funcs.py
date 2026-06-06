@@ -178,7 +178,7 @@ def tableWidget_get_visible_items(tableWidget: QTableWidget):
 def cleanup_listWidget(lw: QListWidget):
     """清理 QListWidget 的所有条目，并释放内存"""
     for i in range(lw.count()):
-        item=lw.item(i)
+        item = lw.item(i)
         widget = lw.itemWidget(item)
         if widget:
             widget.destroy()
@@ -268,7 +268,11 @@ def http_downloader(path, src):
         src (str): 源文件url
     """
     logging.log_INFO(f'start download {src} to local file {path}.')
-    resp = requests.get(src, headers=consts.http_header, stream=True)
+    need_verify = not get_dict_value_treely(profile_mgr.local_config,
+                                            ['other_settings', 'disable_ssl_verify'],
+                                            False)
+
+    resp = requests.get(src, headers=consts.http_header, stream=True, verify=need_verify)
     if resp.status_code == 200:
         logging.log_INFO(f'server returned status code 200, start to write data.')
         f = open(path + '.crdownload', 'wb')

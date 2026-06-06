@@ -417,6 +417,7 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
 
             session = requests.Session()
             session.trust_env = True
+            session.verify = request_mgr.is_ssl_required()
             response = session.post(f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_APP_HOST}/c/s/uploadPicture',
                                     headers=request_mgr.header_android,
                                     data=payloads,

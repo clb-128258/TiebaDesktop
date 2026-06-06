@@ -252,7 +252,7 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
 
             success_flag = False
             try:
-                response = requests.get(self.src, headers=request_mgr.header)
+                response = requests.get(self.src, headers=request_mgr.header, verify=request_mgr.is_ssl_required())
                 if response.content:
                     if response.headers['content-type'] == 'image/gif':
                         self.isGif = True

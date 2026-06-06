@@ -9,43 +9,6 @@ from PyQt5.QtWidgets import QWidget, QListWidgetItem, QMessageBox, QGraphicsDrop
 from PyQt5.QtGui import QIcon, QPixmap, QColor
 from PyQt5.QtCore import pyqtSignal, QSize
 
-toolbutton_qss = """QToolButton {
-    background-color: transparent;
-    border: none;
-    border-radius: 6px;
-    padding: 6px;
-    /* 设置图标大小 */
-    icon-size: 24px;
-    /* 可选：设置最小尺寸，保持按钮大小一致 */
-    min-width: 10px;
-    min-height: 10px;
-    }
-
-    /* 鼠标悬停时：轻微灰色背景 */
-    QToolButton:hover {
-    background-color: rgba(0, 0, 0, 0.08);
-    }
-
-    /* 按下时：更深的背景色，模拟按下效果 */
-    QToolButton:pressed {
-    background-color: rgba(0, 0, 0, 0.15);
-    }
-
-    /* 禁用状态：半透明，显示不可点击 */
-    QToolButton:disabled {
-    background-color: transparent;
-    opacity: 0.4;
-    }
-
-    /* 可选：如果按钮有菜单箭头，也可以美化箭头 */
-    QToolButton::menu-indicator {
-    image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */
-    subcontrol-position: right center;
-    subcontrol-origin: padding;
-    left: -4px;
-    }
-"""
-
 
 def get_day_str(ts: int):
     weekIndex = {0: '一',
@@ -150,14 +113,13 @@ class DayHistoryItem(base_ui.WindowBaseQWidget, view_history_item.Ui_Form):
 
     def reset_theme(self):
         self.set_theme_qss()
-        self.add_extend_qss(toolbutton_qss)
         color = profile_mgr.get_theme_color_string()
         policy = profile_mgr.get_theme_policy()
 
         self.frame.setStyleSheet(f"""QFrame#frame {{
             background-color: {color};
             border-radius: 20px; /* 圆角半径 */
-            border: 1px solid {'rgba(255, 255, 255, 0.1)' if policy==2 else '#D3D3D3'};
+            border: 1px solid {'rgba(255, 255, 255, 0.1)' if policy == 2 else '#D3D3D3'};
         }}""")
 
         # 设置列表内容的样式
@@ -246,7 +208,6 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
 
     def reset_theme(self):
         self.set_theme_qss()
-        self.add_extend_qss(toolbutton_qss)
         color = profile_mgr.get_theme_color_string()
         self.listWidget_2.setStyleSheet(f'QListWidget#listWidget_2{{outline:0px;background-color:{color};}}'
                                         f'QListWidget#listWidget_2::item:hover {{color:{color}; background-color:{color};}}'
