@@ -57,6 +57,8 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
 
     def reset_theme(self):
         super().reset_theme()
+        self.loading_widget.reset_theme()
+
         color = profile_mgr.get_theme_color_string()
         self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
                                       f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
