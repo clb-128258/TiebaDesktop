@@ -39,7 +39,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r .\src\requirements.txt
+          pip install -r src\requirements.txt
 
       # ==========================================
       # 3) 修补 aiotieba
@@ -55,7 +55,7 @@ jobs:
                   site_packages = pkg
                   break
           
-          patch_dir = '.\aiotieba-fix-files' 
+          patch_dir = 'aiotieba-fix-files' 
           
           if os.path.exists(patch_dir):
               for item in os.listdir(patch_dir):
@@ -75,7 +75,7 @@ jobs:
       # ==========================================
       - name: Place FFmpeg Executable
         run: |
-          $target_dir = ".\src\binres"   
+          $target_dir = "src\binres"   
           choco install ffmpeg -y
           Copy-Item "C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe" -Destination "$target_dir\" -Force
 
@@ -84,7 +84,7 @@ jobs:
       # ==========================================
       - name: Compile C++ DLL
         run: |
-          cd ./src/publics/winrt_url_share
+          cd src/publics/winrt_url_share
           run_build.bat
           cd %GITHUB_WORKSPACE%
 
@@ -106,7 +106,7 @@ jobs:
           python -c "
           import json, sys, os
           
-          config_path = '.\build-tools\build_config.json'
+          config_path = 'build-tools\build_config.json'
           full_sha = os.getenv('COMMIT_SHA', 'unknown')
           short_sha = full_sha[:7] # 通常取前 7 位作为短 Hash
           
@@ -136,7 +136,7 @@ jobs:
       # 8) 执行构建脚本
       # ==========================================
       - name: Run Build Script
-        working-directory: .\build-tools
+        working-directory: build-tools
         run: python build.py --makefile .\build_config.json
 
       # ==========================================
@@ -146,5 +146,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TiebaDesktop-test-version-daily-build
-          path: ./build-tools/work_out/
+          path: build-tools/work_out/
           if-no-files-found: error # 如果 work_out 目录下没有文件，则让 Action 报错，方便排查构建脚本是否运行成功
