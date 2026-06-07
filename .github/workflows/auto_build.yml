@@ -22,9 +22,10 @@ jobs:
 
       # 配置 MSVC 编译器和 Windows SDK 环境，后续步骤中执行 cmake 将自动调用它们
       - name: Set up MSVC Developer Command Prompt
-        run: |
-          %ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
-
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+      
       # 验证预装的工具链是否存在（可选步骤，方便在日志中查看版本）
       - name: Verify Pre-installed Tools
         run: |
