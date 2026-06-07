@@ -3,8 +3,8 @@ name: TiebaDesktop Windows x64 Test Version Build
 on:
   schedule:
     # 1) 定时触发：使用 Cron 表达式（分 时 日 月 周）。
-    # 这里设定为每天凌晨 0:00 (UTC时间) 执行，你可以根据需要调整
-    - cron: '0 0 * * *'
+    # 这里设定为每天凌晨 2:00 (UTC+8 北京时间) 执行，你可以根据需要调整
+    - cron: '0 18 * * *'
   workflow_dispatch: # 允许你在 GitHub 网页上通过点击按钮手动触发，极大方便调试
 
 jobs:
@@ -56,9 +56,10 @@ jobs:
           import site, shutil, os
           
           site_packages = site.getsitepackages()
+          aiotieba_path = ''
           for pkg in site_packages:
               if pkg.endswith('aiotieba'):
-                  site_packages = pkg
+                  aiotieba_path = str(pkg)
                   break
           
           patch_dir = r'${{ github.workspace }}\aiotieba-fix-files' 
@@ -66,12 +67,12 @@ jobs:
           if os.path.exists(patch_dir):
               for item in os.listdir(patch_dir):
                   s = os.path.join(patch_dir, item)
-                  d = os.path.join(site_packages, item)
+                  d = os.path.join(aiotieba_path, item)
                   if os.path.isdir(s):
                       shutil.copytree(s, d, dirs_exist_ok=True)
                   else:
                       shutil.copy2(s, d)
-              print('Patch aiotieba succeed:', site_packages)
+              print('Patch aiotieba succeed:', aiotieba_path)
           else:
               print('Patch aiotieba failed, because of dir does not exist:', patch_dir)
           "
