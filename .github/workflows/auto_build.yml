@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-and-pack:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       # ==========================================
@@ -22,10 +22,8 @@ jobs:
 
       # 配置 MSVC 编译器和 Windows SDK 环境，后续步骤中执行 cmake 将自动调用它们
       - name: Set up MSVC Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          sdk: '10.0' # 显式指定使用 Windows SDK 10
-          arch: x64
+        run: | 
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 
       # 验证预装的工具链是否存在（可选步骤，方便在日志中查看版本）
       - name: Verify Pre-installed Tools
