@@ -5,7 +5,7 @@
 
 # 贴吧桌面
 
-![STARS](https://img.shields.io/github/stars/clb-128258/TiebaDesktop?style=round-square&logo=github&color=yellow) ![FORKS](https://img.shields.io/github/forks/clb-128258/TiebaDesktop?style=round-square) ![License](https://img.shields.io/badge/License-MIT-purple)
+![STARS](https://img.shields.io/github/stars/clb-128258/TiebaDesktop?style=round-square&logo=github&color=yellow) ![FORKS](https://img.shields.io/github/forks/clb-128258/TiebaDesktop?style=round-square) ![Test Build](https://github.com/clb-128258/TiebaDesktop/actions/workflows/auto_build.yml/badge.svg?branch=main) ![License](https://img.shields.io/badge/License-MIT-purple)
 
 使用 PyQt5 开发的第三方百度贴吧电脑客户端
 </div>

@@ -1,4 +1,4 @@
-name: TiebaDesktop Test Version Build
+name: Test Version Build
 
 on:
   schedule:
