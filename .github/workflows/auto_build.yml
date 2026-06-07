@@ -53,15 +53,9 @@ jobs:
       - name: Patch aiotieba
         run: |
           python -c "
-          import site, shutil, os
+          import shutil, os
           
-          site_packages = site.getsitepackages()
-          aiotieba_path = ''
-          for pkg in site_packages:
-              if pkg.endswith('aiotieba'):
-                  aiotieba_path = str(pkg)
-                  break
-          
+          aiotieba_path = os.getenv('Python_ROOT_DIR')+'\Lib\site-packages\aiotieba'
           patch_dir = r'${{ github.workspace }}\aiotieba-fix-files' 
           
           if os.path.exists(patch_dir):
@@ -111,7 +105,7 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
         run: |
           python -c "
-          import json, sys, os
+          import json, sys, os, pathlib
           
           config_path = r'${{ github.workspace }}\build-tools\build_config.json'
           full_sha = os.getenv('COMMIT_SHA', 'unknown')
