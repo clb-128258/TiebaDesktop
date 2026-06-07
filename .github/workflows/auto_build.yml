@@ -73,9 +73,9 @@ jobs:
                       shutil.copytree(s, d, dirs_exist_ok=True)
                   else:
                       shutil.copy2(s, d)
-              print('补丁成功覆盖到依赖目录：', site_packages)
+              print('Patch aiotieba succeed:', site_packages)
           else:
-              print('错误：未找到补丁目录', patch_dir)
+              print('Patch aiotieba failed, because of dir does not exist:', patch_dir)
           "
 
       # ==========================================
@@ -110,19 +110,16 @@ jobs:
           # 从 GitHub 上下文中获取提交 Hash（完整的 40 位哈希）
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          # 借用 Python 脚本自动获取准确的工具链绝对路径，避免硬编码引发路径错乱
           python -c "
           import json, sys, os
           
           config_path = '${{ github.workspace }}\build-tools\build_config.json'
           full_sha = os.getenv('COMMIT_SHA', 'unknown')
-          short_sha = full_sha[:7] # 通常取前 7 位作为短 Hash
+          short_sha = full_sha[:7]
           
-          # 先读取配置文件内容
           with open(config_path, 'rt', encoding='utf-8') as f:
               cfg_json_item = json.loads(f.read())
           
-          # 修改 JSON 内容
           cfg_json_item['src_code_path'] = os.path.join(os.environ['GITHUB_WORKSPACE'], 'src')
           cfg_json_item['py_environ_path'] = str(pathlib.Path(sys.executable).parent.parent if pathlib.Path(sys.executable).parent.name == 'Scripts' else pathlib.Path(sys.executable).parent)
           cfg_json_item['sevenzip_path'] = 'C:\\Program Files\\7-Zip\\7z.exe'
@@ -133,10 +130,9 @@ jobs:
           cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions-auto-build'
           cfg_json_item['version']['git_last_commit_hash'] = short_sha
           
-          # 保存 json 内容
           with open(config_path, 'w', encoding='utf-8') as f:
               json.dump(cfg_json_item, f, indent=4)
-          print('成功在本地生成配置文件。内容如下：')
+          print('Build config has successfully generated:')
           print(json.dumps(cfg_json_item, indent=4))
           "
 
