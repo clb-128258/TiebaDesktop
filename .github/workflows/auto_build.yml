@@ -22,7 +22,8 @@ jobs:
 
       # 配置 MSVC 编译器和 Windows SDK 环境，后续步骤中执行 cmake 将自动调用它们
       - name: Set up MSVC Developer Command Prompt
-        run: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        run: |
+          %ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
 
       # 验证预装的工具链是否存在（可选步骤，方便在日志中查看版本）
       - name: Verify Pre-installed Tools
@@ -122,7 +123,7 @@ jobs:
           
           cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions-auto-build'
           cfg_json_item['version']['git_last_commit_hash'] = short_sha
-        
+          
           # 保存 json 内容
           with open(config_path, 'w', encoding='utf-8') as f:
               json.dump(cfg_json_item, f, indent=4)
