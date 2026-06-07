@@ -7,24 +7,35 @@
 
 ![STARS](https://img.shields.io/github/stars/clb-128258/TiebaDesktop?style=round-square&logo=github&color=yellow) ![FORKS](https://img.shields.io/github/forks/clb-128258/TiebaDesktop?style=round-square) ![License](https://img.shields.io/badge/License-MIT-purple)
 
-一个第三方百度贴吧电脑客户端, 使用 PyQt5 开发
+使用 PyQt5 开发的第三方百度贴吧电脑客户端
 </div>
-
-> [!note]
->
-> 由于学业原因，更新会较为缓慢，一些 Bug 可能无法及时修复，还请谅解。  
-> 如对本项目有任何建议或问题，欢迎提交 Issues 或 PR。
 
 ## 项目特色
 
-* 基于 Qt5 开发，原生框架性能开销低，兼容旧版系统
+* 基于 PyQt5 开发
 * 现代化的 UI 设计，针对电脑设备优化的 UI 布局
 * 支持多种账号登录方式
 * 丰富的个性化设置选项
 * [启动参数调用功能](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
-* 更多强大且实用的贴吧功能...
+* 更多强大且实用的功能...
 
-## UI 展示
+## 每夜版
+### 概述
+为追随最新的功能更新，本仓库会自动构建测试版本的应用，方便用户尝鲜体验。  
+
+本仓库通过 Github Actions 实现自动构建应用，会在每天**凌晨 2:00** (北京时间) 自动执行构建。  
+构建后，Workflow 下会出现构建产物 (Artifacts)，为贴吧桌面的可执行压缩文件。
+### 如何获取
+跳转到本仓库的 `Actions` 页面，找到最新的一条 `workflow`，在 `Artifacts` 板块下即可下载到测试版的贴吧桌面。
+
+
+> [!note]
+>
+> 1) CI 工具目前**不会执行对 NSIS 安装包的编译**，因此产物只有 Zip 压缩包；
+> 2) 目前 CI 流程**只支持 64 位 Windows 系统**，其它架构与系统敬请期待；
+> 3) CI 构建产物的**留存有效期为 2 天**，超过 2 天后会被 Github 自动删除。
+
+## UI 概览
 
 ![Show Image 1](./docs/app-ui-grabs/1.png)
 ![Show Image 2](./docs/app-ui-grabs/2.png)
