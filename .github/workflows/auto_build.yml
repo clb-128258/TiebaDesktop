@@ -25,6 +25,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           sdk: '10.0' # 显式指定使用 Windows SDK 10
+          arch: x64
 
       # 验证预装的工具链是否存在（可选步骤，方便在日志中查看版本）
       - name: Verify Pre-installed Tools
