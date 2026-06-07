@@ -1,0 +1,150 @@
+name: TiebaDesktop Windows x64 Test Version Build
+
+on:
+  schedule:
+    # 1) 定时触发：使用 Cron 表达式（分 时 日 月 周）。
+    # 这里设定为每天凌晨 0:00 (UTC时间) 执行，你可以根据需要调整
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许你在 GitHub 网页上通过点击按钮手动触发，极大方便调试
+
+jobs:
+  build-and-pack:
+    runs-on: windows-latest
+
+    steps:
+      # ==========================================
+      # 1) 准备好相关工具链
+      # ==========================================
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # 配置 MSVC 编译器和 Windows SDK 环境，后续步骤中执行 cmake 将自动调用它们
+      - name: Set up MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          sdk: '10.0' # 显式指定使用 Windows SDK 10
+
+      # 验证预装的工具链是否存在（可选步骤，方便在日志中查看版本）
+      - name: Verify Pre-installed Tools
+        run: |
+          cmake --version
+          7z
+          makensis /VERSION
+
+      # ==========================================
+      # 2) 根据 requirements.txt 安装特定 python 库
+      # ==========================================
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .\src\requirements.txt
+
+      # ==========================================
+      # 3) 修补 aiotieba
+      # ==========================================
+      - name: Patch aiotieba
+        run: |
+          python -c "
+          import site, shutil, os
+          
+          site_packages = site.getsitepackages()
+          for pkg in site_packages:
+              if pkg.endswith('aiotieba'):
+                  site_packages = pkg
+                  break
+          
+          patch_dir = '.\aiotieba-fix-files' 
+          
+          if os.path.exists(patch_dir):
+              for item in os.listdir(patch_dir):
+                  s = os.path.join(patch_dir, item)
+                  d = os.path.join(site_packages, item)
+                  if os.path.isdir(s):
+                      shutil.copytree(s, d, dirs_exist_ok=True)
+                  else:
+                      shutil.copy2(s, d)
+              print('补丁成功覆盖到依赖目录：', site_packages)
+          else:
+              print('错误：未找到补丁目录', patch_dir)
+          "
+
+      # ==========================================
+      # 4) 把 ffmpeg.exe 放置在特定目录下
+      # ==========================================
+      - name: Place FFmpeg Executable
+        run: |
+          $target_dir = ".\src\binres"   
+          choco install ffmpeg -y
+          Copy-Item "C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe" -Destination "$target_dir\" -Force
+
+      # ==========================================
+      # 5) 编译 C++ DLL
+      # ==========================================
+      - name: Compile C++ DLL
+        run: |
+          cd ./src/publics/winrt_url_share
+          run_build.bat
+          cd %GITHUB_WORKSPACE%
+
+      # ==========================================
+      # 6) 安装 pyinstaller 库
+      # ==========================================
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      # ==========================================
+      # 7) 设置构建配置文件 (只在本地修改，不 push)
+      # ==========================================
+      - name: Generate Build Configuration JSON
+        env:
+          # 从 GitHub 上下文中获取提交 Hash（完整的 40 位哈希）
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          # 借用 Python 脚本自动获取准确的工具链绝对路径，避免硬编码引发路径错乱
+          python -c "
+          import json, sys, os
+          
+          config_path = '.\build-tools\build_config.json'
+          full_sha = os.getenv('COMMIT_SHA', 'unknown')
+          short_sha = full_sha[:7] # 通常取前 7 位作为短 Hash
+          
+          # 先读取配置文件内容
+          with open(config_path, 'rt', encoding='utf-8') as f:
+              cfg_json_item = json.loads(f.read())
+          
+          # 修改 JSON 内容
+          cfg_json_item['src_code_path'] = os.path.join(os.environ['GITHUB_WORKSPACE'], 'src')
+          cfg_json_item['py_environ_path'] = str(pathlib.Path(sys.executable).parent.parent if pathlib.Path(sys.executable).parent.name == 'Scripts' else pathlib.Path(sys.executable).parent)
+          cfg_json_item['sevenzip_path'] = 'C:\\Program Files\\7-Zip\\7z.exe'
+          
+          cfg_json_item['installer_cfg']['build_nsis'] = True
+          cfg_json_item['installer_cfg']['makensis_path'] = 'C:\\Program Files (x86)\\NSIS\\makensis.exe'
+          
+          cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions-auto-build'
+          cfg_json_item['version']['git_last_commit_hash'] = short_sha
+        
+          # 保存 json 内容
+          with open(config_path, 'w', encoding='utf-8') as f:
+              json.dump(cfg_json_item, f, indent=4)
+          print('成功在本地生成配置文件。内容如下：')
+          print(json.dumps(cfg_json_item, indent=4))
+          "
+
+      # ==========================================
+      # 8) 执行构建脚本
+      # ==========================================
+      - name: Run Build Script
+        working-directory: .\build-tools
+        run: python build.py --makefile .\build_config.json
+
+      # ==========================================
+      # 9) 保存产物 (Artifacts)，其余文件随虚拟机销毁自动丢弃
+      # ==========================================
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TiebaDesktop-test-version-daily-build
+          path: ./build-tools/work_out/
+          if-no-files-found: error # 如果 work_out 目录下没有文件，则让 Action 报错，方便排查构建脚本是否运行成功
