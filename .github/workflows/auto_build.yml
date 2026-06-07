@@ -44,8 +44,6 @@ jobs:
       # ==========================================
       - name: Install Python Dependencies
         run: |
-          echo ${{ github.workspace }}
-          dir ${{ github.workspace }}
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}\src\requirements.txt
 
@@ -63,7 +61,7 @@ jobs:
                   site_packages = pkg
                   break
           
-          patch_dir = '${{ github.workspace }}\\aiotieba-fix-files' 
+          patch_dir = r'${{ github.workspace }}\aiotieba-fix-files' 
           
           if os.path.exists(patch_dir):
               for item in os.listdir(patch_dir):
@@ -86,6 +84,7 @@ jobs:
           $target_dir = "${{ github.workspace }}\src\binres"   
           choco install ffmpeg -y
           Copy-Item "C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe" -Destination "$target_dir\" -Force
+          echo "copy ffmpeg succeed!"
 
       # ==========================================
       # 5) 编译 C++ DLL
@@ -93,7 +92,7 @@ jobs:
       - name: Compile C++ DLL
         run: |
           cd ${{ github.workspace }}\src\publics\winrt_url_share
-          run_build.bat
+          ${{ github.workspace }}\src\publics\winrt_url_share\run_build.bat
           cd ${{ github.workspace }}
 
       # ==========================================
@@ -113,7 +112,7 @@ jobs:
           python -c "
           import json, sys, os
           
-          config_path = '${{ github.workspace }}\build-tools\build_config.json'
+          config_path = r'${{ github.workspace }}\build-tools\build_config.json'
           full_sha = os.getenv('COMMIT_SHA', 'unknown')
           short_sha = full_sha[:7]
           
