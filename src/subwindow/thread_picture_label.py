@@ -6,7 +6,8 @@ from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QLabel, QAction, QFileDialog
 
 from publics import profile_mgr, qt_image
-from publics.funcs import start_background_thread, http_downloader
+from publics.funcs import start_background_thread, http_downloader, open_url_in_browser
+from publics.baidu_features import online_graph
 from publics.qt_image import ImageType
 from subwindow import base_ui
 
@@ -31,6 +32,9 @@ class ThreadPictureLabel(QLabel):
                                        self.preview_src,
                                        coverType=qt_image.ImageCoverType.RadiusAngleCover,
                                        expectSize=(self.width_n, self.height_n))
+
+        self.baidu_sensor = online_graph.BaiduGraphSensor()
+        self.baidu_sensor.imageResultUrlGot.connect(lambda url: open_url_in_browser(url))
 
         self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.setToolTip('图片正在加载...')
@@ -97,11 +101,17 @@ class ThreadPictureLabel(QLabel):
         show_o.triggered.connect(self.show_big_picture)
         menu.addAction(show_o)
 
+        menu.addSeparator()
+
+        call_bd_sensor = QAction('百度识图', self)
+        call_bd_sensor.triggered.connect(lambda: self.baidu_sensor.get_image_result_url_async(self.src_addr))
+        menu.addAction(call_bd_sensor)
+
         save = QAction('保存图片', self)
         save.triggered.connect(self.save_picture)
         menu.addAction(save)
 
-        copy_src = QAction('复制图片链接', self)
+        copy_src = QAction('复制链接', self)
         copy_src.triggered.connect(lambda: pyperclip.copy(self.src_addr))
         menu.addAction(copy_src)
 
