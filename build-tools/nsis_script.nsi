@@ -1,4 +1,9 @@
-Unicode true
+﻿Unicode true
+
+!include "MUI2.nsh"
+!include WinVer.nsh
+!include "x64.nsh"
+!include "LogicLib.nsh"
 
 ; 常量
 !define PRODUCT_NAME "贴吧桌面"
@@ -7,17 +12,12 @@ Unicode true
 !define PRODUCT_GITHUB_PAGE "https://www.github.com/clb-128258/TiebaDesktop"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
-
 !define PRODUCT_STARTMENU_REGVAL "NSIS:StartMenuDir"
 
+; 压缩模式
 SetCompressor lzma
 
-; ------ MUI 现代界面定义 (1.67 版本以上兼容) ------
-!include "MUI2.nsh"
-!include WinVer.nsh
-!include "x64.nsh"
-
-; MUI 预定义常量
+; MUI 设置
 !define MUI_ABORTWARNING
 !define MUI_ICON ".\work_temp\ui\tieba_logo_big_single.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
@@ -108,10 +108,20 @@ SectionEnd
 
 
 Function .onInit
-  ${IfNot} ${IsNativeARM64} ${OrIf} ${IsNativeAMD64}
-		MessageBox MB_ICONSTOP|MB_OK "本软件仅支持 AMD64/ARM64 架构的系统。单击确认键以退出安装程序。"
-		Quit
+  ${If} ${IsNativeAMD64}
+    # 如果是 AMD64 (标准 64位 Intel/AMD) 系统，允许通过，不做任何操作
+    DetailPrint "系统架构为: AMD64"
+      
+  ${ElseIf} ${IsNativeARM64}
+    # 如果是 ARM64 (比如 骁龙 处理器笔记本) 系统，允许通过，不做任何操作
+    DetailPrint "系统架构为: ARM64"
+      
+  ${Else}
+    MessageBox MB_ICONSTOP|MB_OK "本软件仅支持 AMD64/ARM64 架构的系统。单击确认键以退出安装程序。"
+    Quit
+  
 	${EndIf}
+
   ${IfNot} ${AtLeastWin7}
     MessageBox MB_ICONSTOP|MB_OK "你的 Windows 版本过低，请至少使用 Win7 及以上版本的系统。单击确认键以退出安装程序。"
     Quit
