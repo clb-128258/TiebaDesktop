@@ -1,4 +1,3 @@
-import asyncio
 import gc
 
 import publics.app_logger as logging
@@ -123,6 +122,7 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
             widget.portrait = infos['portrait']
             widget.thread_id = infos['thread_id']
             widget.post_id = infos['post_id']
+            widget.is_comment = infos['is_subfloor']
             widget.allow_home_page = True
             widget.subcomment_show_thread_button = True
             widget.load_by_callback = True
@@ -189,11 +189,13 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
                         'thread_data': {'vn': thread["view_num"], 'ag': thread["agree_num"],
                                         'rpy': thread["reply_num"], 'rpt': thread["share_num"]},
                         'portrait': thread["author"]["portrait"].split('?')[0],
-                        'forum_head_avatar': ''}
+                        'forum_head_avatar': '',
+                        'is_subfloor': False}
 
                 # 获取回复贴数据
                 if postinfo := thread.get('top_agree_post'):
                     data['post_id'] = postinfo['id']
+                    data['is_subfloor'] = bool(postinfo.get('quote_id'))
                     data['timestamp'] = postinfo["time"]
                     data['thread_data']['ag'] = postinfo["agree"]['agree_num']
                     data['user_name'] = postinfo['author']['name_show']
