@@ -59,13 +59,13 @@ def compile_nsis_pkg(cfg):
     system_name = get_system_name()
     exe_name = f'TiebaDesktop-nsis-installer-{version}-{git_hash}-{system_name}.exe'
 
-    with open('./nsis_script.nsi', 'rt', encoding='gbk') as file:
+    with open('./nsis_script.nsi', 'rt', encoding='utf-8') as file:
         nsis_script = file.read()
 
     nsis_script = nsis_script.replace('[installer_name]', exe_name)
     nsis_script = nsis_script.replace('[verstr]', cfg["version"]['version_string'])
 
-    with open('./_temp_nsis_script.nsi', 'wt', encoding='gbk') as file:
+    with open('./_temp_nsis_script.nsi', 'wt', encoding='utf-8') as file:
         file.write(nsis_script)
 
     args = [cfg['installer_cfg']['makensis_path'],
