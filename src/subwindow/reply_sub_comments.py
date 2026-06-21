@@ -145,11 +145,15 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
     def on_load_finished(self, result_msg):
         if result_msg:
+            # 加载失败
             if self.show_thread_frame:
                 self.frame_3.hide()
 
             toast = top_toast_widget.ToastMessage(result_msg, 2000, top_toast_widget.ToastIconType.ERROR)
             self.top_toaster.showToast(toast)
+        else:
+            # 加载成功
+            self.load_item_images()
 
         self.loading_widget.hide()
         self.refresh_button.show()
@@ -188,15 +192,26 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         widget.portrait = datas['portrait']
         widget.thread_id = datas['thread_id']
         widget.post_id = datas['post_id']
+
         if not datas['is_floor']:
             widget.is_comment = True
+
             if datas['replyobj']:
                 widget.set_reply_text(
                     '回复用户 <a href=\"user://{uid}\">{u}</a>: '.format(uid=datas['reply_uid'], u=datas['replyobj']))
-            widget.setdatas(datas['portrait'], datas['user_name'], datas['is_author'], datas['content'], [],
+            widget.setdatas(datas['portrait'],
+                            datas['user_name'],
+                            datas['is_author'],
+                            datas['content'],
+                            [],
                             -1,
-                            datas['create_time_str'], '', -1,
-                            datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
+                            datas['create_time_str'],
+                            '',
+                            -1,
+                            datas['agree_count'],
+                            datas['ulevel'],
+                            datas['is_bawu'],
+                            voice_info=datas['voice_info'])
         else:
             widget.is_comment = False
             widget.set_reply_text(f'主楼层信息')
@@ -211,14 +226,15 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
 
-        self.load_item_images()
+        if datas['is_position_post']:
+            self.listWidget.scrollToItem(item)
 
     def load_comments_async(self):
         if not self.isLoading and self.page != -1:
             start_background_thread(self.load_comments)
 
     def load_comments(self):
-        async def add_posts_info(comments):
+        async def add_posts_info(comments, pos_pid):
             for t in comments.objs:
                 content = make_thread_content(t.contents.objs)
                 portrait = t.user.portrait
@@ -253,7 +269,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                          'is_bawu': is_bawu,
                          'thread_id': thread_id,
                          'post_id': post_id,
-                         'voice_info': voice_info}
+                         'voice_info': voice_info,
+                         'is_position_post': post_id == pos_pid}
 
                 self.add_comment.emit(tdata)
 
@@ -293,6 +310,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
             reply_num = comments.page.total_count
 
             from_subfloor = False
+            old_pid = 0
             if self.is_postId_from_subFloor:
                 old_pid = self.post_id
                 self.post_id = post_id
@@ -331,9 +349,12 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                      'pictures': preview_pixmap,
                      'floor': floor,
                      'reply_num': reply_num,
-                     'load_from_subfloor': from_subfloor}
+                     'load_from_subfloor': from_subfloor,
+                     'is_position_post': False}
 
             self.add_comment.emit(tdata)
+
+            return old_pid
 
         async def run_task():
             self.isLoading = True
@@ -351,8 +372,10 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                     await set_ui_top_info(comments)
 
                     if self.page == 1:
-                        await add_current_floor_info(comments)
-                    await add_posts_info(comments)
+                        pos_pid = await add_current_floor_info(comments)
+                    else:
+                        pos_pid = 0
+                    await add_posts_info(comments, pos_pid)
 
             except Exception as e:
                 logging.log_exception(e)
