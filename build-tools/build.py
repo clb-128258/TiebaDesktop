@@ -65,7 +65,7 @@ def compile_nsis_pkg(cfg):
     nsis_script = nsis_script.replace('[installer_name]', exe_name)
     nsis_script = nsis_script.replace('[verstr]', cfg["version"]['version_string'])
 
-    with open('./_temp_nsis_script.nsi', 'wt', encoding='gbk') as file:
+    with open('./_temp_nsis_script.nsi', 'wt', encoding='utf-8') as file:
         file.write(nsis_script)
 
     args = [cfg['installer_cfg']['makensis_path'],
