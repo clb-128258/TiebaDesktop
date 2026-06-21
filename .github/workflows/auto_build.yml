@@ -4,7 +4,7 @@ on:
   schedule:
     # 1) 定时触发：使用 Cron 表达式（分 时 日 月 周）。
     # 这里设定为每天凌晨 2:00 (UTC+8 北京时间) 执行，你可以根据需要调整
-    - cron: '0 18 * * *'
+    - cron: '0 17 * * *'
   workflow_dispatch: # 允许你在 GitHub 网页上通过点击按钮手动触发，极大方便调试
 
 jobs:
@@ -118,7 +118,8 @@ jobs:
           cfg_json_item['py_environ_path'] = str(pathlib.Path(sys.executable).parent.parent if pathlib.Path(sys.executable).parent.name == 'Scripts' else pathlib.Path(sys.executable).parent)
           cfg_json_item['sevenzip_path'] = 'C:\\Program Files\\7-Zip\\7z.exe'
           
-          cfg_json_item['installer_cfg']['build_nsis'] = False
+          cfg_json_item['installer_cfg']['build_nsis'] = True
+          cfg_json_item['installer_cfg']['makensis_path'] = 'C:\\Program Files (x86)\\NSIS\\makensis.exe'
           
           cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions'
           cfg_json_item['version']['git_last_commit_hash'] = short_sha
