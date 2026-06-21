@@ -145,6 +145,9 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
     def on_load_finished(self, result_msg):
         if result_msg:
+            if self.show_thread_frame:
+                self.frame_3.hide()
+
             toast = top_toast_widget.ToastMessage(result_msg, 2000, top_toast_widget.ToastIconType.ERROR)
             self.top_toaster.showToast(toast)
 
@@ -155,6 +158,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.setWindowTitle(f'第 {datas["floor_info"]["floor_pos"]} 楼的回复 ({datas["floor_info"]["reply_num"]} 条)')
 
         if self.show_thread_frame:
+            self.frame_3.show()
+
             self.thread_author_uid = datas['author']['author_uid']
             self.label_3.setText(datas['author']['author_name'])
             self.label_9.setText(f'原主题贴作者 | 吧内等级 Lv.{datas["author"]["level"]}')
