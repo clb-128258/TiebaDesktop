@@ -143,6 +143,6 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: TiebaDesktop-daily-build-version-win64
-          path: ${{ github.workspace }}/build-tools/work_out/*.zip
+          name: TiebaDesktop-daily-build-version
+          path: ${{ github.workspace }}/build-tools/work_out/*
           if-no-files-found: error # 如果 work_out 目录下没有文件，则让 Action 报错，方便排查构建脚本是否运行成功
