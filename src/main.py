@@ -1,5 +1,51 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-from core_features import *
+from publics import webview2, tieba_apis
+from publics import proxytool
+from publics.winrt_url_share import winrt_share
+from publics.funcs import *
+from publics.app_logger import init_log
+from publics.app_logger import log_exception, log_INFO, log_WARN
+from publics.tb_syncer import *
+from publics import top_toast_widget
+
+from PyQt5.QtCore import (QLocale, QTranslator, QT_VERSION_STR,
+                          QT_VERSION, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve)
+from PyQt5.QtGui import QPixmapCache, QFont
+from PyQt5.QtWidgets import (QMessageBox, QAction, QMainWindow, QApplication,
+                             QWidgetAction, QCheckBox, QInputDialog, QGraphicsOpacityEffect)
+
+from subwindow.agree_thread_list import AgreedThreadsList
+from subwindow.firstpage_recommend import RecommendWindow
+from subwindow.follow_forum_list import FollowForumList
+from subwindow.interact_list import UserInteractionsList
+from subwindow.tieba_search_entry import TiebaSearchWindow
+from subwindow.mainwindow_menu import MainPopupMenu
+from subwindow import base_ui
+
+from ui import mainwindow, settings, login_by_bduss, qr_login
+
+import typing
+import sys
+import os
+import requests
+import aiotieba
+import aiotieba.helper.cache
+import asyncio
+import gc
+import consts
+import shutil
+import platform
+import time
+import copy
+import subprocess
+
+if os.name == 'nt':
+    import win32api
+    import win32con
+
+datapath = consts.datapath
+requests.session().trust_env = True
+requests.session().verify = False
 
 
 def excepthook(type, value, traceback):
