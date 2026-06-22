@@ -14,9 +14,10 @@ import aiohttp.client_exceptions
 
 import pyperclip
 import requests
-from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer
+from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QMovie, QIcon, QPixmap
-from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem, QTableWidget, QListWidget
+from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem, QTableWidget, QListWidget, QLabel, \
+    QGraphicsOpacityEffect
 
 import consts
 import aiotieba
@@ -571,6 +572,49 @@ def get_system_dark_mode_status():
         return False
 
 
+def show_label_pixmap_with_animation(label: QLabel, pixmap: QPixmap):
+    """
+    把 pixmap 设置到 label 上，并以渐变动画显示图片
+
+    Notes:
+        为保证动图显示效果，只有在 label 没有事先设置显示任何内容的情况下，才会显示渐变动画，否则会直接 setPixmap()。
+    """
+
+    # 原先已存在 pixmap 时的特判
+    if label.pixmap():
+        label.setPixmap(pixmap)
+        return
+
+    # 初始化透明度效果
+    fade_in_effect = QGraphicsOpacityEffect()
+    fade_in_effect.setOpacity(0.0)
+    label.setGraphicsEffect(fade_in_effect)
+
+    # 设置 QPixmap
+    label.setPixmap(pixmap)
+
+    # 初始化动画，使用 label 对象作为 animation 的寄存器
+    label.fade_in_animation = QPropertyAnimation(fade_in_effect, b"opacity")
+    label.fade_in_animation.setStartValue(0.0)
+    label.fade_in_animation.setEndValue(1.0)
+    label.fade_in_animation.setDuration(200)
+    label.fade_in_animation.setEasingCurve(QEasingCurve.InOutQuad)
+
+    # 动画结束时释放资源
+    def on_animation_finished():
+        # 释放 fade_in_animation
+        label.fade_in_animation.deleteLater()
+        label.fade_in_animation = None
+        del label.fade_in_animation
+
+        # 清除透明度效果
+        label.setGraphicsEffect(None)
+
+    # 开始渲染动画
+    label.fade_in_animation.finished.connect(on_animation_finished)
+    label.fade_in_animation.start()
+
+
 class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
     """覆盖在其它widget上层的加载动画组件"""
 
@@ -683,8 +727,8 @@ class UserItem(QWidget, user_item.Ui_Form):
 
         self.toolButton.clicked.connect(self.show_toolbutton_icon)
         self.portrait_image = qt_image.MultipleImage()
-        self.portrait_image.currentImageChanged.connect(
-            lambda: self.label.setPixmap(self.portrait_image.currentPixmap()))
+        self.portrait_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap))
         self.destroyed.connect(self.portrait_image.destroyImage)
 
         self.reset_theme()

@@ -6,7 +6,8 @@ from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QLabel, QAction, QFileDialog
 
 from publics import profile_mgr, qt_image
-from publics.funcs import start_background_thread, http_downloader, open_url_in_browser
+from publics.funcs import start_background_thread, http_downloader, open_url_in_browser, \
+    show_label_pixmap_with_animation
 from publics.baidu_features import online_graph
 from publics.qt_image import ImageType
 from subwindow import base_ui
@@ -63,7 +64,7 @@ class ThreadPictureLabel(QLabel):
         self.show_big_picture()
 
     def set_picture(self, pixmap):
-        self.setPixmap(pixmap)
+        show_label_pixmap_with_animation(self, pixmap)
 
     def load_picture_async(self):
         self.image_loader.loadImage()

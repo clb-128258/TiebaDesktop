@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QMessageBox
 
 from publics import qt_window_mgr, qt_image, top_toast_widget
-from publics.funcs import start_background_thread
+from publics.funcs import start_background_thread, show_label_pixmap_with_animation
 from publics.tieba_apis import sign_forum
 from subwindow import base_ui
 from ui import ba_item
@@ -34,7 +34,8 @@ class ForumItem(base_ui.WindowBaseQWidget, ba_item.Ui_Form):
         self.pushButton_2.clicked.connect(self.sign_async)
 
         self.forum_atavar_image = qt_image.MultipleImage()
-        self.forum_atavar_image.currentPixmapChanged.connect(self.label.setPixmap)
+        self.forum_atavar_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap))
         self.destroyed.connect(self.forum_atavar_image.destroyImage)
 
         if issign:

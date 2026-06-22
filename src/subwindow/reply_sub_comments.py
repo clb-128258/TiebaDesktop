@@ -8,7 +8,8 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, top_toast_widget, profile_mgr, qt_image
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
-    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, LoadingFlashWidget, large_num_to_string
+    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, LoadingFlashWidget, large_num_to_string, \
+    show_label_pixmap_with_animation
 import publics.app_logger as logging
 from subwindow import base_ui
 
@@ -103,7 +104,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
 
         self.thread_user_portrait_image = qt_image.MultipleImage()
-        self.thread_user_portrait_image.currentPixmapChanged.connect(self.label_2.setPixmap)
+        self.thread_user_portrait_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_2, pixmap))
 
     def open_thread_detail(self):
         from subwindow.thread_detail_view import ThreadDetailView

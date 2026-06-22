@@ -1,9 +1,10 @@
-from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QEvent
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent
 from PyQt5.QtGui import QPixmap, QCursor
 from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 from typing import Union
 from publics import qt_window_mgr, profile_mgr, qt_image
-from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string
+from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string, \
+    show_label_pixmap_with_animation
 import publics.app_logger as logging
 from publics.tieba_apis import agree_thread_or_post, OpAgreeObjectType
 from subwindow import base_ui
@@ -76,8 +77,8 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
 
         self.portrait_image = qt_image.MultipleImage()
-        self.portrait_image.currentImageChanged.connect(
-            lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.portrait_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
         self.destroyed.connect(self.portrait_image.destroyImage)
 
     def reset_theme(self):

@@ -1516,6 +1516,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.set_top_button_style()
         self.rend_page_switch_animation()
 
+        # 不管怎样，更新前一个页面的索引
+        self.previous_page_index = self.stackedWidget.currentIndex()
+
     def rend_page_switch_animation(self):
         """
         实现页面切换时的视觉渐变效果
@@ -1590,9 +1593,6 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         # 保存当前动画引用并启动动画
         self.page_switch_animation = animation_group
         animation_group.start()
-
-        # 更新前一个页面的索引
-        self.previous_page_index = current_index
 
     def set_top_button_style(self):
         button_index = [self.pushButton_2, self.pushButton_3, self.pushButton_4]

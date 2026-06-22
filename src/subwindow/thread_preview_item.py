@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 
 from publics import qt_window_mgr, qt_image, profile_mgr
-from publics.funcs import timestamp_to_string, large_num_to_string
+from publics.funcs import timestamp_to_string, large_num_to_string, show_label_pixmap_with_animation
 from subwindow import base_ui
 
 from ui import tie_preview
@@ -32,10 +32,15 @@ class AsyncLoadImage(qt_image.MultipleImage):
                           expectSize=(200, 200),
                           coverType=qt_image.ImageCoverType.RadiusAngleCoverCentrally)
 
+    def set_pixmap_on_label(self, pixmap: QPixmap, label: QLabel):
+        show_label_pixmap_with_animation(label, pixmap)
+
     def load_image_on_qtLabel(self, label: QLabel):
         if not self.isLoaded:
-            self.currentPixmapChanged.connect(label.setPixmap, Qt.QueuedConnection)
+            self.currentPixmapChanged.connect(lambda pixmap: self.set_pixmap_on_label(pixmap, label),
+                                              Qt.QueuedConnection)
             label.destroyed.connect(self.destroyImage)
+
             self.loadImage()
             self.isLoaded = True
 
@@ -65,8 +70,10 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
 
         self.portrait_image = qt_image.MultipleImage()
         self.forum_image = qt_image.MultipleImage()
-        self.portrait_image.currentPixmapChanged.connect(self.label_4.setPixmap)
-        self.forum_image.currentPixmapChanged.connect(self.label.setPixmap)
+        self.portrait_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_4,pixmap))
+        self.forum_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label,pixmap))
         self.destroyed.connect(self.portrait_image.destroyImage)
         self.destroyed.connect(self.forum_image.destroyImage)
 

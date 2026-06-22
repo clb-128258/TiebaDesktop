@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QCursor
 
 from publics import qt_window_mgr, qt_image, profile_mgr
-from publics.funcs import open_url_in_browser
+from publics.funcs import open_url_in_browser, show_label_pixmap_with_animation
 from subwindow import base_ui
 
 from ui import agreed_item
@@ -32,11 +32,12 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
         self.label_4.installEventFilter(self)  # 重写事件过滤器
 
         self.portrait_image = qt_image.MultipleImage()
-        self.portrait_image.currentImageChanged.connect(
-            lambda: self.label_4.setPixmap(self.portrait_image.currentPixmap()))
+        self.portrait_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
         self.destroyed.connect(self.portrait_image.destroyImage)
         self.left_image = qt_image.MultipleImage()
-        self.left_image.currentImageChanged.connect(lambda: self.label_2.setPixmap(self.left_image.currentPixmap()))
+        self.left_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_2, pixmap))
         self.destroyed.connect(self.left_image.destroyImage)
 
     def reset_theme(self):
