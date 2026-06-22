@@ -874,8 +874,9 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
             "callback": "bd__cbs__iou0dl"
         }
 
-        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/v3/login/main/qrbdusslogin',
-                                    headers=header, params=params)
+        response = self.session.get(
+            f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/v3/login/main/qrbdusslogin',
+            headers=header, params=params)
         response.raise_for_status()
         json_text = self.parse_response_qrbdusslogin(response.text)
         jsonify_data = json.loads(json_text)
@@ -1355,8 +1356,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         self.init_profile_menu()
         self.init_pages()
-        self.stackedWidget.setCurrentIndex(
-            get_dict_value_treely(profile_mgr.local_config, ['other_settings', 'mw_default_page'], 0))  # 设置初始页面
+
+        default_index = get_dict_value_treely(profile_mgr.local_config,
+                                              ['other_settings', 'mw_default_page'],
+                                              0)
+        self.stackedWidget.setCurrentIndex(default_index)  # 设置初始页面
+        self.previous_page_index = default_index  # 初始化前一个页面索引
+        self.paint_page_switch_elements()
 
         self.notice_syncer.start_sync()
         self.refresh_all_datas()
@@ -1456,6 +1462,111 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.toast_widget = top_toast_widget.TopToaster()
         self.toast_widget.setCoverWidget(self)
 
+        # 初始化页面切换动画相关的属性
+        self.previous_page_index = 0  # 前一个页面的索引
+        self.page_switch_animation = None  # 当前正在执行的动画
+
+    def paint_page_switch_elements(self):
+        self.set_top_button_style()
+        self.rend_page_switch_animation()
+
+    def rend_page_switch_animation(self):
+        """
+        实现页面切换时的视觉渐变效果
+        当用户切换页面时，前一个页面淡出，新页面淡入，形成平滑的过渡动画
+        """
+
+        # 获取前一个页面和当前页面的索引
+        previous_index = self.previous_page_index
+        current_index = self.stackedWidget.currentIndex()
+
+        # 如果页面没有实际改变，则不执行动画
+        if previous_index == current_index:
+            return
+
+        # 停止之前正在执行的动画（如果有）
+        if self.page_switch_animation is not None:
+            self.page_switch_animation.stop()
+            self.page_switch_animation.deleteLater()
+
+        # 获取前一个页面和当前页面的widgets
+        previous_widget = self.stackedWidget.widget(previous_index)
+        current_widget = self.stackedWidget.widget(current_index)
+
+        if previous_widget is None or current_widget is None:
+            self.previous_page_index = current_index
+            return
+
+        # 确保当前页面可见，前一个页面也保持可见以便显示动画
+        current_widget.setVisible(True)
+        previous_widget.setVisible(True)
+
+        # 为前一个页面创建透明度效果
+        fade_out_effect = QGraphicsOpacityEffect()
+        fade_out_effect.setOpacity(1.0)
+        previous_widget.setGraphicsEffect(fade_out_effect)
+
+        # 为当前页面创建透明度效果
+        fade_in_effect = QGraphicsOpacityEffect()
+        fade_in_effect.setOpacity(0.0)
+        current_widget.setGraphicsEffect(fade_in_effect)
+
+        # 创建并行动画组，用于同时执行淡出和淡入效果
+        animation_group = QParallelAnimationGroup()
+
+        # 创建前一个页面的淡出动画
+        fade_out_animation = QPropertyAnimation(fade_out_effect, b"opacity")
+        fade_out_animation.setStartValue(1.0)
+        fade_out_animation.setEndValue(0.0)
+        fade_out_animation.setDuration(200)
+        fade_out_animation.setEasingCurve(QEasingCurve.InOutQuad)
+
+        # 创建当前页面的淡入动画
+        fade_in_animation = QPropertyAnimation(fade_in_effect, b"opacity")
+        fade_in_animation.setStartValue(0.0)
+        fade_in_animation.setEndValue(1.0)
+        fade_in_animation.setDuration(200)
+        fade_in_animation.setEasingCurve(QEasingCurve.InOutQuad)
+
+        # 将两个动画添加到并行动画组
+        animation_group.addAnimation(fade_out_animation)
+        animation_group.addAnimation(fade_in_animation)
+
+        # 动画完成后的清理工作
+        def on_animation_finished():
+            previous_widget.setVisible(False)
+            previous_widget.setGraphicsEffect(None)
+            current_widget.setGraphicsEffect(None)
+            self.page_switch_animation = None
+
+        animation_group.finished.connect(on_animation_finished)
+
+        # 保存当前动画引用并启动动画
+        self.page_switch_animation = animation_group
+        animation_group.start()
+
+        # 更新前一个页面的索引
+        self.previous_page_index = current_index
+
+    def set_top_button_style(self):
+        button_index = [self.pushButton_2, self.pushButton_3, self.pushButton_4]
+        current_button = button_index[self.stackedWidget.currentIndex()]
+
+        current_font = QFont()
+        other_font = QFont()
+
+        current_font.setBold(True)
+        current_font.setPointSize(15)
+        other_font.setBold(False)
+        other_font.setPointSize(13)
+
+        current_button.setFont(current_font)
+
+        for btn in button_index:
+            if btn == current_button:
+                continue
+            btn.setFont(other_font)
+
     def set_unread_count(self):
         if self.notice_syncer.have_basic_unread_notice():
             self.pushButton_4.setStyleSheet('QPushButton{color: red;}')
@@ -1471,6 +1582,8 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.flist.is_first_show = False
         self.stackedWidget.setCurrentIndex(1)
 
+        self.paint_page_switch_elements()
+
     def switch_interact_page(self):
         if self.isMinimized():
             self.showNormal()
@@ -1481,7 +1594,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         if self.interactionlist.is_first_show:
             self.interactionlist.refresh_list()
             self.interactionlist.is_first_show = False
+
         self.stackedWidget.setCurrentIndex(2)
+        self.paint_page_switch_elements()
 
     def refresh_recommand(self):
         if self.stackedWidget.currentIndex() == 0:
@@ -1491,6 +1606,8 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.stackedWidget.setCurrentIndex(0)
             if self.recommend.is_first_load:
                 self.recommend.get_recommand_async()
+
+            self.paint_page_switch_elements()
 
     def refresh_all_datas(self):
         qt_window_mgr.clear_windows()
