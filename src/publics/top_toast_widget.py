@@ -1,6 +1,9 @@
 from PyQt5.QtGui import QPixmap, QColor
 from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
 from PyQt5.QtCore import QTimer, QEvent, QPropertyAnimation, QEasingCurve, QPoint, Qt, QParallelAnimationGroup
+
+from publics import profile_mgr
+from publics.funcs import get_dict_value_treely
 from ui import top_toast
 import enum
 import queue
@@ -57,6 +60,7 @@ class TopToaster(QWidget, top_toast.Ui_Form):
         self.init_pixmap_cache()
 
         self.opacity_effect = QGraphicsOpacityEffect(self)
+        self.opacity_effect.setOpacity(1.0)
         self.setGraphicsEffect(self.opacity_effect)
 
         self._is_showing = False
@@ -76,17 +80,34 @@ class TopToaster(QWidget, top_toast.Ui_Form):
         self.show()
         self._sync_parent_widget_size()
 
-        # 更新位移动画的起止点
-        self._pos_anim_show.setStartValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
-        self._pos_anim_show.setEndValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
+        disable_top_toast_animation = get_dict_value_treely(profile_mgr.local_config,
+                                                            ['other_settings', 'animation_switches',
+                                                             'disable_top_toast_animation'],
+                                                            False)
+        if disable_top_toast_animation:
+            self.opacity_effect.setOpacity(1.0)
+            self.move(self._calc_x_pos(), Y_POS_MOVE_VALUE)
+        else:
+            # 更新位移动画的起止点
+            self._pos_anim_show.setStartValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
+            self._pos_anim_show.setEndValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
 
-        self._group_show.start()
+            self._group_show.start()
 
     def hideWithAnimation(self):
-        self._pos_anim_hide.setStartValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
-        self._pos_anim_hide.setEndValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
+        disable_top_toast_animation = get_dict_value_treely(profile_mgr.local_config,
+                                                            ['other_settings', 'animation_switches',
+                                                             'disable_top_toast_animation'],
+                                                            False)
 
-        self._group_hide.start()
+        if disable_top_toast_animation:
+            self.move(self._calc_x_pos(), -Y_POS_MOVE_VALUE)
+            self._hide_toast_widget_fully()
+        else:
+            self._pos_anim_hide.setStartValue(QPoint(self._calc_x_pos(), Y_POS_MOVE_VALUE))
+            self._pos_anim_hide.setEndValue(QPoint(self._calc_x_pos(), -Y_POS_MOVE_VALUE))
+
+            self._group_hide.start()
 
     def init_animation(self):
         # 位移动画

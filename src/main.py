@@ -359,6 +359,10 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["webview_settings"]["transparent_bg_color"] = self.checkBox_25.isChecked()
             profile_mgr.local_config['sign_settings']['use_widget_sign_flag'] = self.checkBox_26.isChecked()
             profile_mgr.local_config["other_settings"]["disable_ssl_verify"] = self.checkBox_27.isChecked()
+            profile_mgr.local_config['other_settings']['animation_switches'][
+                'enable_image_fade_in'] = self.checkBox_28.isChecked()
+            profile_mgr.local_config['other_settings']['animation_switches'][
+                'disable_top_toast_animation'] = self.checkBox_29.isChecked()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -736,10 +740,14 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
             self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
 
+            self.checkBox_28.setChecked(
+                profile_mgr.local_config['other_settings']['animation_switches']['enable_image_fade_in'])
             self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
             self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
             self.comboBox_6.setCurrentIndex(self.brightDarkPolicyFlag)
 
+            self.checkBox_29.setChecked(
+                profile_mgr.local_config['other_settings']['animation_switches']['disable_top_toast_animation'])
             self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
             self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])

@@ -35,7 +35,9 @@ local_config_model = {
         "show_msgbox_before_close": True,
         "context_menu_search_engine": {"preset": "bing", "custom_url": ""},
         "mw_default_page": 0,
-        "disable_ssl_verify": False
+        "disable_ssl_verify": False,
+        "animation_switches": {"enable_image_fade_in": True,
+                               "disable_top_toast_animation": False}
     },
     "webview_settings": {
         "disable_font_cover": False,

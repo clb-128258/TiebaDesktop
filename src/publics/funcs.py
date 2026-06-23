@@ -580,8 +580,11 @@ def show_label_pixmap_with_animation(label: QLabel, pixmap: QPixmap):
         为保证动图显示效果，只有在 label 没有事先设置显示任何内容的情况下，才会显示渐变动画，否则会直接 setPixmap()。
     """
 
-    # 原先已存在 pixmap 时的特判
-    if label.pixmap():
+    # 原先已存在 pixmap，或配置文件禁用时的特判
+    image_fade_in_enabled = get_dict_value_treely(profile_mgr.local_config,
+                                                  ['other_settings', 'animation_switches', 'enable_image_fade_in'],
+                                                  True)
+    if label.pixmap() or not image_fade_in_enabled:
         label.setPixmap(pixmap)
         return
 
