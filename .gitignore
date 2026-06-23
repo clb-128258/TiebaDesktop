@@ -10,3 +10,6 @@
 /src/__pycache__
 /src/publics/__pycache__
 /src/subwindow/__pycache__
+
+/build-tools/work_temp
+/build-tools/work_out
