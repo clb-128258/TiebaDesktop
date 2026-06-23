@@ -27,21 +27,33 @@ class RecommendWindow(QListWidget):
         self.bduss = bduss
         self.stoken = stoken
         self.parent_window = parent
+
         self.init_cover_widgets()
         self.set_theme_qss()
+
         self.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
         self.setHorizontalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
         self.setSizeAdjustPolicy(QListWidget.SizeAdjustPolicy.AdjustToContents)
         self.setFrameShape(QListWidget.Shape.NoFrame)
+
         self.verticalScrollBar().setSingleStep(20)
         self.add_tie.connect(self.add_thread)
         self.load_finish.connect(self.on_load_finish)
         self.verticalScrollBar().valueChanged.connect(self.load_more)
+        self.refresh_button.clicked.connect(lambda: self.get_recommand_async(True))
+
+    def resizeEvent(self, a0):
+        super().resizeEvent(a0)
+        self.refresh_button.move_button()
 
     def init_cover_widgets(self):
         self.loading_widget = LoadingFlashWidget(caption='贴子正在赶来的路上...')
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()
+
+        self.refresh_button = base_ui.FloatingButton(self)
+        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
+        self.refresh_button.move_button()
 
     def set_theme_qss(self):
         color = profile_mgr.get_theme_color_string()
@@ -60,6 +72,8 @@ class RecommendWindow(QListWidget):
     def on_load_finish(self, msg):
         if self.is_first_load:
             self.loading_widget.hide()
+            self.refresh_button.show()
+
             self.parent_window.toast_widget.showToast(msg)
             self.load_list_images()
             self.is_first_load = False
@@ -103,6 +117,8 @@ class RecommendWindow(QListWidget):
             self.is_first_load = True if refresh else self.is_first_load
             if self.is_first_load:
                 self.loading_widget.show()
+                self.refresh_button.hide()
+
                 # 清理内存
                 cleanup_listWidget(self)
                 QPixmapCache.clear()
@@ -236,10 +252,14 @@ class RecommendWindow(QListWidget):
 
             # 进一步获取用户信息
             # 优先获取新版昵称，如果没有则使用旧版昵称或者用户名
-            user_name = element['author'].get('user_nickname_v2',
-                                              element['author'].get('display_name',
-                                                                    element['author']['user_name'])
-                                              )
+            name_fetch_list = ['user_nickname_v2', 'user_nickname', 'display_name', 'user_name', 'user_id']
+            user_name = ''
+            for n in name_fetch_list:
+                if not element['author'].get(n):
+                    continue
+                else:
+                    user_name = str(element['author'].get(n))
+                    break
 
             # 进一步获取吧信息
             forum_name = element['forum']['forum_name']

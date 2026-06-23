@@ -1400,7 +1400,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         self.pushButton_3.clicked.connect(self.switch_follow_forum_page)
         self.pushButton_4.clicked.connect(self.switch_interact_page)
-        self.pushButton_2.clicked.connect(self.refresh_recommand)
+        self.pushButton_2.clicked.connect(self.switch_recommand_page)
         self.pushButton_5.clicked.connect(self.open_search_window)
 
         self.add_info.connect(self._add_uinfo)
@@ -1476,7 +1476,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5 and self.stackedWidget.currentIndex() == 0:
-            self.refresh_recommand()
+            self.recommend.get_recommand_async(True)
 
     def move_as_config(self):
         window_rect = profile_mgr.get_window_rects(type(self))
@@ -1631,10 +1631,10 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.pushButton_4.setText('消息')
 
     def switch_follow_forum_page(self):
+        self.stackedWidget.setCurrentIndex(1)
         if self.flist.is_first_show:
             self.flist.get_bars_async()
             self.flist.is_first_show = False
-        self.stackedWidget.setCurrentIndex(1)
 
         self.paint_page_switch_elements()
 
@@ -1645,23 +1645,20 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         if not self.isActiveWindow():
             self.activateWindow()
 
+        self.stackedWidget.setCurrentIndex(2)
+
         if self.interactionlist.is_first_show:
             self.interactionlist.refresh_list()
             self.interactionlist.is_first_show = False
 
-        self.stackedWidget.setCurrentIndex(2)
         self.paint_page_switch_elements()
 
-    def refresh_recommand(self):
-        if self.stackedWidget.currentIndex() == 0:
-            # 启动刷新
-            self.recommend.get_recommand_async(True)
-        else:
-            self.stackedWidget.setCurrentIndex(0)
-            if self.recommend.is_first_load:
-                self.recommend.get_recommand_async()
+    def switch_recommand_page(self):
+        self.stackedWidget.setCurrentIndex(0)
+        if self.recommend.is_first_load:
+            self.recommend.get_recommand_async()
 
-            self.paint_page_switch_elements()
+        self.paint_page_switch_elements()
 
     def refresh_all_datas(self):
         qt_window_mgr.clear_windows()
@@ -1692,7 +1689,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.user_info_widget.get_self_info_async()
         self.notice_syncer.run_msg_sync_immedently()
         if self.stackedWidget.currentIndex() == 0:
-            self.refresh_recommand()
+            self.switch_recommand_page()
         elif self.stackedWidget.currentIndex() == 1:
             self.switch_follow_forum_page()
         elif self.stackedWidget.currentIndex() == 2:
