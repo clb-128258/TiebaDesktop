@@ -189,15 +189,18 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
             self.forum_atavar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
                                            datas['avatar'],
                                            qt_image.ImageCoverType.RoundCover,
-                                           (100, 100))
+                                           (110, 110))
             self.forum_atavar.loadImage()
 
-            forum_desp_text = ''
+            has_desp_content = datas['forum_desp'] or datas['forum_desp_ex']
+            forum_desp_text = '<html><body style=\"line-height: 20px;\">'
             if datas['forum_desp']:
-                forum_desp_text += f"<h3>{datas['forum_desp']}</h3>"
+                forum_desp_text += f"<span style=\"font-size: 15px; font-weight: bold;\">{datas['forum_desp']}</span>"
             if datas['forum_desp_ex']:
-                forum_desp_text += f"\n<p>{datas['forum_desp_ex']}</p>"
-            if not forum_desp_text:
+                forum_desp_text += f"<br><span>{datas['forum_desp_ex']}</span>"
+            forum_desp_text += '</body></html>'
+
+            if not has_desp_content:
                 self.label_5.hide()
             else:
                 self.label_5.setText(forum_desp_text)
@@ -231,8 +234,8 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                     qss = qss.replace('[color]', 'rgb(247, 126, 48)')
                 self.label_16.setStyleSheet(qss)
                 self.label_16.setText(f'Lv.{forum_level} {datas["follow_info"]["level_flag"]}')
-                self.label_9.setText(
-                    f'{datas["follow_info"]["exp"]} / {datas["follow_info"]["next_exp"]}，距离下一等级还差 {datas["follow_info"]["next_exp"] - datas["follow_info"]["exp"]} 经验值')
+                self.label_9.setText(f'{datas["follow_info"]["exp"]} / {datas["follow_info"]["next_exp"]}，'
+                                     f'距离下一等级还差 {datas["follow_info"]["next_exp"] - datas["follow_info"]["exp"]} 经验值')
                 self.progressBar.setRange(0, datas["follow_info"]["next_exp"])
                 self.progressBar.setValue(datas["follow_info"]["exp"])
                 if datas['follow_info']['isSign']:
