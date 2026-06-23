@@ -722,8 +722,6 @@ class UserItem(QWidget, user_item.Ui_Form):
         self.setupUi(self)
         self.bduss = bduss
         self.stoken = stoken
-        self.label_3.setToolTip(
-            '请注意，贴吧 ID 与用户 ID 不同，贴吧 ID 显示在贴吧 APP 的个人主页上，用户 ID 则主要供 APP 内部使用。')
 
         self.toolButton.clicked.connect(self.show_toolbutton_icon)
         self.portrait_image = qt_image.MultipleImage()

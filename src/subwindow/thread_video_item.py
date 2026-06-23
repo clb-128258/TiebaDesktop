@@ -128,8 +128,14 @@ class ThreadVideoItem(base_ui.WindowBaseQWidget, thread_video_item.Ui_Form):
         resized_pixmap = qt_image.add_cover_radius_angle_for_pixmap(original_pixmap)
 
         del original_pixmap
-        self.label.clear()
-        self.label.setPixmap(resized_pixmap)
+
+        # 渐变显示图片
+        if self.label.pixmap():
+            # 已有图片时直接显示，不渲染动画
+            self.label.clear()
+            self.label.setPixmap(resized_pixmap)
+        else:
+            funcs.show_label_pixmap_with_animation(self.label, resized_pixmap)
 
     def move_widgets(self):
         if self.is_webview_alive:

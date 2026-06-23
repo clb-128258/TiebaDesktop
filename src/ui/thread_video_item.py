@@ -35,6 +35,9 @@ class Ui_Form(object):
         self.gridLayout.setContentsMargins(11, 6, 8, 6)
         self.gridLayout.setObjectName("gridLayout")
         self.label_3 = QtWidgets.QLabel(self.frame)
+        self.label_3.setStyleSheet("QLabel {\n"
+"    color: white;\n"
+"}")
         self.label_3.setObjectName("label_3")
         self.gridLayout.addWidget(self.label_3, 0, 0, 1, 1)
         self.toolButton_3 = QtWidgets.QToolButton(self.frame)

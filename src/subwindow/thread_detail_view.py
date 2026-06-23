@@ -6,7 +6,6 @@ import sys
 import time
 import typing
 import json
-
 import aiotieba
 import pyperclip
 
@@ -14,19 +13,21 @@ from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer, Q
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
 from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
-import consts
-
 from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image, webview2
 from publics.winrt_url_share import winrt_share
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
-    cleanup_listWidget
+    cleanup_listWidget, show_label_pixmap_with_animation
 import publics.app_logger as logging
 from publics.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread, \
     pb_page
+
 from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
+
 from ui import tie_detail_view
+import consts
+
 
 narrow_status_map = {1: base_ui.NarrowButtonStatus.ArrowRight, 2: base_ui.NarrowButtonStatus.ArrowLeft}
 
@@ -262,8 +263,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.pushButton_13.clicked.connect(self.jump_next_page)
         self.pushButton_8.clicked.connect(self.jump_first_page)
         self.toolButton.clicked.connect(self.frame_7.hide)
-        self.lz_portrait.currentPixmapChanged.connect(self.label_4.setPixmap)
-        self.forum_avatar.currentPixmapChanged.connect(self.label_14.setPixmap)
+        self.lz_portrait.currentPixmapChanged.connect(lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
+        self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: show_label_pixmap_with_animation(self.label_14, pixmap))
         self.toolButton_2.clicked.connect(self.frame_3.hide)
         self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
         self.pushButton_10.clicked.connect(self.show_addpost_emoji_selector)

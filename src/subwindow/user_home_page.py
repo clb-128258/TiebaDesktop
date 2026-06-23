@@ -1,7 +1,7 @@
 import asyncio
-
 import aiotieba
 import pyperclip
+
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
 from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image
 from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
-    get_exception_string, cleanup_listWidget
+    get_exception_string, cleanup_listWidget, show_label_pixmap_with_animation
 import publics.app_logger as logging
 
 from publics.tieba_apis import get_user_profile
@@ -82,10 +82,9 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.tabWidget.currentChanged.connect(self.load_thread_image)
 
         self.portrait_image = qt_image.MultipleImage()
-        self.portrait_image.currentImageChanged.connect(
-            lambda: self.label.setPixmap(self.portrait_image.currentPixmap()))
-        self.portrait_image.currentImageChanged.connect(
-            lambda: self.setWindowIcon(QIcon(self.portrait_image.currentPixmap())))
+        self.portrait_image.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap))
+        self.portrait_image.currentPixmapChanged.connect(lambda pixmap: self.setWindowIcon(QIcon(pixmap)))
         self.destroyed.connect(self.portrait_image.destroyImage)
 
         self.init_top_toaster()

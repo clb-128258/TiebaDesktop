@@ -2,12 +2,13 @@ import gc
 
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
-from PyQt5.QtWidgets import QListWidget, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget, app_logger
 from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget
 from subwindow import base_ui
+
 from ui import forum_search
 
 

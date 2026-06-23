@@ -71,9 +71,9 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
         self.portrait_image = qt_image.MultipleImage()
         self.forum_image = qt_image.MultipleImage()
         self.portrait_image.currentPixmapChanged.connect(
-            lambda pixmap: show_label_pixmap_with_animation(self.label_4,pixmap))
+            lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
         self.forum_image.currentPixmapChanged.connect(
-            lambda pixmap: show_label_pixmap_with_animation(self.label,pixmap))
+            lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap))
         self.destroyed.connect(self.portrait_image.destroyImage)
         self.destroyed.connect(self.forum_image.destroyImage)
 

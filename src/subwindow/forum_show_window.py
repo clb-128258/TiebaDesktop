@@ -1,8 +1,8 @@
 import asyncio
 import gc
 import time
-
 import aiotieba
+
 from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
@@ -10,11 +10,11 @@ from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 from publics import profile_mgr, qt_window_mgr, cache_mgr, qt_image, top_toast_widget
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
-    cleanup_listWidget
+    cleanup_listWidget, show_label_pixmap_with_animation
 import publics.app_logger as logging
 from publics.tieba_apis import fetch_frs_bottom, sign_forum
-from subwindow import base_ui
 
+from subwindow import base_ui
 from ui import ba_head
 
 
@@ -47,10 +47,12 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             lw.verticalScrollBar().valueChanged.connect(self.threadList_load_image)
 
         self.forum_avatar = qt_image.MultipleImage()
-        self.forum_avatar.currentPixmapChanged.connect(self.label.setPixmap)
+        self.forum_avatar.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap))
         self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: self.setWindowIcon(QIcon(pixmap)))
         self.forum_admin_portrait = qt_image.MultipleImage()
-        self.forum_admin_portrait.currentPixmapChanged.connect(self.label_6.setPixmap)
+        self.forum_admin_portrait.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_6, pixmap))
 
         self.init_elements()
         self.label_9.hide()

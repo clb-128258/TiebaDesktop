@@ -1,23 +1,22 @@
 import asyncio
 import time
 import datetime
-
 import aiotieba
 import pyperclip
 import requests
+
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
     QTableWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image, top_toast_widget, profile_mgr
+from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image, top_toast_widget
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
-    large_num_to_string, get_exception_string, get_dict_value_treely
+    large_num_to_string, get_exception_string, show_label_pixmap_with_animation
 import publics.app_logger as logging
-
 from publics.tieba_apis import get_forum_level_info, sign_forum
-from subwindow import base_ui
 
+from subwindow import base_ui
 from ui import forum_detail
 
 
@@ -56,7 +55,8 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         self.pushButton_8.clicked.connect(self.refresh_main_data)
 
         self.forum_atavar = qt_image.MultipleImage()
-        self.forum_atavar.currentPixmapChanged.connect(self.label.setPixmap)
+        self.forum_atavar.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap))
         self.forum_atavar.currentPixmapChanged.connect(lambda pm: self.setWindowIcon(QIcon(pm)))
 
         self.listWidget_2.setCurrentRow(default_index)
