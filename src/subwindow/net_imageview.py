@@ -5,12 +5,15 @@ import time
 import requests
 from PyQt5.QtCore import pyqtSignal, QEvent, Qt, QMimeData, QUrl, QByteArray, QSize, QBuffer, QIODevice
 from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
-from PyQt5.QtWidgets import QApplication, QMenu, QAction, QFileDialog
+from PyQt5.QtWidgets import QApplication, QAction, QFileDialog
 
 import publics.app_logger as logging
 from publics import request_mgr, top_toast_widget, profile_mgr
+
 from subwindow import base_ui
 from subwindow.base_ui import BaseQMenu
+
+import consts
 from ui import image_viewer
 
 
@@ -252,7 +255,8 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
 
             success_flag = False
             try:
-                response = requests.get(self.src, headers=request_mgr.header, verify=request_mgr.is_ssl_required())
+                response = requests.get(self.src, headers=request_mgr.header, verify=request_mgr.is_ssl_required(),
+                                        timeout=consts.HTTP_TIMEOUT)
                 if response.content:
                     if response.headers['content-type'] == 'image/gif':
                         self.isGif = True

@@ -1,10 +1,14 @@
-from PyQt5.QtCore import QObject, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize, QRect, Qt
-from PyQt5.QtGui import QImage, QPixmap, QMovie, QBrush, QPainter, QPixmapCache
 import requests
-from publics import request_mgr, cache_mgr, funcs, app_logger
+import consts
 from typing import Union, Tuple
 import os
 import enum
+
+from PyQt5.QtCore import QObject, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize, QRect, Qt
+from PyQt5.QtGui import QImage, QPixmap, QMovie, QBrush, QPainter, QPixmapCache
+
+from publics import request_mgr, cache_mgr, funcs, app_logger
+
 
 def add_cover_radius_angle(image: QImage,
                            width: int = -1,
@@ -246,7 +250,8 @@ class MultipleImage(QObject):
             self.__image_type = ImageType.OtherStatic
 
     def __load_from_httpurl(self):
-        response = requests.get(self.__image_source, headers=request_mgr.header, verify=request_mgr.is_ssl_required())
+        response = requests.get(self.__image_source, headers=request_mgr.header, verify=request_mgr.is_ssl_required(),
+                                timeout=consts.HTTP_TIMEOUT)
         if response.status_code == 200 and response.content:
             self.__image_original_binary = response.content
 

@@ -16,6 +16,8 @@ APP_VERSION_STR = '1.3.1-beta'
 APP_VERSION_NUM = 10
 
 # 网络请求信息
+HTTP_TIMEOUT = 12
+
 SCHEME_HTTP = 'http://'
 SCHEME_HTTPS = 'https://'
 

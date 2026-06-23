@@ -1,6 +1,6 @@
 """本地缓存文件管理器"""
 import consts
-from publics import request_mgr, funcs, profile_mgr
+from publics import request_mgr
 import requests
 import os
 import hashlib
@@ -50,7 +50,8 @@ def save_md5_ico(link_str: str) -> str:
     Return:
         md5值
     """
-    response = requests.get(link_str, headers=request_mgr.header, verify=request_mgr.is_ssl_required())
+    response = requests.get(link_str, headers=request_mgr.header, verify=request_mgr.is_ssl_required(),
+                            timeout=consts.HTTP_TIMEOUT)
     bytes_data = response.content
     if bytes_data and response.status_code == 200:
         return save_md5_ico_from_bin(bytes_data)
@@ -88,7 +89,8 @@ def save_bd_hash_img(bd_hash: str, original=False) -> bytes:
     ex_header = request_mgr.header
     ex_header['Referer'] = 'tieba.baidu.com'
 
-    response = requests.get(head_url, headers=ex_header, verify=request_mgr.is_ssl_required())
+    response = requests.get(head_url, headers=ex_header, verify=request_mgr.is_ssl_required(),
+                            timeout=consts.HTTP_TIMEOUT)
     bytes_data = response.content
     if bytes_data and response.status_code == 200:
         local_path = f'{consts.datapath}/image_caches/bd_hash_img{"_original_size" if original else ""}_{bd_hash}.jpg'
@@ -110,7 +112,8 @@ def get_portrait(portrait: str) -> bytes:
 def save_portrait(portrait: str):
     head_url = f'http://tb.himg.baidu.com/sys/portraith/item/{portrait}'
 
-    response = requests.get(head_url, headers=request_mgr.header, verify=request_mgr.is_ssl_required())
+    response = requests.get(head_url, headers=request_mgr.header, verify=request_mgr.is_ssl_required(),
+                            timeout=consts.HTTP_TIMEOUT)
     bytes_data = response.content
     if bytes_data and response.status_code == 200:
         local_path = f'{consts.datapath}/image_caches/portrait_{portrait}.jpg'

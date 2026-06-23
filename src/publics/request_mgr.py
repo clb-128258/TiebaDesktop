@@ -93,7 +93,7 @@ def run_get_api(api: str,
                            headers=final_header,
                            cookies=cookie,
                            params=params,
-                           timeout=30)
+                           timeout=consts.HTTP_TIMEOUT)
 
     if encoding:
         response.encoding = encoding
@@ -153,7 +153,7 @@ def run_post_api(api: str,
                             cookies=cookie,
                             params=params,
                             data=payloads,
-                            timeout=30)
+                            timeout=consts.HTTP_TIMEOUT)
 
     if encoding:
         response.encoding = encoding
@@ -214,7 +214,7 @@ def run_protobuf_api(api: str,
                             cookies=cookie,
                             params=params,
                             files=data,
-                            timeout=30)
+                            timeout=consts.HTTP_TIMEOUT)
 
     response.raise_for_status()
     response.close()

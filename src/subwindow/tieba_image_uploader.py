@@ -13,6 +13,8 @@ from PyQt5.QtWidgets import QFileDialog, QApplication, QMenu, QAction, QMessageB
 from publics import request_mgr, top_toast_widget, funcs, profile_mgr, app_logger, qt_image
 from subwindow import base_ui
 from subwindow.base_ui import BaseQMenu
+
+import consts
 from ui import tb_image_uploader
 
 
@@ -421,7 +423,8 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
             response = session.post(f'{request_mgr.SCHEME_HTTP}{request_mgr.TIEBA_APP_HOST}/c/s/uploadPicture',
                                     headers=request_mgr.header_android,
                                     data=payloads,
-                                    files=data)
+                                    files=data,
+                                    timeout=consts.HTTP_TIMEOUT)
             response.close()
             session.close()
             response.raise_for_status()

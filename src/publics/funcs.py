@@ -273,7 +273,7 @@ def http_downloader(path, src):
                                             ['other_settings', 'disable_ssl_verify'],
                                             False)
 
-    resp = requests.get(src, headers=consts.http_header, stream=True, verify=need_verify)
+    resp = requests.get(src, headers=consts.http_header, stream=True, verify=need_verify, timeout=consts.HTTP_TIMEOUT)
     if resp.status_code == 200:
         logging.log_INFO(f'server returned status code 200, start to write data.')
         f = open(path + '.crdownload', 'wb')
