@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\top_toast.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\top_toast.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #

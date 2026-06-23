@@ -363,6 +363,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 'enable_image_fade_in'] = self.checkBox_28.isChecked()
             profile_mgr.local_config['other_settings']['animation_switches'][
                 'disable_top_toast_animation'] = self.checkBox_29.isChecked()
+            profile_mgr.local_config['other_settings']['animation_switches'][
+                'disable_mw_switch_animation'] = self.checkBox_30.isChecked()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -753,6 +755,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
             self.checkBox_27.setChecked(profile_mgr.local_config["other_settings"]["disable_ssl_verify"])
             self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
+            self.checkBox_30.setChecked(
+                profile_mgr.local_config['other_settings']['animation_switches']['disable_mw_switch_animation'])
 
             self.checkBox_26.setChecked(profile_mgr.local_config['sign_settings']['use_widget_sign_flag'])
 
@@ -1522,7 +1526,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
     def paint_page_switch_elements(self):
         self.set_top_button_style()
-        self.rend_page_switch_animation()
+
+        page_switch_animation_enabled = get_dict_value_treely(profile_mgr.local_config,
+                                                              ['other_settings', 'animation_switches',
+                                                               'disable_mw_switch_animation'],
+                                                              False)
+        if not page_switch_animation_enabled:
+            self.rend_page_switch_animation()
 
         # 不管怎样，更新前一个页面的索引
         self.previous_page_index = self.stackedWidget.currentIndex()
