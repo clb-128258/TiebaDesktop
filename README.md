@@ -53,13 +53,17 @@
 
 ## 🖼️ 界面预览
 
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap:8px;">
-<img src="./docs/app-ui-grabs/1.png" alt="首页界面">
-<img src="./docs/app-ui-grabs/2.png" alt="吧内浏览">
-<img src="./docs/app-ui-grabs/3.png" alt="贴子详情">
-<img src="./docs/app-ui-grabs/4.png" alt="账号管理">
-<img src="./docs/app-ui-grabs/5.png" alt="个人设置">
-<img src="./docs/app-ui-grabs/6.png" alt="深色主题">
+<div align="center">
+
+<img src="./docs/app-ui-grabs/1.png" alt="首页推荐" width="48%">
+<img src="./docs/app-ui-grabs/2.png" alt="关注的吧" width="48%">
+
+<img src="./docs/app-ui-grabs/3.png" alt="吧内贴子" width="48%">
+<img src="./docs/app-ui-grabs/4.png" alt="贴子详情" width="48%">
+
+<img src="./docs/app-ui-grabs/5.png" alt="吧详情页" width="48%">
+<img src="./docs/app-ui-grabs/6.png" alt="互动消息" width="48%">
+
 </div>
 
 ## 🚀 功能特性
@@ -101,7 +105,9 @@
 - ✅ 吧内关注、签到
 - ✅ 一键签到、成长等级签到
 -
+
 ✅ [命令行启动参数签到](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md#%E7%AD%BE%E5%88%B0%E6%89%80%E6%9C%89%E5%85%B3%E6%B3%A8%E7%9A%84%E5%90%A7)
+
 - ✅ 首页进吧页直接签到
 - ✅ **⚡ 翻倍的签到经验值**
 
