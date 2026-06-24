@@ -105,7 +105,6 @@
 - ✅ 吧内关注、签到
 - ✅ 一键签到、成长等级签到
 - ✅ [命令行启动参数签到](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md#%E7%AD%BE%E5%88%B0%E6%89%80%E6%9C%89%E5%85%B3%E6%B3%A8%E7%9A%84%E5%90%A7)
-
 - ✅ 首页进吧页直接签到
 - ✅ **⚡ 翻倍的签到经验值**
 
