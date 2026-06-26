@@ -1,15 +1,22 @@
 """webview2模块，实现了webview2与pyqt的绑定"""
 # 先引入跨平台库
 import os
+import typing
+
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache
 from PyQt5.QtCore import pyqtSignal, Qt
-from publics import app_logger
-import typing
+
+from publics import app_logger, qt_image
 
 # 判断一下是不是windows
 if os.name == 'nt':
-    import clr
+    try:
+        import clr
+    except Exception as e:
+        app_logger.log_WARN('failed to init .net CLR!')
+        app_logger.log_exception(e)
+        clr = None
     from win32gui import SetParent, MoveWindow
 else:
     app_logger.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
@@ -114,7 +121,7 @@ def isWebView2Installed():
     if os.name == 'nt':
         return bool(WebView2VersionScaner.get_ver_CoreWebView2Environment())
     else:
-        logging.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
+        app_logger.log_WARN('Your system is not Windows, so WebView2 can not work at this time')
         return False
 
 
@@ -642,7 +649,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def isHtmlInFullScreenState(self) -> bool:
         """
@@ -688,7 +695,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def back(self):
         """后退到历史记录中的上一页（如果可能）。"""
@@ -698,7 +705,7 @@ class QWebView2View(QWidget):
 
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def reload(self):
         """重新加载当前页面。"""
@@ -836,7 +843,7 @@ class QWebView2View(QWidget):
         if self.__render_completed:
             self.__run_on_ui_thread(_load)
         else:
-            logging.log_WARN('WebView has not inited')
+            app_logger.log_WARN('WebView has not inited')
 
     def openSaveHtmlDialog(self):
         """打开“另存为”对话框以保存当前页面。"""
@@ -950,15 +957,27 @@ class QWebView2View(QWidget):
             def _set_parent():
                 hwnd = self.__webview.Handle.ToInt32()
                 SetParent(hwnd, int(self.winId()))
-                MoveWindow(hwnd, 0, 0, self.width(), self.height(), True)
+
+                real_width = int(self.width() * self.devicePixelRatioF())
+                real_height = int(self.height() * self.devicePixelRatioF())
+                MoveWindow(hwnd, 0, 0, real_width, real_height, True)
 
             _set_parent()
 
     def __remake_qicon(self):
         def on_stream_copied(memoryStream):
             iconBytes = bytes(memoryStream.ToArray())  # 复制完后，转为python的字节数据
+
+            # 处理 QPixmap
+            screen_rate = qt_image.get_screen_ratio()
             pixmap = QPixmap()
+            pixmap.setDevicePixelRatio(screen_rate)
             pixmap.loadFromData(iconBytes)
+            pixmap = pixmap.scaled(int(pixmap.width() * screen_rate),
+                                   int(pixmap.height() * screen_rate),
+                                   Qt.KeepAspectRatio,
+                                   Qt.SmoothTransformation)
+
             if not pixmap.isNull():  # 图像不为空，加载成功
                 self.__current_icon = QIcon(pixmap)
                 self.__current_icon_binary = iconBytes

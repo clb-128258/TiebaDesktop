@@ -10,6 +10,11 @@
     <height>701</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>内置浏览器</string>
   </property>

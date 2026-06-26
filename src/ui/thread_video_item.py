@@ -15,6 +15,10 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(248, 140)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        Form.setFont(font)
         Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "")
         self.label = QtWidgets.QLabel(Form)
@@ -35,6 +39,10 @@ class Ui_Form(object):
         self.gridLayout.setContentsMargins(11, 6, 8, 6)
         self.gridLayout.setObjectName("gridLayout")
         self.label_3 = QtWidgets.QLabel(self.frame)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.label_3.setFont(font)
         self.label_3.setStyleSheet("QLabel {\n"
 "    color: white;\n"
 "}")

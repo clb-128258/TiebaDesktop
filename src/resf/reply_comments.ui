@@ -10,6 +10,11 @@
     <height>622</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>楼中楼回复</string>
   </property>
@@ -81,6 +86,11 @@
            </item>
            <item row="1" column="1">
             <widget class="QLabel" name="label_9">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+              </font>
+             </property>
              <property name="styleSheet">
               <string notr="true">QLabel{
 	color: grey;
@@ -105,6 +115,11 @@
          </item>
          <item row="0" column="1">
           <widget class="QPushButton" name="pushButton_2">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>个人主页</string>
            </property>
@@ -139,6 +154,11 @@
          </property>
          <item row="1" column="0" colspan="3">
           <widget class="QLabel" name="label_7">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="styleSheet">
             <string notr="true">QLabel{
 	color: grey;
@@ -154,6 +174,11 @@
          </item>
          <item row="0" column="3" rowspan="2">
           <widget class="QPushButton" name="pushButton">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>去看原贴</string>
            </property>
@@ -177,6 +202,11 @@
                <width>37</width>
                <height>22</height>
               </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+              </font>
              </property>
              <property name="toolTip">
               <string>在求助贴下回贴，一次经验 +6。</string>

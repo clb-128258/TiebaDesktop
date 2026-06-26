@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(165, 31)
+        Form.resize(167, 31)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -35,6 +35,9 @@ class Ui_Form(object):
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
         Form.setPalette(palette)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        Form.setFont(font)
         Form.setStyleSheet("")
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setContentsMargins(4, 4, 4, 4)
@@ -46,6 +49,9 @@ class Ui_Form(object):
         self.label.setObjectName("label")
         self.horizontalLayout.addWidget(self.label)
         self.label_2 = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
         self.horizontalLayout.addWidget(self.label_2)
         self.horizontalLayout.setStretch(1, 1)
@@ -53,6 +59,9 @@ class Ui_Form(object):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.label_3 = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_3.setFont(font)
         self.label_3.setStyleSheet("QLabel{\n"
 "    color: rgb(100,100,100);\n"
 "}\n"

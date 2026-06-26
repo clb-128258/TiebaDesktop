@@ -37,37 +37,10 @@ class Ui_Dialog(object):
         self.label_2.setObjectName("label_2")
         self.horizontalLayout_2.addWidget(self.label_2)
         self.toolButton = QtWidgets.QToolButton(Dialog)
-        self.toolButton.setStyleSheet("QToolButton {\n"
-"                background-color: transparent;\n"
-"                border: none;\n"
-"                border-radius: 6px;\n"
-"                padding: 1px;\n"
-"                icon-size: 17px;\n"
-"                }\n"
-"\n"
-"                /* 鼠标悬停时：轻微灰色背景 */\n"
-"                QToolButton:hover {\n"
-"                background-color: rgba(0, 0, 0, 0.08);\n"
-"                }\n"
-"\n"
-"                /* 按下时：更深的背景色，模拟按下效果 */\n"
-"                QToolButton:pressed {\n"
-"                background-color: rgba(0, 0, 0, 0.15);\n"
-"                }\n"
-"\n"
-"                /* 禁用状态：半透明，显示不可点击 */\n"
-"                QToolButton:disabled {\n"
-"                background-color: transparent;\n"
-"                opacity: 0.4;\n"
-"                }\n"
-"\n"
-"                /* 可选：如果按钮有菜单箭头，也可以美化箭头 */\n"
-"                QToolButton::menu-indicator {\n"
-"                image: url(:/icons/menu_arrow.png); /* 自定义箭头图标 */\n"
-"                subcontrol-position: right center;\n"
-"                subcontrol-origin: padding;\n"
-"                left: -4px;\n"
-"                }")
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.toolButton.setFont(font)
+        self.toolButton.setStyleSheet("")
         self.toolButton.setObjectName("toolButton")
         self.horizontalLayout_2.addWidget(self.toolButton)
         spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)

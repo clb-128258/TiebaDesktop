@@ -10,6 +10,11 @@
     <height>639</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>贴子预览</string>
   </property>
@@ -80,6 +85,11 @@
           </item>
           <item row="0" column="1">
            <widget class="QLabel" name="label_20">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>贴子内容提示</string>
             </property>
@@ -285,6 +295,9 @@
              <font>
               <pointsize>10</pointsize>
              </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLabel{color: grey;}</string>
             </property>
             <property name="text">
              <string/>
@@ -544,6 +557,11 @@
           </item>
           <item row="0" column="2" rowspan="2">
            <widget class="QPushButton" name="pushButton_2">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>进吧</string>
             </property>
@@ -555,6 +573,9 @@
              <font>
               <pointsize>10</pointsize>
              </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLabel{color: grey;}</string>
             </property>
             <property name="text">
              <string>desp</string>
@@ -643,6 +664,11 @@
               <height>25</height>
              </size>
             </property>
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="toolTip">
              <string/>
             </property>
@@ -676,6 +702,11 @@
               <height>25</height>
              </size>
             </property>
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="toolTip">
              <string/>
             </property>
@@ -708,6 +739,11 @@
               <width>40</width>
               <height>25</height>
              </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
             </property>
             <property name="toolTip">
              <string>在求助贴下回贴，一次经验 +6。</string>
@@ -798,6 +834,11 @@
          </property>
          <item row="1" column="4">
           <widget class="QPushButton" name="pushButton_7">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>立即跳转</string>
            </property>
@@ -815,6 +856,11 @@
          </item>
          <item row="1" column="2">
           <widget class="QLabel" name="label_17">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>页，共有x页</string>
            </property>
@@ -835,13 +881,24 @@
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_16">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>当前在第</string>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="spinBox"/>
+          <widget class="QSpinBox" name="spinBox">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+          </widget>
          </item>
          <item row="1" column="3">
           <spacer name="horizontalSpacer_5">
@@ -861,6 +918,11 @@
          </item>
          <item row="1" column="6">
           <widget class="QPushButton" name="pushButton_8">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>回首楼</string>
            </property>

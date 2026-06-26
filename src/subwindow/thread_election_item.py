@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap
 
 from publics import profile_mgr
+from publics.qt_image import get_pixmap_icon_from_file
 from ui import manager_election_item
 from subwindow import base_ui
 
@@ -37,9 +38,8 @@ class ThreadManagerElectionItem(base_ui.WindowBaseQWidget, manager_election_item
 
     def reset_theme(self):
         super().reset_theme()
-        vote_icon = QPixmap(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/ballot.png')
-        vote_icon = vote_icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.label_3.setPixmap(vote_icon)
+        self.label_3.setPixmap(
+            get_pixmap_icon_from_file(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/ballot.png', 30))
 
     def update_vote_status(self):
         if self.vote_start_time <= time.time() and self.vote_status != 6:

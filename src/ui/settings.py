@@ -15,6 +15,9 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(921, 625)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        Dialog.setFont(font)
         self.gridLayout_12 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_12.setObjectName("gridLayout_12")
         self.line = QtWidgets.QFrame(Dialog)
@@ -121,6 +124,9 @@ class Ui_Dialog(object):
         spacerItem1 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_27.addItem(spacerItem1)
         self.label_43 = QtWidgets.QLabel(self.groupBox_9)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_43.setFont(font)
         self.label_43.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_43.setObjectName("label_43")
@@ -144,6 +150,9 @@ class Ui_Dialog(object):
         spacerItem4 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_36.addItem(spacerItem4)
         self.label_50 = QtWidgets.QLabel(self.groupBox_9)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_50.setFont(font)
         self.label_50.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_50.setObjectName("label_50")
@@ -157,6 +166,9 @@ class Ui_Dialog(object):
         spacerItem6 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_26.addItem(spacerItem6)
         self.label_42 = QtWidgets.QLabel(self.groupBox_9)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_42.setFont(font)
         self.label_42.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_42.setObjectName("label_42")
@@ -191,7 +203,12 @@ class Ui_Dialog(object):
         self.pushButton_8.setObjectName("pushButton_8")
         self.horizontalLayout_29.addWidget(self.pushButton_8)
         self.label_44 = QtWidgets.QLabel(self.groupBox_9)
-        self.label_44.setStyleSheet("QLabel{color: grey;}\n"
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_44.setFont(font)
+        self.label_44.setStyleSheet("QLabel{\n"
+"    color: grey;\n"
+"}\n"
 "")
         self.label_44.setObjectName("label_44")
         self.horizontalLayout_29.addWidget(self.label_44)
@@ -204,6 +221,9 @@ class Ui_Dialog(object):
         spacerItem11 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_41.addItem(spacerItem11)
         self.label_54 = QtWidgets.QLabel(self.groupBox_9)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_54.setFont(font)
         self.label_54.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_54.setObjectName("label_54")
@@ -217,8 +237,13 @@ class Ui_Dialog(object):
         spacerItem13 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_43.addItem(spacerItem13)
         self.label_55 = QtWidgets.QLabel(self.groupBox_9)
-        self.label_55.setStyleSheet("QLabel{color: grey;}\n"
-"")
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_55.setFont(font)
+        self.label_55.setStyleSheet("QLabel{\n"
+"    color: grey;\n"
+"    font-size: 9pt;\n"
+"}")
         self.label_55.setObjectName("label_55")
         self.horizontalLayout_43.addWidget(self.label_55)
         spacerItem14 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -336,6 +361,9 @@ class Ui_Dialog(object):
         spacerItem20 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_21.addItem(spacerItem20, 2, 2, 1, 1)
         self.label_39 = QtWidgets.QLabel(self.groupBox_7)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_39.setFont(font)
         self.label_39.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_39.setObjectName("label_39")
@@ -347,8 +375,13 @@ class Ui_Dialog(object):
         spacerItem21 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_38.addItem(spacerItem21)
         self.label_52 = QtWidgets.QLabel(self.groupBox_7)
-        self.label_52.setStyleSheet("QLabel{color: grey;}\n"
-"")
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_52.setFont(font)
+        self.label_52.setStyleSheet("QLabel{\n"
+"    color: grey;\n"
+"    font-size: 9pt;\n"
+"}")
         self.label_52.setObjectName("label_52")
         self.horizontalLayout_38.addWidget(self.label_52)
         spacerItem22 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -371,6 +404,9 @@ class Ui_Dialog(object):
         spacerItem23 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_24.addItem(spacerItem23)
         self.label_41 = QtWidgets.QLabel(self.groupBox_5)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_41.setFont(font)
         self.label_41.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_41.setObjectName("label_41")
@@ -384,6 +420,9 @@ class Ui_Dialog(object):
         spacerItem25 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_23.addItem(spacerItem25)
         self.label_40 = QtWidgets.QLabel(self.groupBox_5)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_40.setFont(font)
         self.label_40.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_40.setObjectName("label_40")
@@ -407,6 +446,9 @@ class Ui_Dialog(object):
         spacerItem28 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_30.addItem(spacerItem28)
         self.label_46 = QtWidgets.QLabel(self.groupBox_5)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_46.setFont(font)
         self.label_46.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_46.setObjectName("label_46")
@@ -446,6 +488,9 @@ class Ui_Dialog(object):
         spacerItem32 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_21.addItem(spacerItem32)
         self.label_36 = QtWidgets.QLabel(self.groupBox_4)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_36.setFont(font)
         self.label_36.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_36.setObjectName("label_36")
@@ -479,6 +524,9 @@ class Ui_Dialog(object):
         spacerItem36 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_34.addItem(spacerItem36)
         self.label_49 = QtWidgets.QLabel(self.groupBox_4)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_49.setFont(font)
         self.label_49.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_49.setObjectName("label_49")
@@ -492,6 +540,9 @@ class Ui_Dialog(object):
         spacerItem38 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_22.addItem(spacerItem38)
         self.label_37 = QtWidgets.QLabel(self.groupBox_4)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_37.setFont(font)
         self.label_37.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_37.setObjectName("label_37")
@@ -513,6 +564,9 @@ class Ui_Dialog(object):
         spacerItem40 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_20.addItem(spacerItem40)
         self.label_9 = QtWidgets.QLabel(self.groupBox_4)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_9.setFont(font)
         self.label_9.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_9.setObjectName("label_9")
@@ -529,6 +583,9 @@ class Ui_Dialog(object):
         self.gridLayout_20.setContentsMargins(-1, 4, -1, -1)
         self.gridLayout_20.setObjectName("gridLayout_20")
         self.label_38 = QtWidgets.QLabel(self.groupBox_4)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_38.setFont(font)
         self.label_38.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_38.setObjectName("label_38")
@@ -584,7 +641,10 @@ class Ui_Dialog(object):
         spacerItem44 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_19.addItem(spacerItem44)
         self.label_4 = QtWidgets.QLabel(self.groupBox_8)
-        self.label_4.setStyleSheet("QLabel{color: grey;}\n"
+        self.label_4.setStyleSheet("QLabel{\n"
+"    color: grey;\n"
+"    font-size: 9pt;\n"
+"}\n"
 "")
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_19.addWidget(self.label_4)
@@ -646,7 +706,10 @@ class Ui_Dialog(object):
         spacerItem49 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_40.addItem(spacerItem49)
         self.label_53 = QtWidgets.QLabel(self.groupBox_8)
-        self.label_53.setStyleSheet("QLabel{color: grey;}\n"
+        self.label_53.setStyleSheet("QLabel{\n"
+"    color: grey;\n"
+"    font-size: 9pt;\n"
+"}\n"
 "")
         self.label_53.setObjectName("label_53")
         self.horizontalLayout_40.addWidget(self.label_53)
@@ -670,7 +733,10 @@ class Ui_Dialog(object):
         spacerItem52 = QtWidgets.QSpacerItem(66, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_33.addItem(spacerItem52)
         self.label_48 = QtWidgets.QLabel(self.groupBox_8)
-        self.label_48.setStyleSheet("QLabel{color: grey;}\n"
+        self.label_48.setStyleSheet("QLabel{\n"
+"    color: grey;\n"
+"    font-size: 9pt;\n"
+"}\n"
 "")
         self.label_48.setObjectName("label_48")
         self.horizontalLayout_33.addWidget(self.label_48)
@@ -697,6 +763,9 @@ class Ui_Dialog(object):
         spacerItem55 = QtWidgets.QSpacerItem(17, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_37.addItem(spacerItem55)
         self.label_51 = QtWidgets.QLabel(self.groupBox_10)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_51.setFont(font)
         self.label_51.setStyleSheet("QLabel{color: grey;}\n"
 "")
         self.label_51.setObjectName("label_51")
@@ -781,10 +850,16 @@ class Ui_Dialog(object):
         self.checkBox_18.setObjectName("checkBox_18")
         self.gridLayout_15.addWidget(self.checkBox_18, 6, 0, 2, 1)
         self.label_31 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_31.setFont(font)
         self.label_31.setStyleSheet("QLabel{color: grey;}")
         self.label_31.setObjectName("label_31")
         self.gridLayout_15.addWidget(self.label_31, 4, 1, 1, 1)
         self.label_33 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_33.setFont(font)
         self.label_33.setStyleSheet("QLabel{color: grey;}")
         self.label_33.setObjectName("label_33")
         self.gridLayout_15.addWidget(self.label_33, 13, 1, 1, 1)
@@ -792,6 +867,9 @@ class Ui_Dialog(object):
         self.checkBox_4.setObjectName("checkBox_4")
         self.gridLayout_15.addWidget(self.checkBox_4, 0, 0, 1, 1)
         self.label_28 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_28.setFont(font)
         self.label_28.setStyleSheet("QLabel{color: grey;}")
         self.label_28.setObjectName("label_28")
         self.gridLayout_15.addWidget(self.label_28, 3, 1, 1, 1)
@@ -800,6 +878,9 @@ class Ui_Dialog(object):
         self.checkBox_19.setObjectName("checkBox_19")
         self.gridLayout_15.addWidget(self.checkBox_19, 8, 0, 2, 1)
         self.label_35 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_35.setFont(font)
         self.label_35.setStyleSheet("QLabel{color: grey;}")
         self.label_35.setObjectName("label_35")
         self.gridLayout_15.addWidget(self.label_35, 8, 1, 2, 1)
@@ -808,10 +889,16 @@ class Ui_Dialog(object):
         self.checkBox_11.setObjectName("checkBox_11")
         self.gridLayout_15.addWidget(self.checkBox_11, 13, 0, 1, 1)
         self.label_30 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_30.setFont(font)
         self.label_30.setStyleSheet("QLabel{color: grey;}")
         self.label_30.setObjectName("label_30")
         self.gridLayout_15.addWidget(self.label_30, 12, 1, 1, 1)
         self.label_29 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_29.setFont(font)
         self.label_29.setStyleSheet("QLabel{color: grey;}")
         self.label_29.setObjectName("label_29")
         self.gridLayout_15.addWidget(self.label_29, 2, 1, 1, 1)
@@ -823,6 +910,9 @@ class Ui_Dialog(object):
         self.checkBox_5.setObjectName("checkBox_5")
         self.gridLayout_15.addWidget(self.checkBox_5, 1, 0, 1, 1)
         self.label_12 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_12.setFont(font)
         self.label_12.setStyleSheet("QLabel{color: grey;}")
         self.label_12.setObjectName("label_12")
         self.gridLayout_15.addWidget(self.label_12, 0, 1, 1, 1)
@@ -837,14 +927,23 @@ class Ui_Dialog(object):
         self.checkBox_8.setObjectName("checkBox_8")
         self.gridLayout_15.addWidget(self.checkBox_8, 12, 0, 1, 1)
         self.label_27 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_27.setFont(font)
         self.label_27.setStyleSheet("QLabel{color: grey;}")
         self.label_27.setObjectName("label_27")
         self.gridLayout_15.addWidget(self.label_27, 1, 1, 1, 1)
         self.label_32 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_32.setFont(font)
         self.label_32.setStyleSheet("QLabel{color: grey;}")
         self.label_32.setObjectName("label_32")
         self.gridLayout_15.addWidget(self.label_32, 5, 1, 1, 1)
         self.label_34 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_34.setFont(font)
         self.label_34.setStyleSheet("QLabel{color: grey;}")
         self.label_34.setObjectName("label_34")
         self.gridLayout_15.addWidget(self.label_34, 6, 1, 2, 1)
@@ -853,6 +952,9 @@ class Ui_Dialog(object):
         self.checkBox_22.setObjectName("checkBox_22")
         self.gridLayout_15.addWidget(self.checkBox_22, 10, 0, 2, 1)
         self.label_45 = QtWidgets.QLabel(self.groupBox_3)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_45.setFont(font)
         self.label_45.setStyleSheet("QLabel{color: grey;}")
         self.label_45.setObjectName("label_45")
         self.gridLayout_15.addWidget(self.label_45, 10, 1, 2, 1)
@@ -1003,7 +1105,7 @@ class Ui_Dialog(object):
         self.retranslateUi(Dialog)
         self.listWidget.setCurrentRow(0)
         self.stackedWidget.setCurrentIndex(0)
-        self.listWidget_3.setCurrentRow(-1)
+        self.listWidget_3.setCurrentRow(0)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):

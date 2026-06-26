@@ -64,6 +64,7 @@ class SingleHistoryItem(base_ui.WindowBaseQWidget, view_history_single_item.Ui_F
 
     def load_icon(self):
         pixmap = QPixmap()
+        pixmap.setDevicePixelRatio(self.devicePixelRatioF())
         if self.history_info['type'] == 2:
             pixmap.loadFromData(cache_mgr.get_portrait(self.history_info["user_info"]["portrait"]))
         elif self.history_info['type'] == 3:

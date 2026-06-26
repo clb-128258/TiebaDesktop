@@ -1,8 +1,8 @@
-from PyQt5.QtGui import QPixmap, QColor
-from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QWidget, QGraphicsOpacityEffect
 from PyQt5.QtCore import QTimer, QEvent, QPropertyAnimation, QEasingCurve, QPoint, Qt, QParallelAnimationGroup
 
-from publics import profile_mgr
+from publics import profile_mgr, qt_image
 from publics.funcs import get_dict_value_treely
 from ui import top_toast
 import enum
@@ -144,12 +144,9 @@ class TopToaster(QWidget, top_toast.Ui_Form):
         self._group_hide.finished.connect(self._hide_toast_widget_fully)
 
     def init_pixmap_cache(self):
-        self.success_icon = QPixmap('ui/success.png').scaled(ICON_SIZE, ICON_SIZE,
-                                                             transformMode=Qt.SmoothTransformation)
-        self.error_icon = QPixmap('ui/error.png').scaled(ICON_SIZE, ICON_SIZE,
-                                                         transformMode=Qt.SmoothTransformation)
-        self.info_icon = QPixmap('ui/information.png').scaled(ICON_SIZE, ICON_SIZE,
-                                                              transformMode=Qt.SmoothTransformation)
+        self.success_icon = qt_image.get_pixmap_icon_from_file('ui/success.png', ICON_SIZE)
+        self.error_icon = qt_image.get_pixmap_icon_from_file('ui/error.png', ICON_SIZE)
+        self.info_icon = qt_image.get_pixmap_icon_from_file('ui/information.png', ICON_SIZE)
 
     def _calc_x_pos(self):
         if not self.parent():

@@ -3,6 +3,7 @@ from PyQt5.QtGui import QPixmap
 
 from publics import audio_stream_player, profile_mgr
 from publics.funcs import format_second
+from publics.qt_image import get_pixmap_icon_from_file
 from subwindow import base_ui
 from ui import thread_voice_item
 
@@ -27,9 +28,8 @@ class ThreadVoiceItem(base_ui.WindowBaseQWidget, thread_voice_item.Ui_Form):
 
     def reset_theme(self):
         super().reset_theme()
-        voice_icon = QPixmap(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/voice_icon.png')
-        voice_icon = voice_icon.scaled(20, 20, transformMode=Qt.SmoothTransformation)
-        self.label.setPixmap(voice_icon)
+        self.label.setPixmap(
+            get_pixmap_icon_from_file(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/voice_icon.png', 20))
 
     def start_pause_audio(self):
         if not self.play_engine.is_audio_playing():

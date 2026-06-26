@@ -10,6 +10,12 @@
     <height>72</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>微软雅黑</family>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -20,6 +26,12 @@
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,0,0">
    <item row="1" column="3">
     <widget class="QPushButton" name="pushButton_2">
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>删除</string>
      </property>
@@ -50,6 +62,12 @@
    </item>
    <item row="0" column="3">
     <widget class="QPushButton" name="pushButton">
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="text">
       <string>切换</string>
      </property>
@@ -59,6 +77,15 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLabel" name="label_3">
+       <property name="font">
+        <font>
+         <family>微软雅黑</family>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
        <property name="text">
         <string>uid</string>
        </property>

@@ -16,6 +16,11 @@
     <height>350</height>
    </size>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>用户选择menu</string>
   </property>
@@ -28,6 +33,11 @@
    </property>
    <item row="0" column="0">
     <widget class="QLineEdit" name="lineEdit">
+     <property name="font">
+      <font>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="frame">
       <bool>true</bool>
      </property>

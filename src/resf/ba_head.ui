@@ -10,8 +10,13 @@
     <height>606</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
-   <string>吧头信息</string>
+   <string>吧首页</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_9" columnstretch="0">
    <item row="0" column="0" rowspan="2">
@@ -37,8 +42,13 @@
       </property>
       <item row="2" column="0">
        <widget class="QTabWidget" name="tabWidget">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab_4">
          <attribute name="title">
@@ -412,6 +422,11 @@
              <height>25</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="styleSheet">
             <string notr="true">QLabel{
 	background-color: rgb(91, 68, 200);
@@ -430,6 +445,11 @@
          </item>
          <item row="0" column="6">
           <widget class="QPushButton" name="pushButton_4">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string> 浏览器进吧</string>
            </property>
@@ -440,6 +460,11 @@
          </item>
          <item row="0" column="7">
           <widget class="QPushButton" name="pushButton_3">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string> 吧详情</string>
            </property>
@@ -450,6 +475,11 @@
          </item>
          <item row="0" column="2" colspan="2">
           <widget class="QLabel" name="label_7">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -470,6 +500,11 @@
          </item>
          <item row="0" column="5">
           <widget class="QPushButton" name="pushButton_5">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string> 吧内搜索</string>
            </property>

@@ -10,6 +10,11 @@
     <height>195</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>拉黑用户</string>
   </property>
@@ -32,6 +37,11 @@
      </item>
      <item row="2" column="0">
       <widget class="QCheckBox" name="checkBox_2">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string>禁止关注</string>
        </property>
@@ -110,6 +120,11 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_2">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string>取消</string>
        </property>

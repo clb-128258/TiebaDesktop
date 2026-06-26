@@ -10,6 +10,11 @@
     <height>370</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>上传图片</string>
   </property>

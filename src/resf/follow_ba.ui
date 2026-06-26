@@ -10,6 +10,11 @@
     <height>586</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -50,6 +55,11 @@
      </item>
      <item row="0" column="2">
       <widget class="QPushButton" name="pushButton">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string>一键签到</string>
        </property>
@@ -72,6 +82,11 @@
      </item>
      <item row="0" column="1">
       <widget class="QPushButton" name="pushButton_2">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string>刷新列表</string>
        </property>

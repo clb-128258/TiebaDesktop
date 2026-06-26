@@ -4,6 +4,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QListWidgetItem
 from publics import profile_mgr, request_mgr, top_toast_widget, app_logger, funcs
 from publics.funcs import get_exception_string
+from publics.qt_image import get_pixmap_icon_from_file
 from subwindow import base_ui
 
 from ui import thread_vote_info, thread_vote_option_item
@@ -52,9 +53,8 @@ class ThreadVoteItem(base_ui.WindowBaseQWidget, thread_vote_info.Ui_Form):
 
     def reset_theme(self):
         super().reset_theme()
-        vote_icon = QPixmap(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/vote.png')
-        vote_icon = vote_icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.label.setPixmap(vote_icon)
+        self.label.setPixmap(
+            get_pixmap_icon_from_file(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/vote.png', 30))
 
         # 设置列表内容的样式
         for i in range(self.listWidget.count()):

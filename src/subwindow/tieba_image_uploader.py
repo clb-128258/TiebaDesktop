@@ -187,9 +187,16 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()
 
+        def set_pixmap():
+            pixmap = self.show_movie.currentPixmap()
+            pixmap.setDevicePixelRatio(self.devicePixelRatioF())
+            self.label_5.setPixmap(pixmap)
+
         self.show_movie = QMovie('ui/upload.gif', QByteArray(b'gif'))
-        self.show_movie.setScaledSize(QSize(270, 190))
-        self.show_movie.frameChanged.connect(lambda: self.label_5.setPixmap(self.show_movie.currentPixmap()))
+        self.show_movie.setScaledSize(QSize(int(270 * self.devicePixelRatioF()),
+                                            int(self.devicePixelRatioF() * 190))
+                                      )
+        self.show_movie.frameChanged.connect(set_pixmap)
 
     def init_add_image_menu(self):
         menu = BaseQMenu(self)

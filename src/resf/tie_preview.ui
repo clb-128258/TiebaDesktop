@@ -10,6 +10,11 @@
     <height>363</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>贴子预览</string>
   </property>
@@ -189,6 +194,14 @@
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="label_11">
+     <property name="font">
+      <font>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLabel{color: grey;}</string>
+     </property>
      <property name="text">
       <string>x 人看过，x 人点赞，x 条回复，x 次转发</string>
      </property>
@@ -219,6 +232,14 @@
        <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0">
         <item>
          <widget class="QLabel" name="label_10">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QLabel{color: grey;}</string>
+          </property>
           <property name="text">
            <string>来自</string>
           </property>

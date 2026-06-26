@@ -14,7 +14,10 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(658, 418)
+        Dialog.resize(446, 398)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        Dialog.setFont(font)
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
         self.groupBox_2 = QtWidgets.QGroupBox(Dialog)

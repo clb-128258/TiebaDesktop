@@ -10,6 +10,11 @@
     <height>537</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>浏览记录</string>
   </property>
@@ -131,6 +136,11 @@
       </item>
       <item>
        <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>还没有任何浏览记录，快去看点什么吧~</string>
         </property>

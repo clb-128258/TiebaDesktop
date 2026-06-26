@@ -10,7 +10,7 @@ from publics import profile_mgr, funcs
 SCHEME_HTTP = consts.SCHEME_HTTP
 SCHEME_HTTPS = consts.SCHEME_HTTPS
 TIEBA_APP_HOST = consts.TIEBA_APP_HOST
-TIEBA_WEB_HOST = consts.TIEBA_APP_HOST
+TIEBA_WEB_HOST = consts.TIEBA_WEB_HOST
 TIEBA_CLIENT_VERSION = consts.TIEBA_CLIENT_VERSION
 
 header = consts.http_header

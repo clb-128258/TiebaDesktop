@@ -10,6 +10,11 @@
     <height>565</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>吧详情</string>
   </property>
@@ -28,6 +33,11 @@
        <width>16777215</width>
        <height>16777215</height>
       </size>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>9</pointsize>
+      </font>
      </property>
      <property name="currentIndex">
       <number>0</number>
@@ -60,6 +70,11 @@
          </property>
          <item row="1" column="1">
           <widget class="QPushButton" name="pushButton">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>关注</string>
            </property>
@@ -67,6 +82,11 @@
          </item>
          <item row="2" column="0" colspan="2">
           <widget class="QLabel" name="label_5">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -107,6 +127,11 @@
            </item>
            <item>
             <widget class="QLabel" name="label_11">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>吧id</string>
              </property>
@@ -244,6 +269,11 @@ QLabel{
                      <height>16</height>
                     </size>
                    </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>吧分类</string>
                    </property>
@@ -290,6 +320,11 @@ QLabel{
                  </property>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_22">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>主题贴</string>
                    </property>
@@ -348,6 +383,11 @@ QLabel{
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_19">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>关注</string>
                    </property>
@@ -394,6 +434,11 @@ QLabel{
                  </property>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_20">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>贴子</string>
                    </property>
@@ -537,6 +582,11 @@ QLabel{
                  </property>
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_9">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>xxxx / xxxx，距离下一等级还差 xx</string>
                    </property>
@@ -547,6 +597,11 @@ QLabel{
                  </item>
                  <item row="0" column="1" rowspan="2">
                   <widget class="QPushButton" name="pushButton_2">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>签到</string>
                    </property>
@@ -676,6 +731,11 @@ QLabel{
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_41">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>总发贴数</string>
                    </property>
@@ -696,6 +756,11 @@ QLabel{
                  </property>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_36">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>今日盖楼数</string>
                    </property>
@@ -754,6 +819,11 @@ QLabel{
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_40">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>关注天数</string>
                    </property>
@@ -871,6 +941,11 @@ QLabel{
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_38">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>漏签天数</string>
                    </property>
@@ -891,6 +966,11 @@ QLabel{
                  </property>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_42">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>连签天数</string>
                    </property>
@@ -949,6 +1029,11 @@ QLabel{
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_39">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>今日签到名次</string>
                    </property>
@@ -969,6 +1054,11 @@ QLabel{
                  </property>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_44">
+                   <property name="font">
+                    <font>
+                     <pointsize>9</pointsize>
+                    </font>
+                   </property>
                    <property name="text">
                     <string>签到天数</string>
                    </property>
@@ -1130,6 +1220,11 @@ QLabel{
        </item>
        <item row="0" column="2">
         <widget class="QPushButton" name="pushButton_4">
+         <property name="font">
+          <font>
+           <pointsize>9</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>保存图片</string>
          </property>
@@ -1161,8 +1256,8 @@ QLabel{
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>100</width>
-            <height>30</height>
+            <width>805</width>
+            <height>518</height>
            </rect>
           </property>
           <property name="palette">

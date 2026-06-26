@@ -4,7 +4,7 @@ import platform
 import pyperclip
 import yarl
 import json
-from PyQt5.QtCore import Qt, QSize, QByteArray, QMimeData, QPoint, QTimer, QEvent
+from PyQt5.QtCore import Qt, QByteArray, QMimeData, QPoint, QTimer, QEvent
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
 from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QAction, QMessageBox
 
@@ -86,12 +86,14 @@ class ExtTabBar(QTabBar):
         policy = profile_mgr.get_theme_policy()
         color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
+
         self.setStyleSheet(f"""QTabBar {{
             border: none;
             qproperty-drawBase: false;
         }}
         
         QTabBar::tab {{
+            font: 9pt "微软雅黑";
             padding: 6px 10px;
             border-radius: 14px;
             color: {font_color};
@@ -111,7 +113,7 @@ class ExtTabBar(QTabBar):
             image: url(./ui/icon_{profile_mgr.get_theme_policy_string()[1]}/close.png);
             width: 26px;
             height: 26px;
-            padding: 1px;
+            padding: 0px;
             border-radius: 8px;
         }}
         QTabBar::close-button:hover {{
@@ -195,6 +197,7 @@ class ExtTabBar(QTabBar):
             # 设置预览图
             self.drag_preview_label.clear()
             self.drag_pixmap = self.grab(tab_rect)
+            self.drag_pixmap.setDevicePixelRatio(self.devicePixelRatioF())
             self.drag_preview_label.set_pixmap(self.drag_pixmap)
         super().mousePressEvent(event)
 
@@ -754,7 +757,6 @@ class ExtWebView2(webview2.QWebView2View):
         self.setWindowIcon(self.default_icon)
 
         self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
-        self.show_movie.setScaledSize(QSize(50, 50))
         self.show_movie.frameChanged.connect(
             lambda: self.setWindowIcon(QIcon(self.show_movie.currentPixmap())))
 

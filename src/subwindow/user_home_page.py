@@ -11,6 +11,7 @@ from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread,
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
     get_exception_string, cleanup_listWidget, show_label_pixmap_with_animation
 import publics.app_logger as logging
+from publics.qt_image import get_pixmap_icon_from_file
 
 from publics.tieba_apis import get_user_profile
 from subwindow import base_ui
@@ -39,9 +40,8 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.user_id_portrait = user_id_portrait
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.label_11.setPixmap(
-            QPixmap(f'ui/icon_black/user_ban_new.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
-        self.label_7.setPixmap(QPixmap('ui/tb_dashen.png').scaled(15, 15, transformMode=Qt.SmoothTransformation))
+        self.label_11.setPixmap(get_pixmap_icon_from_file(f'ui/icon_black/user_ban_new.png', 15))
+        self.label_7.setPixmap(get_pixmap_icon_from_file(f'ui/tb_dashen.png', 15))
 
         # 隐藏组件
         self.frame_8.hide()

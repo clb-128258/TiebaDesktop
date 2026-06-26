@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\resf\thread_vote_option_item.ui'
+# Form implementation generated from reading ui file 'H:\Code\TiebaDesktop\src\resf\thread_vote_option_item.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -15,6 +15,10 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(197, 38)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        Form.setFont(font)
         Form.setStyleSheet("QWidget{font-family: \"微软雅黑\";}\n"
 "")
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
@@ -23,12 +27,24 @@ class Ui_Form(object):
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName("gridLayout")
         self.label_3 = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.label_3.setFont(font)
         self.label_3.setObjectName("label_3")
         self.gridLayout.addWidget(self.label_3, 0, 0, 1, 1)
         self.pushButton = QtWidgets.QPushButton(Form)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 0, 2, 1, 1)
         self.label = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.label.setFont(font)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 0, 1, 1, 1)
         self.gridLayout.setColumnStretch(0, 1)

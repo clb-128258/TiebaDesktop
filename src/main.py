@@ -1842,6 +1842,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 profile_mgr.current_stoken = ''
                 profile_mgr.current_bduss = ''
                 pixmap = QPixmap('ui/default_user_image.png')
+                pixmap.setDevicePixelRatio(qt_image.get_screen_ratio())
                 pixmap = qt_image.add_cover_for_pixmap(pixmap, 30)
                 self.add_info.emit([pixmap, '未登录'])
             else:
@@ -1853,6 +1854,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 self.self_user_portrait = self.user_data['portrait']
 
                 pixmap = QPixmap()
+                pixmap.setDevicePixelRatio(qt_image.get_screen_ratio())
                 pixmap.loadFromData(cache_mgr.get_portrait(self.self_user_portrait))
                 pixmap = qt_image.add_cover_for_pixmap(pixmap, 30)
                 self.add_info.emit([pixmap, name])

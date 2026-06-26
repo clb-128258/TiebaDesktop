@@ -7,8 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>309</width>
-    <height>203</height>
+    <height>205</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
   </property>
   <property name="windowTitle">
    <string>楼层详情</string>
@@ -18,6 +23,14 @@
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QLabel" name="label">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{color: grey;}</string>
+       </property>
        <property name="text">
         <string>第 x 楼,time,ip</string>
        </property>
@@ -38,6 +51,11 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButton">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string>查看楼中楼 (0)</string>
        </property>
@@ -125,6 +143,11 @@
          <height>25</height>
         </size>
        </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="styleSheet">
         <string notr="true">QLabel{
 	background-color: rgb(91, 68, 200);
@@ -154,6 +177,11 @@
          <width>40</width>
          <height>25</height>
         </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
        </property>
        <property name="styleSheet">
         <string notr="true">QLabel{
@@ -326,6 +354,11 @@
          <width>16777215</width>
          <height>26</height>
         </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
        </property>
        <property name="styleSheet">
         <string notr="true">QLabel{

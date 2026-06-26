@@ -14,6 +14,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
 from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image, webview2
+from publics.qt_image import get_pixmap_icon_from_file
 from publics.winrt_url_share import winrt_share
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
@@ -27,7 +28,6 @@ from subwindow.tieba_image_uploader import TiebaImageUploader
 
 from ui import tie_detail_view
 import consts
-
 
 narrow_status_map = {1: base_ui.NarrowButtonStatus.ArrowRight, 2: base_ui.NarrowButtonStatus.ArrowLeft}
 
@@ -263,8 +263,10 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.pushButton_13.clicked.connect(self.jump_next_page)
         self.pushButton_8.clicked.connect(self.jump_first_page)
         self.toolButton.clicked.connect(self.frame_7.hide)
-        self.lz_portrait.currentPixmapChanged.connect(lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
-        self.forum_avatar.currentPixmapChanged.connect(lambda pixmap: show_label_pixmap_with_animation(self.label_14, pixmap))
+        self.lz_portrait.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
+        self.forum_avatar.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_14, pixmap))
         self.toolButton_2.clicked.connect(self.frame_3.hide)
         self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
         self.pushButton_10.clicked.connect(self.show_addpost_emoji_selector)
@@ -323,8 +325,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.scrollAreaWidgetContents_2.setStyleSheet(
             f'QWidget#scrollAreaWidgetContents_2 {{background-color: {color};}}')
 
-        self.label_19.setPixmap(
-            QPixmap(f'ui/icon_{font_policy}/warning.png').scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.label_19.setPixmap(get_pixmap_icon_from_file(f'ui/icon_{font_policy}/warning.png', 20))
         self.toolButton_2.setIcon(QIcon(f'ui/icon_{font_policy}/close.png'))
         self.toolButton.setIcon(QIcon(f'ui/icon_{font_policy}/close.png'))
         self.toolButton_3.setIcon(QIcon(f'ui/icon_{font_policy}/page.png'))

@@ -14,17 +14,27 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(309, 203)
+        Form.resize(309, 205)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        Form.setFont(font)
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.label = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label.setFont(font)
+        self.label.setStyleSheet("QLabel{color: grey;}")
         self.label.setObjectName("label")
         self.horizontalLayout_2.addWidget(self.label)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem)
         self.pushButton = QtWidgets.QPushButton(Form)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.pushButton.setFont(font)
         self.pushButton.setFlat(True)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout_2.addWidget(self.pushButton)
@@ -65,6 +75,9 @@ class Ui_Form(object):
         self.label_11 = QtWidgets.QLabel(Form)
         self.label_11.setMinimumSize(QtCore.QSize(41, 21))
         self.label_11.setMaximumSize(QtCore.QSize(40, 25))
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_11.setFont(font)
         self.label_11.setStyleSheet("QLabel{\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"
@@ -77,6 +90,9 @@ class Ui_Form(object):
         self.label_8 = QtWidgets.QLabel(Form)
         self.label_8.setMinimumSize(QtCore.QSize(41, 21))
         self.label_8.setMaximumSize(QtCore.QSize(40, 25))
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_8.setFont(font)
         self.label_8.setStyleSheet("QLabel{\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"
@@ -146,6 +162,9 @@ class Ui_Form(object):
         self.label_10 = QtWidgets.QLabel(Form)
         self.label_10.setMinimumSize(QtCore.QSize(0, 26))
         self.label_10.setMaximumSize(QtCore.QSize(16777215, 26))
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_10.setFont(font)
         self.label_10.setStyleSheet("QLabel{\n"
 "    background-color: rgb(188, 188, 188);\n"
 "    border-radius: 8px;\n"

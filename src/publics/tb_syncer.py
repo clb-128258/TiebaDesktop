@@ -27,15 +27,17 @@ def download_toast_icon(link, need_round_cover=True):
         if not os.path.isfile(cache_path):
             cache_mgr.save_portrait(portrait)
     else:
-        timestr = str(time.time() * 10 ** 6)
+        timestr = str(time.time() * 10 ** 7)
         cache_path = f'{consts.datapath}/image_caches/ToastNotifyImageCache_{timestr}.png'
         icon_response = requests.get(link, headers=request_mgr.header)
         if icon_response.content and icon_response.status_code == 200:
             image = QImage()
+            image.setDevicePixelRatio(qt_image.get_screen_ratio())
             image.loadFromData(icon_response.content)
 
             if need_round_cover:
                 image = qt_image.add_round_cover(image, 150 if max(image.width(), image.height()) >= 150 else -1)
+                image.setDevicePixelRatio(qt_image.get_screen_ratio())
 
             image.save(cache_path)
 

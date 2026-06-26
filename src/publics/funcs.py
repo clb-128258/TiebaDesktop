@@ -651,9 +651,17 @@ class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
             self.label_17.hide()
 
     def init_load_flash(self):
+        def set_pixmap():
+            pixmap = self.show_movie.currentPixmap()
+            pixmap.setDevicePixelRatio(self.devicePixelRatioF())
+            self.label_18.setPixmap(pixmap)
+
         self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
-        self.show_movie.setScaledSize(QSize(120, 120))
-        self.show_movie.frameChanged.connect(lambda: self.label_18.setPixmap(self.show_movie.currentPixmap()))
+        self.show_movie.setScaledSize(QSize(int(120 * self.devicePixelRatioF()),
+                                            int(120 * self.devicePixelRatioF())
+                                            )
+                                      )
+        self.show_movie.frameChanged.connect(set_pixmap)
         self.destroyed.connect(self.show_movie.deleteLater)
 
     def eventFilter(self, source, event):

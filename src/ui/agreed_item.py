@@ -15,6 +15,9 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(526, 210)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        Form.setFont(font)
         Form.setStyleSheet("")
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setObjectName("gridLayout_2")
@@ -43,6 +46,9 @@ class Ui_Form(object):
         self.label_10 = QtWidgets.QLabel(Form)
         self.label_10.setMinimumSize(QtCore.QSize(0, 26))
         self.label_10.setMaximumSize(QtCore.QSize(16777215, 26))
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_10.setFont(font)
         self.label_10.setStyleSheet("QLabel{\n"
 "    background-color: rgb(188, 188, 188);\n"
 "    border-radius: 8px;\n"
@@ -81,11 +87,18 @@ class Ui_Form(object):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.label = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label.setFont(font)
+        self.label.setStyleSheet("QLabel{color: grey;}")
         self.label.setObjectName("label")
         self.horizontalLayout_2.addWidget(self.label)
         spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem1)
         self.pushButton = QtWidgets.QPushButton(Form)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.pushButton.setFont(font)
         self.pushButton.setFlat(True)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout_2.addWidget(self.pushButton)

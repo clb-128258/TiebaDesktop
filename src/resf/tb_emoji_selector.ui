@@ -10,6 +10,11 @@
     <height>216</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>表情选择menu</string>
   </property>
@@ -22,6 +27,11 @@
    </property>
    <item row="0" column="0">
     <widget class="QLineEdit" name="lineEdit">
+     <property name="font">
+      <font>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="frame">
       <bool>true</bool>
      </property>
@@ -149,6 +159,11 @@ QLabel{color: black;}
       </item>
       <item row="1" column="1" colspan="2">
        <widget class="QLabel" name="label_3">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>你可以直接使用自定义表情标签，尽管贴吧桌面可能不支持显示这类表情。</string>
         </property>

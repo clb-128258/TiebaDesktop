@@ -1,19 +1,36 @@
 import requests
-import consts
 from typing import Union, Tuple
 import os
 import enum
 
+from PyQt5.QtWidgets import qApp
 from PyQt5.QtCore import QObject, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize, QRect, Qt
 from PyQt5.QtGui import QImage, QPixmap, QMovie, QBrush, QPainter, QPixmapCache
 
 from publics import request_mgr, cache_mgr, funcs, app_logger
+import consts
+
+
+def get_pixmap_icon_from_file(file: str, size: int):
+    screen_ratio = get_screen_ratio()
+    size = int(size * screen_ratio)
+
+    pixmap = QPixmap(file)
+    pixmap.setDevicePixelRatio(screen_ratio)
+    return pixmap.scaled(size, size, transformMode=Qt.SmoothTransformation)
+
+
+def get_screen_ratio():
+    return qApp.primaryScreen().devicePixelRatio()
 
 
 def add_cover_radius_angle(image: QImage,
                            width: int = -1,
                            height: int = -1,
-                           cover_in_center: bool = False) -> QImage:
+                           cover_in_center: bool = False,
+                           high_dpi_support: bool = True) -> QImage:
+    screen_rate = get_screen_ratio() if high_dpi_support else 1.0
+
     if width == height == -1:
         resize_rate = 1.0
     else:
@@ -22,6 +39,7 @@ def add_cover_radius_angle(image: QImage,
     round_diameter_actually = int(round_diameter_original * (1 / resize_rate))
 
     image = image.convertToFormat(QImage.Format_ARGB32)
+    image.setDevicePixelRatio(screen_rate)
     if cover_in_center:
         imgsize = min(image.width(), image.height())
         width = height = min(width, height)
@@ -32,10 +50,12 @@ def add_cover_radius_angle(image: QImage,
             imgsize,
         )
         image = image.copy(rect)
+        image.setDevicePixelRatio(screen_rate)
 
     # Create the output image with the same dimensions
     # and an alpha channel and make it completely transparent:
     out_img = QImage(image.size(), QImage.Format_ARGB32)
+    out_img.setDevicePixelRatio(screen_rate)
     out_img.fill(Qt.transparent)
 
     # Create a texture brush and paint a circle
@@ -51,26 +71,38 @@ def add_cover_radius_angle(image: QImage,
     painter.setPen(Qt.NoPen)
 
     # drawing radius rect
-    painter.drawRoundedRect(QRect(0, 0, image.width(), image.height()), round_diameter_actually,
+    painter.drawRoundedRect(QRect(0, 0, int(image.width() / screen_rate),
+                                  int(image.height() / screen_rate)),
+                            round_diameter_actually,
                             round_diameter_actually)
 
     # closing painter event
     painter.end()
 
-    if width == height == -1:
+    if width == height == -1 and screen_rate == 1.0:
         # return original image
         return out_img
+    elif screen_rate != 1.0 and width == height == -1:
+        # high dpi support
+        return out_img.scaled(int(out_img.width() * screen_rate),
+                              int(out_img.height() * screen_rate),
+                              Qt.KeepAspectRatio,
+                              Qt.SmoothTransformation)
     else:
         # return scaled image
-        return out_img.scaled(width, height,
+        return out_img.scaled(int(width * screen_rate),
+                              int(height * screen_rate),
                               Qt.KeepAspectRatio,
                               Qt.SmoothTransformation)
 
 
-def add_round_cover(image: QImage, size=-1) -> QImage:
+def add_round_cover(image: QImage, size=-1, high_dpi_support: bool = True) -> QImage:
     # https://geek-docs.com/pyqt5/pyqt5-tutorials/g_pyqt5-how-to-create-circular-image-from-any-image.html
+    screen_rate = get_screen_ratio() if high_dpi_support else 1.0
 
-    image.convertToFormat(QImage.Format_ARGB32)
+    image = image.convertToFormat(QImage.Format_ARGB32)
+    image.setDevicePixelRatio(screen_rate)
+
     # Crop image to a square:
     imgsize = min(image.width(), image.height())
     rect = QRect(
@@ -81,10 +113,12 @@ def add_round_cover(image: QImage, size=-1) -> QImage:
     )
 
     image = image.copy(rect)
+    image.setDevicePixelRatio(screen_rate)
 
     # Create the output image with the same dimensions
     # and an alpha channel and make it completely transparent:
     out_img = QImage(imgsize, imgsize, QImage.Format_ARGB32)
+    out_img.setDevicePixelRatio(screen_rate)
     out_img.fill(Qt.transparent)
 
     # Create a texture brush and paint a circle
@@ -100,30 +134,55 @@ def add_round_cover(image: QImage, size=-1) -> QImage:
     painter.setPen(Qt.NoPen)
 
     # drawing circle
-    painter.drawEllipse(0, 0, imgsize, imgsize)
+    painter.drawEllipse(0, 0,
+                        int(imgsize / screen_rate), int(imgsize / screen_rate))
 
     # closing painter event
     painter.end()
 
-    if size == -1:
+    if size == -1 and screen_rate == 1.0:
         # return original image
         return out_img
+    elif screen_rate != 1.0 and size == -1:
+        # high dpi support
+        return out_img.scaled(int(imgsize * screen_rate),
+                              int(imgsize * screen_rate),
+                              Qt.KeepAspectRatio,
+                              Qt.SmoothTransformation)
     else:
         # return scaled image
-        return out_img.scaled(size, size,
+        return out_img.scaled(int(size * screen_rate),
+                              int(size * screen_rate),
                               Qt.KeepAspectRatio,
                               Qt.SmoothTransformation)
 
 
-def add_cover_for_pixmap(pixmap: QPixmap, size=-1) -> QPixmap:
-    return QPixmap.fromImage(add_round_cover(pixmap.toImage(), size))
+def add_cover_for_pixmap(pixmap: QPixmap, size=-1, high_dpi_support: bool = True) -> QPixmap:
+    screen_rate = get_screen_ratio() if high_dpi_support else 1.0
+
+    image = pixmap.toImage()
+    image.setDevicePixelRatio(screen_rate)
+
+    pixmap = QPixmap.fromImage(add_round_cover(image, size, high_dpi_support))
+    pixmap.setDevicePixelRatio(screen_rate)
+
+    return pixmap
 
 
 def add_cover_radius_angle_for_pixmap(pixmap: QPixmap,
                                       width: int = -1,
                                       height: int = -1,
-                                      cover_in_center: bool = False) -> QPixmap:
-    return QPixmap.fromImage(add_cover_radius_angle(pixmap.toImage(), width, height, cover_in_center))
+                                      cover_in_center: bool = False,
+                                      high_dpi_support: bool = True) -> QPixmap:
+    screen_rate = get_screen_ratio() if high_dpi_support else 1.0
+
+    image = pixmap.toImage()
+    image.setDevicePixelRatio(screen_rate)
+
+    pixmap = QPixmap.fromImage(add_cover_radius_angle(image, width, height, cover_in_center, high_dpi_support))
+    pixmap.setDevicePixelRatio(screen_rate)
+
+    return pixmap
 
 
 class ImageType(enum.Enum):
@@ -208,12 +267,15 @@ class MultipleImage(QObject):
     def __load_gif(self):
         def on_frame_changed():
             current_image = self.__gif_container.currentImage()
+            current_image.setDevicePixelRatio(get_screen_ratio())
+
             if self.__cover_type == ImageCoverType.RoundCover:
                 self.__gif_covered_image = add_round_cover(current_image)
             elif self.__cover_type in (ImageCoverType.RadiusAngleCover, ImageCoverType.RadiusAngleCoverCentrally):
                 self.__gif_covered_image = add_cover_radius_angle(current_image,
                                                                   cover_in_center=self.__cover_type == ImageCoverType.RadiusAngleCoverCentrally)
 
+            self.__gif_covered_image.setDevicePixelRatio(get_screen_ratio())
             self.currentImageChanged.emit(current_image)
             self.currentPixmapChanged.emit(self.currentPixmap())
 
@@ -230,7 +292,9 @@ class MultipleImage(QObject):
             lambda e: self.imageLoadFailed.emit(f'QMovie load failed because {self.__gif_container.lastErrorString()}'))
 
         if self.__expect_size[0] and self.__expect_size[1]:
-            self.__gif_container.setScaledSize(QSize(self.__expect_size[0], self.__expect_size[1]))
+            self.__gif_container.setScaledSize(QSize(self.__expect_size[0],
+                                                     self.__expect_size[1])
+                                               )
         self.__gif_container.setDevice(self.__gif_buffer)
         self.__gif_container.setCacheMode(QMovie.CacheMode.CacheAll)
 
@@ -291,6 +355,10 @@ class MultipleImage(QObject):
             self.__static_image.loadFromData(self.__image_original_binary)
             self.__static_pixmap = QPixmap.fromImage(self.__static_image)
 
+            # 兼容高分屏
+            self.__static_image.setDevicePixelRatio(get_screen_ratio())
+            self.__static_pixmap.setDevicePixelRatio(get_screen_ratio())
+
     def __resize_mask_qt_image(self):
         if self.__cover_type == ImageCoverType.RoundCover:
             if self.__expect_size[0] and self.__expect_size[1]:
@@ -303,10 +371,14 @@ class MultipleImage(QObject):
         elif self.__cover_type == ImageCoverType.NoCover:
             width = self.__expect_size[0] if self.__expect_size[0] else self.__static_image.width()
             height = self.__expect_size[1] if self.__expect_size[1] else self.__static_image.height()
+            width = int(width * get_screen_ratio())
+            height = int(height * get_screen_ratio())
+
             self.__static_image = self.__static_image.scaled(width, height,
                                                              Qt.KeepAspectRatio,
                                                              Qt.SmoothTransformation)
             self.__static_pixmap = QPixmap.fromImage(self.__static_image)
+            self.__static_pixmap.setDevicePixelRatio(get_screen_ratio())
         elif self.__cover_type in (ImageCoverType.RadiusAngleCover, ImageCoverType.RadiusAngleCoverCentrally):
             width = self.__expect_size[0] if self.__expect_size[0] else self.__static_image.width()
             height = self.__expect_size[1] if self.__expect_size[1] else self.__static_image.height()
@@ -415,7 +487,9 @@ class MultipleImage(QObject):
             if self.__cover_type == ImageCoverType.RoundCover:
                 return self.__gif_covered_image
             else:
-                return self.__gif_container.currentImage()
+                image = self.__gif_container.currentImage()
+                image.setDevicePixelRatio(get_screen_ratio())
+                return image
 
     def currentPixmap(self) -> QPixmap:
         """获取当前 QPixmap"""
@@ -423,9 +497,13 @@ class MultipleImage(QObject):
             return self.__static_pixmap
         elif self.isDynamicImage():
             if self.__cover_type == ImageCoverType.NoCover:
-                return self.__gif_container.currentPixmap()
+                pixmap = self.__gif_container.currentPixmap()
+                pixmap.setDevicePixelRatio(get_screen_ratio())
+                return pixmap
             else:
-                return QPixmap.fromImage(self.__gif_covered_image)
+                pixmap = QPixmap.fromImage(self.__gif_covered_image)
+                pixmap.setDevicePixelRatio(get_screen_ratio())
+                return pixmap
 
     def destroyImage(self):
         """释放图像所占用的资源"""

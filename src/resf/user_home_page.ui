@@ -10,6 +10,11 @@
     <height>613</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>用户信息</string>
   </property>
@@ -159,6 +164,11 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>操作...</string>
             </property>
@@ -381,6 +391,11 @@ QLabel{
          </item>
          <item row="0" column="1">
           <widget class="QLabel" name="label_12">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>该用户被全吧封禁，贴子和回复将不可见。</string>
            </property>
@@ -422,6 +437,11 @@ QLabel{
          </item>
          <item row="0" column="1">
           <widget class="QLabel" name="label_10">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>该用户是贴吧大神</string>
            </property>
@@ -456,6 +476,11 @@ QLabel{
          </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_16">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>该用户设置了贴子评论权限。</string>
            </property>
@@ -469,6 +494,11 @@ QLabel{
    </item>
    <item row="2" column="0">
     <widget class="QTabWidget" name="tabWidget">
+     <property name="font">
+      <font>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -550,6 +580,11 @@ QLabel{
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="label_20">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>该用户已隐藏自己的回贴列表。</string>
             </property>
@@ -635,6 +670,11 @@ QLabel{
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="label_15">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>该用户设置了关注吧的可见范围。</string>
             </property>
@@ -688,6 +728,11 @@ QLabel{
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="label_18">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>该用户设置了关注和粉丝列表的可见范围。</string>
             </property>
@@ -757,6 +802,11 @@ QLabel{
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="label_19">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>该用户设置了关注和粉丝列表的可见范围。</string>
             </property>

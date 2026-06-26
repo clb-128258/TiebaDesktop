@@ -10,6 +10,11 @@
     <height>611</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>我的互动</string>
   </property>
@@ -34,6 +39,11 @@
     <layout class="QGridLayout" name="gridLayout">
      <item row="1" column="2">
       <widget class="QPushButton" name="pushButton">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string>刷新列表</string>
        </property>
@@ -85,6 +95,11 @@
      </item>
      <item row="3" column="0" colspan="3">
       <widget class="QTabWidget" name="tabWidget">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
        <property name="currentIndex">
         <number>0</number>
        </property>

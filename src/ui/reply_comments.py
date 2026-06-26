@@ -15,6 +15,9 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(477, 622)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        Dialog.setFont(font)
         self.gridLayout_4 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_4.setObjectName("gridLayout_4")
         self.frame_3 = QtWidgets.QFrame(Dialog)
@@ -45,6 +48,9 @@ class Ui_Dialog(object):
         self.label_3.setObjectName("label_3")
         self.gridLayout_5.addWidget(self.label_3, 0, 1, 1, 1)
         self.label_9 = QtWidgets.QLabel(self.frame)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_9.setFont(font)
         self.label_9.setStyleSheet("QLabel{\n"
 "    color: grey;\n"
 "}")
@@ -58,6 +64,9 @@ class Ui_Dialog(object):
         self.gridLayout_5.setColumnStretch(1, 1)
         self.gridLayout_2.addLayout(self.gridLayout_5, 0, 0, 1, 1)
         self.pushButton_2 = QtWidgets.QPushButton(self.frame)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.pushButton_2.setFont(font)
         self.pushButton_2.setObjectName("pushButton_2")
         self.gridLayout_2.addWidget(self.pushButton_2, 0, 1, 1, 1)
         self.gridLayout_2.setColumnStretch(0, 1)
@@ -73,6 +82,9 @@ class Ui_Dialog(object):
         self.gridLayout.setVerticalSpacing(8)
         self.gridLayout.setObjectName("gridLayout")
         self.label_7 = QtWidgets.QLabel(self.frame_2)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_7.setFont(font)
         self.label_7.setStyleSheet("QLabel{\n"
 "    color: grey;\n"
 "}")
@@ -80,6 +92,9 @@ class Ui_Dialog(object):
         self.label_7.setObjectName("label_7")
         self.gridLayout.addWidget(self.label_7, 1, 0, 1, 3)
         self.pushButton = QtWidgets.QPushButton(self.frame_2)
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 0, 3, 2, 1)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -88,6 +103,9 @@ class Ui_Dialog(object):
         self.label_8 = QtWidgets.QLabel(self.frame_2)
         self.label_8.setMinimumSize(QtCore.QSize(37, 22))
         self.label_8.setMaximumSize(QtCore.QSize(37, 22))
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        self.label_8.setFont(font)
         self.label_8.setStyleSheet("QLabel{\n"
 "    background-color: rgb(91, 68, 200);\n"
 "    color: rgb(255, 255, 255);\n"

@@ -241,7 +241,6 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
 
     def _resizeslot(self, pixmap):
         self.label.setPixmap(pixmap)
-        self.scrollAreaWidgetContents.setMinimumSize(pixmap.width(), pixmap.height())
 
         self.mirror_horizontal.setChecked(self.is_horizontal_mirror)
         self.mirror_vertical.setChecked(self.is_vertical_mirror)
@@ -284,7 +283,10 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
                 result_image = result_image.scaled(nw, nh, Qt.AspectRatioMode.KeepAspectRatio,
                                                    Qt.TransformationMode.SmoothTransformation)
             result_image = result_image.mirrored(self.is_horizontal_mirror, self.is_vertical_mirror)
-            self.updateImage.emit(QPixmap.fromImage(result_image))
+
+            pix = QPixmap.fromImage(result_image)
+            pix.setDevicePixelRatio(self.devicePixelRatioF())
+            self.updateImage.emit(pix)
         self.isResizing = False
 
     def resize_image(self):
@@ -386,9 +388,15 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
     def load_image(self):
         self.setWindowTitle(f'[加载中...] - 图片查看器')
 
+        def set_pixmap():
+            pixmap = self.show_movie.currentPixmap()
+            pixmap.setDevicePixelRatio(self.devicePixelRatioF())
+            self.label.setPixmap(pixmap)
+
         self.show_movie = QMovie('ui/loading_new.gif', QByteArray(b'gif'))
-        self.show_movie.setScaledSize(QSize(100, 100))
-        self.show_movie.frameChanged.connect(lambda: self.label.setPixmap(self.show_movie.currentPixmap()))
+        self.show_movie.setScaledSize(QSize(int(100 * self.devicePixelRatioF()),
+                                            int(100 * self.devicePixelRatioF())))
+        self.show_movie.frameChanged.connect(set_pixmap)
 
         self.resize_image()
         self.show_movie.start()
