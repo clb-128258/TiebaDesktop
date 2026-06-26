@@ -38,7 +38,8 @@ local_config_model = {
         "disable_ssl_verify": False,
         "animation_switches": {"enable_image_fade_in": True,
                                "disable_top_toast_animation": False,
-                               "disable_mw_switch_animation": False}
+                               "disable_mw_switch_animation": False},
+        "reset_dpi": -1
     },
     "webview_settings": {
         "disable_font_cover": False,

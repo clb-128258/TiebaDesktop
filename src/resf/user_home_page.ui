@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>807</width>
-    <height>613</height>
+    <width>786</width>
+    <height>623</height>
    </rect>
   </property>
   <property name="font">
@@ -18,16 +18,28 @@
   <property name="windowTitle">
    <string>用户信息</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_9" rowstretch="0,0,1">
+  <layout class="QGridLayout" name="gridLayout_12" rowstretch="0,1">
    <item row="0" column="0">
     <widget class="QFrame" name="frame">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>140</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QFrame#frame{
+	border-radius: 16px;
+	background-color: rgba(91, 68, 200, 50);
+}</string>
+     </property>
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,1">
+     <layout class="QGridLayout" name="gridLayout_10">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -40,90 +52,544 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item row="2" column="0" colspan="3">
-       <widget class="QFrame" name="frame_6">
+      <item row="0" column="0">
+       <widget class="QScrollArea" name="scrollArea">
+        <property name="palette">
+         <palette>
+          <active>
+           <colorrole role="Button">
+            <brush brushstyle="SolidPattern">
+             <color alpha="0">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Base">
+            <brush brushstyle="SolidPattern">
+             <color alpha="0">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Window">
+            <brush brushstyle="NoBrush">
+             <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+          </active>
+          <inactive>
+           <colorrole role="Button">
+            <brush brushstyle="SolidPattern">
+             <color alpha="0">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Base">
+            <brush brushstyle="SolidPattern">
+             <color alpha="0">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Window">
+            <brush brushstyle="NoBrush">
+             <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+          </inactive>
+          <disabled>
+           <colorrole role="Button">
+            <brush brushstyle="SolidPattern">
+             <color alpha="0">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Base">
+            <brush brushstyle="SolidPattern">
+             <color alpha="0">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Window">
+            <brush brushstyle="NoBrush">
+             <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+          </disabled>
+         </palette>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QScrollArea{
+	background: transparent;
+}
+QWidget#scrollAreaWidgetContents{
+	background: transparent;
+}</string>
+        </property>
         <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
+         <enum>QFrame::NoFrame</enum>
         </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::AdjustToContents</enum>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="label_6">
-           <property name="font">
-            <font>
-             <family>微软雅黑</family>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;个人简介&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>个人简介</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-           <property name="textInteractionFlags">
-            <set>Qt::TextBrowserInteraction</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="0" column="0" rowspan="2" colspan="2">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string/>
+        <property name="widgetResizable">
+         <bool>true</bool>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QLabel" name="label_2">
-            <property name="font">
-             <font>
-              <family>微软雅黑</family>
-              <pointsize>13</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>昵称</string>
-            </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>751</width>
+           <height>219</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,1">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_9">
+            <item row="0" column="0" rowspan="3">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>sex</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_14">
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>9</pointsize>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel{
+    background-color: rgba(91, 68, 200, 170);
+	border-style: radius;
+	border-radius: 11px;
+    border-width: 3px 8px;
+	border-color: rgba(91, 68, 200, 200);
+	color: white;
+}
+</string>
+                </property>
+                <property name="text">
+                 <string>xx 发贴</string>
+                </property>
+                <property name="textInteractionFlags">
+                 <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_8">
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>9</pointsize>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel{
+    background-color: rgba(91, 68, 200, 170);
+	border-style: radius;
+	border-radius: 11px;
+    border-width: 3px 8px;
+	border-color: rgba(91, 68, 200, 200);
+	color: white;
+}
+</string>
+                </property>
+                <property name="text">
+                 <string>xx 点赞</string>
+                </property>
+                <property name="textInteractionFlags">
+                 <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_4">
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>9</pointsize>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel{
+    background-color: rgba(91, 68, 200, 170);
+	border-style: radius;
+	border-radius: 11px;
+    border-width: 3px 8px;
+	border-color: rgba(91, 68, 200, 200);
+	color: white;
+}
+</string>
+                </property>
+                <property name="text">
+                 <string>吧龄 xx 年</string>
+                </property>
+                <property name="textInteractionFlags">
+                 <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_5">
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>9</pointsize>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel{
+    background-color: rgba(91, 68, 200, 170);
+	border-style: radius;
+	border-radius: 11px;
+    border-width: 3px 8px;
+	border-color: rgba(91, 68, 200, 200);
+	color: white;
+}
+</string>
+                </property>
+                <property name="text">
+                 <string>IP 属地: </string>
+                </property>
+                <property name="textInteractionFlags">
+                 <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item row="0" column="1" rowspan="2">
+             <layout class="QHBoxLayout" name="horizontalLayout">
+              <item>
+               <widget class="QLabel" name="label_2">
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>13</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>昵称</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_9">
+                <property name="minimumSize">
+                 <size>
+                  <width>44</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>微软雅黑</family>
+                  <pointsize>10</pointsize>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;贴吧成长等级&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel{
+	background-color: rgb(91, 68, 200);
+	color: rgb(255, 255, 255);
+	border-radius: 7px;
+}
+</string>
+                </property>
+                <property name="text">
+                 <string>Lv.0</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item row="0" column="2" rowspan="3">
+             <widget class="QPushButton" name="pushButton">
+              <property name="font">
+               <font>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>操作...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="0">
+           <widget class="QFrame" name="frame_8">
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <property name="spacing">
+              <number>3</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QFrame" name="frame_3">
+               <property name="styleSheet">
+                <string notr="true">QFrame{
+	background-color: rgb(154, 154, 154);
+	border-radius: 7px;
+}
+QLabel{
+	color: black;
+}</string>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,1">
+                <property name="topMargin">
+                 <number>6</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>6</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_11">
+                  <property name="text">
+                   <string>icon</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="label_12">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>该用户被全吧封禁，贴子和回复将不可见。</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="frame_2">
+               <property name="styleSheet">
+                <string notr="true">QFrame{
+	background-color: rgb(91, 68, 200);
+	border-radius: 7px;
+}
+QLabel{
+	color: white;
+}</string>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1">
+                <property name="topMargin">
+                 <number>6</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>6</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_7">
+                  <property name="text">
+                   <string>icon</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="label_10">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>该用户是贴吧大神</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="frame_5">
+               <property name="styleSheet">
+                <string notr="true">QFrame{
+	background-color: rgb(154, 154, 154);
+	border-radius: 7px;
+}
+QLabel{
+	color: black;
+}</string>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_8" columnstretch="0">
+                <property name="topMargin">
+                 <number>6</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>6</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_16">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>该用户设置了贴子评论权限。</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
-          <item>
-           <widget class="QLabel" name="label_9">
-            <property name="minimumSize">
-             <size>
-              <width>44</width>
-              <height>20</height>
-             </size>
-            </property>
+          <item row="2" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QLabel" name="label_3">
+              <property name="font">
+               <font>
+                <family>微软雅黑</family>
+                <pointsize>10</pointsize>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>贴吧 ID：</string>
+              </property>
+              <property name="textInteractionFlags">
+               <set>Qt::TextBrowserInteraction</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton">
+              <property name="text">
+               <string>c</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_6">
             <property name="font">
              <font>
               <family>微软雅黑</family>
@@ -131,368 +597,30 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;贴吧成长等级&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QLabel{
-	background-color: rgb(91, 68, 200);
-	color: rgb(255, 255, 255);
-	border-radius: 7px;
-}
-</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;个人简介&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Lv.0</string>
+             <string>个人简介</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton">
-            <property name="font">
-             <font>
-              <pointsize>9</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>操作...</string>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
             </property>
            </widget>
           </item>
          </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <item>
-           <widget class="QLabel" name="label_13">
-            <property name="text">
-             <string>sex</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_14">
-            <property name="font">
-             <font>
-              <family>微软雅黑</family>
-              <pointsize>9</pointsize>
-             </font>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QLabel{
-    background-color: rgb(221, 221, 221);
-	border-style: radius;
-	border-radius: 10px;
-    border-width: 3px 8px;
-	border-color: rgb(221, 221, 221);
-	color: black;
-}
-</string>
-            </property>
-            <property name="text">
-             <string>xx 发贴</string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_8">
-            <property name="font">
-             <font>
-              <family>微软雅黑</family>
-              <pointsize>9</pointsize>
-             </font>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QLabel{
-    background-color: rgb(221, 221, 221);
-	border-style: radius;
-	border-radius: 10px;
-    border-width: 3px 8px;
-	border-color: rgb(221, 221, 221);
-	color: black;
-}
-</string>
-            </property>
-            <property name="text">
-             <string>xx 点赞</string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_3">
-            <property name="font">
-             <font>
-              <family>微软雅黑</family>
-              <pointsize>9</pointsize>
-             </font>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QLabel{
-    background-color: rgb(221, 221, 221);
-	border-style: radius;
-	border-radius: 10px;
-    border-width: 3px 8px;
-	border-color: rgb(221, 221, 221);
-	color: black;
-}
-</string>
-            </property>
-            <property name="text">
-             <string>贴吧 ID：</string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_4">
-            <property name="font">
-             <font>
-              <family>微软雅黑</family>
-              <pointsize>9</pointsize>
-             </font>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QLabel{
-    background-color: rgb(221, 221, 221);
-	border-style: radius;
-	border-radius: 10px;
-    border-width: 3px 8px;
-	border-color: rgb(221, 221, 221);
-	color: black;
-}
-</string>
-            </property>
-            <property name="text">
-             <string>吧龄 xx 年</string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_5">
-            <property name="font">
-             <font>
-              <family>微软雅黑</family>
-              <pointsize>9</pointsize>
-             </font>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QLabel{
-    background-color: rgb(221, 221, 221);
-	border-style: radius;
-	border-radius: 10px;
-    border-width: 3px 8px;
-	border-color: rgb(221, 221, 221);
-	color: black;
-}
-</string>
-            </property>
-            <property name="text">
-             <string>IP 属地: </string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-       </layout>
+        </widget>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QFrame" name="frame_8">
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <property name="spacing">
-       <number>3</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QFrame" name="frame_3">
-        <property name="styleSheet">
-         <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
-	border-radius: 7px;
-}
-QLabel{
-	color: black;
-}</string>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,1">
-         <property name="topMargin">
-          <number>6</number>
-         </property>
-         <property name="bottomMargin">
-          <number>6</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>icon</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="label_12">
-           <property name="font">
-            <font>
-             <pointsize>9</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>该用户被全吧封禁，贴子和回复将不可见。</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QFrame" name="frame_2">
-        <property name="styleSheet">
-         <string notr="true">QFrame{
-	background-color: rgb(199, 188, 255);
-	border-radius: 7px;
-}
-QLabel{
-	color: black;
-}</string>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1">
-         <property name="topMargin">
-          <number>6</number>
-         </property>
-         <property name="bottomMargin">
-          <number>6</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>icon</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="label_10">
-           <property name="font">
-            <font>
-             <pointsize>9</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>该用户是贴吧大神</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QFrame" name="frame_5">
-        <property name="styleSheet">
-         <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
-	border-radius: 7px;
-}
-QLabel{
-	color: black;
-}</string>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_8" columnstretch="0">
-         <property name="topMargin">
-          <number>6</number>
-         </property>
-         <property name="bottomMargin">
-          <number>6</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_16">
-           <property name="font">
-            <font>
-             <pointsize>9</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>该用户设置了贴子评论权限。</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="2" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="font">
       <font>
@@ -557,12 +685,9 @@ QLabel{
        <item row="0" column="0">
         <widget class="QFrame" name="frame_11">
          <property name="styleSheet">
-          <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
+          <string notr="true">QFrame#frame_11{
+	background-color: rgba(91, 68, 200, 50);
 	border-radius: 7px;
-}
-QLabel{
-	color: black;
 }</string>
          </property>
          <property name="frameShape">
@@ -647,12 +772,9 @@ QLabel{
        <item row="0" column="0" colspan="2">
         <widget class="QFrame" name="frame_4">
          <property name="styleSheet">
-          <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
+          <string notr="true">QFrame#frame_4{
+	background-color: rgba(91, 68, 200, 50);
 	border-radius: 7px;
-}
-QLabel{
-	color: black;
 }</string>
          </property>
          <property name="frameShape">
@@ -705,12 +827,9 @@ QLabel{
        <item row="0" column="0">
         <widget class="QFrame" name="frame_9">
          <property name="styleSheet">
-          <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
+          <string notr="true">QFrame#frame_9{
+	background-color: rgba(91, 68, 200, 50);
 	border-radius: 7px;
-}
-QLabel{
-	color: black;
 }</string>
          </property>
          <property name="frameShape">
@@ -779,12 +898,9 @@ QLabel{
        <item row="0" column="0">
         <widget class="QFrame" name="frame_10">
          <property name="styleSheet">
-          <string notr="true">QFrame{
-	background-color: rgb(154, 154, 154);
+          <string notr="true">QFrame#frame_10{
+	background-color: rgba(91, 68, 200, 50);
 	border-radius: 7px;
-}
-QLabel{
-	color: black;
 }</string>
          </property>
          <property name="frameShape">

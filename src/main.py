@@ -204,6 +204,13 @@ def handle_command_events():
         sys.exit(0)
 
 
+def set_qt_scale_factor():
+    """重设 Qt 的缩放因子"""
+    factor = get_dict_value_treely(profile_mgr.local_config, ['other_settings', 'reset_dpi'], -1)
+    if factor != -1:
+        os.environ['QT_SCALE_FACTOR'] = str(factor)
+
+
 class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
     """设置窗口"""
     scanFinish = pyqtSignal(dict)
@@ -386,11 +393,18 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             port_num = int(self.lineEdit_2.text()) if self.lineEdit_2.text() else -1
             if not 0 <= port_num <= 65535 and self.lineEdit_2.text():
                 raise IndexError(f'invalid port number {port_num}')
+
             profile_mgr.local_config["proxy_settings"]["proxy_switch"] = proxy_switch
             profile_mgr.local_config['proxy_settings']['custom_proxy_server']['ip'] = self.lineEdit.text()
             profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port'] = port_num
             profile_mgr.local_config['proxy_settings']['enabled_scheme']['http'] = self.checkBox_14.isChecked()
             profile_mgr.local_config['proxy_settings']['enabled_scheme']['https'] = self.checkBox_15.isChecked()
+
+            if self.radioButton_6.isChecked():
+                profile_mgr.local_config['other_settings']['reset_dpi'] = -1
+            else:
+                profile_mgr.local_config['other_settings']['reset_dpi'] = self.spinBox.value() / 100
+
             profile_mgr.save_local_config()
         except KeyError:
             profile_mgr.fix_local_config()
@@ -774,6 +788,12 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.lineEdit_2.setText(str(port) if port != -1 else '')
             self.checkBox_14.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['http'])
             self.checkBox_15.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['https'])
+
+            if profile_mgr.local_config['other_settings']['reset_dpi'] == -1:
+                self.radioButton_6.setChecked(True)
+            else:
+                self.radioButton_7.setChecked(True)
+                self.spinBox.setValue(int(profile_mgr.local_config['other_settings']['reset_dpi'] * 100))
         except KeyError:
             logging.log_WARN('settings profile load failed, use default settings')
 
@@ -1867,28 +1887,39 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
 
 if __name__ == "__main__":
+    # set excepthook
     sys.excepthook = excepthook
 
+    # init profiles
     reset_udf()
     create_data()
     init_log()
     profile_mgr.init_all_datas()
     proxytool.set_proxy()
+
+    # process command args
     handle_command_events()
 
+    # Qt high dpi support
+    set_qt_scale_factor()
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+
+    # init Qt
     app = QApplication(sys.argv)
     translates = set_qt_languages()
     log_INFO('Qt init complete')
 
+    # init .net/cpp libraries
     winrt_share.init_library()
     check_webview2()
 
+    # init main window
     log_INFO('Initing main window')
     mainw = MainWindow()
     mainw.show()
-    logging.log_INFO('Mainwindow showed, into the main loop')
 
+    # main loop
+    logging.log_INFO('MainWindow showed, now run into the main loop')
     sys.exit(app.exec())

@@ -14,55 +14,162 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(807, 613)
+        Form.resize(786, 623)
         font = QtGui.QFont()
         font.setPointSize(9)
         Form.setFont(font)
-        self.gridLayout_9 = QtWidgets.QGridLayout(Form)
-        self.gridLayout_9.setObjectName("gridLayout_9")
+        self.gridLayout_12 = QtWidgets.QGridLayout(Form)
+        self.gridLayout_12.setObjectName("gridLayout_12")
         self.frame = QtWidgets.QFrame(Form)
+        self.frame.setMaximumSize(QtCore.QSize(16777215, 140))
+        self.frame.setStyleSheet("QFrame#frame{\n"
+"    border-radius: 16px;\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
+"}")
         self.frame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
-        self.gridLayout = QtWidgets.QGridLayout(self.frame)
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_10 = QtWidgets.QGridLayout(self.frame)
+        self.gridLayout_10.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_10.setObjectName("gridLayout_10")
+        self.scrollArea = QtWidgets.QScrollArea(self.frame)
+        palette = QtGui.QPalette()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
+        self.scrollArea.setPalette(palette)
+        self.scrollArea.setStyleSheet("QScrollArea{\n"
+"    background: transparent;\n"
+"}\n"
+"QWidget#scrollAreaWidgetContents{\n"
+"    background: transparent;\n"
+"}")
+        self.scrollArea.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.scrollArea.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setObjectName("scrollArea")
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 751, 219))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.gridLayout = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout.setObjectName("gridLayout")
-        self.frame_6 = QtWidgets.QFrame(self.frame)
-        self.frame_6.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frame_6.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frame_6.setObjectName("frame_6")
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.frame_6)
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.label_6 = QtWidgets.QLabel(self.frame_6)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(10)
-        self.label_6.setFont(font)
-        self.label_6.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
-        self.label_6.setWordWrap(True)
-        self.label_6.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-        self.label_6.setObjectName("label_6")
-        self.horizontalLayout_2.addWidget(self.label_6)
-        self.horizontalLayout_2.setStretch(0, 1)
-        self.gridLayout.addWidget(self.frame_6, 2, 0, 1, 3)
-        self.label = QtWidgets.QLabel(self.frame)
+        self.gridLayout_9 = QtWidgets.QGridLayout()
+        self.gridLayout_9.setObjectName("gridLayout_9")
+        self.label = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         self.label.setText("")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName("label")
-        self.gridLayout.addWidget(self.label, 0, 0, 2, 2)
-        self.verticalLayout = QtWidgets.QVBoxLayout()
-        self.verticalLayout.setObjectName("verticalLayout")
+        self.gridLayout_9.addWidget(self.label, 0, 0, 3, 1)
+        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.label_13 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        self.label_13.setObjectName("label_13")
+        self.horizontalLayout_4.addWidget(self.label_13)
+        self.label_14 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.label_14.setFont(font)
+        self.label_14.setStyleSheet("QLabel{\n"
+"    background-color: rgba(91, 68, 200, 170);\n"
+"    border-style: radius;\n"
+"    border-radius: 11px;\n"
+"    border-width: 3px 8px;\n"
+"    border-color: rgba(91, 68, 200, 200);\n"
+"    color: white;\n"
+"}\n"
+"")
+        self.label_14.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByKeyboard|QtCore.Qt.LinksAccessibleByMouse)
+        self.label_14.setObjectName("label_14")
+        self.horizontalLayout_4.addWidget(self.label_14)
+        self.label_8 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.label_8.setFont(font)
+        self.label_8.setStyleSheet("QLabel{\n"
+"    background-color: rgba(91, 68, 200, 170);\n"
+"    border-style: radius;\n"
+"    border-radius: 11px;\n"
+"    border-width: 3px 8px;\n"
+"    border-color: rgba(91, 68, 200, 200);\n"
+"    color: white;\n"
+"}\n"
+"")
+        self.label_8.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByKeyboard|QtCore.Qt.LinksAccessibleByMouse)
+        self.label_8.setObjectName("label_8")
+        self.horizontalLayout_4.addWidget(self.label_8)
+        self.label_4 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.label_4.setFont(font)
+        self.label_4.setStyleSheet("QLabel{\n"
+"    background-color: rgba(91, 68, 200, 170);\n"
+"    border-style: radius;\n"
+"    border-radius: 11px;\n"
+"    border-width: 3px 8px;\n"
+"    border-color: rgba(91, 68, 200, 200);\n"
+"    color: white;\n"
+"}\n"
+"")
+        self.label_4.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByKeyboard|QtCore.Qt.LinksAccessibleByMouse)
+        self.label_4.setObjectName("label_4")
+        self.horizontalLayout_4.addWidget(self.label_4)
+        self.label_5 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(9)
+        self.label_5.setFont(font)
+        self.label_5.setStyleSheet("QLabel{\n"
+"    background-color: rgba(91, 68, 200, 170);\n"
+"    border-style: radius;\n"
+"    border-radius: 11px;\n"
+"    border-width: 3px 8px;\n"
+"    border-color: rgba(91, 68, 200, 200);\n"
+"    color: white;\n"
+"}\n"
+"")
+        self.label_5.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByKeyboard|QtCore.Qt.LinksAccessibleByMouse)
+        self.label_5.setObjectName("label_5")
+        self.horizontalLayout_4.addWidget(self.label_5)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem)
+        self.gridLayout_9.addLayout(self.horizontalLayout_4, 2, 1, 1, 1)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.label_2 = QtWidgets.QLabel(self.frame)
+        self.label_2 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
         font.setPointSize(13)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
         self.horizontalLayout.addWidget(self.label_2)
-        self.label_9 = QtWidgets.QLabel(self.frame)
+        self.label_9 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         self.label_9.setMinimumSize(QtCore.QSize(44, 20))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
@@ -77,112 +184,17 @@ class Ui_Form(object):
         self.label_9.setAlignment(QtCore.Qt.AlignCenter)
         self.label_9.setObjectName("label_9")
         self.horizontalLayout.addWidget(self.label_9)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(spacerItem)
-        self.pushButton = QtWidgets.QPushButton(self.frame)
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem1)
+        self.gridLayout_9.addLayout(self.horizontalLayout, 0, 1, 2, 1)
+        self.pushButton = QtWidgets.QPushButton(self.scrollAreaWidgetContents)
         font = QtGui.QFont()
         font.setPointSize(9)
         self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout.addWidget(self.pushButton)
-        self.verticalLayout.addLayout(self.horizontalLayout)
-        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-        self.label_13 = QtWidgets.QLabel(self.frame)
-        self.label_13.setObjectName("label_13")
-        self.horizontalLayout_4.addWidget(self.label_13)
-        self.label_14 = QtWidgets.QLabel(self.frame)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(9)
-        self.label_14.setFont(font)
-        self.label_14.setStyleSheet("QLabel{\n"
-"    background-color: rgb(221, 221, 221);\n"
-"    border-style: radius;\n"
-"    border-radius: 10px;\n"
-"    border-width: 3px 8px;\n"
-"    border-color: rgb(221, 221, 221);\n"
-"    color: black;\n"
-"}\n"
-"")
-        self.label_14.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-        self.label_14.setObjectName("label_14")
-        self.horizontalLayout_4.addWidget(self.label_14)
-        self.label_8 = QtWidgets.QLabel(self.frame)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(9)
-        self.label_8.setFont(font)
-        self.label_8.setStyleSheet("QLabel{\n"
-"    background-color: rgb(221, 221, 221);\n"
-"    border-style: radius;\n"
-"    border-radius: 10px;\n"
-"    border-width: 3px 8px;\n"
-"    border-color: rgb(221, 221, 221);\n"
-"    color: black;\n"
-"}\n"
-"")
-        self.label_8.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-        self.label_8.setObjectName("label_8")
-        self.horizontalLayout_4.addWidget(self.label_8)
-        self.label_3 = QtWidgets.QLabel(self.frame)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(9)
-        self.label_3.setFont(font)
-        self.label_3.setStyleSheet("QLabel{\n"
-"    background-color: rgb(221, 221, 221);\n"
-"    border-style: radius;\n"
-"    border-radius: 10px;\n"
-"    border-width: 3px 8px;\n"
-"    border-color: rgb(221, 221, 221);\n"
-"    color: black;\n"
-"}\n"
-"")
-        self.label_3.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-        self.label_3.setObjectName("label_3")
-        self.horizontalLayout_4.addWidget(self.label_3)
-        self.label_4 = QtWidgets.QLabel(self.frame)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(9)
-        self.label_4.setFont(font)
-        self.label_4.setStyleSheet("QLabel{\n"
-"    background-color: rgb(221, 221, 221);\n"
-"    border-style: radius;\n"
-"    border-radius: 10px;\n"
-"    border-width: 3px 8px;\n"
-"    border-color: rgb(221, 221, 221);\n"
-"    color: black;\n"
-"}\n"
-"")
-        self.label_4.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-        self.label_4.setObjectName("label_4")
-        self.horizontalLayout_4.addWidget(self.label_4)
-        self.label_5 = QtWidgets.QLabel(self.frame)
-        font = QtGui.QFont()
-        font.setFamily("微软雅黑")
-        font.setPointSize(9)
-        self.label_5.setFont(font)
-        self.label_5.setStyleSheet("QLabel{\n"
-"    background-color: rgb(221, 221, 221);\n"
-"    border-style: radius;\n"
-"    border-radius: 10px;\n"
-"    border-width: 3px 8px;\n"
-"    border-color: rgb(221, 221, 221);\n"
-"    color: black;\n"
-"}\n"
-"")
-        self.label_5.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-        self.label_5.setObjectName("label_5")
-        self.horizontalLayout_4.addWidget(self.label_5)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_4.addItem(spacerItem1)
-        self.verticalLayout.addLayout(self.horizontalLayout_4)
-        self.gridLayout.addLayout(self.verticalLayout, 0, 2, 1, 1)
-        self.gridLayout.setRowStretch(2, 1)
-        self.gridLayout_9.addWidget(self.frame, 0, 0, 1, 1)
-        self.frame_8 = QtWidgets.QFrame(Form)
+        self.gridLayout_9.addWidget(self.pushButton, 0, 2, 3, 1)
+        self.gridLayout.addLayout(self.gridLayout_9, 0, 0, 1, 1)
+        self.frame_8 = QtWidgets.QFrame(self.scrollAreaWidgetContents)
         self.frame_8.setObjectName("frame_8")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.frame_8)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -215,11 +227,11 @@ class Ui_Form(object):
         self.verticalLayout_2.addWidget(self.frame_3)
         self.frame_2 = QtWidgets.QFrame(self.frame_8)
         self.frame_2.setStyleSheet("QFrame{\n"
-"    background-color: rgb(199, 188, 255);\n"
+"    background-color: rgb(91, 68, 200);\n"
 "    border-radius: 7px;\n"
 "}\n"
 "QLabel{\n"
-"    color: black;\n"
+"    color: white;\n"
 "}")
         self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_2.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -259,7 +271,38 @@ class Ui_Form(object):
         self.label_16.setObjectName("label_16")
         self.gridLayout_8.addWidget(self.label_16, 0, 0, 1, 1)
         self.verticalLayout_2.addWidget(self.frame_5)
-        self.gridLayout_9.addWidget(self.frame_8, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.frame_8, 1, 0, 1, 1)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label_3 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(10)
+        self.label_3.setFont(font)
+        self.label_3.setStyleSheet("")
+        self.label_3.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout_2.addWidget(self.label_3)
+        self.toolButton = QtWidgets.QToolButton(self.scrollAreaWidgetContents)
+        self.toolButton.setObjectName("toolButton")
+        self.horizontalLayout_2.addWidget(self.toolButton)
+        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_2.addItem(spacerItem2)
+        self.gridLayout.addLayout(self.horizontalLayout_2, 2, 0, 1, 1)
+        self.label_6 = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        font = QtGui.QFont()
+        font.setFamily("微软雅黑")
+        font.setPointSize(10)
+        self.label_6.setFont(font)
+        self.label_6.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.label_6.setWordWrap(True)
+        self.label_6.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        self.label_6.setObjectName("label_6")
+        self.gridLayout.addWidget(self.label_6, 3, 0, 1, 1)
+        self.gridLayout.setRowStretch(3, 1)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.gridLayout_10.addWidget(self.scrollArea, 0, 0, 1, 1)
+        self.gridLayout_12.addWidget(self.frame, 0, 0, 1, 1)
         self.tabWidget = QtWidgets.QTabWidget(Form)
         font = QtGui.QFont()
         font.setPointSize(9)
@@ -284,12 +327,9 @@ class Ui_Form(object):
         self.gridLayout_4.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_4.setObjectName("gridLayout_4")
         self.frame_11 = QtWidgets.QFrame(self.tab_3)
-        self.frame_11.setStyleSheet("QFrame{\n"
-"    background-color: rgb(154, 154, 154);\n"
+        self.frame_11.setStyleSheet("QFrame#frame_11{\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
 "    border-radius: 7px;\n"
-"}\n"
-"QLabel{\n"
-"    color: black;\n"
 "}")
         self.frame_11.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_11.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -325,12 +365,9 @@ class Ui_Form(object):
         self.listWidget.setObjectName("listWidget")
         self.gridLayout_3.addWidget(self.listWidget, 1, 0, 1, 2)
         self.frame_4 = QtWidgets.QFrame(self.tab)
-        self.frame_4.setStyleSheet("QFrame{\n"
-"    background-color: rgb(154, 154, 154);\n"
+        self.frame_4.setStyleSheet("QFrame#frame_4{\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
 "    border-radius: 7px;\n"
-"}\n"
-"QLabel{\n"
-"    color: black;\n"
 "}")
         self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_4.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -352,12 +389,9 @@ class Ui_Form(object):
         self.gridLayout_17.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_17.setObjectName("gridLayout_17")
         self.frame_9 = QtWidgets.QFrame(self.tab_2)
-        self.frame_9.setStyleSheet("QFrame{\n"
-"    background-color: rgb(154, 154, 154);\n"
+        self.frame_9.setStyleSheet("QFrame#frame_9{\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
 "    border-radius: 7px;\n"
-"}\n"
-"QLabel{\n"
-"    color: black;\n"
 "}")
         self.frame_9.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_9.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -386,12 +420,9 @@ class Ui_Form(object):
         self.gridLayout_11.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_11.setObjectName("gridLayout_11")
         self.frame_10 = QtWidgets.QFrame(self.tab_5)
-        self.frame_10.setStyleSheet("QFrame{\n"
-"    background-color: rgb(154, 154, 154);\n"
+        self.frame_10.setStyleSheet("QFrame#frame_10{\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
 "    border-radius: 7px;\n"
-"}\n"
-"QLabel{\n"
-"    color: black;\n"
 "}")
         self.frame_10.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_10.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -414,8 +445,8 @@ class Ui_Form(object):
         self.listWidget_5.setObjectName("listWidget_5")
         self.gridLayout_11.addWidget(self.listWidget_5, 1, 0, 1, 1)
         self.tabWidget.addTab(self.tab_5, "")
-        self.gridLayout_9.addWidget(self.tabWidget, 2, 0, 1, 1)
-        self.gridLayout_9.setRowStretch(2, 1)
+        self.gridLayout_12.addWidget(self.tabWidget, 1, 0, 1, 1)
+        self.gridLayout_12.setRowStretch(1, 1)
 
         self.retranslateUi(Form)
         self.tabWidget.setCurrentIndex(0)
@@ -424,23 +455,24 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "用户信息"))
-        self.label_6.setToolTip(_translate("Form", "<html><head/><body><p>个人简介</p></body></html>"))
-        self.label_6.setText(_translate("Form", "个人简介"))
+        self.label_13.setText(_translate("Form", "sex"))
+        self.label_14.setText(_translate("Form", "xx 发贴"))
+        self.label_8.setText(_translate("Form", "xx 点赞"))
+        self.label_4.setText(_translate("Form", "吧龄 xx 年"))
+        self.label_5.setText(_translate("Form", "IP 属地: "))
         self.label_2.setText(_translate("Form", "昵称"))
         self.label_9.setToolTip(_translate("Form", "<html><head/><body><p>贴吧成长等级</p></body></html>"))
         self.label_9.setText(_translate("Form", "Lv.0"))
         self.pushButton.setText(_translate("Form", "操作..."))
-        self.label_13.setText(_translate("Form", "sex"))
-        self.label_14.setText(_translate("Form", "xx 发贴"))
-        self.label_8.setText(_translate("Form", "xx 点赞"))
-        self.label_3.setText(_translate("Form", "贴吧 ID："))
-        self.label_4.setText(_translate("Form", "吧龄 xx 年"))
-        self.label_5.setText(_translate("Form", "IP 属地: "))
         self.label_11.setText(_translate("Form", "icon"))
         self.label_12.setText(_translate("Form", "该用户被全吧封禁，贴子和回复将不可见。"))
         self.label_7.setText(_translate("Form", "icon"))
         self.label_10.setText(_translate("Form", "该用户是贴吧大神"))
         self.label_16.setText(_translate("Form", "该用户设置了贴子评论权限。"))
+        self.label_3.setText(_translate("Form", "贴吧 ID："))
+        self.toolButton.setText(_translate("Form", "c"))
+        self.label_6.setToolTip(_translate("Form", "<html><head/><body><p>个人简介</p></body></html>"))
+        self.label_6.setText(_translate("Form", "个人简介"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("Form", "主题贴"))
         self.label_20.setText(_translate("Form", "该用户已隐藏自己的回贴列表。"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("Form", "回复贴"))

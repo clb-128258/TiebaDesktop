@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>921</width>
-    <height>625</height>
+    <width>1048</width>
+    <height>709</height>
    </rect>
   </property>
   <property name="font">
@@ -239,8 +239,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>676</width>
-            <height>1618</height>
+            <width>803</width>
+            <height>1788</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -265,89 +265,7 @@
               <bool>true</bool>
              </property>
              <layout class="QGridLayout" name="gridLayout_22">
-              <item row="7" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_27" stretch="0,0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <spacer name="horizontalSpacer_34">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>17</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_43">
-                  <property name="font">
-                   <font>
-                    <pointsize>9</pointsize>
-                   </font>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel{color: grey;}
-</string>
-                  </property>
-                  <property name="text">
-                   <string>开启后，在 WebView 窗口处于非活动状态时，页面内容将暂停渲染。可解决兼容性问题，但是会影响视觉体验</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_35">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
               <item row="9" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_35" stretch="0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QCheckBox" name="checkBox_25">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
-                  <property name="text">
-                   <string>启用透明 WebView 背景</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_46">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="10" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_36" stretch="0,0,0">
                 <property name="topMargin">
                  <number>0</number>
@@ -399,89 +317,7 @@
                 </item>
                </layout>
               </item>
-              <item row="5" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_26" stretch="0,0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <spacer name="horizontalSpacer_32">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>17</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_42">
-                  <property name="font">
-                   <font>
-                    <pointsize>9</pointsize>
-                   </font>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel{color: grey;}
-</string>
-                  </property>
-                  <property name="text">
-                   <string>勾选后，将不会尝试重写 WebView 中的网页字体，而是遵循原字体</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_33">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="2" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_42" stretch="0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QCheckBox" name="checkBox_29">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
-                  <property name="text">
-                   <string>禁用顶部消息气泡动画</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_58">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="4" column="0">
+              <item row="3" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_25" stretch="0,0">
                 <property name="topMargin">
                  <number>0</number>
@@ -511,90 +347,161 @@
                 </item>
                </layout>
               </item>
-              <item row="11" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_29" stretch="0,0,0">
+              <item row="0" column="0">
+               <layout class="QGridLayout" name="gridLayout_25" columnstretch="0,0,0,0,1">
                 <property name="topMargin">
-                 <number>5</number>
+                 <number>4</number>
                 </property>
-                <item>
-                 <widget class="QPushButton" name="pushButton_8">
-                  <property name="text">
-                   <string>重置所有设置</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_44">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_60">
                   <property name="font">
                    <font>
                     <pointsize>9</pointsize>
                    </font>
                   </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel{
-	color: grey;
-}
-</string>
+                  <property name="toolTip">
+                   <string/>
                   </property>
                   <property name="text">
-                   <string>点击左侧按钮可使所有设置恢复到默认状态</string>
+                   <string>重设显示缩放比：</string>
                   </property>
                  </widget>
                 </item>
-                <item>
-                 <spacer name="horizontalSpacer_38">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
+                <item row="0" column="1" colspan="4">
+                 <widget class="QRadioButton" name="radioButton_6">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
                   </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
+                  <property name="text">
+                   <string>保持系统默认值</string>
                   </property>
-                 </spacer>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
                 </item>
-               </layout>
-              </item>
-              <item row="3" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_41" stretch="0,0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <spacer name="horizontalSpacer_56">
+                <item row="1" column="0" rowspan="4">
+                 <spacer name="horizontalSpacer_62">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                   <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
+                   <enum>QSizePolicy::Expanding</enum>
                   </property>
                   <property name="sizeHint" stdset="0">
                    <size>
-                    <width>17</width>
+                    <width>98</width>
                     <height>20</height>
                    </size>
                   </property>
                  </spacer>
                 </item>
-                <item>
-                 <widget class="QLabel" name="label_54">
-                  <property name="font">
-                   <font>
-                    <pointsize>9</pointsize>
-                   </font>
-                  </property>
+                <item row="1" column="1" rowspan="2" colspan="4">
+                 <layout class="QHBoxLayout" name="horizontalLayout_2">
+                  <item>
+                   <widget class="QRadioButton" name="radioButton_7">
+                    <property name="font">
+                     <font>
+                      <pointsize>9</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>自定义值</string>
+                    </property>
+                    <property name="checked">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSpinBox" name="spinBox">
+                    <property name="font">
+                     <font>
+                      <pointsize>9</pointsize>
+                     </font>
+                    </property>
+                    <property name="minimum">
+                     <number>100</number>
+                    </property>
+                    <property name="maximum">
+                     <number>1000</number>
+                    </property>
+                    <property name="value">
+                     <number>100</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="label_57">
+                    <property name="font">
+                     <font>
+                      <pointsize>9</pointsize>
+                     </font>
+                    </property>
+                    <property name="toolTip">
+                     <string/>
+                    </property>
+                    <property name="text">
+                     <string>%</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="horizontalSpacer_63">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
+                </item>
+                <item row="3" column="1" colspan="4">
+                 <widget class="QLabel" name="label_58">
                   <property name="styleSheet">
-                   <string notr="true">QLabel{color: grey;}
+                   <string notr="true">QLabel{
+	color: grey;
+	font-size: 9pt;
+}
 </string>
                   </property>
                   <property name="text">
-                   <string>开启后，顶部消息气泡将不会使用动画效果弹出，而是直接显示在顶部</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;在高 DPI 屏幕下，如果 UI 显示比例不对，请尝试在此处重设 UI 缩放比，以强制覆盖系统的缩放设置。&lt;br&gt;&lt;span style=&quot; color:#ff0105;&quot;&gt;警告：该功能可能导致 UI 显示不正确，从而无法正常操作软件。&lt;/span&gt;仅当在高 DPI 屏幕下内容缩放比例不正确时，才应该使用此功能。&lt;br&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;注意：该设置需要重启软件才可生效。&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="5" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_28" stretch="0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="checkBox_21">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>启用 WebView 界面冻结</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_57">
+                 <spacer name="horizontalSpacer_36">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -608,7 +515,7 @@
                 </item>
                </layout>
               </item>
-              <item row="1" column="0">
+              <item row="2" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_43" stretch="0,0,0">
                 <property name="topMargin">
                  <number>0</number>
@@ -662,23 +569,38 @@
                 </item>
                </layout>
               </item>
-              <item row="6" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_28" stretch="0,0">
+              <item row="10" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_29" stretch="0,0,0">
                 <property name="topMargin">
-                 <number>0</number>
+                 <number>5</number>
                 </property>
                 <item>
-                 <widget class="QCheckBox" name="checkBox_21">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
+                 <widget class="QPushButton" name="pushButton_8">
                   <property name="text">
-                   <string>启用 WebView 界面冻结</string>
+                   <string>重置所有设置</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_36">
+                 <widget class="QLabel" name="label_44">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{
+	color: grey;
+}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>点击左侧按钮可使所有设置恢复到默认状态</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_38">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -692,7 +614,141 @@
                 </item>
                </layout>
               </item>
-              <item row="0" column="0">
+              <item row="8" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_35" stretch="0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="checkBox_25">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>启用透明 WebView 背景</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_46">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="6" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_27" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_34">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>17</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_43">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{color: grey;}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>开启后，在 WebView 窗口处于非活动状态时，页面内容将暂停渲染。可解决兼容性问题，但是会影响视觉体验</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_35">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="4" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_26" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_32">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>17</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_42">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{color: grey;}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>勾选后，将不会尝试重写 WebView 中的网页字体，而是遵循原字体</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_33">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="1" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_44" stretch="0,0">
                 <property name="topMargin">
                  <number>0</number>
@@ -1359,179 +1415,6 @@
                  <bool>true</bool>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_6">
-                 <item row="4" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_21" stretch="0,0,0">
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <spacer name="horizontalSpacer_23">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>17</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item>
-                    <widget class="QLabel" name="label_36">
-                     <property name="font">
-                      <font>
-                       <pointsize>9</pointsize>
-                      </font>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QLabel{color: grey;}
-</string>
-                     </property>
-                     <property name="text">
-                      <string>勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_24">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </item>
-                 <item row="10" column="0" colspan="2">
-                  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
-                   <item>
-                    <widget class="QLabel" name="label_13">
-                     <property name="toolTip">
-                      <string/>
-                     </property>
-                     <property name="text">
-                      <string>看贴回复默认排序：</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QComboBox" name="comboBox">
-                     <item>
-                      <property name="text">
-                       <string>正序</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>倒序</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>热门排序</string>
-                      </property>
-                     </item>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_6">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>20</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item>
-                    <widget class="QCheckBox" name="checkBox_3">
-                     <property name="text">
-                      <string>默认启用只看楼主</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_4">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </item>
-                 <item row="8" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_34" stretch="0,0,0">
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <spacer name="horizontalSpacer_44">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>17</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item>
-                    <widget class="QLabel" name="label_49">
-                     <property name="font">
-                      <font>
-                       <pointsize>9</pointsize>
-                      </font>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QLabel{color: grey;}
-</string>
-                     </property>
-                     <property name="text">
-                      <string>勾选后，将会在贴子标题上方显示贴子内容声明</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_45">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </item>
                  <item row="6" column="0">
                   <layout class="QHBoxLayout" name="horizontalLayout_22" stretch="0,0,0">
                    <property name="topMargin">
@@ -1571,78 +1454,6 @@
                    </item>
                    <item>
                     <spacer name="horizontalSpacer_26">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </item>
-                 <item row="3" column="0" colspan="2">
-                  <widget class="QCheckBox" name="checkBox_2">
-                   <property name="toolTip">
-                    <string/>
-                   </property>
-                   <property name="text">
-                    <string>不显示用户的 IP 属地</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="0" colspan="2">
-                  <widget class="QCheckBox" name="checkBox">
-                   <property name="toolTip">
-                    <string/>
-                   </property>
-                   <property name="text">
-                    <string>首页不推荐视频贴</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_20" stretch="0,0,0">
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <spacer name="horizontalSpacer_21">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>17</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item>
-                    <widget class="QLabel" name="label_9">
-                     <property name="font">
-                      <font>
-                       <pointsize>9</pointsize>
-                      </font>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QLabel{color: grey;}
-</string>
-                     </property>
-                     <property name="text">
-                      <string>勾选后，主窗口的“推荐”板块中将不会出现视频贴子</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_22">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -1732,6 +1543,160 @@
                    </item>
                   </layout>
                  </item>
+                 <item row="8" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_34" stretch="0,0,0">
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <spacer name="horizontalSpacer_44">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>17</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_49">
+                     <property name="font">
+                      <font>
+                       <pointsize>9</pointsize>
+                      </font>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{color: grey;}
+</string>
+                     </property>
+                     <property name="text">
+                      <string>勾选后，将会在贴子标题上方显示贴子内容声明</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_45">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="7" column="0">
+                  <widget class="QCheckBox" name="checkBox_24">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>默认显示贴子内容声明</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0" colspan="2">
+                  <widget class="QCheckBox" name="checkBox">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>首页不推荐视频贴</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0" colspan="2">
+                  <widget class="QCheckBox" name="checkBox_2">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>不显示用户的 IP 属地</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="10" column="0" colspan="2">
+                  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
+                   <item>
+                    <widget class="QLabel" name="label_13">
+                     <property name="toolTip">
+                      <string/>
+                     </property>
+                     <property name="text">
+                      <string>看贴回复默认排序：</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox">
+                     <item>
+                      <property name="text">
+                       <string>正序</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>倒序</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>热门排序</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_6">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="checkBox_3">
+                     <property name="text">
+                      <string>默认启用只看楼主</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_4">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
                  <item row="11" column="0" colspan="2">
                   <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0,0">
                    <item>
@@ -1788,18 +1753,109 @@
                    </item>
                   </layout>
                  </item>
-                 <item row="7" column="0">
-                  <widget class="QCheckBox" name="checkBox_24">
-                   <property name="toolTip">
-                    <string/>
+                 <item row="2" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_20" stretch="0,0,0">
+                   <property name="topMargin">
+                    <number>0</number>
                    </property>
-                   <property name="text">
-                    <string>默认显示贴子内容声明</string>
+                   <item>
+                    <spacer name="horizontalSpacer_21">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>17</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_9">
+                     <property name="font">
+                      <font>
+                       <pointsize>9</pointsize>
+                      </font>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{color: grey;}
+</string>
+                     </property>
+                     <property name="text">
+                      <string>勾选后，主窗口的“推荐”板块中将不会出现视频贴子</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_22">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
+                 <item row="4" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_21" stretch="0,0,0">
+                   <property name="topMargin">
+                    <number>0</number>
                    </property>
-                   <property name="checked">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
+                   <item>
+                    <spacer name="horizontalSpacer_23">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>17</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_36">
+                     <property name="font">
+                      <font>
+                       <pointsize>9</pointsize>
+                      </font>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{color: grey;}
+</string>
+                     </property>
+                     <property name="text">
+                      <string>勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_24">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
                  </item>
                 </layout>
                </widget>
@@ -1828,7 +1884,110 @@
               <property name="bottomMargin">
                <number>9</number>
               </property>
-              <item row="5" column="0">
+              <item row="8" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_40" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_54">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>17</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_53">
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{
+	color: grey;
+	font-size: 9pt;
+}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>勾选后，视图中的图片内容显示时会渲染淡入动画，显示效果更加优雅。
+如果电脑配置较低，可能导致渲染渐变效果时出现卡顿，此时建议关闭此功能</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_55">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="10" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_41" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_56">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>17</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_54">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{color: grey;}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>开启后，顶部消息气泡将不会使用动画效果弹出，而是直接显示在顶部</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_57">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="6" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_19" stretch="0,0,0">
                 <property name="topMargin">
                  <number>0</number>
@@ -1878,6 +2037,72 @@
                 </item>
                </layout>
               </item>
+              <item row="1" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_33" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_42">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>66</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_48">
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{
+	color: grey;
+	font-size: 9pt;
+}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>将在设置窗口关闭时应用此设置。
+GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
+注意：“跟随系统”功能仅支持 Windows 10 1809 及更高版本的系统，
+在低版本系统中，选择该选项将会看到浅色模式的界面。</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_43">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="7" column="0">
+               <widget class="QCheckBox" name="checkBox_28">
+                <property name="toolTip">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>启用图片显示动画</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_14" stretch="0,0,0">
                 <item>
@@ -1924,7 +2149,40 @@
                 </item>
                </layout>
               </item>
-              <item row="3" column="0">
+              <item row="5" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="0,0">
+                <property name="topMargin">
+                 <number>4</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="checkBox_16">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>退出软件时要求用户确认</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_15">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="4" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="0,0,0,0">
                 <item>
                  <widget class="QLabel" name="label_19">
@@ -2028,77 +2286,23 @@
                 </item>
                </layout>
               </item>
-              <item row="7" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_40" stretch="0,0,0">
+              <item row="9" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_42" stretch="0,0">
                 <property name="topMargin">
                  <number>0</number>
                 </property>
                 <item>
-                 <spacer name="horizontalSpacer_54">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>17</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_53">
-                  <property name="styleSheet">
-                   <string notr="true">QLabel{
-	color: grey;
-	font-size: 9pt;
-}
-</string>
-                  </property>
-                  <property name="text">
-                   <string>勾选后，视图中的图片内容显示时会渲染淡入动画，显示效果更加优雅。
-如果电脑配置较低，可能导致渲染渐变效果时出现卡顿，为保证程序流畅运行，建议你关闭此功能</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_55">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="4" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="0,0">
-                <property name="topMargin">
-                 <number>4</number>
-                </property>
-                <item>
-                 <widget class="QCheckBox" name="checkBox_16">
+                 <widget class="QCheckBox" name="checkBox_29">
                   <property name="toolTip">
                    <string/>
                   </property>
                   <property name="text">
-                   <string>退出软件时要求用户确认</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
+                   <string>禁用顶部消息气泡动画</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_15">
+                 <spacer name="horizontalSpacer_58">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -2111,72 +2315,6 @@
                  </spacer>
                 </item>
                </layout>
-              </item>
-              <item row="1" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_33" stretch="0,0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <spacer name="horizontalSpacer_42">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>66</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_48">
-                  <property name="styleSheet">
-                   <string notr="true">QLabel{
-	color: grey;
-	font-size: 9pt;
-}
-</string>
-                  </property>
-                  <property name="text">
-                   <string>将在设置窗口关闭时应用此设置。
-GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
-注意：“跟随系统”功能仅支持 Windows 10 1809 及更高版本的系统，
-在低版本系统中，选择该选项将会看到浅色模式的界面。</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_43">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="6" column="0">
-               <widget class="QCheckBox" name="checkBox_28">
-                <property name="toolTip">
-                 <string/>
-                </property>
-                <property name="text">
-                 <string>启用图片显示动画</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
               </item>
              </layout>
             </widget>
@@ -2462,7 +2600,7 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
                <string notr="true">QLabel{color: grey;}</string>
               </property>
               <property name="text">
-               <string>所有用户的 WebView 数据，需切换到对应账号进行清理操作，或退出对应账号即可清理</string>
+               <string>所有用户的 WebView 数据，需切换到对应账号进行清理操作</string>
               </property>
              </widget>
             </item>
@@ -2484,7 +2622,7 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
                <string notr="true">QLabel{color: grey;}</string>
               </property>
               <property name="text">
-               <string>当前账号在 WebView 内产生的登录信息，清除后会导致浏览器内账号退出登录</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;当前账号在 WebView 内产生的登录信息，&lt;span style=&quot; font-weight:700;&quot;&gt;清除后会导致浏览器内账号退出登录&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -2650,7 +2788,7 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
                <string notr="true">QLabel{color: grey;}</string>
               </property>
               <property name="text">
-               <string>回复主题时未被发送的草稿内容</string>
+               <string>回复贴子时未被发送的草稿内容</string>
               </property>
              </widget>
             </item>
