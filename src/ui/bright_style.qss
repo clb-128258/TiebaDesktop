@@ -70,7 +70,7 @@ QLineEdit:disabled {
 
 QScrollBar:vertical {
     border: none;
-    background: BG_COLOR;
+    background: transparent;
     width: 14px;
     margin: 0px 0px 0px 0px;
 }
@@ -84,7 +84,7 @@ QScrollBar::handle:vertical {
 
 QScrollBar:horizontal {
     border: none;
-    background: BG_COLOR;
+    background: transparent;
     height: 14px;
 }
 

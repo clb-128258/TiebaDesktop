@@ -86,6 +86,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap))
         self.portrait_image.currentPixmapChanged.connect(lambda pixmap: self.setWindowIcon(QIcon(pixmap)))
         self.destroyed.connect(self.portrait_image.destroyImage)
+        self.toolButton.clicked.connect(self.copy_tieba_id)
 
         self.init_top_toaster()
         self.init_load_flash()
@@ -94,12 +95,20 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
     def reset_theme(self):
         super().reset_theme()
         color = profile_mgr.get_theme_color_string()
+        bg_style, font_style = profile_mgr.get_theme_policy_string()
         self.listWidget_4.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
                                         f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
                                         f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
         self.listWidget_2.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
                                         f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
                                         f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
+
+        self.toolButton.setIcon(QIcon(f'ui/icon_{font_style}/content_copy.png'))
+
+        warning_icon_labels = [self.label_17, self.label_21, self.label_22, self.label_23]
+        warning_icon = qt_image.get_pixmap_icon_from_file(f'ui/icon_{font_style}/warning.png', 20)
+        for l in warning_icon_labels:
+            l.setPixmap(warning_icon)
 
         for lw in self.listwidgets.values():
             for i in range(lw.count()):
@@ -236,6 +245,10 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
         self.pushButton.setMenu(menu)
 
+    def copy_tieba_id(self):
+        pyperclip.copy(str(self.real_tieba_id))
+        self.show_copy_success_toast()
+
     def load_thread_image(self):
         from subwindow.thread_preview_item import ThreadView
         from subwindow.thread_reply_item import ReplyItem
@@ -344,12 +357,11 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             self.close()
         else:
             self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, self.real_portrait,
-                                             qt_image.ImageCoverType.RoundCover, (50, 50))
+                                             qt_image.ImageCoverType.RoundCover, (52, 52))
             self.portrait_image.loadImage()
             self.setWindowTitle(data['name'] + ' - 个人主页')
 
             self.label_2.setText(data['name'])
-            self.label_2.setToolTip('用户名：' + data['bd_user_name'])
             self.label_9.setText('Lv.' + str(data['level']))
             self.label_8.setText('获赞数 ' + large_num_to_string(data['agree_c']))
             self.label_4.setText('吧龄 {age} 年'.format(age=data['account_age']))
@@ -362,19 +374,18 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             self.tabWidget.setTabText(4, '粉丝列表 ({c})'.format(c=large_num_to_string(data['fans'])))
 
             if not data['desp']:
-                self.frame_6.hide()
+                self.label_6.setText('这个人很懒，还没有写个人简介~')
             else:
-                self.label_6.setText(cut_string(data['desp'], 50))
+                self.label_6.setText(data['desp'])
 
-            if not data['tieba_id']:
-                self.label_3.hide()
-            else:
-                self.label_3.setText('贴吧 ID：' + str(data['tieba_id']))
+            self.label_5.setText('IP 属地：' + data['ip'])
+            self.label_5.setVisible(bool(data['ip']))
 
-            if not data['ip']:
-                self.label_5.hide()
-            else:
-                self.label_5.setText('IP 属地：' + data['ip'])
+            self.label_3.setText('贴吧 ID: ' + str(data['tieba_id']))
+            self.horizontalFrame.setVisible(bool(data['tieba_id']))
+            self.label_25.setText('用户名: ' + data['bd_user_name'])
+            self.label_25.setVisible(bool(data['bd_user_name']))
+            self.label_24.setText('用户 ID: ' + str(self.real_user_id))
 
             sex_icon_path = ''
             sex_icon_desp = ''
@@ -386,7 +397,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                 sex_icon_desp = '女性'
             if sex_icon_path:
                 self.label_13.setToolTip(sex_icon_desp)
-                self.label_13.setPixmap(QPixmap(sex_icon_path).scaled(20, 20, transformMode=Qt.SmoothTransformation))
+                self.label_13.setPixmap(qt_image.get_pixmap_icon_from_file(sex_icon_path, 24))
             else:
                 self.label_13.hide()
 
@@ -399,16 +410,16 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                 self.frame_10.show()
                 have_flag_showed = True
                 if data['hide_follow_fans'] == 3:
-                    text = '该用户隐藏了关注和粉丝列表。'
+                    text = '该用户已隐藏关注和粉丝列表'
                 else:
-                    text = '该用户设置关注与粉丝列表仅互关好友可见。'
+                    text = '该用户已设置关注与粉丝列表仅互关好友可见'
                 self.label_18.setText(text)
                 self.label_19.setText(text)
             if data['is_banned']:
                 self.frame_3.show()
                 self.label_12.setText(
                     f'该用户被全吧 {("封禁 " + str(data["unban_days"]) + " 天") if data["unban_days"] != 36500 else "永久封禁"}，'
-                    f'在封禁期间贴子和回复将不可见。')
+                    f'在封禁期间贴子和回复将不可见')
                 have_flag_showed = True
             if data['god_info']:
                 self.frame_2.show()
@@ -418,18 +429,18 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                 self.frame_5.show()
                 have_flag_showed = True
                 if data['thread_reply_permission'] == 5:
-                    self.label_16.setText('由于隐私设置，只有粉丝可以评论该用户的贴子。')
+                    self.label_16.setText('由于该用户的隐私设置，只有粉丝可以评论该用户的贴子')
                 elif data['thread_reply_permission'] == 6:
-                    self.label_16.setText('由于隐私设置，只有该用户关注的人可以评论该用户的贴子。')
+                    self.label_16.setText('由于该用户的隐私设置，只有该用户关注的人可以评论该用户的贴子')
             if data['follow_forums_show_permission'] != 1 or not self.bduss:
                 self.frame_4.show()
                 have_flag_showed = True
                 if data['follow_forums_show_permission'] == 2:
-                    self.label_15.setText('该用户设置关注吧列表仅好友可见。')
+                    self.label_15.setText('该用户设置关注吧列表仅好友可见')
                 elif data['follow_forums_show_permission'] == 3:
-                    self.label_15.setText('该用户隐藏了关注吧列表。')
+                    self.label_15.setText('该用户已隐藏关注吧列表')
                 elif not self.bduss:
-                    self.label_15.setText('你还没有登录账号，无法获取关注吧列表，请先登录。')
+                    self.label_15.setText('你还没有登录账号，无法获取关注吧列表，请先登录账号')
             if have_flag_showed:
                 self.frame_8.hide()
 
@@ -439,6 +450,8 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             self.frame_8.show()
             self.flash_shower.hide()
             self.init_user_action_menu()
+            self.update()
+            self.repaint()
 
             # 主信息加载完之后再加载
             for i in self.page.keys():
