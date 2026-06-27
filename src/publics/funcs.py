@@ -211,21 +211,19 @@ def large_num_to_string(num: int, prespace=False, endspace=False):
 
 def make_thread_content(threadContents, previewPlainText=False):
     """把贴子正文内容碎片转换成 Qt 可以解析的 HTML 代码，或者是纯文本"""
-    if previewPlainText:
-        _text = ''
-    else:
-        _text = '<p>'
+    ContentTypes = aiotieba.get_posts._classdef
+    _text = '' if previewPlainText else '<p>'
 
     for i in threadContents:
-        if type(i) == aiotieba.get_posts._classdef.FragText:
+        if isinstance(i, ContentTypes.FragText):
             will_add_text = i.text
             if not previewPlainText:
                 will_add_text = will_add_text.replace('\n', '<br>')  # 在html格式下，把原本的换行符号转换为br标签
             _text += will_add_text
 
-        elif type(i) == aiotieba.get_posts._classdef.FragEmoji and previewPlainText:
+        elif isinstance(i, ContentTypes.FragEmoji) and previewPlainText:
             _text += f'[{i.desc}]'
-        elif type(i) == aiotieba.get_posts._classdef.FragEmoji and not previewPlainText:
+        elif isinstance(i, ContentTypes.FragEmoji) and not previewPlainText:
             path = f'{os.getcwd()}/ui/emoticons/{i.id}.png'
             iconsize = 17 if profile_mgr.local_config['thread_view_settings']['tb_emoticon_size'] == 0 else 30
             if os.path.isfile(path):
@@ -233,24 +231,24 @@ def make_thread_content(threadContents, previewPlainText=False):
             else:
                 _text += f'[{i.desc}]'
 
-        elif type(i) == aiotieba.get_posts._classdef.FragVoice and previewPlainText:
+        elif isinstance(i, ContentTypes.FragVoice) and previewPlainText:
             _text += f'[语音] {format_second(i.duration)}'
-        elif type(i) == aiotieba.get_posts._classdef.FragVideo and previewPlainText:
+        elif isinstance(i, ContentTypes.FragVideo) and previewPlainText:
             _text += f'[视频] 时长 {format_second(i.duration)} | {large_num_to_string(i.view_num, endspace=True)}次浏览'
 
-        elif type(i) == aiotieba.get_posts._classdef.FragAt and not previewPlainText:
+        elif isinstance(i, ContentTypes.FragAt) and not previewPlainText:
             _text += f' <a href=\"user://{i.user_id}\">{i.text}</a> '
-        elif type(i) == aiotieba.get_posts._classdef.FragAt and previewPlainText:
+        elif isinstance(i, ContentTypes.FragAt) and previewPlainText:
             _text += f' {i.text} '
 
-        elif type(i) == aiotieba.get_posts._classdef.FragLink and not previewPlainText:
+        elif isinstance(i, ContentTypes.FragLink) and not previewPlainText:
             if str(i.url).startswith((f'{consts.SCHEME_HTTPS}{consts.TIEBA_WEB_HOST}/p/',
                                       f'{consts.SCHEME_HTTP}{consts.TIEBA_WEB_HOST}/p/')):
                 t = ' <a href=\"tieba_thread://{0}\">{1}</a> '.format(str(i.url).split('?')[0].split('/')[-1], i.title)
             else:
                 t = ' <a href=\"{0}\">{1}</a> '.format(i.url, i.title)
             _text += t
-        elif type(i) == aiotieba.get_posts._classdef.FragLink and previewPlainText:
+        elif isinstance(i, ContentTypes.FragLink) and previewPlainText:
             t = ' [链接]{0} '.format(i.title)
             _text += t
 
