@@ -244,7 +244,8 @@ def make_thread_content(threadContents, previewPlainText=False):
             _text += f' {i.text} '
 
         elif type(i) == aiotieba.get_posts._classdef.FragLink and not previewPlainText:
-            if str(i.url).startswith(('https://tieba.baidu.com/p/', 'http://tieba.baidu.com/p/')):
+            if str(i.url).startswith((f'{consts.SCHEME_HTTPS}{consts.TIEBA_WEB_HOST}/p/',
+                                      f'{consts.SCHEME_HTTP}{consts.TIEBA_WEB_HOST}/p/')):
                 t = ' <a href=\"tieba_thread://{0}\">{1}</a> '.format(str(i.url).split('?')[0].split('/')[-1], i.title)
             else:
                 t = ' <a href=\"{0}\">{1}</a> '.format(i.url, i.title)

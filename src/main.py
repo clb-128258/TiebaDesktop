@@ -421,7 +421,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                                               '链接中的 [query] 字段代表实际使用时的搜索关键词（包括中括号）。\n'
                                               '请注意输入链接头部的 HTTP/HTTPS 前缀。')
         if click_ok and text:
-            if not text.startswith(('http://', 'https://')):
+            if not text.startswith((consts.SCHEME_HTTP, consts.SCHEME_HTTPS)):
                 QMessageBox.critical(self, '输入错误', '请输入一个有效的 HTTP/HTTPS 链接。', QMessageBox.Ok)
             else:
                 self.comboBox_5.addItem(text)
