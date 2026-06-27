@@ -51,6 +51,9 @@ message User {
     string ip_address = 127;
     message UserGrowth {
         uint32 level_id = 1;
+        int64 score = 2;
+        int64 target_score = 3;
+        double tmoney = 4;
     }
     UserGrowth user_growth = 137;
     message BazhuSign {

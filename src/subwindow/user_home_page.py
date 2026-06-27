@@ -1,4 +1,7 @@
 import asyncio
+import datetime
+import time
+
 import aiotieba
 import pyperclip
 
@@ -71,9 +74,6 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.listWidget_4.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('thread'))
         self.listWidget_5.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('fans'))
 
-        # 隐藏ip属地
-        if profile_mgr.local_config['thread_view_settings']['hide_ip']:
-            self.label_5.hide()
         self.tabWidget.setCurrentIndex(tab_index)
 
         self.action_ok_signal.connect(self.action_ok_slot)
@@ -104,6 +104,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                                         f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
 
         self.toolButton.setIcon(QIcon(f'ui/icon_{font_style}/content_copy.png'))
+        self.label_29.setPixmap(qt_image.get_pixmap_icon_from_file(f'ui/icon_{font_style}/currency_exchange.png', 18))
 
         warning_icon_labels = [self.label_17, self.label_21, self.label_22, self.label_23]
         warning_icon = qt_image.get_pixmap_icon_from_file(f'ui/icon_{font_style}/warning.png', 20)
@@ -357,15 +358,22 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             self.close()
         else:
             self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, self.real_portrait,
-                                             qt_image.ImageCoverType.RoundCover, (52, 52))
+                                             qt_image.ImageCoverType.RoundCover, (63, 63))
             self.portrait_image.loadImage()
             self.setWindowTitle(data['name'] + ' - 个人主页')
 
             self.label_2.setText(data['name'])
             self.label_9.setText('Lv.' + str(data['level']))
             self.label_8.setText('获赞数 ' + large_num_to_string(data['agree_c']))
+            self.label_8.setToolTip(f"共获得吧友 {data['agree_c']} 次点赞")
             self.label_4.setText('吧龄 {age} 年'.format(age=data['account_age']))
             self.label_14.setText('发贴数 ' + large_num_to_string(data['post_c']))
+
+            ts = time.time() - int(float(data['account_age']) * 31536000)
+            dtobj = datetime.datetime.fromtimestamp(ts)
+            register_date_string = f'{dtobj.year}年{dtobj.month}月'
+            self.label_4.setToolTip(f'账号注册时间大约为 {register_date_string}')
+
             self.tabWidget.setTabText(0, '主题贴 ({c})'.format(c=large_num_to_string(data['thread_c'])))
             self.tabWidget.setTabText(1,
                                       '回复贴 ({c})'.format(c=large_num_to_string(data['post_c'] - data['thread_c'])))
@@ -380,6 +388,21 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
             self.label_5.setText('IP 属地：' + data['ip'])
             self.label_5.setVisible(bool(data['ip']))
+            # 隐藏ip属地
+            if profile_mgr.local_config['thread_view_settings']['hide_ip']:
+                self.label_5.hide()
+
+            if data['level_next_exp'] == 0:
+                self.label_27.setText("经验值未知")
+                self.progressBar.hide()
+                self.horizontalFrame_2.hide()
+            else:
+                self.label_28.setText(f"贴贝余额 {data['tb_coins_num']}")
+                self.label_27.setText(f"经验值 {data['level_exp']} / {data['level_next_exp']}")
+                self.progressBar.setRange(0, data['level_next_exp'])
+                self.progressBar.setValue(
+                    data['level_exp'] if data['level_exp'] <= data['level_next_exp'] else data['level_next_exp'])
+
 
             self.label_3.setText('贴吧 ID: ' + str(data['tieba_id']))
             self.horizontalFrame.setVisible(bool(data['tieba_id']))
@@ -487,7 +510,10 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                         'bd_user_name': '',  # 百度用户名
                         'hide_posts': False,  # 是否隐藏回贴，目前不使用此字段
                         'hide_follow_fans': 0,  # 是否隐藏关注粉丝列表
-                        'deregistered': False  # 是否已注销
+                        'deregistered': False,  # 是否已注销
+                        'level_exp': 0,  # 成长等级经验值
+                        'level_next_exp': 0,  # 成长等级下一等级点经验值
+                        'tb_coins_num': 0  # 贴贝余额
                         }
 
                 if self.user_id_portrait in ('00000000', 0):
@@ -525,12 +551,15 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                         data['hide_follow_fans'] = response_proto.data.user.priv_sets.follow
                         data['deregistered'] = bool(response_proto.data.user.deregistered)
                         self.real_baidu_user_name = data['bd_user_name'] = user_info.user_name
+                        data['level_exp'] = response_proto.data.user.user_growth.score
+                        data['level_next_exp'] = response_proto.data.user.user_growth.target_score
+                        data['tb_coins_num'] = int(response_proto.data.user.user_growth.tmoney)
 
                         god_info = ''
                         if response_proto.data.user.new_god_data.field_name:
                             god_info += f'{response_proto.data.user.new_god_data.field_name}领域大神'
                         if response_proto.data.user.bazhu_grade.desc:
-                            if god_info: god_info += ' | '
+                            if god_info: god_info += '\n'
                             god_info += response_proto.data.user.bazhu_grade.desc.replace('/', '、')
                         data['god_info'] = god_info
 

@@ -19,7 +19,6 @@ message DataReq_PbPage {
     int32 back = 3;
     int32 is_jumpfloor = 34;
     int32 jumpfloor_num = 35;
-    int64 pid = 7;
 }
 
 message PbPageReqIdl {
