@@ -58,11 +58,11 @@
 <img src="./docs/app-ui-grabs/1.png" alt="首页推荐" width="48%">
 <img src="./docs/app-ui-grabs/2.png" alt="关注的吧" width="48%">
 
-<img src="./docs/app-ui-grabs/3.png" alt="吧内贴子" width="48%">
-<img src="./docs/app-ui-grabs/4.png" alt="贴子详情" width="48%">
+<img src="./docs/app-ui-grabs/3.png" alt="互动消息" width="48%">
+<img src="./docs/app-ui-grabs/4.png" alt="吧内贴子" width="48%">
 
-<img src="./docs/app-ui-grabs/5.png" alt="吧详情页" width="48%">
-<img src="./docs/app-ui-grabs/6.png" alt="互动消息" width="48%">
+<img src="./docs/app-ui-grabs/5.png" alt="贴子详情" width="48%">
+<img src="./docs/app-ui-grabs/6.png" alt="个人主页" width="48%">
 
 </div>
 
@@ -141,6 +141,7 @@
 
 - ✅ 深色 / 浅色主题
 - ✅ 跟随系统设置自动切换主题
+- ✅ UI 动画效果
 
 ---
 
