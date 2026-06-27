@@ -12,8 +12,8 @@ def get_default_datapath():
 
 
 # 版本信息
-APP_VERSION_STR = '1.3.1-beta'
-APP_VERSION_NUM = 10
+APP_VERSION_STR = '1.3.2-release'
+APP_VERSION_NUM = 11
 
 # 网络请求信息
 HTTP_TIMEOUT = 12
