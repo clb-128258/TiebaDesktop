@@ -1,7 +1,7 @@
 """Windows 8 系统下的通知工具"""
 import os
 import subprocess
-import threading
+from publics.funcs import start_background_thread
 
 
 def send_msg(title: str, msgitem: str, icon: str = '', callback=None):
@@ -14,5 +14,4 @@ def send_msg(title: str, msgitem: str, icon: str = '', callback=None):
 
 
 def send_msg_async(title: str, msgitem: str, icon: str = '', callback=None):
-    t = threading.Thread(target=send_msg, args=(title, msgitem, icon, callback), daemon=True)
-    t.start()
+    start_background_thread(send_msg, (title, msgitem, icon, callback))
