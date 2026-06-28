@@ -217,6 +217,7 @@ class NarrowButtonStatus(enum.Enum):
     ArrowLeft = enum.auto()
     ArrowRight = enum.auto()
     Refresh = enum.auto()
+    Add = enum.auto()
 
 
 class BaseQMenu(QMenu):
@@ -310,11 +311,13 @@ class WindowBaseQDialog(QDialog):
 class FloatingButton(QToolButton):
     """在 QWidget 上方悬浮的按钮"""
 
-    def __init__(self, parent):
+    def __init__(self, parent, moveUpCount=1):
         super().__init__()
         self.setParent(parent)
         self.init_ui()
+
         self.status = None
+        self.moveUpCount = moveUpCount
 
     def init_ui(self):
         self.setFixedSize(45, 45)
@@ -348,6 +351,8 @@ class FloatingButton(QToolButton):
             tool_tip = '点击切换到另一页面'
         elif status == NarrowButtonStatus.Refresh:
             tool_tip = '刷新'
+        elif status == NarrowButtonStatus.Add:
+            tool_tip = '添加'
         self.setToolTip(tool_tip)
 
         if status == NarrowButtonStatus.ArrowRight:
@@ -356,18 +361,22 @@ class FloatingButton(QToolButton):
             icon_path = f'ui/icon_white/back.png'
         elif status == NarrowButtonStatus.Refresh:
             icon_path = f'ui/icon_white/refresh.png'
+        elif status == NarrowButtonStatus.Add:
+            icon_path = f'ui/icon_white/add.png'
         self.setIcon(QIcon(icon_path))
 
         self.move_button()
 
     def move_button(self):
+        put_left_button_list = [NarrowButtonStatus.ArrowRight, NarrowButtonStatus.Refresh, NarrowButtonStatus.Add]
+        put_right_button_list = [NarrowButtonStatus.ArrowLeft]
         move_value = 20
         x, y = 0, 0
 
-        if self.status in (NarrowButtonStatus.ArrowRight, NarrowButtonStatus.Refresh):
+        if self.status in put_left_button_list:
             x = self.parent().width() - self.width() - move_value
-            y = self.parent().height() - self.height() - move_value
-        elif self.status == NarrowButtonStatus.ArrowLeft:
+            y = self.parent().height() - self.moveUpCount * (self.height() + move_value)
+        elif self.status in put_right_button_list:
             x = move_value
-            y = self.parent().height() - self.height() - move_value
+            y = self.parent().height() - self.moveUpCount * (self.height() + move_value)
         self.move(x, y)

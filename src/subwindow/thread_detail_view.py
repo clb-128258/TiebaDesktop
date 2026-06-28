@@ -3,17 +3,14 @@ import gc
 import os
 import platform
 import sys
-import time
-import typing
-import json
 import aiotieba
 import pyperclip
 
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer, QObject
-from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor, QPixmap
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
+from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor
 from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image, webview2
+from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image
 from publics.qt_image import get_pixmap_icon_from_file
 from publics.winrt_url_share import winrt_share
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
@@ -23,11 +20,10 @@ import publics.app_logger as logging
 from publics.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread, \
     pb_page
 
-from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector
+from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector, thread_publisher
 from subwindow.tieba_image_uploader import TiebaImageUploader
 
 from ui import tie_detail_view
-import consts
 
 narrow_status_map = {1: base_ui.NarrowButtonStatus.ArrowRight, 2: base_ui.NarrowButtonStatus.ArrowLeft}
 
@@ -81,88 +77,7 @@ class ThreadPreview:
     text = ''
 
 
-class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
-    """发贴遇到验证码时，显示验证码网页的webview"""
 
-    class CaptchaDataGetter(QObject, webview2.HttpDataRewriter):
-        is_captcha_token_got = False
-        captchaTokenGot = pyqtSignal(dict)
-
-        def onResponseCaught(self, url: str, statusCode: int, header: typing.Dict[str, str],
-                             content: typing.Optional[bytes]):
-            if statusCode == 200 and not self.is_captcha_token_got:
-                json_data = json.loads(content.decode())
-                if json_data['code'] == 0:
-                    self.is_captcha_token_got = True
-                    time.sleep(1)  # 休眠一秒，保证ui显示效果
-                    self.captchaTokenGot.emit(json_data['data'])
-                else:
-                    logging.log_WARN(f'tieba add post captcha failed with json info {json_data}')
-            else:
-                logging.log_WARN(f'tieba add post captcha failed with HTTP status code {statusCode}')
-
-            return statusCode, header, content
-
-    def __init__(self, captcha_md5, h5_link):
-        super().__init__()
-
-        self.captcha_md5 = captcha_md5
-        self.h5_link = h5_link
-        self.captcha_success_json_info = None
-
-        self.setWindowTitle('交互式发贴验证码')
-        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.setWindowFlags(Qt.WindowCloseButtonHint)
-        self.resize(800, 600)
-
-        self.webview = webview2.QWebView2View()
-        self.http_catcher = self.CaptchaDataGetter()
-        self.http_catcher.captchaTokenGot.connect(self.on_captcha_succeed)
-        self.webview.setParent(self)
-        self.profile = webview2.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}',
-                                               user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
-                                               enable_link_hover_text=False,
-                                               enable_zoom_factor=False,
-                                               enable_error_page=True,
-                                               enable_context_menu=True,
-                                               enable_keyboard_keys=True,
-                                               handle_newtab_byuser=False,
-                                               http_rewriter={
-                                                   '*://seccaptcha.baidu.com/v1/webapi/verint/verify/*': self.http_catcher},
-                                               enable_transparent_bg=get_dict_value_treely(
-                                                   profile_mgr.local_config,
-                                                   ['webview_settings', 'transparent_bg_color'], False))
-        self.webview.setProfile(self.profile)
-        self.webview.loadAfterRender(h5_link)
-        self.webview.initRender()
-
-    def resizeEvent(self, a0):
-        self.webview.setGeometry(0, 0, self.width(), self.height())
-
-    def keyPressEvent(self, a0):
-        if a0.key() == Qt.Key.Key_Escape:
-            a0.ignore()
-            self.close()
-
-    def closeEvent(self, a0):
-        if not self.http_catcher.is_captcha_token_got:
-            if QMessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-                self.webview.destroyWebviewUntilComplete()
-                a0.accept()
-            else:
-                a0.ignore()
-        else:
-            self.webview.destroyWebviewUntilComplete()
-            a0.accept()
-
-    def exec_window(self):
-        self.exec()
-        return self.captcha_md5, self.captcha_success_json_info
-
-    def on_captcha_succeed(self, data):
-        self.captcha_success_json_info = data
-        self.close()
 
 
 class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
@@ -655,7 +570,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             md5 = msg['captcha_info']['md5']
             h5_link = msg['captcha_info']['link']
 
-            dialog = AddPostCaptchaWebView(md5, h5_link)
+            dialog = thread_publisher.AddPostCaptchaWebView(md5, h5_link)
             md5, json_info = dialog.exec_window()
             if json_info:
                 self.add_post_async(md5, json_info)

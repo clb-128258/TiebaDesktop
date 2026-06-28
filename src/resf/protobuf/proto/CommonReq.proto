@@ -81,4 +81,10 @@ message CommonReq {
     string pid_rcs = 80;
     int32 need_decrypt = 81;
     int32 need_cam_decrypt = 82;
+    string shoubai_version = 83;
+    string hm_acuid = 84;
+    string hm_oid = 85;
+    string hm_needmp = 86;
+    string support_image = 87;
+    string package_version = 88;
 }

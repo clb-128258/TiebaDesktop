@@ -12,6 +12,7 @@ from proto.PbPage import PbPageReqIdl_pb2, PbPageResIdl_pb2
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
 from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
+from proto.AddThread import AddThreadReqIdl_pb2, AddThreadResIdl_pb2
 
 from publics import request_mgr, app_logger, profile_mgr
 from publics.funcs import get_dict_value_treely
@@ -416,3 +417,185 @@ def thread_store(bduss, stoken, offset=0, rn=20):
                                     use_mobile_header=True)
 
     return resp
+
+
+def getRecomForumList(bduss, stoken, history_fids=None):
+    if history_fids is None:
+        history_fids = []
+
+    history_fids = ','.join(str(fid) for fid in history_fids)
+    payload = {
+        'call_from': "client_index",
+        'history_fids': history_fids,
+        'query_type': "recommend_list",
+        'recom_type': "2"
+    }
+
+    resp = request_mgr.run_post_api('/mo/q/forum/getRecomForumList',
+                                    request_mgr.calc_sign(payload),
+                                    bduss=bduss,
+                                    stoken=stoken,
+                                    host_type=1,
+                                    use_mobile_header=True)
+
+    return resp
+
+
+def add_thread(bduss, stoken,
+               forum_id, title, content,
+               tab_name="", tab_id=0,
+               hide_in_homepage=False, content_statement="", is_question=False,
+               captcha_md5="", captcha_json_info=None):
+    async def get_tbs():
+        return login(bduss)['anti']['tbs']
+
+    async def get_access_info(aiotieba_client) -> tuple[str, str, str, str, str]:
+        """
+        获取贴吧风控信息
+
+        Return:
+            以下风控字段值，均为字符串类型：z_id, client_id, sample_id, show_name, tbs
+        """
+        aiotieba_http_core = aiotieba_client._http_core
+
+        # 并发执行，提高性能
+        result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
+                                      aiotieba.sync.request(aiotieba_http_core),
+                                      aiotieba_client.get_self_info(),
+                                      get_tbs()
+                                      )
+        z_id = result[0]
+        client_id, sample_id = result[1][0], result[1][1]
+        show_name = result[2].show_name
+        tbs = result[3]
+
+        return z_id, client_id, sample_id, show_name, tbs
+
+    async def run():
+        app_logger.log_INFO(f'add thread in forum {forum_id}')
+        async with aiotieba.Client(bduss, stoken, proxy=True) as client:
+            access_info = await get_access_info(client)
+            z_id, client_id, sample_id, show_name, tbs = access_info[0], access_info[1], access_info[2], access_info[3], \
+                access_info[4]
+
+            # aiotieba.api.add_post.pack_proto function
+            request_body_proto = AddThreadReqIdl_pb2.AddThreadReqIdl()
+            request_body_proto.data.common.BDUSS = bduss
+            request_body_proto.data.common._client_type = 2
+            request_body_proto.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+            request_body_proto.data.common._client_id = client_id
+            request_body_proto.data.common._phone_imei = "000000000000000"
+            request_body_proto.data.common._from = "ad_wandoujia"
+            request_body_proto.data.common.cuid = client.account.cuid_galaxy2
+            current_ts = time.time()
+            current_tsms = int(current_ts * 1000)
+            current_dt = datetime.datetime.fromtimestamp(current_ts)
+            request_body_proto.data.common._timestamp = current_tsms
+            request_body_proto.data.common.model = "PFGM00"
+            request_body_proto.data.common.tbs = tbs
+            request_body_proto.data.common.net_type = 1
+            request_body_proto.data.common.pversion = "1.0.3"
+            request_body_proto.data.common._os_version = '12'
+            request_body_proto.data.common.brand = "oppo"
+            request_body_proto.data.common.lego_lib_version = "3.0.0"
+            request_body_proto.data.common.applist = ""
+            request_body_proto.data.common.stoken = stoken
+            request_body_proto.data.common.z_id = z_id
+            request_body_proto.data.common.cuid_galaxy2 = client.account.cuid_galaxy2
+            request_body_proto.data.common.cuid_gid = ""
+            request_body_proto.data.common.c3_aid = client.account.c3_aid
+            request_body_proto.data.common.sample_id = sample_id
+            request_body_proto.data.common.scr_w = 900
+            request_body_proto.data.common.scr_h = 1600
+            request_body_proto.data.common.scr_dip = 1.5
+            request_body_proto.data.common.q_type = 0
+            request_body_proto.data.common.is_teenager = 0
+            request_body_proto.data.common.sdk_ver = "3.36.0"
+            request_body_proto.data.common.framework_ver = "3340042"
+            request_body_proto.data.common.naws_game_ver = "1030000"
+            request_body_proto.data.common.active_timestamp = current_tsms - 86400 * 30
+            request_body_proto.data.common.first_install_time = current_tsms - 86400 * 30
+            request_body_proto.data.common.last_update_time = current_tsms - 86400 * 30
+            request_body_proto.data.common.event_day = f"{current_dt.year}{current_dt.month}{current_dt.day}"
+            request_body_proto.data.common.android_id = client.account.android_id
+            request_body_proto.data.common.cmode = 1
+            request_body_proto.data.common.start_scheme = ""
+            request_body_proto.data.common.start_type = 1
+            request_body_proto.data.common.idfv = "0"
+            request_body_proto.data.common.extra = ""
+            request_body_proto.data.common.user_agent = request_mgr.header_protobuf['User-Agent']
+            request_body_proto.data.common.personalized_rec_switch = 1
+            request_body_proto.data.common.device_score = "0.4"
+            request_body_proto.data.common.package_version = "hybrid-main-pb_1.0.324.1"
+
+            request_body_proto.data.anonymous = "1"
+            request_body_proto.data.can_no_forum = "0"
+            request_body_proto.data.is_feedback = "0"
+            request_body_proto.data.takephoto_num = "0"
+            request_body_proto.data.entrance_type = "1"
+            request_body_proto.data.vcode_tag = "12"
+            request_body_proto.data.new_vcode = "1"
+            request_body_proto.data.is_pictxt = "0"
+            request_body_proto.data.is_show_bless = 0
+            request_body_proto.data.call_from = "2"
+            request_body_proto.data.is_forum_business_account = "0"
+            request_body_proto.data.is_hide = "0"
+            request_body_proto.data.is_repost_to_dynamic = '0'
+            request_body_proto.data.pro_zone = "0"
+            request_body_proto.data.is_link_thread = "0"
+            request_body_proto.data.is_xiuxiu_thread = 0
+            request_body_proto.data.is_article = "0"
+            request_body_proto.data.private_chat_page_height = 0
+            request_body_proto.data.private_chat_page_width = 0
+            request_body_proto.data.activity_product_id = 0
+            request_body_proto.data.activity_business_id = 0
+
+            request_body_proto.data.is_question = 1 if is_question else 0
+            request_body_proto.data.content = content
+            request_body_proto.data.fid = str(forum_id)
+            request_body_proto.data.kw = str(await client.get_fname(forum_id))
+            request_body_proto.data.name_show = show_name
+            request_body_proto.data.title = title
+            request_body_proto.data.is_ntitle = "1" if not title else "0"
+
+            # 吧内分区
+            if tab_name:
+                request_body_proto.data.tab_name = tab_name
+                request_body_proto.data.tab_id = str(tab_id)
+                request_body_proto.data.is_general_tab = "1"
+
+            # 处理 ext
+            ext_json = {"need_image": 1 if '#(pic,' in content else 0,
+                        "is_hide": 1 if hide_in_homepage else 0,
+                        "need_follow_forum": 0}
+            if content_statement:
+                ext_json["content_statement"] = content_statement
+            ext_stringify = json.dumps(ext_json, separators=(',', ':'), ensure_ascii=False)
+            request_body_proto.data.ext = ext_stringify
+
+            # 验证码特判
+            if captcha_json_info and captcha_md5:
+                vcode_stringify = json.dumps(captcha_json_info, separators=(',', ':'))
+                request_body_proto.data.vcode_type = "6"
+                request_body_proto.data.vcode_md5 = captcha_md5
+                request_body_proto.data.vcode = vcode_stringify
+
+            response_bin = request_mgr.run_protobuf_api('/c/c/thread/add',
+                                                        payloads=request_body_proto.SerializeToString(),
+                                                        cmd_id=309730,
+                                                        bduss=bduss,
+                                                        stoken=stoken,
+                                                        host_type=2
+                                                        )
+
+            response_proto = AddThreadResIdl_pb2.AddThreadResIdl()
+            response_proto.ParseFromString(response_bin)
+
+            return response_proto
+
+    def start_async():
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        return asyncio.run(run())
+
+    return start_async()

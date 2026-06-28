@@ -69,6 +69,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.add_thread.connect(self.add_thread_)
         self.thread_refresh_ok.connect(self.show_load_ok_msg)
         self.refresh_button.clicked.connect(self.refresh_all)
+        self.create_thread_button.clicked.connect(self.open_add_thread_window)
         self.follow_forum_ok.connect(self.show_follow_result)
         self.pushButton.clicked.connect(self.do_follow_forum)
         self.pushButton_3.clicked.connect(self.open_detail_window)
@@ -118,6 +119,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
 
     def resizeEvent(self, a0):
         self.refresh_button.move_button()
+        self.create_thread_button.move_button()
 
     def init_elements(self):
         self.flash_shower = LoadingFlashWidget()
@@ -134,12 +136,24 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.refresh_button.move_button()
         self.refresh_button.hide()
 
+        self.create_thread_button = base_ui.FloatingButton(self, 2)
+        self.create_thread_button.set_button_status(base_ui.NarrowButtonStatus.Add)
+        self.create_thread_button.move_button()
+        self.create_thread_button.setToolTip('发布主题贴')
+        self.create_thread_button.hide()
+
     def threadList_load_image(self):
         for lw in self.listwidgets:
             if lw.parent() == self.tabWidget.currentWidget():
                 widgets = listWidget_get_visible_widgets(lw)
                 for i in widgets:
                     i.load_all_AsyncImage()
+
+    def open_add_thread_window(self):
+        from subwindow.thread_publisher import ThreadPublisherWindow
+        add_thread_dialog = ThreadPublisherWindow(self.bduss, self.stoken, self.forum_name, self.forum_id)
+        add_thread_dialog.exec()
+        add_thread_dialog.deleteLater()
 
     def open_search_window(self):
         from subwindow.tieba_search_entry import TiebaSearchWindow
@@ -505,6 +519,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
 
             self.flash_shower.hide()
             self.refresh_button.show()
+            self.create_thread_button.show()
 
     def load_info(self):
         def frs_bottom(kw):

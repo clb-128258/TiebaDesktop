@@ -1,0 +1,46 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/Error.proto";
+import "proto/Anti.proto";
+import "proto/ContriInfo.proto";
+import "proto/IconStampInfo.proto";
+import "proto/PostAntiInfo.proto";
+import "proto/ReplyExp.proto";
+import "proto/SuccessToast.proto";
+import "proto/TbInteraction.proto";
+import "proto/ThreadEasterEgg.proto";
+import "proto/Toast.proto";
+import "proto/VcodeInfo.proto";
+import "proto/ZhiBoInfoTW.proto";
+
+message DataRes_AddThread {
+    string opgroup = 1;
+    string tid = 2;
+    string pid = 3;
+    string video_id = 4;
+    string msg = 5;
+    string pre_msg = 6;
+    string color_msg = 7;
+    ZhiBoInfoTW twzhibo_info = 8;
+    ReplyExp exp = 9;
+    ContriInfo contri_info = 10;
+    ThreadEasterEgg star_info = 11;
+    IconStampInfo icon_stamp_info = 13;
+    PostAntiInfo info = 14;
+    Anti anti_stat = 15;
+    TbInteraction tb_hudong = 16;
+    VcodeInfo anti = 17;
+    string ext_msg = 18;
+    string invitees_number = 19;
+    Toast toast = 20;
+    SuccessToast success_toast = 21;
+    int32 follow_status = 22;
+    uint64 forum_id = 23;
+    string finish_scheme = 24;
+}
+
+message AddThreadResIdl {
+    Error error = 1;
+    DataRes_AddThread data = 2;
+}
