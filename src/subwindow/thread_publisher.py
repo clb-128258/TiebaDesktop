@@ -321,7 +321,7 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
                 dialog = AddPostCaptchaWebView(md5, h5_link)
                 md5, json_info = dialog.exec_window()
                 if json_info:
-                    self.add_post_async(md5, json_info)
+                    self.add_thread_async(md5, json_info)
                 else:
                     self.toast_widget.showToast(top_toast_widget.ToastMessage('用户已取消交互验证',
                                                                               icon_type=top_toast_widget.ToastIconType.INFORMATION))
@@ -395,7 +395,7 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
                 emit_data['is_captcha'] = True
                 emit_data['captcha_info']['md5'] = result.data.info.vcode_md5
                 emit_data['captcha_info']['link'] = result.data.info.vcode_pic_url
-                emit_data['text'] = '服务器要求输入验证码，请在弹出的验证网页中完成验证。如多次弹出验证，建议使用官方客户端发贴'
+                emit_data['text'] = '服务器要求安全风控验证，请在弹出的验证网页中完成验证。如多次弹出验证，建议使用官方客户端发贴'
             else:
                 emit_data['success'] = False
                 emit_data['text'] = f'{result.error.errmsg} (错误代码 {result.error.errorno})'
