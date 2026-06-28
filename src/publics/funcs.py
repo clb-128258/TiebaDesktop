@@ -9,20 +9,18 @@ import time
 import datetime
 import ctypes
 import platform
-
+import aiotieba
+import json
 import aiohttp.client_exceptions
-
 import pyperclip
 import requests
+
 from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QMovie, QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem, QTableWidget, QListWidget, QLabel, \
     QGraphicsOpacityEffect
 
 import consts
-import aiotieba
-import json
-
 from publics import aes, profile_mgr, qt_window_mgr, qt_image
 import publics.app_logger as logging
 from publics.toasting import init_AUMID
