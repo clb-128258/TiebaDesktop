@@ -1,14 +1,19 @@
 import pathlib
-import winreg
 import random
-
-from windows_toasts import InteractableWindowsToaster, Toast, ToastDisplayImage, ToastImagePosition, ToastImage, \
-    MIN_VERSION, ToastButton
 from typing import Callable, Optional
 import platform
 
 from publics import win8toast
 import consts
+
+IS_WINDOWS = platform.system() == 'Windows'
+Win10_MIN_VERSION = 10240
+
+if IS_WINDOWS:
+    import winreg
+if IS_WINDOWS and int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
+    from windows_toasts import InteractableWindowsToaster, Toast, ToastDisplayImage, ToastImagePosition, ToastImage, \
+        ToastButton
 
 
 class Button:
@@ -29,7 +34,7 @@ class Button:
 
 def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
     if platform.system() == 'Windows':
-        if int(platform.version().split('.')[-1]) >= MIN_VERSION:
+        if int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
             if iconPath is not None:
                 if not iconPath.exists():
                     raise ValueError(f"Could not register the application: File {iconPath} does not exist")
@@ -80,7 +85,7 @@ def showMessage(title: str,
         wintoaster.remove_toast(newToast)
 
     if platform.system() == 'Windows':
-        if int(platform.version().split('.')[-1]) >= MIN_VERSION:
+        if int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
             wintoaster = InteractableWindowsToaster(lowerText, consts.WINDOWS_AUMID)
             newToast = Toast()
             newToast.text_fields = [title, text]
@@ -99,5 +104,5 @@ def showMessage(title: str,
                     newToast.AddAction(i.toast_button)
 
             wintoaster.show_toast(newToast)
-        elif int(platform.version().split('.')[-1]) == 9600:
+        elif 9200 <= int(platform.version().split('.')[-1]) <= 9600:
             win8toast.send_msg_async(title.replace('\n', ' '), text.replace('\n', ' '), icon, callback)
