@@ -77,9 +77,6 @@ class ThreadPreview:
     text = ''
 
 
-
-
-
 class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     """主题贴详情窗口，可以浏览主题贴详细内容和回复"""
     first_floor_pid = -1  # 首楼回复id

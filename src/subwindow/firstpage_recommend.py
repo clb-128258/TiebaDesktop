@@ -1,16 +1,18 @@
 import asyncio
 import gc
 
-import publics.app_logger as logging
+from bs4 import BeautifulSoup
 import aiotieba
+
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
-from bs4 import BeautifulSoup
 
+import publics.app_logger as logging
 from publics import request_mgr, profile_mgr, top_toast_widget
 from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string, \
     listWidget_get_visible_widgets, large_num_to_string, cleanup_listWidget
+
 from subwindow import base_ui
 
 
@@ -92,10 +94,6 @@ class RecommendWindow(QListWidget):
                 self.get_recommand_async()
 
     def add_thread(self, infos):
-        # {'thread_id': thread_id, 'forum_id': forum_id, 'title': title,
-        # 'content': content, 'author_portrait': portrait, 'user_name': user_name,
-        # 'user_portrait_pixmap': user_head_pixmap, 'forum_name': forum_name,
-        # 'forum_pixmap': forum_pixmap, 'view_pixmap': []}
         item = QListWidgetItem()
         from subwindow.thread_preview_item import ThreadView
         widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
@@ -298,7 +296,10 @@ class RecommendWindow(QListWidget):
                                                    '&page_thread_count=10',
                                                    bduss=self.bduss, stoken=self.stoken)
                 if response['errno'] == 110003:
+                    # 出错时回退到 v1 版本的接口
+                    self.isloading = False
                     start_background_thread(self.get_recommand_v1)
+                    return
                 else:
                     tlist = response['data']['thread_list']
                     thread_list = []
@@ -316,8 +317,8 @@ class RecommendWindow(QListWidget):
                 logging.log_exception(e)
                 toast_msg.title = get_exception_string(e)
                 toast_msg.icon_type = top_toast_widget.ToastIconType.ERROR
-            finally:
-                self.isloading = False
-                self.load_finish.emit(toast_msg)
+
+            self.isloading = False
+            self.load_finish.emit(toast_msg)
 
         func()
