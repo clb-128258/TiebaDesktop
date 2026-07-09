@@ -17,7 +17,8 @@ from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_backgro
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
     cleanup_listWidget, show_label_pixmap_with_animation
 import publics.app_logger as logging
-from publics.baidu_features.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread, \
+from publics.baidu_features.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, \
+    cancel_store_thread, \
     pb_page
 
 from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector, thread_publisher
@@ -554,7 +555,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
             # 异步跳转到最后一页
             self.reply_page = self.reply_total_pages
-            QTimer.singleShot(4000, lambda: self.load_sub_threads_refreshly(reset_page=False))
+            QTimer.singleShot(1000, lambda: self.load_sub_threads_refreshly(reset_page=False))
         else:
             toast.icon_type = top_toast_widget.ToastIconType.ERROR
 
@@ -616,8 +617,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                               captcha_md5, captcha_json_info)
             if result.error.errorno == 0:
                 emit_data['success'] = True
-                exp_text = f'经验 +{result.data.exp.inc}' if result.data.exp.inc not in ('0', '') else '本次回贴没有增加任何经验值'
-                emit_data['text'] = f'回贴成功，{exp_text}'
+                exp_text = f'，本吧经验 +{result.data.exp.inc}' if result.data.exp.inc not in ('0', '') else ''
+                emit_data['text'] = f'回贴成功{exp_text}'
             elif result.data.info.need_vcode == '1':
                 emit_data['success'] = False
                 emit_data['is_captcha'] = True

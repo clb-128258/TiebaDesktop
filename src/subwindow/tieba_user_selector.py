@@ -1,7 +1,4 @@
 """贴吧用户选择器"""
-import gc
-import time
-
 from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtWidgets import QWidgetAction
 
@@ -53,11 +50,11 @@ def get_user_list():
             fans_list = await client.get_fans()
 
             # 整合关注/粉丝列表
-            user_list = list(follow_list.objs)
-            for i in fans_list.objs:
+            user_list = list(fans_list.objs)
+            for i in follow_list.objs:
                 if i not in user_list: user_list.append(i)
 
-            return follow_list
+            return user_list
 
     def start_async():
         loop = asyncio.new_event_loop()
@@ -145,13 +142,13 @@ class TiebaUserSelector(WindowBaseQWidget, tb_user_selector.Ui_Form):
                 user_list = search_user(search_keyword)
                 for f in user_list:
                     # emit each follow object to UI thread
-                    user = {'uid': f["user_id"], 'portrait': f['portrait'], 'name': f['name']}
+                    user = {'uid': f["user_id"], 'portrait': f['portrait'], 'name': funcs.cut_string(f['name'], 10)}
                     self.add_user.emit(user)
             else:
                 user_list = get_user_list()
                 for f in user_list:
                     # emit each follow object to UI thread
-                    user = {'uid': f.user_id, 'portrait': f.portrait, 'name': f.nick_name_new}
+                    user = {'uid': f.user_id, 'portrait': f.portrait, 'name': funcs.cut_string(f.nick_name_new, 10)}
                     self.add_user.emit(user)
         except Exception as e:
             app_logger.log_exception(e)
