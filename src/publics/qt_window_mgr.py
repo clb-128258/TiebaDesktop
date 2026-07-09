@@ -8,8 +8,9 @@ distributed_window = []
 
 def refresh_all_windows_theme(need_refresh_main=True):
     if need_refresh_main:
-        from __main__ import mainw
-        mainw.set_theme_qss()
+        from __main__ import main_window, tray_icon
+        tray_icon.menu.set_theme_qss()
+        main_window.set_theme_qss()
 
     for w in distributed_window:
         w.reset_theme()

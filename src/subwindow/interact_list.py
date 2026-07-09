@@ -2,7 +2,7 @@ import asyncio
 import gc
 
 import aiotieba
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
@@ -76,7 +76,7 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
             self.latest_agree_id = 0
 
             self.load_inter_data_async('all')
-            self.parent_window.notice_syncer.run_msg_sync_immedently()
+            QTimer.singleShot(2000, self.parent_window.notice_syncer.run_msg_sync_immedently)
 
     def load_item_images(self):
         current_widget = self.tabWidget.currentWidget()
@@ -127,12 +127,12 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
                             [],
                             -1,
                             data['post_time_str'],
-                            '', -2,-1, -1, False)
+                            '', -2, -1, -1, False)
         else:
             from subwindow.thread_agreed_item import AgreedThreadItem
             widget = AgreedThreadItem(self.bduss, self.stoken)
 
-            widget.item_type=data['item_type']
+            widget.item_type = data['item_type']
             widget.portrait = data['portrait']
             widget.thread_id = data['thread_id']
             widget.post_id = data['post_id']

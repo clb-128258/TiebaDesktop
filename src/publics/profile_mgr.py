@@ -32,7 +32,7 @@ local_config_model = {
         "enabled_scheme": {"http": True, "https": True}
     },
     "other_settings": {
-        "show_msgbox_before_close": True,
+        "close_main_window_action": 0,
         "context_menu_search_engine": {"preset": "bing", "custom_url": ""},
         "mw_default_page": 0,
         "disable_ssl_verify": False,

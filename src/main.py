@@ -12,9 +12,10 @@ from publics import top_toast_widget, account_mgr
 
 from PyQt5.QtCore import (QLocale, QTranslator, QT_VERSION_STR,
                           QT_VERSION, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QPoint)
-from PyQt5.QtGui import QPixmapCache, QFont
+from PyQt5.QtGui import QPixmapCache, QFont, QCloseEvent
 from PyQt5.QtWidgets import (QMessageBox, QAction, QMainWindow, QApplication,
-                             QWidgetAction, QCheckBox, QInputDialog, QGraphicsOpacityEffect, QFileDialog)
+                             QWidgetAction, QInputDialog, QGraphicsOpacityEffect, QFileDialog,
+                             QSystemTrayIcon)
 
 from subwindow.agree_thread_list import AgreedThreadsList
 from subwindow.firstpage_recommend import RecommendWindow
@@ -204,6 +205,101 @@ def set_qt_scale_factor():
     factor = get_dict_value_treely(profile_mgr.local_config, ['other_settings', 'reset_dpi'], -1)
     if factor != -1:
         os.environ['QT_SCALE_FACTOR'] = str(factor)
+
+
+class TrayIcon(QSystemTrayIcon):
+    def __init__(self):
+        super().__init__()
+        self.setIcon(QIcon('ui/tieba_logo_small.png'))
+
+        self.activated.connect(self.handle_click)
+        main_window.account_manager.accountStateChanged.connect(self.update_tooltip)
+        main_window.notice_syncer.noticeCountChanged.connect(self.update_tooltip)
+
+        self.init_menu()
+        self.update_tooltip()
+
+    def update_tooltip(self):
+        interact_type_index = {UnreadMessageType.AGREE: '点赞',
+                               UnreadMessageType.AT: '@',
+                               UnreadMessageType.REPLY: '回复'}
+        base_text = '贴吧桌面'
+
+        account = main_window.account_manager.current_account
+        if account:
+            base_text += f'\n当前账号: {account.nickname}'
+
+        interact_syncer = main_window.notice_syncer
+        if interact_syncer.get_basic_unread_notice_count() > 0:
+            base_text += '\n未读通知: '
+            for k, v in interact_type_index.items():
+                notice_count = interact_syncer.get_unread_notice_count(k)
+                if notice_count > 0:
+                    base_text += f'{notice_count} 条{v}, '
+            base_text = base_text[0:-2]
+
+        self.setToolTip(base_text)
+
+    def handle_click(self, tpe):
+        if tpe != QSystemTrayIcon.ActivationReason.Context:
+            main_window.show_active_window()
+
+    def init_menu(self):
+        self.menu = base_ui.BaseQMenu()
+
+        open_main_window = QAction('打开主窗口', self)
+        open_main_window.triggered.connect(main_window.show_active_window)
+        self.menu.addAction(open_main_window)
+
+        switch_forum_page = QAction('打开进吧页面', self)
+        switch_forum_page.triggered.connect(self.show_into_forum_page)
+        self.menu.addAction(switch_forum_page)
+
+        switch_interact_page = QAction('查看互动消息', self)
+        switch_interact_page.triggered.connect(self.show_interact_page)
+        self.menu.addAction(switch_interact_page)
+
+        self.menu.addSeparator()
+
+        show_all_windows = QAction('还原离散窗口', self)
+        show_all_windows.triggered.connect(self.restore_all_windows)
+        self.menu.addAction(show_all_windows)
+
+        minimize_all_windows = QAction('最小化离散窗口', self)
+        minimize_all_windows.triggered.connect(self.minimize_all_windows)
+        self.menu.addAction(minimize_all_windows)
+
+        close_all_windows = QAction('关闭离散窗口', self)
+        close_all_windows.triggered.connect(qt_window_mgr.clear_windows)
+        self.menu.addAction(close_all_windows)
+
+        self.menu.addSeparator()
+
+        open_settings_window = QAction('软件设置', self)
+        open_settings_window.triggered.connect(main_window.open_settings_window)
+        self.menu.addAction(open_settings_window)
+
+        exit_app = QAction('退出软件', self)
+        exit_app.triggered.connect(main_window.exit_app)
+        self.menu.addAction(exit_app)
+
+        self.setContextMenu(self.menu)
+
+    def restore_all_windows(self):
+        for i in qt_window_mgr.distributed_window:
+            i.showNormal()
+
+    def minimize_all_windows(self):
+        for i in qt_window_mgr.distributed_window:
+            i.showMinimized()
+
+    def show_into_forum_page(self):
+        main_window.show_active_window()
+        main_window.switch_follow_forum_page()
+
+    def show_interact_page(self):
+        main_window.show_active_window()
+        main_window.switch_interact_page()
 
 
 class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
@@ -409,7 +505,6 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config['thread_view_settings']['play_gif'] = self.checkBox_12.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = self.checkBox_13.isChecked()
             profile_mgr.local_config["notify_settings"]["offline_notify"] = self.checkBox_17.isChecked()
-            profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = self.checkBox_16.isChecked()
             profile_mgr.local_config["other_settings"]["mw_default_page"] = self.comboBox_4.currentIndex()
             profile_mgr.local_config["webview_settings"]["disable_font_cover"] = self.checkBox_20.isChecked()
             profile_mgr.local_config["webview_settings"]["view_frozen"] = self.checkBox_21.isChecked()
@@ -425,6 +520,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 'disable_top_toast_animation'] = self.checkBox_29.isChecked()
             profile_mgr.local_config['other_settings']['animation_switches'][
                 'disable_mw_switch_animation'] = self.checkBox_30.isChecked()
+            profile_mgr.local_config["other_settings"]["close_main_window_action"] = self.comboBox_7.currentIndex()
 
             se_name_map = profile_mgr.sep_name_map
             if se_name_map.get(self.comboBox_5.currentText()) in profile_mgr.search_engine_presets.keys():
@@ -775,9 +871,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
             self.checkBox_28.setChecked(
                 profile_mgr.local_config['other_settings']['animation_switches']['enable_image_fade_in'])
-            self.checkBox_16.setChecked(profile_mgr.local_config['other_settings']['show_msgbox_before_close'])
             self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
             self.comboBox_6.setCurrentIndex(self.brightDarkPolicyFlag)
+            self.comboBox_7.setCurrentIndex(profile_mgr.local_config["other_settings"]["close_main_window_action"])
 
             self.checkBox_29.setChecked(
                 profile_mgr.local_config['other_settings']['animation_switches']['disable_top_toast_animation'])
@@ -882,7 +978,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         toast = top_toast_widget.ToastMessage('已开始在后台刷新数据，登录失效的账号将被清理，请耐心等待',
                                               icon_type=top_toast_widget.ToastIconType.INFORMATION)
         self.top_toaster.showToast(toast)
-    def on_account_add_failed(self,err_info):
+
+    def on_account_add_failed(self, err_info):
         toast = top_toast_widget.ToastMessage(f'账号添加失败: {err_info}',
                                               icon_type=top_toast_widget.ToastIconType.ERROR)
         self.top_toaster.showToast(toast)
@@ -893,6 +990,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     user_data = {'bduss': '', 'stoken': ''}
     self_user_portrait = ''
     is_account_first_load = True
+    is_settings_window_using = False
 
     add_info = pyqtSignal(list)
     user_info_loaded = pyqtSignal()
@@ -939,32 +1037,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         return super().nativeEvent(eventType, message)
 
     def closeEvent(self, a0):
-        def whether_show_question():
-            try:
-                show_question = profile_mgr.local_config['other_settings']['show_msgbox_before_close']
-            except KeyError:
-                show_question = True
-
-            return show_question
-
-        def save_not_show_profile():
-            try:
-                profile_mgr.local_config['other_settings']['show_msgbox_before_close'] = False
-                profile_mgr.save_local_config()
-            except Exception as e:
-                log_exception(e)
-
-        def do_exit():
-            profile_mgr.add_window_rects(type(self),
-                                         self.x() + 1, self.y() + 31,
-                                         self.width(), self.height(),
-                                         self.isMaximized())
-
-            a0.accept()
-            app.closeAllWindows()
-            app.quit()
-
-        if whether_show_question():
+        close_action = get_dict_value_treely(profile_mgr.local_config,
+                                             ['other_settings', 'close_main_window_action'],
+                                             0)
+        if close_action == 0:
+            a0.ignore()
+            self.hide()
+        elif close_action == 1:
             windows_num = len(qt_window_mgr.distributed_window)
             show_text = (f'你还有 {windows_num} 个打开的窗口没有被关闭，' if windows_num > 0 else '') + '确认要退出软件吗？'
             msgbox = QMessageBox(QMessageBox.Information,
@@ -972,19 +1051,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                                  show_text,
                                  parent=self)
             msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            cb = QCheckBox()
-            cb.setText('以后不再提示')
-            cb.setToolTip('勾选后，以后关闭主窗口时将直接关闭程序，不再提示用户。你随时可以到软件设置中调整此选项。')
-            msgbox.setCheckBox(cb)
 
             if msgbox.exec() == QMessageBox.Yes:
-                if cb.isChecked():
-                    save_not_show_profile()
-                do_exit()
+                self.exit_app(a0)
             else:
                 a0.ignore()
         else:
-            do_exit()
+            self.exit_app(a0)
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5 and self.stackedWidget.currentIndex() == 0:
@@ -1023,6 +1096,22 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             # 弹出通知
             toast = top_toast_widget.ToastMessage('主题切换成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
             self.toast_widget.showToast(toast)
+
+    def exit_app(self, close_event: QCloseEvent = None):
+        profile_mgr.add_window_rects(type(self),
+                                     self.x() + 1, self.y() + 31,
+                                     self.width(), self.height(),
+                                     self.isMaximized())
+
+        if close_event:
+            close_event.accept()
+        else:
+            self.close()
+
+        tray_icon.hide()
+        qt_window_mgr.clear_windows()
+        app.closeAllWindows()
+        app.quit()
 
     def init_ui_elements(self):
         self.toast_widget = top_toast_widget.TopToaster()
@@ -1156,13 +1245,19 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         self.paint_page_switch_elements()
 
-    def switch_interact_page(self):
+    def show_active_window(self):
+        if self.is_settings_window_using:
+            return
+
+        self.show()
         if self.isMinimized():
             self.showNormal()
         self.raise_()
         if not self.isActiveWindow():
             self.activateWindow()
 
+    def switch_interact_page(self):
+        self.show_active_window()
         self.stackedWidget.setCurrentIndex(2)
 
         if self.interactionlist.is_first_show:
@@ -1248,9 +1343,14 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.stackedWidget.setCurrentIndex(0)
 
     def open_settings_window(self):
+        if self.is_settings_window_using:
+            return
+
+        self.is_settings_window_using = True
         d = SettingsWindow()
         d.exec()
         d.deleteLater()
+        self.is_settings_window_using = False
 
     def init_profile_menu(self):
         self.popup_menu = base_ui.BaseQMenu()
@@ -1276,8 +1376,14 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.exit_login_ac.triggered.connect(self.exit_login)
         self.popup_menu.addAction(self.exit_login_ac)
 
+        self.popup_menu.addSeparator()
+
+        self.hide_window = QAction('最小化到托盘', self)
+        self.hide_window.triggered.connect(self.hide)
+        self.popup_menu.addAction(self.hide_window)
+
         self.exit_whole_app = QAction('退出软件', self)
-        self.exit_whole_app.triggered.connect(self.close)
+        self.exit_whole_app.triggered.connect(self.exit_app)
         self.popup_menu.addAction(self.exit_whole_app)
 
         self.pushButton.setMenu(self.popup_menu)
@@ -1388,6 +1494,7 @@ if __name__ == "__main__":
 
     # init Qt
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
     translates = set_qt_languages()
     log_INFO('Qt init complete')
 
@@ -1395,10 +1502,12 @@ if __name__ == "__main__":
     winrt_share.init_library()
     check_webview2()
 
-    # init main window
+    # init main window, tray icon
     log_INFO('Initing main window')
-    mainw = MainWindow()
-    mainw.show()
+    main_window = MainWindow()
+    tray_icon = TrayIcon()
+    tray_icon.show()
+    main_window.show()
 
     # main loop
     logging.log_INFO('MainWindow showed, now run into the main loop')
