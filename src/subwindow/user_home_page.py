@@ -9,7 +9,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image
+from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image, account_mgr
 from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
     get_exception_string, cleanup_listWidget, show_label_pixmap_with_animation
@@ -142,6 +142,18 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         menu = BaseQMenu(self)
         menu.setToolTipsVisible(True)
 
+        switch_to_account = QAction('切换到此账号', self)
+        switch_to_account.triggered.connect(self.switch_to_account)
+
+        mgr = account_mgr.GlobalAccountContainer.get_current_manager()
+        if mgr.current_account.uid != self.real_user_id and self.real_user_id in [i.uid for i in mgr.account_list]:
+            switch_to_account.setVisible(True)
+        else:
+            switch_to_account.setVisible(False)
+
+        menu.addAction(switch_to_account)
+        menu.addSeparator()
+
         follow = QAction('关注', self)
         follow.triggered.connect(lambda: self.do_action_async('follow'))
         menu.addAction(follow)
@@ -238,11 +250,11 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         menu.addAction(open_in_browser)
 
         if self.real_user_id == profile_mgr.current_uid or not self.bduss:
-            follow.setEnabled(False)
-            unfollow.setEnabled(False)
-            blacklist.setEnabled(False)
-            old_mute.setEnabled(False)
-            cancel_old_mute.setEnabled(False)
+            follow.setVisible(False)
+            unfollow.setVisible(False)
+            blacklist.setVisible(False)
+            old_mute.setVisible(False)
+            cancel_old_mute.setVisible(False)
 
         self.pushButton.setMenu(menu)
 
@@ -268,6 +280,14 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                         i.load_avatar()
                     elif isinstance(i, UserItem):
                         i.get_portrait()
+
+    def switch_to_account(self):
+        if QMessageBox.information(self, '切换到此账号',
+                                   f'切换账号操作会导致当前会话下打开的所有窗口被关闭。确认要继续切换到账号 {self.nick_name} 吗？',
+                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            mgr = account_mgr.GlobalAccountContainer.get_current_manager()
+            mgr.switch_to_account_async(self.real_user_id)
+            self.close()
 
     def open_user_blacklister(self):
         from subwindow.single_blacklist import SingleUserBlacklistWindow
@@ -402,7 +422,6 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                 self.progressBar.setRange(0, data['level_next_exp'])
                 self.progressBar.setValue(
                     data['level_exp'] if data['level_exp'] <= data['level_next_exp'] else data['level_next_exp'])
-
 
             self.label_3.setText('贴吧 ID: ' + str(data['tieba_id']))
             self.horizontalFrame.setVisible(bool(data['tieba_id']))
