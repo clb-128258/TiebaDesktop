@@ -218,6 +218,7 @@ class NarrowButtonStatus(enum.Enum):
     ArrowRight = enum.auto()
     Refresh = enum.auto()
     Add = enum.auto()
+    Settings = enum.auto()
 
 
 class BaseQMenu(QMenu):
@@ -353,6 +354,8 @@ class FloatingButton(QToolButton):
             tool_tip = '刷新'
         elif status == NarrowButtonStatus.Add:
             tool_tip = '添加'
+        elif status == NarrowButtonStatus.Settings:
+            tool_tip = '管理'
         self.setToolTip(tool_tip)
 
         if status == NarrowButtonStatus.ArrowRight:
@@ -363,12 +366,15 @@ class FloatingButton(QToolButton):
             icon_path = f'ui/icon_white/refresh.png'
         elif status == NarrowButtonStatus.Add:
             icon_path = f'ui/icon_white/add.png'
+        elif status == NarrowButtonStatus.Settings:
+            icon_path = f'ui/icon_white/settings.png'
         self.setIcon(QIcon(icon_path))
 
         self.move_button()
 
     def move_button(self):
-        put_left_button_list = [NarrowButtonStatus.ArrowRight, NarrowButtonStatus.Refresh, NarrowButtonStatus.Add]
+        put_left_button_list = [NarrowButtonStatus.ArrowRight, NarrowButtonStatus.Refresh, NarrowButtonStatus.Add,
+                                NarrowButtonStatus.Settings]
         put_right_button_list = [NarrowButtonStatus.ArrowLeft]
         move_value = 20
         x, y = 0, 0

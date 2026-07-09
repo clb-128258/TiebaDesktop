@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QMessageBox
 
 from publics import qt_window_mgr, qt_image, top_toast_widget
 from publics.funcs import start_background_thread, show_label_pixmap_with_animation
-from publics.tieba_apis import sign_forum
+from publics.baidu_features.tieba_apis import sign_forum
 from subwindow import base_ui
 from ui import ba_item
 

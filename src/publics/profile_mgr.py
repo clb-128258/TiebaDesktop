@@ -2,7 +2,7 @@
 import json
 import time
 import copy
-from publics import proxytool
+from publics import proxytool, account_mgr
 import consts
 
 local_config_model = {

@@ -7,7 +7,8 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
 
-from publics import top_toast_widget, tieba_apis, app_logger, profile_mgr
+from publics import top_toast_widget, app_logger, profile_mgr
+from publics.baidu_features import tieba_apis
 from publics.funcs import start_background_thread, get_exception_string
 from subwindow import base_ui
 from ui import sign

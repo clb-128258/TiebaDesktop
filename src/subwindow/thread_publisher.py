@@ -14,7 +14,7 @@ import consts
 from publics import profile_mgr, top_toast_widget, app_logger, webview2
 from publics.funcs import start_background_thread, get_exception_string, LoadingFlashWidget, get_dict_value_treely, \
     open_url_in_browser
-from publics.tieba_apis import getRecomForumList, add_thread
+from publics.baidu_features.tieba_apis import getRecomForumList, add_thread
 from subwindow import base_ui, tieba_user_selector, tieba_emoji_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import thread_publisher

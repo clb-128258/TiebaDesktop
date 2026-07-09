@@ -1,6 +1,6 @@
 import asyncio
-
 import pyperclip
+
 from PyQt5.QtCore import pyqtSignal, QTimer, QEvent, QSize, Qt
 from PyQt5.QtGui import QIcon, QResizeEvent
 from PyQt5.QtGui import QPixmap
@@ -11,6 +11,7 @@ from subwindow import base_ui
 from subwindow.history_list import HistoryViewWindow
 from subwindow.star_thread_list import StaredThreadsList
 from subwindow.user_home_page import UserHomeWindow
+
 from ui import mw_popup
 
 

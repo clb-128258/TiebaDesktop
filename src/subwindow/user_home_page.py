@@ -5,8 +5,8 @@ import time
 import aiotieba
 import pyperclip
 
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image
@@ -16,7 +16,7 @@ from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread,
 import publics.app_logger as logging
 from publics.qt_image import get_pixmap_icon_from_file
 
-from publics.tieba_apis import get_user_profile
+from publics.baidu_features.tieba_apis import get_user_profile
 from subwindow import base_ui
 from subwindow.base_ui import BaseQMenu
 

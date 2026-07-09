@@ -1,18 +1,20 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-from publics import webview2, tieba_apis
+from publics import webview2
+from publics.baidu_features import tieba_apis
 from publics import proxytool
+from publics.baidu_features.baidu_passport_login import LoginWebView, QRLoginDialog, SeniorLoginDialog
 from publics.winrt_url_share import winrt_share
 from publics.funcs import *
 from publics.app_logger import init_log
 from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.tb_syncer import *
-from publics import top_toast_widget
+from publics import top_toast_widget, account_mgr
 
 from PyQt5.QtCore import (QLocale, QTranslator, QT_VERSION_STR,
-                          QT_VERSION, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve)
+                          QT_VERSION, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QPoint)
 from PyQt5.QtGui import QPixmapCache, QFont
 from PyQt5.QtWidgets import (QMessageBox, QAction, QMainWindow, QApplication,
-                             QWidgetAction, QCheckBox, QInputDialog, QGraphicsOpacityEffect)
+                             QWidgetAction, QCheckBox, QInputDialog, QGraphicsOpacityEffect, QFileDialog)
 
 from subwindow.agree_thread_list import AgreedThreadsList
 from subwindow.firstpage_recommend import RecommendWindow
@@ -22,9 +24,8 @@ from subwindow.tieba_search_entry import TiebaSearchWindow
 from subwindow.mainwindow_menu import MainPopupMenu
 from subwindow import base_ui
 
-from ui import mainwindow, settings, login_by_bduss, qr_login
+from ui import mainwindow, settings
 
-import typing
 import sys
 import os
 import requests
@@ -36,7 +37,6 @@ import consts
 import shutil
 import platform
 import time
-import copy
 import subprocess
 
 if os.name == 'nt':
@@ -106,15 +106,9 @@ def handle_command_events():
     log_INFO('Handling command args')
 
     def get_current_user():
-        user_data = {'bduss': '', 'stoken': ''}
-        real_user_data = load_json_secret(f'{datapath}/user_bduss')
-        if real_user_data['current_bduss'] and real_user_data['login_list']:  # 有选账号且有已登录用户
-            # 找到这个用户
-            for i in real_user_data['login_list']:
-                if i['bduss'] == real_user_data['current_bduss']:
-                    user_data = i
-                    break
-        return user_data['bduss'], user_data['stoken']
+        account_mgr_obj = account_mgr.GlobalAccountContainer.get_current_manager()
+        account_mgr_obj.load_accounts_list()
+        return account_mgr_obj.current_account.bduss, account_mgr_obj.current_account.stoken
 
     def msgbox(text, title='贴吧桌面'):
         if '--quiet' not in cmds and os.name == 'nt':
@@ -170,14 +164,15 @@ def handle_command_events():
         for i in cmds:
             if i.startswith('--userid='):
                 uid = int(i.split('=')[1])
-        if uid < 0:
+        if uid <= 0:
             msgbox('请指定正确的用户 ID。')
         else:
-            real_user_data = load_json_secret(f'{datapath}/user_bduss')
-            for i in real_user_data['login_list']:
-                if i['uid'] == uid:
-                    real_user_data['current_bduss'] = i['bduss']
-                    save_json_secret(real_user_data, f'{datapath}/user_bduss')
+            account_mgr_obj = account_mgr.GlobalAccountContainer.get_current_manager()
+            account_mgr_obj.load_accounts_list()
+
+            for i in account_mgr_obj.account_list:
+                if i.uid == uid:
+                    account_mgr_obj.switch_to_account(uid)
                     msgbox(f'已将账号切换到 {uid}。')
                     return
             msgbox(f'未在本地找到 {uid} 的登录信息。')
@@ -221,22 +216,30 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+
+        self.account_mgr = account_mgr.GlobalAccountContainer.get_current_manager()
+        self.account_mgr.accountStateChanged.connect(self.get_logon_accounts)
+        self.account_mgr.addAccountFailed.connect(self.on_account_add_failed)
+
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_6.setPixmap(
             QPixmap('ui/tieba_logo_big_transparent.png').scaled(55, 55, transformMode=Qt.SmoothTransformation))
         self.groupBox_3.hide()
+
         self.init_top_toaster()
         self.init_load_animation()
+        self.init_hover_buttons()
+
         self.set_debug_info()
         self.get_logon_accounts()
         self.load_local_config()
 
-        self.init_login_button_menu()
-        self.listWidget.currentRowChanged.connect(self.stackedWidget.setCurrentIndex)
+        self.listWidget.currentRowChanged.connect(self.switch_main_page)
         self.listWidget_3.currentRowChanged.connect(self.scroll_common_settings)
 
-        self.pushButton.clicked.connect(self.clear_account_list)
+        self.manage_account_button.clicked.connect(self.init_manage_acount_button_menu)
+        self.login_button.clicked.connect(self.init_login_button_menu)
         self.pushButton_11.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
         self.pushButton_12.clicked.connect(self.scan_use_detail_async)
         self.pushButton_4.clicked.connect(self.clear_caches_async)
@@ -277,10 +280,16 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                                      self.width(), self.height(),
                                      False)
 
+        self.account_mgr.accountStateChanged.disconnect(self.get_logon_accounts)
+        self.account_mgr.addAccountFailed.disconnect(self.on_account_add_failed)
         self.listWidget_2.clear()
         QPixmapCache.clear()
         gc.collect()
         a0.accept()
+
+    def resizeEvent(self, a0):
+        self.login_button.move_button()
+        self.manage_account_button.move_button()
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_Escape:
@@ -295,6 +304,15 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                              window_rect[2],
                              window_rect[3])
 
+    def init_hover_buttons(self):
+        self.manage_account_button = base_ui.FloatingButton(self, 1)
+        self.manage_account_button.set_button_status(base_ui.NarrowButtonStatus.Settings)
+        self.manage_account_button.move_button()
+
+        self.login_button = base_ui.FloatingButton(self, 2)
+        self.login_button.set_button_status(base_ui.NarrowButtonStatus.Add)
+        self.login_button.move_button()
+
     def init_top_toaster(self):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
@@ -307,7 +325,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
     def init_login_button_menu(self):
         menu = base_ui.BaseQMenu()
 
-        webview_login = QAction('网页登录 (推荐)', self)
+        webview_login = QAction('浏览器登录', self)
         webview_login.triggered.connect(self.add_account)
         menu.addAction(webview_login)
 
@@ -319,13 +337,48 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         bduss_directly_login.triggered.connect(self.add_account_senior)
         menu.addAction(bduss_directly_login)
 
-        self.pushButton_2.setMenu(menu)
+        bt_pos = self.login_button.mapToGlobal(QPoint(0, 0))
+        show_pos = QPoint(bt_pos.x() - (132 - self.login_button.width()), bt_pos.y() - 100)
+        menu.exec_(show_pos)
+
+    def init_manage_acount_button_menu(self):
+        menu = base_ui.BaseQMenu()
+        menu.setToolTipsVisible(True)
+
+        export_accounts = QAction('导出账号信息', self)
+        export_accounts.setToolTip('将所有已登录账号的信息导出到本地文件，便于保存账号信息。\n'
+                                   '注意：导出的文件中包括 BDUSS 等登录令牌信息，请妥善保管，否则可能导致你的账号被盗。')
+        export_accounts.triggered.connect(self.export_account_info)
+        export_accounts.setEnabled(self.account_mgr.has_any_accounts())
+        menu.addAction(export_accounts)
+
+        update_accounts_info = QAction('更新所有账号的信息', self)
+        update_accounts_info.setToolTip(
+            '如果已登录账号的显示昵称与实际的不一致，或者需要清理登录失效的账号，可以选择更新所有账号的信息。')
+        update_accounts_info.triggered.connect(self.refresh_all_users_info)
+        update_accounts_info.setEnabled(self.account_mgr.has_any_accounts())
+        menu.addAction(update_accounts_info)
+
+        clear_all_accounts = QAction('清空账号列表', self)
+        clear_all_accounts.triggered.connect(self.clear_account_list)
+        clear_all_accounts.setEnabled(self.account_mgr.has_any_accounts())
+        menu.addAction(clear_all_accounts)
+
+        bt_pos = self.manage_account_button.mapToGlobal(QPoint(0, 0))
+        show_pos = QPoint(bt_pos.x() - 139, bt_pos.y() - (95 - self.manage_account_button.height()))
+        menu.exec_(show_pos)
 
     def open_web_link(self, url):
         open_url_in_browser(url)
         policy = profile_mgr.local_config['web_browser_settings']['url_open_policy']
         if policy == 0:
             self.close()
+
+    def switch_main_page(self, index):
+        self.stackedWidget.setCurrentIndex(index)
+
+        self.login_button.setVisible(index == 0)
+        self.manage_account_button.setVisible(index == 0)
 
     def scroll_common_settings(self, row):
         groupbox_map = [self.groupBox_8, self.groupBox_4,
@@ -450,17 +503,14 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         d = LoginWebView()
         d.resize(1065, 680)
         d.exec()
-        self.get_logon_accounts()
 
     def add_account_qrcode(self):
         d = QRLoginDialog()
         d.exec()
-        self.get_logon_accounts()
 
     def add_account_senior(self):
         d = SeniorLoginDialog()
         d.exec()
-        self.get_logon_accounts()
 
     def select_all_caches(self):
         safetyClearTypeCb = [self.checkBox_4,
@@ -680,62 +730,29 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
     def clear_account_list(self):
         if QMessageBox.warning(self, '警告', '确认要清空本地的所有登录信息吗？这会导致所有用户退出登录。',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            # 写入登录信息
-            account_list = load_json_secret(f'{datapath}/user_bduss')
-            account_list['current_bduss'] = ''
-            account_list['login_list'] = []
-            save_json_secret(account_list, f'{datapath}/user_bduss')
-            shutil.rmtree(f'{datapath}/webview_data')
-            os.mkdir(f'{datapath}/webview_data')
-            mainw.refresh_all_datas()  # 更新主页面信息
-            self.get_logon_accounts()
-            toast = top_toast_widget.ToastMessage('登录信息清空成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
-            self.top_toaster.showToast(toast)
+            self.current_a = None
+            self.account_mgr.clear_all_accounts_async()
 
-    def switch_account(self, bduss="", name=""):
-        if not bduss:
-            bduss = self.listWidget_2.currentItem().bduss
-        if not name:
-            name = self.listWidget_2.itemWidget(self.listWidget_2.currentItem()).label_2.text()
-        if bduss != self.current_a:
+    def switch_account(self, uid=0):
+        if not uid:
+            uid = self.listWidget_2.currentItem().user_portrait_id
+        user_info = self.account_mgr.get_account_by_uid_portrait(uid)
+
+        if user_info != self.current_a:
             if QMessageBox.information(self, '提示',
-                                       f'确认要切换到账号 {name} 吗？',
+                                       f'确认要切换到账号 {user_info.nickname} 吗？',
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-                # 写入登录信息
-                account_list = load_json_secret(f'{datapath}/user_bduss')
-                account_list['current_bduss'] = bduss
-                save_json_secret(account_list, f'{datapath}/user_bduss')
-                mainw.refresh_all_datas()  # 更新主页面信息
-                self.get_logon_accounts()
+                self.account_mgr.switch_to_account_async(user_info.uid)
 
-                toast = top_toast_widget.ToastMessage(f'已切换到账号 {name}',
-                                                      icon_type=top_toast_widget.ToastIconType.SUCCESS)
-                self.top_toaster.showToast(toast)
+    def delete_account(self, uid=0):
+        if not uid:
+            uid = self.listWidget_2.currentItem().user_portrait_id
+        user_info = self.account_mgr.get_account_by_uid_portrait(uid)
 
-    def delete_account(self, bduss="", name=""):
-        if not bduss:
-            bduss = self.listWidget_2.currentItem().bduss
-        if not name:
-            name = self.listWidget_2.itemWidget(self.listWidget_2.currentItem()).label_2.text()
         if QMessageBox.information(self, '提示',
-                                   f'确认要删除账号 {name} 的登录信息吗？',
+                                   f'确认要删除账号 {user_info.nickname} 的登录信息吗？',
                                    QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            account_list = load_json_secret(f'{datapath}/user_bduss')
-            for i in tuple(account_list['login_list']):
-                if i['bduss'] == bduss:
-                    shutil.rmtree(f'{datapath}/webview_data/{i["uid"]}')
-                    account_list['login_list'].remove(i)  # 删掉登录信息
-                    break
-            if account_list['current_bduss'] == bduss:
-                # 如果要删除的账号是当前登录的，取消登录状态
-                account_list['current_bduss'] = ''
-            save_json_secret(account_list, f'{datapath}/user_bduss')
-            mainw.refresh_all_datas()  # 更新主页面信息
-            self.get_logon_accounts()
-
-            toast = top_toast_widget.ToastMessage(f'账号信息删除成功',
-                                                  icon_type=top_toast_widget.ToastIconType.SUCCESS)
-            self.top_toaster.showToast(toast)
+            self.account_mgr.delete_account_async(uid)
 
     def load_local_config(self):
         try:
@@ -804,611 +821,79 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         gc.collect()
 
         # 加载列表
-        account_list = load_json_secret(f'{datapath}/user_bduss')
-        self.current_a = account_list['current_bduss']
-        for i in account_list['login_list']:
+        self.current_a = self.account_mgr.current_account
+        for account in self.account_mgr.account_list:
+            # 向下兼容
+            i = account.to_json()
+
             item = ExtListWidgetItem(i['bduss'], i['stoken'])
-            item.user_portrait_id = i['portrait']
+            item.user_portrait_id = i['uid']
             widget = UserItem(i['bduss'], i['stoken'])
-            widget.switchRequested.connect(lambda d: self.switch_account(d[0], d[1]))
-            widget.deleteRequested.connect(lambda d: self.delete_account(d[0], d[1]))
+            widget.switchRequested.connect(lambda d: self.switch_account(d[0]))
+            widget.deleteRequested.connect(lambda d: self.delete_account(d[0]))
             widget.doubleClicked.connect(self.switch_account)
             widget.user_portrait_id = i['portrait']
-            widget.setdatas(i['portrait'], i['name'], i.get('uid', -1), True,
-                            is_current_user=self.current_a == i['bduss'])
+            widget.setdatas(i['portrait'], i['name'], i['uid'], True,
+                            is_current_user=account.is_current)
             item.setSizeHint(widget.size())
             self.listWidget_2.addItem(item)
             self.listWidget_2.setItemWidget(item, widget)
 
-        account_num = len(account_list['login_list'])
+        account_num = len(self.account_mgr.account_list)
         if not account_num:
             self.listWidget_2.hide()
-            self.label.setText('你目前还没有登录任何账号，点击右侧的“添加账号”可立即登录新账号。')
+            self.label.show()
+            self.label.setText('未登录任何账号\n点击右下角“+”按钮可登录账号')
         else:
             self.listWidget_2.show()
-            self.label.setText(f'你目前已登录 {account_num} 个账号。')
-
-
-class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
-    """扫码登录对话框"""
-    qr_code_loaded = pyqtSignal(dict)
-    qr_status_changed = pyqtSignal(dict)
-
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-
-        self.setWindowFlags(Qt.WindowCloseButtonHint)
-        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-
-        self.qr_sign = ''
-        self.tangram_guid = ''
-        self.is_qr_loading = False
-        self.is_window_using = True
-        self.is_login_succeed = False
-        self.session = requests.Session()
-        self.session.trust_env = True
-
-        self.loading_widget = LoadingFlashWidget(caption='二维码加载中...')
-        self.loading_widget.cover_widget(self.label_3)
-        self.loading_widget.hide()
-        self.qr_code_image = qt_image.MultipleImage()
-        self.qr_code_image.currentPixmapChanged.connect(self.label_3.setPixmap)
-        self.qr_code_image.imageLoadSucceed.connect(lambda: self.on_qrimg_loaded(True))
-        self.qr_code_image.imageLoadFailed.connect(lambda: self.on_qrimg_loaded(False))
-
-        self.qr_code_loaded.connect(self.load_qrcode_img)
-        self.qr_status_changed.connect(self.on_login_state_changed)
-        self.toolButton.clicked.connect(self.get_new_qr_code_async)
-
-        self.start_looper()
-        self.get_new_qr_code_async()
-
-    def reset_theme(self):
-        super().reset_theme()
-        self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/refresh.png'))
-
-    def closeEvent(self, a0):
-        def do_close():
-            self.is_window_using = False
-            self.session.close()
-            a0.accept()
-
-        if self.is_login_succeed:
-            do_close()
-        else:
-            if QMessageBox.information(self,
-                                       '提示',
-                                       '你确实要中止登录流程吗？',
-                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-                do_close()
-            else:
-                a0.ignore()
-
-    def keyPressEvent(self, a0):
-        if a0.key() == Qt.Key.Key_Escape:
-            a0.ignore()
-            self.close()
-
-    def parse_response(self, text):
-        text = text.replace(f'{self.tangram_guid}(', '')[0:-1]
-        if text.endswith(')'):
-            text = text[0:-1]
-        return text
-
-    def parse_response_qrbdusslogin(self, text):
-        final_text = text.replace(f'bd__cbs__iou0dl(', '')[0:-1].replace(' ', '').replace(r'\&', '').replace('\'', '\"')
-        return final_text
-
-    def on_login_state_changed(self, data):
-        if data['type'] == 1:
-            self.label_3.setText('二维码已过期，请重新加载')
-        elif data['type'] == 2:
-            self.label_3.setText('扫码成功，请在手机上确认')
-        elif data['type'] == 3:
-            self.label_3.setText('你已取消扫码，二维码已失效，请重新加载')
-        elif data['type'] == 4:
-            self.label_3.setText('百度服务器要求短信验证，请使用网页登录')
-        elif data['type'] == 5:
-            QMessageBox.information(self, '登录成功',
-                                    f'你已成功登录账号 {data["user"]}。\n可以在 设置-账号管理 中找到你的账号。',
-                                    QMessageBox.Ok)
-            mainw.refresh_all_datas()  # 更新主页面信息
-            self.close()
-
-    def get_bduss_by_token(self, token):
-        header = {
-            'User-Agent': request_mgr.header['User-Agent'],
-            'Accept-Encoding': "gzip, deflate, br, zstd",
-            'sec-ch-ua-platform': "\"Windows\"",
-            'sec-ch-ua': "\"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
-            'sec-ch-ua-mobile': "?0",
-            'Sec-Fetch-Site': "same-site",
-            'Sec-Fetch-Mode': "no-cors",
-            'Sec-Fetch-Dest': "script",
-            'Referer': "https://tieba.baidu.com/",
-            'Accept-Language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-            "Connection": "keep-alive",
-        }
-
-        timestamp = time.time()
-        timestamp_second = int(timestamp)
-        timestamp_ms = int(timestamp * 1000)
-        params = {
-            "v": str(timestamp_ms),
-            "bduss": token,
-            "u": "",
-            "loginVersion": "v5",
-            "qrcode": "1",
-            "tpl": "tb",
-            "maskId": "",
-            "fileId": "",
-            "apiver": "v3",
-            "tt": str(timestamp_ms),
-            "traceid": "",
-            "time": str(timestamp_second),
-            "alg": "v3",
-            "elapsed": "10",
-            "callback": "bd__cbs__iou0dl"
-        }
-
-        response = self.session.get(
-            f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/v3/login/main/qrbdusslogin',
-            headers=header, params=params)
-        response.raise_for_status()
-        json_text = self.parse_response_qrbdusslogin(response.text)
-        jsonify_data = json.loads(json_text)
-        response.close()
-
-        return jsonify_data
-
-    def handle_qr_status(self, resp):
-        """处理扫码轮询逻辑"""
-        if resp['errno'] == 1:
-            # 没扫码，不操作
-            pass
-        elif resp['errno'] == 0:
-            channel_v = resp['channel_v']
-            channel_v_json = json.loads(channel_v)
-            if channel_v_json['status'] == 1:
-                # 已经扫码，等待手机确认
-                self.qr_status_changed.emit({'type': 2})
-            elif channel_v_json['status'] == 2:
-                # 用户取消扫码登录
-                self.qr_status_changed.emit({'type': 3})
-            elif channel_v_json['status'] == 0:
-                # 用户点击确定登录，登录成功
-                login_token = channel_v_json['v']
-                login_data = self.get_bduss_by_token(login_token)
-                if int(login_data['data']['session']['needvcode']):
-                    # 需要验证码
-                    self.qr_status_changed.emit({'type': 4})
-                else:
-                    # 正常上号
-                    bduss = login_data['data']['session']['bduss']
-                    stoken = login_data['data']['session']['stokenList'].split('quot;')[1][3:]
-                    result = self.write_user_info(bduss, stoken)
-                    if result:
-                        self.is_login_succeed = True
-                        self.qr_status_changed.emit({'type': 5, 'user': result})
-                    else:
-                        self.qr_status_changed.emit({'type': 6})
-        else:
-            raise Exception(f'errno is {resp["errno"]}')
-
-    def query_qr_status(self):
-        header = {
-            'User-Agent': request_mgr.header['User-Agent'],
-            'Accept-Encoding': "gzip, deflate, br, zstd",
-            'sec-ch-ua-platform': "\"Windows\"",
-            'sec-ch-ua': "\"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
-            'sec-ch-ua-mobile': "?0",
-            'Sec-Fetch-Site': "same-site",
-            'Sec-Fetch-Mode': "no-cors",
-            'Sec-Fetch-Dest': "script",
-            'Referer': "https://tieba.baidu.com/",
-            'Accept-Language': "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-            "Connection": "keep-alive",
-        }
-
-        timestamp = time.time()
-        timestamp_ms = int(timestamp * 1000)
-        params = {
-            "channel_id": self.qr_sign,
-            "tpl": "tb",
-            "_sdkFrom": "1",
-            "callback": self.tangram_guid,
-            "apiver": "v3",
-            "tt": str(timestamp_ms),
-            '_': str(timestamp_ms),
-        }
-
-        response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/channel/unicast',
-                                    headers=header, params=params)
-        response.raise_for_status()
-        json_text = self.parse_response(response.text)
-        jsonify_data = json.loads(json_text)
-        response.close()
-
-        return jsonify_data
-
-    def write_user_info(self, bduss, stoken):
-        """向本地写入登录信息"""
-
-        async def get_self_info(bduss, stoken):
-            try:
-                async with aiotieba.Client(bduss, stoken, proxy=True) as client:
-                    user_info = await client.get_self_info()
-                    return user_info.portrait, user_info.nick_name_new, user_info.user_id
-            except:
-                return '', '', 0
-
-        try:
-            # 获取用户信息
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            portrait, name, uid = asyncio.run(get_self_info(bduss, stoken))
-
-            if (portrait and name and uid):
-                pf = load_json_secret(f'{datapath}/user_bduss')
-
-                if not pf['login_list']:  # 在没有账号登上去的情况下，把这个账号设置为当前账号
-                    pf['current_bduss'] = bduss
-                else:
-                    # 找一下有没有旧的登录信息，有就删除
-                    for i in tuple(pf['login_list']):
-                        if i['portrait'] == portrait:
-                            # 如果旧信息是当前账号，把当前账号也更新一次
-                            if pf['current_bduss'] == i['bduss']:
-                                pf['current_bduss'] = bduss
-                            pf['login_list'].remove(i)
-                            break
-                # 添加新的登录信息
-                pf['login_list'].append(
-                    {'bduss': bduss, 'stoken': stoken, 'portrait': portrait, 'name': name,
-                     'uid': uid})
-
-                save_json_secret(pf, f'{datapath}/user_bduss')
-                if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
-                    shutil.rmtree(f'{datapath}/webview_data/{uid}')
-                os.mkdir(f'{datapath}/webview_data/{uid}')
-
-                return f'{name} (用户 ID: {uid})'
-            else:
-                raise Exception('user info is null')
-        except Exception as e:
-            log_exception(e)
-            return ''
-
-    def start_looper(self):
-        self.loop_thread = start_background_thread(self.status_looper)
-
-    def status_looper(self):
-        """二维码状态轮询器"""
-        loop_count = 0
-        current_sign = self.qr_sign
-
-        while self.is_window_using:
-            if current_sign != self.qr_sign:
-                # 在二维码发生更改时，重新初始化数据
-                loop_count = 0
-                current_sign = self.qr_sign
-                log_INFO(f'looping qr code {current_sign}')
-            elif self.is_qr_loading or not current_sign:
-                # 二维码在加载或没有初始化时不操作
-                pass
-            else:
-                if loop_count >= 20:
-                    # 在循环次数到上限时，通知二维码过期，重新初始化数据
-                    self.qr_status_changed.emit({'type': 1})
-                    loop_count = 0
-                    current_sign = ''
-                else:
-                    # 执行轮询逻辑
-                    try:
-                        resp = self.query_qr_status()
-                        log_INFO(f'time of loop qr code {current_sign} ok, json data {resp}')
-                        self.handle_qr_status(resp)
-                    except Exception as e:
-                        logging.log_exception(e)
-                    else:
-                        loop_count += 1
-
-            time.sleep(1)  # 休眠
-        else:
-            log_INFO(f'qr code loop thread will exit')
-
-    def on_qrimg_loaded(self, success):
-        if not success:
-            self.label_3.setText('二维码图片加载失败')
-        self.loading_widget.hide()
-        self.is_qr_loading = False
-
-    def load_qrcode_img(self, data):
-        """已获取到token, 开始异步加载二维码图片"""
-        if not data['success']:
-            self.label_3.setText(data['info'])
-            self.loading_widget.hide()
-        else:
-            self.qr_code_image.destroyImage()
-            self.qr_code_image.setImageInfo(qt_image.ImageLoadSource.HttpLink,
-                                            data['qr_code_url'])
-            self.qr_code_image.loadImage()
-
-    def get_new_qr_code_async(self):
-        if not self.is_qr_loading:
-            self.is_qr_loading = True
-            self.loading_widget.show()
-            start_background_thread(self.get_new_qr_code)
-
-    def get_new_qr_code(self):
-        emit_data = {'success': False, 'info': '', 'qr_code_url': ''}
-
-        try:
-            header = copy.deepcopy(request_mgr.header)
-            del header['x-requested-with']
-            header['Referer'] = 'https://tieba.baidu.com/'
-
-            timestamp = time.time()
-            timestamp_second = int(timestamp)
-            timestamp_ms = int(timestamp * 1000)
-            self.tangram_guid = f'tangram_guid_{timestamp_ms}'
-            params = {
-                "lp": "pc",
-                "qrloginfrom": "pc",
-                "apiver": "v3",
-                "tt": str(timestamp_ms),
-                "tpl": "tb",
-                "logPage": f"traceId:pc_loginv5_{timestamp_second},logPage:loginv5",
-                "callback": self.tangram_guid
-            }
-
-            response = self.session.get(f'{request_mgr.SCHEME_HTTPS}{consts.BAIDU_PASSPORT_HOST}/v2/api/getqrcode',
-                                        headers=header, params=params)
-            response.raise_for_status()
-            json_text = self.parse_response(response.text)
-            jsonify_data = json.loads(json_text)
-            response.close()
-
-            if jsonify_data['errno'] != 0:
-                raise ValueError(f'Response status code is {jsonify_data["errno"]}')
-            else:
-                emit_data['qr_code_url'] = request_mgr.SCHEME_HTTP + jsonify_data['imgurl']
-                self.qr_sign = jsonify_data['sign']
-        except Exception as e:
-            logging.log_exception(e)
-            emit_data['success'] = False
-            emit_data['info'] = get_exception_string(e)
-            self.is_qr_loading = False
-        else:
-            emit_data['success'] = True
-            emit_data['info'] = '获取成功'
-        finally:
-            self.qr_code_loaded.emit(emit_data)
-
-
-class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
-    """高级登录对话框"""
-
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-
-        self.setWindowFlags(Qt.WindowCloseButtonHint)
-        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.pushButton_2.clicked.connect(self.close)
-        self.pushButton.clicked.connect(self.save_account_info)
-
-    def save_account_info(self):
-        async def get_self_info(bduss, stoken):
-            try:
-                async with aiotieba.Client(bduss, stoken, proxy=True) as client:
-                    user_info = await client.get_self_info()
-                    return user_info.portrait, user_info.nick_name_new, user_info.user_id
-            except:
-                return '', '', 0
-
-        bduss = self.lineEdit.text()
-        stoken = self.lineEdit_2.text()
-        if bduss and stoken:
-            # 获取用户信息
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            portrait, name, uid = asyncio.run(get_self_info(bduss, stoken))
-
-            if not (portrait and name and uid):
-                QMessageBox.critical(self, '登录失败',
-                                     '无法通过你提供的 BDUSS 和 STOKEN 获取用户信息。你的 BDUSS 或 STOKEN 可能失效了，或者你输入的内容不正确。',
-                                     QMessageBox.Ok)
-            else:
-                pf = load_json_secret(f'{datapath}/user_bduss')
-
-                if not pf['login_list']:  # 在没有账号登上去的情况下，把这个账号设置为当前账号
-                    pf['current_bduss'] = bduss
-                else:
-                    # 找一下有没有旧的登录信息，有就删除
-                    for i in tuple(pf['login_list']):
-                        if i['portrait'] == portrait:
-                            # 如果旧信息是当前账号，把当前账号也更新一次
-                            if pf['current_bduss'] == i['bduss']:
-                                pf['current_bduss'] = bduss
-                            pf['login_list'].remove(i)
-                            QMessageBox.information(self, '提示',
-                                                    '检测到本地已有该账号的登录信息，已使用本次的登录信息替换了旧的登录信息。',
-                                                    QMessageBox.Ok)
-                            break
-                # 添加新的登录信息
-                pf['login_list'].append(
-                    {'bduss': bduss, 'stoken': stoken, 'portrait': portrait, 'name': name, 'uid': uid})
-
-                save_json_secret(pf, f'{datapath}/user_bduss')
-                mainw.refresh_all_datas()  # 更新主页面信息
-                if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
-                    shutil.rmtree(f'{datapath}/webview_data/{uid}')
-                os.mkdir(f'{datapath}/webview_data/{uid}')
-
-                QMessageBox.information(self, '登录成功', f'账号 {name} 已经登录成功，登录信息已保存至本地。',
-                                        QMessageBox.Ok)
-                self.close()
-        else:
-            QMessageBox.critical(self, '填写错误',
-                                 '请正确填写 BDUSS 和 STOKEN 后再尝试登录。',
-                                 QMessageBox.Ok)
-
-
-class LoginWebView(base_ui.WindowBaseQDialog):
-    """登录百度账号的webview，用户在网页执行登陆操作，webview后台抓取bduss等登录信息"""
-
-    class LoginRewriter(QObject, webview2.HttpDataRewriter):
-        is_token_got = False
-        tokenGot = pyqtSignal(dict)
-
-        def onRequestCaught(self, url: str, method: str, header: typing.Dict[str, str],
-                            content: typing.Optional[bytes]):
-            if not self.is_token_got:
-                tlist = [
-                    'BDUSS',
-                    'STOKEN']
-
-                cookies_dic = self.parseCookieToDict(header['Cookie'])
-                login_cookies = {}
-                for k, v in cookies_dic.items():
-                    if k in tlist:
-                        login_cookies[k] = v
-
-                if len(login_cookies.keys()) == len(tlist):
-                    self.is_token_got = True
-                    self.tokenGot.emit(login_cookies)
-
-            return url, method, header, content
-
-    islogin = False
-    closeSignal = pyqtSignal()
-    need_restart = False
-
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('登录百度账号')
-        self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.setWindowFlags(Qt.WindowCloseButtonHint)
-        self.closeSignal.connect(self.close)
-        self.init_flash_widget()
-
-        self.webview = webview2.QWebView2View()
-        self.http_catcher = self.LoginRewriter()
-        self.http_catcher.tokenGot.connect(self.start_login)
-        self.webview.setParent(self)
-        self.webview.newtabSignal.connect(self.open_in_current_page)
-        self.profile = webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/default',
-                                               user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
-                                               enable_link_hover_text=False,
-                                               enable_zoom_factor=False,
-                                               enable_error_page=False,
-                                               enable_context_menu=False,
-                                               enable_keyboard_keys=False,
-                                               handle_newtab_byuser=False,
-                                               http_rewriter={'*://tieba.baidu.com/*': self.http_catcher},
-                                               enable_transparent_bg=get_dict_value_treely(
-                                                   profile_mgr.local_config,
-                                                   ['webview_settings', 'transparent_bg_color'], False))
-        self.webview.setProfile(self.profile)
-        self.webview.loadAfterRender('https://passport.baidu.com/v2/?login&u=https%3A%2F%2Ftieba.baidu.com')
-        self.webview.initRender()
-
-    def keyPressEvent(self, a0):
-        if a0.key() == Qt.Key.Key_Escape:
-            a0.ignore()
-            self.close()
-
-    def closeEvent(self, a0):
-        if not self.islogin:
-            if QMessageBox.information(self, '提示', '你确实要中止登录流程吗？',
-                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-                self.webview.destroyWebviewUntilComplete()
-                a0.accept()
-            else:
-                a0.ignore()
-        else:
-            if self.need_restart:
-                QMessageBox.information(self, '提示',
-                                        '账号已登录成功，为保证本地数据完全加载，你需要重启本软件。点击确定键关闭本软件，软件将在下次重新打开时自动应用你的设置。',
-                                        QMessageBox.Ok)
-                sys.exit(0)
-
-            self.webview.destroyWebviewUntilComplete()
-            mainw.refresh_all_datas()  # 更新主页面信息
-            self.flash_widget.hide()
-            a0.accept()
-
-    def resizeEvent(self, a0):
-        self.webview.setGeometry(0, 0, self.width(), self.height())
-        self.flash_widget.sync_parent_widget_size()
-
-    def init_flash_widget(self):
-        self.flash_widget = LoadingFlashWidget(caption='登录成功，即将跳转...')
-        self.flash_widget.cover_widget(self, enable_filler=False)
-        self.flash_widget.hide()
-
-    def open_in_current_page(self, link):
-        self.webview.load(link)
-
-    def start_login(self, infos):
-        self.webview.hide()
-        self.flash_widget.show()
-        start_background_thread(self.do_login, (infos,))
-
-    def do_login(self, infos):
-        async def get_self_info(bduss, stoken):
-            try:
-                async with aiotieba.Client(bduss, stoken, proxy=True) as client:
-                    user_info = await client.get_self_info()
-                    return user_info.portrait, user_info.nick_name_new, user_info.user_id
-            except:
-                return '', '', 0
-
-        self.webview.destroyWebviewUntilComplete()  # 先销毁webview
-        time.sleep(5)
-
-        # 获取用户信息
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        portrait, name, uid = asyncio.run(get_self_info(infos['BDUSS'], infos['STOKEN']))
-
-        pf = load_json_secret(f'{datapath}/user_bduss')  # 加载配置文件
-
-        if not pf['login_list']:  # 在没有账号登上去的情况下，把这个账号设置为当前账号
-            pf['current_bduss'] = infos['BDUSS']
-        else:
-            # 找一下有没有旧的登录信息，有就删除
-            for i in tuple(pf['login_list']):
-                if i['portrait'] == portrait:
-                    # 如果旧信息是当前账号，把当前账号也更新一次
-                    if pf['current_bduss'] == i['bduss']:
-                        pf['current_bduss'] = infos['BDUSS']
-                    pf['login_list'].remove(i)
-                    break
-        # 添加新的登录信息
-        pf['login_list'].append(
-            {'bduss': infos['BDUSS'], 'stoken': infos['STOKEN'], 'portrait': portrait, 'name': name, 'uid': uid})
-        save_json_secret(pf, f'{datapath}/user_bduss')  # 保存配置文件
-
-        try:
-            if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
-                shutil.rmtree(f'{datapath}/webview_data/{uid}')
-            os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
-            os.mkdir(f'{datapath}/webview_data/default')
-        except PermissionError:
-            self.need_restart = True
-            save_json({'uid': str(uid)}, f'{datapath}/d2id_flag')
-
-        self.islogin = True
-        self.closeSignal.emit()
+            self.label.hide()
+
+    def export_account_info(self):
+        filetype_list = ['JSON 文件 (*.json)', '纯文本文件 (*.txt)']
+        path, tpe = QFileDialog.getSaveFileName(self, '导出账号信息', '',
+                                                ';;'.join(filetype_list))
+
+        if path and tpe:
+            if tpe == filetype_list[0]:
+                json_data = {'current_account_uid': self.account_mgr.current_account.uid,
+                             "account_list": [i.to_json() for i in self.account_mgr.account_list]}
+                save_json(json_data, path, ensure_ascii=False, indent=4)
+            elif tpe == filetype_list[1]:
+                export_text = f'TiebaDesktop Account Info\n{"-" * 100}'
+
+                for i in self.account_mgr.account_list:
+                    account_string = (f'Nickname: {i.nickname}\n'
+                                      f'User ID: {i.uid}\n'
+                                      f'Portrait: {i.portrait}\n'
+                                      f'BDUSS: {i.bduss}\n'
+                                      f'STOKEN: {i.stoken}\n'
+                                      f'Is Current Account: {"Yes" if i.is_current else "No"}')
+                    export_text += '\n\n' + account_string
+
+                with open(path, 'wt', encoding='utf-8') as file:
+                    file.write(export_text)
+
+            toast = top_toast_widget.ToastMessage('数据导出成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.top_toaster.showToast(toast)
+
+    def refresh_all_users_info(self):
+        self.account_mgr.refresh_all_accounts_info_async()
+
+        toast = top_toast_widget.ToastMessage('已开始在后台刷新数据，登录失效的账号将被清理，请耐心等待',
+                                              icon_type=top_toast_widget.ToastIconType.INFORMATION)
+        self.top_toaster.showToast(toast)
+    def on_account_add_failed(self,err_info):
+        toast = top_toast_widget.ToastMessage(f'账号添加失败: {err_info}',
+                                              icon_type=top_toast_widget.ToastIconType.ERROR)
+        self.top_toaster.showToast(toast)
 
 
 class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     """主窗口，整个程序的入口点"""
     user_data = {'bduss': '', 'stoken': ''}
     self_user_portrait = ''
+    is_account_first_load = True
+
     add_info = pyqtSignal(list)
     user_info_loaded = pyqtSignal()
 
@@ -1427,10 +912,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.pushButton_2.clicked.connect(self.switch_recommand_page)
         self.pushButton_5.clicked.connect(self.open_search_window)
 
+        self.account_manager = account_mgr.GlobalAccountContainer.get_current_manager()
         self.add_info.connect(self._add_uinfo)
         self.user_info_loaded.connect(self.__refresh_ui_datas)
         self.notice_syncer.noticeCountChanged.connect(self.set_unread_count)
         self.notice_syncer.activeWindow.connect(self.switch_interact_page)
+        self.account_manager.accountStateChanged.connect(self.refresh_all_datas)
 
         self.init_profile_menu()
         self.init_pages()
@@ -1443,7 +930,8 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.paint_page_switch_elements()
 
         self.notice_syncer.start_sync()
-        self.refresh_all_datas()
+        self.free_current_session()
+        self.account_manager.load_accounts_list_async()
         self.move_as_config()
 
     def nativeEvent(self, eventType, message):
@@ -1690,15 +1178,29 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 
         self.paint_page_switch_elements()
 
-    def refresh_all_datas(self):
+    def free_current_session(self):
         qt_window_mgr.clear_windows()
-        self.recommend.clear()
         QPixmapCache.clear()
         gc.collect()
 
         self.label_9.clear()
         self.label_10.setText('加载中...')
         self.pushButton.setEnabled(False)
+
+    def refresh_all_datas(self):
+        self.free_current_session()
+
+        if self.is_account_first_load:
+            self.is_account_first_load = False
+        else:
+            account = self.account_manager.current_account
+            if account:
+                toast = top_toast_widget.ToastMessage(f'已切换到账号 {account.nickname}',
+                                                      icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            else:
+                toast = top_toast_widget.ToastMessage(f'已进入游客账号模式',
+                                                      icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            self.toast_widget.showToast(toast)
         start_background_thread(self.init_user_data)
 
     def __refresh_ui_datas(self):
@@ -1792,19 +1294,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         if QMessageBox.warning(self, '警告',
                                '确认要退出当前账号吗？\n如果本机没有登录其他账号，那么你将会切换到游客模式下；\n如果你登录了其他账号，那么你将会被切换到下一个账号。',
                                QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            pf = load_json_secret(f'{datapath}/user_bduss')
-            for i in tuple(pf['login_list']):
-                if i['bduss'] == pf['current_bduss']:
-                    pf['login_list'].remove(i)
-                    break
-            pf['current_bduss'] = ''
-
-            save_json_secret(pf, f'{datapath}/user_bduss')
-            shutil.rmtree(f'{datapath}/webview_data/{profile_mgr.current_uid}')
-            self.refresh_all_datas()
-
-            toast = top_toast_widget.ToastMessage('账号退出成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
-            self.toast_widget.showToast(toast)
+            self.account_manager.delete_account_async(self.account_manager.current_account.uid)
 
     def login_exec(self):
         if webview2.isWebView2Installed():
@@ -1824,7 +1314,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
                 os.mkdir(f'{datapath}/webview_data/default')
             except Exception as e:
-                log_WARN('handle_d2id_flag method failed')
+                log_WARN('handle_d2id_flag failed')
                 log_exception(e)
             else:
                 save_json({'uid': ''}, f'{datapath}/d2id_flag')
@@ -1833,6 +1323,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         if not datas:
             QMessageBox.critical(self, '错误', '用户信息加载失败！', QMessageBox.Ok)
             self.label_10.setText('[用户加载失败]')
+            self.pushButton.setEnabled(True)
         else:
             if datas[0]:
                 self.label_9.setPixmap(datas[0])
@@ -1843,24 +1334,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         try:
             self.handle_d2id_flag()  # 先处理d2id
 
-            self.user_data = {'bduss': '', 'stoken': ''}
-            real_user_data = load_json_secret(f'{datapath}/user_bduss')
-            if not real_user_data['current_bduss'] and real_user_data['login_list']:  # 没选账号但是有已登录用户
-                # 把当前用户设置成第一个
-                self.user_data = real_user_data['login_list'][0]
-                real_user_data['current_bduss'] = real_user_data['login_list'][0]['bduss']
-                save_json_secret(real_user_data, f'{datapath}/user_bduss')
-            elif real_user_data['current_bduss'] and real_user_data['login_list']:  # 有选账号且有已登录用户
-                # 找到这个用户
-                for i in real_user_data['login_list']:
-                    if i['bduss'] == real_user_data['current_bduss']:
-                        self.user_data = i
-                        break
+            self.user_data = self.account_manager.current_account.to_json()
 
             if not self.user_data['bduss']:
                 profile_mgr.current_uid = 'default'
                 profile_mgr.current_stoken = ''
                 profile_mgr.current_bduss = ''
+
                 pixmap = QPixmap('ui/default_user_image.png')
                 pixmap.setDevicePixelRatio(qt_image.get_screen_ratio())
                 pixmap = qt_image.add_cover_for_pixmap(pixmap, 30)

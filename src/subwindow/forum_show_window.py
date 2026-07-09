@@ -12,7 +12,7 @@ from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_backgro
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
     cleanup_listWidget, show_label_pixmap_with_animation
 import publics.app_logger as logging
-from publics.tieba_apis import fetch_frs_bottom, sign_forum
+from publics.baidu_features.tieba_apis import fetch_frs_bottom, sign_forum
 
 from subwindow import base_ui
 from ui import ba_head

@@ -14,7 +14,7 @@ from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image, top_toast_w
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
     large_num_to_string, get_exception_string, show_label_pixmap_with_animation
 import publics.app_logger as logging
-from publics.tieba_apis import get_forum_level_info, sign_forum
+from publics.baidu_features.tieba_apis import get_forum_level_info, sign_forum
 
 from subwindow import base_ui
 from ui import forum_detail

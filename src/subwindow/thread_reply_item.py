@@ -6,7 +6,7 @@ from publics import qt_window_mgr, profile_mgr, qt_image
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string, \
     show_label_pixmap_with_animation
 import publics.app_logger as logging
-from publics.tieba_apis import agree_thread_or_post, OpAgreeObjectType
+from publics.baidu_features.tieba_apis import agree_thread_or_post, OpAgreeObjectType
 from subwindow import base_ui
 
 from ui import comment_view

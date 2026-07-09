@@ -40,26 +40,26 @@ def cut_string(text: str, length: int, moretext: str = '...'):
 
 def load_json(filename):
     """加载json文件"""
-    with open(filename, 'rt') as file:
+    with open(filename, 'rt', encoding='utf-8') as file:
         items = json.loads(file.read())
     return items
 
 
-def save_json(jsondata, filename):
+def save_json(jsondata, filename, ensure_ascii=True, indent=None):
     """保存json文件"""
-    with open(filename, 'wt') as file:
-        file.write(json.dumps(jsondata))
+    with open(filename, 'wt', encoding='utf-8') as file:
+        file.write(json.dumps(jsondata, ensure_ascii=ensure_ascii, indent=indent))
 
 
 def save_json_secret(jsondata, filename):
     """加密保存本地的json文件"""
-    with open(filename, 'wt') as file:
+    with open(filename, 'wt', encoding='utf-8') as file:
         file.write(aes.encode(json.dumps(jsondata), consts.encrypt_key))
 
 
 def load_json_secret(filename):
     """加载本地加密存储的json文件"""
-    with open(filename, 'rt') as file:
+    with open(filename, 'rt', encoding='utf-8') as file:
         items = file.read()
     return json.loads(aes.decode(items, consts.encrypt_key))
 
@@ -800,5 +800,5 @@ class UserItem(QWidget, user_item.Ui_Form):
             if is_current_user:
                 self.pushButton.setEnabled(False)
                 self.pushButton.setText('当前账号')
-            self.pushButton.clicked.connect(lambda: self.switchRequested.emit((self.bduss, uname)))
-            self.pushButton_2.clicked.connect(lambda: self.deleteRequested.emit((self.bduss, uname)))
+            self.pushButton.clicked.connect(lambda: self.switchRequested.emit((uid, uname)))
+            self.pushButton_2.clicked.connect(lambda: self.deleteRequested.emit((uid, uname)))

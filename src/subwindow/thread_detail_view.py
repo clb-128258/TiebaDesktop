@@ -17,7 +17,7 @@ from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_backgro
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
     cleanup_listWidget, show_label_pixmap_with_animation
 import publics.app_logger as logging
-from publics.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread, \
+from publics.baidu_features.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, cancel_store_thread, \
     pb_page
 
 from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector, thread_publisher

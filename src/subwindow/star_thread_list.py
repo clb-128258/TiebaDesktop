@@ -6,7 +6,8 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, profile_mgr, top_toast_widget, tieba_apis
+from publics import qt_window_mgr, profile_mgr, top_toast_widget
+from publics.baidu_features import tieba_apis
 from publics.funcs import start_background_thread, listWidget_get_visible_widgets, cleanup_listWidget, \
     LoadingFlashWidget, get_exception_string, timestamp_to_string
 import publics.app_logger as logging
