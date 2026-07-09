@@ -357,7 +357,7 @@ class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
     def save_account_info(self):
         bduss = self.lineEdit.text()
         stoken = self.lineEdit_2.text()
-        if bduss and stoken:
+        if len(bduss) == 192 and len(stoken) == 64:
             account_manager = account_mgr.GlobalAccountContainer.get_current_manager()
             account_manager.add_account_async(bduss, stoken)
             self.close()
