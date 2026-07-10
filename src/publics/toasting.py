@@ -29,24 +29,27 @@ class Button:
         self.button_text = text
         self.button_id = 'buttonid_' + str(random.randint(1, 10 ** 8))
         self.callback = callback
-        self.toast_button = ToastButton(text, self.button_id)
+
+        if IS_WINDOWS and int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
+            self.toast_button = ToastButton(text, self.button_id)
+        else:
+            self.toast_button = None
 
 
 def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
-    if platform.system() == 'Windows':
-        if int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
-            if iconPath is not None:
-                if not iconPath.exists():
-                    raise ValueError(f"Could not register the application: File {iconPath} does not exist")
-                elif iconPath.suffix != ".ico":
-                    raise ValueError(f"Could not register the application: File {iconPath} must be of type .ico")
+    if IS_WINDOWS and int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
+        if iconPath is not None:
+            if not iconPath.exists():
+                raise ValueError(f"Could not register the application: File {iconPath} does not exist")
+            elif iconPath.suffix != ".ico":
+                raise ValueError(f"Could not register the application: File {iconPath} must be of type .ico")
 
-            winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
-            keyPath = f"SOFTWARE\\Classes\\AppUserModelId\\{appId}"
-            with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, keyPath) as masterKey:
-                winreg.SetValueEx(masterKey, "DisplayName", 0, winreg.REG_SZ, appName)
-                if iconPath is not None:
-                    winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
+        winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+        keyPath = f"SOFTWARE\\Classes\\AppUserModelId\\{appId}"
+        with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, keyPath) as masterKey:
+            winreg.SetValueEx(masterKey, "DisplayName", 0, winreg.REG_SZ, appName)
+            if iconPath is not None:
+                winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
 
 
 def showMessage(title: str,
@@ -84,7 +87,7 @@ def showMessage(title: str,
             if callback: callback()
         wintoaster.remove_toast(newToast)
 
-    if platform.system() == 'Windows':
+    if IS_WINDOWS:
         if int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
             wintoaster = InteractableWindowsToaster(lowerText, consts.WINDOWS_AUMID)
             newToast = Toast()
