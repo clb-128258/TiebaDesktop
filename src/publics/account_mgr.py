@@ -45,6 +45,8 @@ class TiebaAccount(QObject):
         nickname (str): 用户新版昵称
         uid (int): 百度用户 ID
 
+        aiotieba_account (aiotieba.Account): aiotieba 的账户信息容器，内含各种贴吧 API 请求参数
+
         is_current (bool): 是否为当前激活账号
     """
 
@@ -58,7 +60,43 @@ class TiebaAccount(QObject):
         self.nickname = ''
         self.uid = 0
 
+        self.aiotieba_account = aiotieba.Account()
+
         self.is_current = False
+
+    def init_access_infos(self):
+        async def get_access_info():
+            """
+            获取贴吧风控信息，并装填入 account 对象
+            """
+
+            self.aiotieba_account.BDUSS = self.bduss
+            self.aiotieba_account.STOKEN = self.stoken
+
+            async with aiotieba.Client(account=self.aiotieba_account, proxy=True) as client:
+                aiotieba_http_core = client._http_core
+
+                try:
+                    # 并发执行，提高性能
+                    result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
+                                                  aiotieba.sync.request(aiotieba_http_core),
+                                                  aiotieba.login.request(aiotieba_http_core)
+                                                  )
+                    zid, client_id, sample_id, tbs = result[0], result[1][0], result[1][1], result[2][1]
+
+                    self.aiotieba_account.tbs = tbs
+                    self.aiotieba_account.z_id = zid
+                    self.aiotieba_account.client_id = client_id
+                    self.aiotieba_account.sample_id = sample_id
+                except Exception as e:
+                    app_logger.log_exception(e)
+                    app_logger.log_WARN(f'[account manager] user {self} access info load failed')
+
+        if not self.aiotieba_account.tbs:
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(get_access_info())
+            new_loop.close()
 
     def init_from_json(self, json_data, current_bduss):
         self.bduss = str(json_data['bduss'])
@@ -85,7 +123,7 @@ class TiebaAccount(QObject):
         return bool(self.uid)
 
     def __str__(self):
-        return f'AccountObject ({self.nickname}/{self.uid}/{self.portrait})'
+        return f'AccountObject({self.nickname}/{self.uid}/{self.portrait})'
 
 
 class AccountManager(QObject):
@@ -99,10 +137,16 @@ class AccountManager(QObject):
         self.account_list = []
         self.current_account = TiebaAccount()
 
+        self.__is_switching_account = False
+
     def load_accounts_list_async(self):
         funcs.start_background_thread(self.load_accounts_list)
 
     def load_accounts_list(self):
+        if self.__is_switching_account:
+            return
+
+        self.__is_switching_account = True
         last_current_uid = self.current_account.uid
 
         self.account_list.clear()
@@ -128,8 +172,10 @@ class AccountManager(QObject):
             self.account_list.append(a)
             if a.is_current:
                 self.current_account = a
+                a.init_access_infos()
 
-        if last_current_uid != self.current_account.uid:
+        self.__is_switching_account = False
+        if last_current_uid != self.current_account.uid or last_current_uid == self.current_account.uid == 0:
             self.accountSwitched.emit(self.current_account)
 
         self.accountStateChanged.emit()
@@ -167,6 +213,7 @@ class AccountManager(QObject):
 
         if not self.has_any_accounts():  # 在没有账号登上去的情况下，把这个账号设置为当前账号
             account_object.is_current = True
+            account_object.init_access_infos()
             self.current_account = account_object
         else:
             # 找一下有没有旧的登录信息，有就删除
@@ -175,6 +222,7 @@ class AccountManager(QObject):
                     # 如果旧信息是当前账号，把当前账号也更新一次
                     if self.current_account.bduss == i.bduss:
                         account_object.is_current = True
+                        account_object.init_access_infos()
                         self.current_account = account_object
                     self.account_list.remove(i)
                     break
@@ -229,6 +277,12 @@ class AccountManager(QObject):
         funcs.start_background_thread(self.switch_to_account, (uid,))
 
     def switch_to_account(self, uid: int):
+        if self.__is_switching_account:
+            self.addAccountFailed.emit('目前正在切换账号，请等待当前操作完成再切换')
+            return
+
+        self.__is_switching_account = True
+
         # 先取消目前用户的激活状态
         self.current_account.is_current = False
 
@@ -239,11 +293,13 @@ class AccountManager(QObject):
                 break
 
         account.is_current = True
+        account.init_access_infos()
         self.current_account = account
 
         # 保存登录信息
         self.save_accounts_list()
 
+        self.__is_switching_account = False
         self.accountSwitched.emit(self.current_account)
         self.accountStateChanged.emit()
 
@@ -264,6 +320,12 @@ class AccountManager(QObject):
         funcs.start_background_thread(self.refresh_all_accounts_info)
 
     def refresh_all_accounts_info(self):
+        if self.__is_switching_account:
+            self.addAccountFailed.emit('目前正在切换账号，请等待当前操作完成再刷新数据')
+            return
+
+        self.__is_switching_account = True
+
         # 留存当前账号信息
         current_uid = self.current_account.uid
         bduss_list = [(i.bduss, i.stoken) for i in self.account_list]
@@ -282,16 +344,19 @@ class AccountManager(QObject):
             # 重新设置上新的当前账号
             if a.uid == current_uid:
                 a.is_current = True
+                a.init_access_infos()
                 self.current_account = a
             else:
                 a.is_current = False
 
         if not self.current_account and self.has_any_accounts():
-            self.current_account = self.account_list[0]
             self.current_account.is_current = True
+            self.current_account.init_access_infos()
+            self.current_account = self.account_list[0]
 
         self.save_accounts_list()
         self.blockSignals(False)
+        self.__is_switching_account = False
 
         self.accountStateChanged.emit()
 
@@ -315,3 +380,11 @@ class GlobalAccountContainer:
     def get_current_manager(cls) -> AccountManager:
         cls.init_manager()
         return cls.account_manager_instance
+
+    @classmethod
+    def get_current_account(cls) -> TiebaAccount:
+        return cls.get_current_manager().current_account
+
+    @classmethod
+    def get_account_list(cls) -> list[TiebaAccount]:
+        return cls.get_current_manager().account_list

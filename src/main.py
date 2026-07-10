@@ -223,7 +223,7 @@ class TrayIcon(QSystemTrayIcon):
         self.setIcon(QIcon('ui/tieba_logo_small.png'))
 
         self.activated.connect(self.handle_click)
-        main_window.account_manager.accountStateChanged.connect(self.update_tooltip)
+        main_window.account_manager.accountSwitched.connect(self.update_tooltip)
         main_window.notice_syncer.noticeCountChanged.connect(self.update_tooltip)
 
         self.init_menu()
@@ -1025,7 +1025,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.user_info_loaded.connect(self.__refresh_ui_datas)
         self.notice_syncer.noticeCountChanged.connect(self.set_unread_count)
         self.notice_syncer.activeWindow.connect(self.switch_interact_page)
-        self.account_manager.accountStateChanged.connect(self.refresh_all_datas)
+        self.account_manager.accountSwitched.connect(self.refresh_all_datas)
 
         self.init_profile_menu()
         self.init_pages()
@@ -1289,8 +1289,8 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         gc.collect()
 
         self.label_9.clear()
-        self.label_10.setText('加载中...')
-        self.pushButton.setEnabled(False)
+        self.label_10.setText('账号加载中...')
+        self.frame.setEnabled(False)
 
     def refresh_all_datas(self):
         self.free_current_session()
@@ -1436,10 +1436,13 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                 save_json({'uid': ''}, f'{datapath}/d2id_flag')
 
     def _add_uinfo(self, datas):
+        self.frame.setEnabled(True)
         if not datas:
-            QMessageBox.critical(self, '错误', '用户信息加载失败！', QMessageBox.Ok)
-            self.label_10.setText('[用户加载失败]')
-            self.pushButton.setEnabled(True)
+            toast = top_toast_widget.ToastMessage(f'用户信息加载失败，已临时进入游客模式',
+                                                  icon_type=top_toast_widget.ToastIconType.ERROR)
+            self.toast_widget.showToast(toast)
+
+            self.label_10.setText('[用户信息加载失败]')
         else:
             if datas[0]:
                 self.label_9.setPixmap(datas[0])

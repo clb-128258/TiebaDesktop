@@ -14,7 +14,7 @@ from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
 from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
 from proto.AddThread import AddThreadReqIdl_pb2, AddThreadResIdl_pb2
 
-from publics import request_mgr, app_logger, profile_mgr
+from publics import request_mgr, app_logger, profile_mgr, account_mgr
 from publics.funcs import get_dict_value_treely
 
 
@@ -111,9 +111,6 @@ def get_user_profile(bduss, stoken, user_id_portrait):
 
 
 def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json_info):
-    async def get_tbs():
-        return login(bduss)['anti']['tbs']
-
     async def get_access_info(aiotieba_client) -> tuple[str, str, str, str, str]:
         """
         获取贴吧风控信息
@@ -121,18 +118,14 @@ def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json
         Return:
             以下风控字段值，均为字符串类型：z_id, client_id, sample_id, show_name, tbs
         """
-        aiotieba_http_core = aiotieba_client._http_core
 
-        # 并发执行，提高性能
-        result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
-                                      aiotieba.sync.request(aiotieba_http_core),
-                                      aiotieba_client.get_self_info(),
-                                      get_tbs()
-                                      )
-        z_id = result[0]
-        client_id, sample_id = result[1][0], result[1][1]
-        show_name = result[2].show_name
-        tbs = result[3]
+        current_account = account_mgr.GlobalAccountContainer.get_current_account()
+        result = await aiotieba_client.get_self_info()
+
+        z_id = current_account.aiotieba_account.z_id
+        client_id, sample_id = current_account.aiotieba_account.client_id, current_account.aiotieba_account.sample_id
+        show_name = result.show_name
+        tbs = current_account.aiotieba_account.tbs
 
         return z_id, client_id, sample_id, show_name, tbs
 
@@ -246,7 +239,7 @@ def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json
 
 
 def sign_forum(bduss, stoken, forum_id, forum_name):
-    tbs = login(bduss)["anti"]["tbs"]
+    tbs = account_mgr.GlobalAccountContainer.get_current_account().aiotieba_account.tbs
 
     from_widget = '1' if get_dict_value_treely(profile_mgr.local_config,
                                                ['sign_settings', 'use_widget_sign_flag'],
@@ -277,16 +270,15 @@ def agree_thread_or_post(bduss: str,
                          post_id: int,
                          is_cancel: bool,
                          content_type: OpAgreeObjectType):
-    account = aiotieba.Account()  # 实例化account以便计算一些数据
-
-    tbs = login(bduss)["anti"]["tbs"]  # 拿tbs
+    tbs = account_mgr.GlobalAccountContainer.get_current_account().aiotieba_account.tbs
+    cuid_galaxy2 = account_mgr.GlobalAccountContainer.get_current_account().aiotieba_account.cuid_galaxy2
 
     payload = {
         'BDUSS': bduss,
         '_client_type': "2",
         '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
         'agree_type': "5" if is_cancel else "2",  # 2点赞 5取消点赞
-        'cuid': account.cuid_galaxy2,
+        'cuid': cuid_galaxy2,
         'obj_type': int(content_type),  # 1回复贴 2楼中楼 3主题贴
         'op_type': "1" if is_cancel else "0",  # 0点赞 1取消点赞
         'post_id': str(post_id),
@@ -447,9 +439,6 @@ def add_thread(bduss, stoken,
                tab_name="", tab_id=0,
                hide_in_homepage=False, content_statement="", is_question=False,
                captcha_md5="", captcha_json_info=None):
-    async def get_tbs():
-        return login(bduss)['anti']['tbs']
-
     async def get_access_info(aiotieba_client) -> tuple[str, str, str, str, str]:
         """
         获取贴吧风控信息
@@ -457,18 +446,14 @@ def add_thread(bduss, stoken,
         Return:
             以下风控字段值，均为字符串类型：z_id, client_id, sample_id, show_name, tbs
         """
-        aiotieba_http_core = aiotieba_client._http_core
 
-        # 并发执行，提高性能
-        result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
-                                      aiotieba.sync.request(aiotieba_http_core),
-                                      aiotieba_client.get_self_info(),
-                                      get_tbs()
-                                      )
-        z_id = result[0]
-        client_id, sample_id = result[1][0], result[1][1]
-        show_name = result[2].show_name
-        tbs = result[3]
+        current_account = account_mgr.GlobalAccountContainer.get_current_account()
+        result = await aiotieba_client.get_self_info()
+
+        z_id = current_account.aiotieba_account.z_id
+        client_id, sample_id = current_account.aiotieba_account.client_id, current_account.aiotieba_account.sample_id
+        show_name = result.show_name
+        tbs = current_account.aiotieba_account.tbs
 
         return z_id, client_id, sample_id, show_name, tbs
 
