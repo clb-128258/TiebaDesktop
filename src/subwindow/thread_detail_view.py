@@ -107,6 +107,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     show_reply_end_text = pyqtSignal(dict)
     store_thread_signal = pyqtSignal(str)
     agree_thread_signal = pyqtSignal(str)
+    delete_thread_signal = pyqtSignal(str)
     add_post_signal = pyqtSignal(dict)
     reply_loaded_signal = pyqtSignal()
 
@@ -131,12 +132,14 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.frame_7.hide()
         self.pushButton_12.hide()
         self.pushButton_13.hide()
+        self.pushButton_9.hide()
         self.collapse_text_area()
 
         icon_size = QSize(23, 23)
         self.pushButton_4.setIconSize(icon_size)
         self.pushButton_11.setIconSize(icon_size)
         self.pushButton.setIconSize(icon_size)
+        self.pushButton_9.setIconSize(icon_size)
 
         icon_size_large = QSize(30, 30)
         self.pushButton_12.setIconSize(icon_size_large)
@@ -151,24 +154,40 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.init_load_flash()
         self.init_top_toaster()
 
-        self.pushButton.clicked.connect(self.init_more_menu)
         self.label_6.linkActivated.connect(self.handle_link_event)
         self.label_6.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.label_6.customContextMenuRequested.connect(lambda: self.show_content_menu(self.label_6))
         self.label_5.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.label_5.customContextMenuRequested.connect(lambda: self.show_content_menu(self.label_5))
+        self.label_2.linkActivated.connect(self.end_label_link_event)
+
         self.head_data_signal.connect(self.update_ui_head_info)
-        self.pushButton_2.clicked.connect(self.open_ba_detail)
         self.add_reply.connect(self.add_reply_ui)
         self.show_reply_end_text.connect(self.show_end_reply_ui)
         self.store_thread_signal.connect(self.store_thread_ok_action)
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
         self.reply_loaded_signal.connect(self.on_reply_loaded)
+        self.delete_thread_signal.connect(self.delete_thread_ok_action)
         self.add_post_signal.connect(self.add_post_ok_action)
+
         self.scrollArea.verticalScrollBar().valueChanged.connect(self.load_sub_threads_from_scroll)
         self.comboBox.currentIndexChanged.connect(lambda: self.load_sub_threads_refreshly())
         self.checkBox.stateChanged.connect(lambda: self.load_sub_threads_refreshly())
-        self.label_2.linkActivated.connect(self.end_label_link_event)
+
+        self.lz_portrait.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
+        self.forum_avatar.currentPixmapChanged.connect(
+            lambda pixmap: show_label_pixmap_with_animation(self.label_14, pixmap))
+
+        self.pushButton_2.clicked.connect(self.open_ba_detail)
+        self.pushButton_9.clicked.connect(self.init_manage_menu)
+        self.pushButton.clicked.connect(self.init_more_menu)
+        self.toolButton_2.clicked.connect(self.frame_3.hide)
+        self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
+        self.pushButton_10.clicked.connect(self.show_addpost_emoji_selector)
+        self.pushButton_6.clicked.connect(self.show_addpost_atuser_selector)
+        self.pushButton_11.clicked.connect(lambda: self.store_thread_async())
+        self.toolButton_3.clicked.connect(self.show_pagejump_bar)
         self.pushButton_4.clicked.connect(lambda: self.agree_thread_async())
         self.pushButton_3.clicked.connect(lambda: self.add_post_async())
         self.pushButton_7.clicked.connect(self.submit_pagejump)
@@ -176,16 +195,6 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.pushButton_13.clicked.connect(self.jump_next_page)
         self.pushButton_8.clicked.connect(self.jump_first_page)
         self.toolButton.clicked.connect(self.frame_7.hide)
-        self.lz_portrait.currentPixmapChanged.connect(
-            lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
-        self.forum_avatar.currentPixmapChanged.connect(
-            lambda pixmap: show_label_pixmap_with_animation(self.label_14, pixmap))
-        self.toolButton_2.clicked.connect(self.frame_3.hide)
-        self.pushButton_5.clicked.connect(self.show_addpost_image_switcher)
-        self.pushButton_10.clicked.connect(self.show_addpost_emoji_selector)
-        self.pushButton_6.clicked.connect(self.show_addpost_atuser_selector)
-        self.pushButton_11.clicked.connect(lambda: self.store_thread_async())
-        self.toolButton_3.clicked.connect(self.show_pagejump_bar)
 
         # 重写事件过滤器
         add_post_area_widgets = [self.label_3, self.label_4,
@@ -212,7 +221,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         super().reset_theme()
 
         listwidgets = [self.listWidget, self.listWidget_4]
-        flat_buttons = [self.pushButton, self.pushButton_4, self.pushButton_11, self.pushButton_13, self.pushButton_12]
+        flat_buttons = [self.pushButton, self.pushButton_4, self.pushButton_11, self.pushButton_13, self.pushButton_12,
+                        self.pushButton_9]
         color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
         bg_policy, font_policy = profile_mgr.get_theme_policy_string()
@@ -245,6 +255,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.pushButton.setIcon(QIcon(f'ui/icon_{font_policy}/share.png'))
         self.pushButton_12.setIcon(QIcon(f'ui/icon_{font_policy}/arrow_warm_up.png'))
         self.pushButton_13.setIcon(QIcon(f'ui/icon_{font_policy}/arrow_cool_down.png'))
+        self.pushButton_9.setIcon(QIcon(f'ui/icon_{font_policy}/settings.png'))
         self.update_agree_button_status()
 
     def eventFilter(self, source, event):
@@ -372,6 +383,16 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.narrow_switch_button = base_ui.FloatingButton(self)
         self.narrow_switch_button.clicked.connect(self.switch_narrow_button_status)
         self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
+
+    def init_manage_menu(self):
+        menu = base_ui.BaseQMenu()
+
+        delete_thread = QAction('删除该主题贴', self)
+        delete_thread.triggered.connect(self.delete_thread_async)
+        menu.addAction(delete_thread)
+
+        bt_pos = self.pushButton_9.mapToGlobal(QPoint(0, 0))
+        menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.pushButton.height()))
 
     def init_more_menu(self):
         url = f'https://tieba.baidu.com/p/{self.thread_id}'
@@ -733,6 +754,48 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         start_async()
 
+    def delete_thread_ok_action(self, msg):
+        toast = top_toast_widget.ToastMessage()
+        toast.icon_type = top_toast_widget.ToastIconType.SUCCESS if not msg else top_toast_widget.ToastIconType.ERROR
+        toast.title = '删除成功' if not msg else msg
+        self.top_toaster.showToast(toast)
+
+        if not msg:
+            QTimer.singleShot(2400, lambda: self.close())
+
+    def delete_thread_async(self):
+        if QMessageBox.warning(self,
+                               '删贴警告',
+                               '删除该主题贴会导致该贴子下的所有回复被一并删除，且该操作不可恢复。\n'
+                               '确认要删除该主题贴吗？',
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            start_background_thread(self.delete_thread)
+
+    def delete_thread(self):
+        async def run_delete():
+            logging.log_INFO(f'delete thread {self.thread_id}')
+            try:
+                if not self.bduss:
+                    self.delete_thread_signal.emit('登录后即可执行删贴操作')
+                    return
+
+                async with aiotieba.Client(BDUSS=self.bduss, STOKEN=self.stoken, proxy=True) as client:
+                    result = await client.del_thread(self.forum_id, self.thread_id)
+                    if not result.err:
+                        self.delete_thread_signal.emit('')
+                    else:
+                        self.delete_thread_signal.emit(get_exception_string(result.err))
+            except Exception as e:
+                logging.log_exception(e)
+                self.delete_thread_signal.emit(get_exception_string(e))
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(run_delete())
+
+        start_async()
+
     def load_sub_threads_refreshly(self, reset_page=True, last_post_id=0):
         if not self.is_getting_replys:
             # 清理内存
@@ -1086,6 +1149,9 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             if not datas['content']:
                 self.label_6.hide()
 
+            is_author = self.user_id == profile_mgr.current_uid
+            self.pushButton_9.setVisible(datas['current_user_is_bawu'] or is_author)
+
             if datas['is_help']:
                 self.label_8.show()
             else:
@@ -1268,6 +1334,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     user_grow_level = thread_info.thread.user.glevel
                     is_forum_manager = bool(thread_info.thread.user.is_bawu)
                     content_statement = proto_response.data.thread.content_statement
+                    current_user_is_bawu = bool(proto_response.data.user.is_bawu)
 
                     video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0,
                                   'is_vertical': False}
@@ -1378,6 +1445,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                              'draft_text': draft_text,  # 草稿文本
                              'content_statement': content_statement,  # 内容提示，如 "疑似含AI内容"
                              'manager_election_info': manager_election_info,  # 吧主竞选信息
+                             'current_user_is_bawu': current_user_is_bawu  # 当前账号是否为吧务
                              }
 
                     logging.log_INFO(

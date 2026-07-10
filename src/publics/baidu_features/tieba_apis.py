@@ -373,6 +373,7 @@ def pb_page(bduss, stoken, thread_id, pn=1, rn=30, sort_type=0, only_see_lz=Fals
     proto_request.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
     proto_request.data.common.BDUSS = bduss
     proto_request.data.common.stoken = stoken
+    proto_request.data.common._from = 'frs'
 
     proto_request.data.kz = int(thread_id)  # 贴子id
     proto_request.data.r = sort_type  # 排序类型

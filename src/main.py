@@ -39,6 +39,7 @@ import shutil
 import platform
 import time
 import subprocess
+import pathlib
 
 if os.name == 'nt':
     import win32api
@@ -205,6 +206,15 @@ def set_qt_scale_factor():
     factor = get_dict_value_treely(profile_mgr.local_config, ['other_settings', 'reset_dpi'], -1)
     if factor != -1:
         os.environ['QT_SCALE_FACTOR'] = str(factor)
+
+
+def reset_cwd():
+    """把工作目录重设到可执行文件所在目录下"""
+    exec_file = pathlib.Path(sys.executable)
+    if 'python' in exec_file.name:
+        return
+
+    os.chdir(exec_file.parent)
 
 
 class TrayIcon(QSystemTrayIcon):
@@ -1475,6 +1485,9 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
 if __name__ == "__main__":
     # set excepthook
     sys.excepthook = excepthook
+
+    # reset cwd
+    reset_cwd()
 
     # init profiles
     reset_udf()
