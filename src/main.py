@@ -1106,7 +1106,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         if close_event:
             close_event.accept()
         else:
-            self.close()
+            self.hide()
 
         tray_icon.hide()
         qt_window_mgr.clear_windows()
