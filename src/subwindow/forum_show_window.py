@@ -58,7 +58,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.label_9.hide()
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
 
-        self.flat_buttons = [self.pushButton_4, self.pushButton_5, self.pushButton_3]
+        self.flat_buttons = [self.pushButton_4, self.pushButton_5, self.pushButton_3, self.pushButton_6]
         icon_size = QSize(23, 23)
         for b in self.flat_buttons:
             b.setIconSize(icon_size)
@@ -77,6 +77,8 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.tabWidget.currentChanged.connect(self.threadList_load_image)
         self.pushButton_4.clicked.connect(
             lambda: open_url_in_browser(f'https://tieba.baidu.com/f?kw={self.forum_name}'))
+        self.pushButton_6.clicked.connect(
+            lambda: open_url_in_browser(f'https://tieba.baidu.com/bawu2/platform/index?word={self.forum_name}&ie=utf-8'))
 
     def reset_theme(self):
         super().reset_theme()
@@ -102,6 +104,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.pushButton_5.setIcon(QIcon(f'ui/icon_{font_policy}/search.png'))
         self.pushButton_4.setIcon(QIcon(f'ui/icon_{font_policy}/os_browser.png'))
         self.pushButton_3.setIcon(QIcon(f'ui/icon_{font_policy}/info.png'))
+        self.pushButton_6.setIcon(QIcon(f'ui/icon_{font_policy}/settings.png'))
 
     def keyPressEvent(self, a0):
         if a0.key() == Qt.Key.Key_F5:
@@ -457,6 +460,8 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             self.label_3.setText('{0}人关注 | {1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
                                                                 large_num_to_string(datas['postnum'], endspace=True)))
             self.label_2.setText(datas['name'] + '吧')
+            self.pushButton_6.setVisible(datas['is_admin'])
+
             self.forum_avatar.setImageInfo(qt_image.ImageLoadSource.HttpLink,
                                            datas['avatar'],
                                            qt_image.ImageCoverType.RoundCover,
@@ -554,6 +559,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                         forum_slogan = resp["forum"]["slogan"]
                         follow_count = resp["forum"]["member_num"]
                         post_count = resp["forum"]["post_num"]
+                        is_admin = resp.get('user', {'is_manager': 0})["is_manager"] != 0
                         forum_sign_info = resp['forum'].get('sign_in_info', {'user_info': None})['user_info']
                         forum_avatar = resp['forum']["avatar"]
                         if admin_info := resp["forum"].get("managers"):
@@ -584,7 +590,8 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                              'is_followed': isFollowed,
                              'level_info': level_info,
                              'uf_level': level_value,
-                             'forum_sign_info': forum_sign_info}
+                             'forum_sign_info': forum_sign_info,
+                             'is_admin': is_admin}
                 finally:
                     self.update_signal.emit(tdata)
 

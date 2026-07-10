@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>823</width>
-    <height>606</height>
+    <width>951</width>
+    <height>745</height>
    </rect>
   </property>
   <property name="font">
@@ -395,7 +395,7 @@
 	background-color: rgba(91, 68, 200, 50);
 }</string>
         </property>
-        <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,0,0,0,0,0,0,0">
+        <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,0,0,0,0,0,0,0,0">
          <property name="leftMargin">
           <number>6</number>
          </property>
@@ -408,6 +408,49 @@
          <property name="bottomMargin">
           <number>6</number>
          </property>
+         <item row="0" column="2" colspan="2">
+          <widget class="QLabel" name="label_7">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="6">
+          <widget class="QPushButton" name="pushButton_5">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string> 吧内搜索</string>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_8">
            <property name="minimumSize">
@@ -443,7 +486,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="6">
+         <item row="0" column="7">
           <widget class="QPushButton" name="pushButton_4">
            <property name="font">
             <font>
@@ -458,7 +501,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="7">
+         <item row="0" column="8">
           <widget class="QPushButton" name="pushButton_3">
            <property name="font">
             <font>
@@ -473,21 +516,6 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2" colspan="2">
-          <widget class="QLabel" name="label_7">
-           <property name="font">
-            <font>
-             <pointsize>9</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QLabel" name="label_6">
            <property name="text">
@@ -499,32 +527,19 @@
           </widget>
          </item>
          <item row="0" column="5">
-          <widget class="QPushButton" name="pushButton_5">
+          <widget class="QPushButton" name="pushButton_6">
            <property name="font">
             <font>
              <pointsize>9</pointsize>
             </font>
            </property>
            <property name="text">
-            <string> 吧内搜索</string>
+            <string> 吧务后台</string>
            </property>
            <property name="flat">
             <bool>true</bool>
            </property>
           </widget>
-         </item>
-         <item row="0" column="4">
-          <spacer name="horizontalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </widget>
