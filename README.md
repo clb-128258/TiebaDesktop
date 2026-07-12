@@ -199,6 +199,7 @@ TiebaDesktop/
 | [🎯 aiotieba](https://github.com/lumina37/aiotieba)                | 贴吧 API 的 Python 实现，本项目的核心基础      |
 | [📋 tbclient.protobuf](https://github.com/n0099/tbclient.protobuf) | 贴吧 .proto 定义合集，提供了 protobuf 开发基础 |
 | [🎬 xgplayer](https://h5player.bytedance.com/)                     | 西瓜播放器，本项目视频播放器的基础                |
+| [📢 toaster (Win8)](https://github.com/nels-o/toaster)             | 本软件在 Win8/8.1 系统下通知功能的实现基础       |
 
 ## 🔗 友情链接
 
