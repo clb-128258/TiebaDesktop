@@ -165,7 +165,11 @@ def handle_command_events():
         uid = -1
         for i in cmds:
             if i.startswith('--userid='):
-                uid = int(i.split('=')[1])
+                try:
+                    uid = int(i.split('=')[1])
+                except:
+                    uid = -1
+
         if uid <= 0:
             msgbox('请指定正确的用户 ID。')
         else:
