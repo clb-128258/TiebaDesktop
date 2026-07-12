@@ -92,11 +92,15 @@ class TiebaAccount(QObject):
                     app_logger.log_exception(e)
                     app_logger.log_WARN(f'[account manager] user {self} access info load failed')
 
-        if not self.aiotieba_account.tbs:
+        def run_async():
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)
             asyncio.run(get_access_info())
             new_loop.close()
+
+        if not self.aiotieba_account.tbs:
+            thread = funcs.start_background_thread(run_async)
+            thread.join()
 
     def init_from_json(self, json_data, current_bduss):
         self.bduss = str(json_data['bduss'])
