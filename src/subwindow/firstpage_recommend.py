@@ -56,6 +56,7 @@ class RecommendWindow(QListWidget):
         self.refresh_button = base_ui.FloatingButton(self)
         self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
         self.refresh_button.move_button()
+        self.refresh_button.hide()
 
     def set_theme_qss(self):
         color = profile_mgr.get_theme_color_string()

@@ -1526,8 +1526,11 @@ if __name__ == "__main__":
     log_INFO('Initing main window')
     main_window = MainWindow()
     tray_icon = TrayIcon()
+
+    # show ui elements
     tray_icon.show()
-    main_window.show()
+    if '--quiet' not in sys.argv:
+        main_window.show()
 
     # main loop
     logging.log_INFO('MainWindow showed, now run into the main loop')
