@@ -1,5 +1,5 @@
 """程序入口点，包含了整个程序最基本的函数和类"""
-from publics import webview2
+from publics import webview2, cache_mgr
 from publics.baidu_features import tieba_apis
 from publics import proxytool
 from publics.baidu_features.baidu_passport_login import LoginWebView, QRLoginDialog, SeniorLoginDialog

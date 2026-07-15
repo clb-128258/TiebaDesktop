@@ -1,5 +1,4 @@
 import asyncio
-import os
 import platform
 import queue
 import subprocess
@@ -14,32 +13,28 @@ from PyQt5.QtGui import QImage
 from PyQt5.QtCore import QObject, pyqtSignal
 
 import consts
-from publics import request_mgr, toasting, cache_mgr, profile_mgr, qt_image
-from publics.funcs import start_background_thread, system_has_network, open_url_in_browser, cut_string
+from publics import request_mgr, toasting, profile_mgr, qt_image
+from publics.funcs import start_background_thread, system_has_network, open_url_in_browser, cut_string, \
+    large_num_to_string, make_thread_content
 import publics.app_logger as logging
 
 
 def download_toast_icon(link, need_round_cover=True):
     """下载通知缓存图标"""
-    if link.startswith('http://tb.himg.baidu.com/sys/portrait/item/'):
-        portrait = link.split('/')[-1].replace('.jpg', '')
-        cache_path = f'{consts.datapath}/image_caches/portrait_{portrait}.jpg'
-        if not os.path.isfile(cache_path):
-            cache_mgr.save_portrait(portrait)
-    else:
-        timestr = str(time.time() * 10 ** 7)
-        cache_path = f'{consts.datapath}/image_caches/ToastNotifyImageCache_{timestr}.png'
-        icon_response = requests.get(link, headers=request_mgr.header)
-        if icon_response.content and icon_response.status_code == 200:
-            image = QImage()
+
+    timestr = str(time.time() * (10 ** 6))
+    cache_path = f'{consts.datapath}/image_caches/ToastNotifyImageCache_{timestr}.png'
+    icon_response = requests.get(link, headers=request_mgr.header)
+    if icon_response.content and icon_response.status_code == 200:
+        image = QImage()
+        image.setDevicePixelRatio(qt_image.get_screen_ratio())
+        image.loadFromData(icon_response.content)
+
+        if need_round_cover:
+            image = qt_image.add_round_cover(image, 400 if max(image.width(), image.height()) >= 400 else -1)
             image.setDevicePixelRatio(qt_image.get_screen_ratio())
-            image.loadFromData(icon_response.content)
 
-            if need_round_cover:
-                image = qt_image.add_round_cover(image, 150 if max(image.width(), image.height()) >= 150 else -1)
-                image.setDevicePixelRatio(qt_image.get_screen_ratio())
-
-            image.save(cache_path)
+        image.save(cache_path)
 
     return cache_path
 
@@ -98,23 +93,32 @@ class ClipboardSyncer(QObject):
             当 type_ 为 user_tbid 时，只会返回对应用户的portrait，而不是完整信息
 
         Return:
-            除 type_==user_tbidtext 情况之外, 返回 icon, poster_image
+            除 type_==user_tbid 情况之外, 返回 title, text, icon, poster_image
         """
 
         async def func():
-            async with (aiotieba.Client(profile_mgr.current_bduss, profile_mgr.current_stoken, proxy=True) as client):
+            async with aiotieba.Client(profile_mgr.current_bduss, profile_mgr.current_stoken, proxy=True) as client:
                 if type_ == 'thread':
                     original_data = await client.get_posts(int(value))
                     img_src = original_data.thread.contents.imgs[0].src if original_data.thread.contents.imgs else ''
-                    return f'主题贴 [{original_data.forum.fname}吧]：\n{cut_string(original_data.thread.title, 30)}', '', img_src
+                    return (f'{cut_string(original_data.thread.title, 15)} '
+                            f'[{original_data.forum.fname}吧]'), cut_string(
+                        make_thread_content(original_data.thread.contents.objs, True),
+                        40), '', img_src
                 elif type_ == 'user':
                     original_data = await client.get_user_info(value)
                     portrait_link = f'http://tb.himg.baidu.com/sys/portrait/item/{original_data.portrait}'
-                    user_desp = ('\n简介：' + cut_string(original_data.sign, 30)) if original_data.sign else ''
-                    return f'{original_data.nick_name_new}{user_desp}', portrait_link, ''
+                    user_desp = cut_string(original_data.sign,
+                                           40) if original_data.sign else (
+                        f'发贴 {large_num_to_string(original_data.post_num)} | '
+                        f'获赞 {large_num_to_string(original_data.agree_num)} | '
+                        f'吧龄 {original_data.age} 年')
+                    return original_data.nick_name_new, user_desp, portrait_link, ''
                 elif type_ == 'forum':
                     original_data = await client.get_forum(value)
-                    return f'{original_data.fname}吧\n{cut_string(original_data.slogan, 30)}', original_data.small_avatar, original_data.background_image_url
+                    return (f'{original_data.fname}吧',
+                            cut_string(original_data.slogan, 40),
+                            original_data.small_avatar, original_data.background_image_url)
                 elif type_ == 'user_tbid':
                     original_data = await client.tieba_uid2user_info(int(value))
                     return original_data.portrait
@@ -130,8 +134,8 @@ class ClipboardSyncer(QObject):
         profile_mgr.local_config["notify_settings"][ntype] = False
         profile_mgr.save_local_config()
 
-    def show_msg(self, text, icon, url, poster):
-        toasting.showMessage('来自剪切板的内容',
+    def show_msg(self, title, text, icon, url, poster):
+        toasting.showMessage(title,
                              text,
                              icon=icon,
                              buttons=[toasting.Button('打开页面',
@@ -139,7 +143,9 @@ class ClipboardSyncer(QObject):
                                       toasting.Button('关闭此类通知',
                                                       lambda: self.save_toast_settings('enable_clipboard_notify'))],
                              callback=lambda: self.clipboardActived.emit(url),
-                             topicon=poster)
+                             topicon=poster,
+                             group='clipboardMonitorResult',
+                             lowerText='来自剪切板的内容')
 
     def query_cboard(self):
         """执行一次对剪切板的查询"""
@@ -152,11 +158,11 @@ class ClipboardSyncer(QObject):
             is_startswith = cb_text.startswith(k) if not k.startswith('[end]') else cb_text.endswith(k[5:])
             if is_startswith and (value := v[1](cb_text)):
                 internal_link = v[0].replace('[value]', value)
-                text, icon, poster_img = self.get_tb_data(v[2], value)
+                title, text, icon, poster_img = self.get_tb_data(v[2], value)
                 icon_cache_path = download_toast_icon(icon) if icon else ''
                 poster_cache_path = download_toast_icon(poster_img, need_round_cover=False) if poster_img else ''
 
-                self.show_msg(text, icon_cache_path, internal_link, poster_cache_path)
+                self.show_msg(title, text, icon_cache_path, internal_link, poster_cache_path)
                 break
 
     def cboard_looper(self):
@@ -190,6 +196,7 @@ class TiebaMsgSyncer(QObject):
     activeWindow = pyqtSignal()
     is_running = False
     latest_count = -1
+    latest_notify_text = ''
 
     def __init__(self, bduss: str = "", stoken: str = ""):
         super().__init__()
@@ -200,6 +207,11 @@ class TiebaMsgSyncer(QObject):
         """重新设置账户"""
         self.bduss = bduss
         self.stoken = stoken
+
+        # 清理上个账号的通知信息
+        self.latest_notify_text = ''
+        if toasting.IS_AT_LEAST_WIN10:
+            toasting.windows_global_toaster.remove_toast_group('tiebaInteractMsg')
 
     def start_sync(self):
         """开始状态同步"""
@@ -252,8 +264,7 @@ class TiebaMsgSyncer(QObject):
                                  '本软件的主要功能将无法使用。\n单击此通知可打开系统的网络设置界面。',
                                  buttons=[toasting.Button('关闭此类通知',
                                                           lambda: self.save_toast_settings('offline_notify'))],
-                                 callback=open_network_panel,
-                                 lowerText='无网络通知')
+                                 callback=open_network_panel)
 
     def show_interact_toast(self, title, text, icon_path=''):
         async def set_read():
@@ -272,6 +283,8 @@ class TiebaMsgSyncer(QObject):
                 request_mgr.run_post_api('/c/u/feed/agreeme', payloads=request_mgr.calc_sign(payload),
                                          use_mobile_header=True, host_type=2)
 
+                self.run_msg_sync_immedently()
+
         def start_async(func):
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)
@@ -284,7 +297,7 @@ class TiebaMsgSyncer(QObject):
                                       toasting.Button('关闭此类通知',
                                                       lambda: self.save_toast_settings('enable_interact_notify'))],
                              callback=self.activeWindow.emit,
-                             lowerText='新消息通知')
+                             group='tiebaInteractMsg')
 
     def get_interactMsgAlter(self):
         """通过接口 https://tiebac.baidu.com/c/s/interactMsgAlter 获取详细的互动消息信息，并发出通知"""
@@ -301,17 +314,26 @@ class TiebaMsgSyncer(QObject):
                                             request_mgr.calc_sign(payloads),
                                             use_mobile_header=True,
                                             host_type=2)
-            if resp['data'].get('title'):
-                title = resp['data']['title']
-                text = resp['data']['desc']
 
-                if icon_list := resp['data'].get("icon_list"):
-                    link = icon_list[-1]
-                    cache_path = download_toast_icon(link)
-                    self.show_interact_toast(title, text, cache_path)
+            if not resp['data'].get('title'):
+                return
+
+            title = resp['data']['title']
+            text = resp['data']['desc']
+            notify_key_text = f'{title}\n{text}'
+
+            if notify_key_text != self.latest_notify_text:
+                self.latest_notify_text = notify_key_text
+            else:
+                return
+
+            if icon_list := resp['data'].get("icon_list"):
+                link = icon_list[-1]
+                cache_path = download_toast_icon(link)
+                self.show_interact_toast(title, text, cache_path)
 
     def run_sleeper(self):
-        sleeper_time = 60
+        sleeper_time = 40
 
         for i in range(sleeper_time):
             time.sleep(1)

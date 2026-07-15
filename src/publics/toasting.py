@@ -6,14 +6,20 @@ import platform
 from publics import win8toast
 import consts
 
-IS_WINDOWS = platform.system() == 'Windows'
 Win10_MIN_VERSION = 10240
+
+IS_WINDOWS = platform.system() == 'Windows'
+IS_AT_LEAST_WIN10 = IS_WINDOWS and int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION
+IS_WIN8 = IS_WINDOWS and 9200 <= int(platform.version().split('.')[-1]) <= 9600
 
 if IS_WINDOWS:
     import winreg
-if IS_WINDOWS and int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
-    from windows_toasts import InteractableWindowsToaster, Toast, ToastDisplayImage, ToastImagePosition, ToastImage, \
-        ToastButton
+if IS_AT_LEAST_WIN10:
+    from windows_toasts import (InteractableWindowsToaster,
+                                Toast, ToastDisplayImage, ToastImagePosition,
+                                ToastImage, ToastButton, ToastAudio, AudioSource)
+
+    windows_global_toaster = InteractableWindowsToaster('贴吧桌面', consts.WINDOWS_AUMID)
 
 
 class Button:
@@ -30,14 +36,14 @@ class Button:
         self.button_id = 'buttonid_' + str(random.randint(1, 10 ** 8))
         self.callback = callback
 
-        if IS_WINDOWS and int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
+        if IS_AT_LEAST_WIN10:
             self.toast_button = ToastButton(text, self.button_id)
         else:
             self.toast_button = None
 
 
 def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
-    if IS_WINDOWS and int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
+    if IS_AT_LEAST_WIN10:
         if iconPath is not None:
             if not iconPath.exists():
                 raise ValueError(f"Could not register the application: File {iconPath} does not exist")
@@ -58,7 +64,8 @@ def showMessage(title: str,
                 topicon='',
                 buttons: list[Button] = None,
                 callback: Callable = None,
-                lowerText=''):
+                group: str = 'default',
+                lowerText: str = ''):
     """
     显示通知消息
 
@@ -70,6 +77,7 @@ def showMessage(title: str,
         buttons (list[Button]): 按钮列表
         callback (Callable): 点击通知时的回调函数
         lowerText (str): 在正文下方显示的浅色文本
+        group (str): 消息所在组名称
 
     Notes:
         在 Windows 8.1 系统中会调用 win8toast.send_msg_async 来发送消息，
@@ -85,12 +93,13 @@ def showMessage(title: str,
                 if b.callback: b.callback()
         if not is_button:
             if callback: callback()
-        wintoaster.remove_toast(newToast)
+        windows_global_toaster.remove_toast(newToast)
 
     if IS_WINDOWS:
-        if int(platform.version().split('.')[-1]) >= Win10_MIN_VERSION:
-            wintoaster = InteractableWindowsToaster(lowerText, consts.WINDOWS_AUMID)
+        if IS_AT_LEAST_WIN10:
             newToast = Toast()
+            newToast.group = group
+            newToast.attribution_text = lowerText
             newToast.text_fields = [title, text]
             newToast.on_activated = lambda event_args: handle_msg_click_winrt(event_args)
 
@@ -106,6 +115,6 @@ def showMessage(title: str,
                 for i in buttons:
                     newToast.AddAction(i.toast_button)
 
-            wintoaster.show_toast(newToast)
-        elif 9200 <= int(platform.version().split('.')[-1]) <= 9600:
+            windows_global_toaster.show_toast(newToast)
+        elif IS_WIN8:
             win8toast.send_msg_async(title.replace('\n', ' '), text.replace('\n', ' '), icon, callback)
