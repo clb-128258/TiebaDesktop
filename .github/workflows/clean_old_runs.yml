@@ -17,5 +17,5 @@ jobs:
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          retain_days: 4     # 仅保留最近 4 天的记录，其余全部删除
-          keep_minimum_runs: 3 # 无论如何，至少保留最近的 3 次运行记录防止空仓
+          retain_days: 3     # 仅保留最近 3 天的记录，其余全部删除
+          keep_minimum_runs: 2 # 无论如何，至少保留最近的 2 次运行记录防止空仓
