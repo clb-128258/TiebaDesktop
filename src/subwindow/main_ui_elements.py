@@ -45,18 +45,28 @@ tray_icon_instance = None
 
 
 class TrayIcon(QSystemTrayIcon):
+    __showMessageSignal = pyqtSignal(dict)
+
     def __init__(self):
         super().__init__()
         self.setIcon(QIcon('ui/tieba_logo_small.png'))
 
         self.main_window = main_window_instance
 
+        self.__showMessageSignal.connect(self.__showmsg_slot)
         self.activated.connect(self.handle_click)
         self.main_window.account_manager.accountSwitched.connect(self.update_tooltip)
         self.main_window.notice_syncer.noticeCountChanged.connect(self.update_tooltip)
 
         self.init_menu()
         self.update_tooltip()
+
+    def __showmsg_slot(self, data):
+        self.showMessage(data['title'], data['msg'], data['icon'], data['timeout'])
+
+    def show_balloon_message(self, title, text, icon, timeout=10000):
+        data = {'title': title, 'msg': text, 'icon': icon, 'timeout': timeout}
+        self.__showMessageSignal.emit(data)
 
     def update_tooltip(self):
         interact_type_index = {UnreadMessageType.AGREE: '点赞',
