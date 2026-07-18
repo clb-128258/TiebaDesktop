@@ -64,18 +64,12 @@ def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
 
 def showMessageInTrayIcon(title: str,
                           text: str,
-                          icon='', ):
+                          icon=''):
     """
     通过全局共用的托盘图标，发送气球通知
     """
-    def send_balloon():
-        from subwindow.main_ui_elements import tray_icon_instance
-        tray_icon_instance.showMessage(title, text, QIcon(icon))
-
-    if threading.current_thread() == threading.main_thread():
-        send_balloon()
-    else:
-        QTimer.singleShot(0, send_balloon)
+    from subwindow.main_ui_elements import tray_icon_instance
+    tray_icon_instance.show_balloon_message(title, text, QIcon(icon))
 
 
 def showMessage(title: str,
@@ -139,5 +133,7 @@ def showMessage(title: str,
             windows_global_toaster.show_toast(newToast)
         elif IS_WIN8:
             win8toast.send_msg_async(title.replace('\n', ' '), text.replace('\n', ' '), icon, callback)
+        else:
+            showMessageInTrayIcon(title, text, icon)
     else:
         showMessageInTrayIcon(title, text, icon)
