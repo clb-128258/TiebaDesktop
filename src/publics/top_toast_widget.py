@@ -1,4 +1,3 @@
-from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QGraphicsOpacityEffect
 from PyQt5.QtCore import QTimer, QEvent, QPropertyAnimation, QEasingCurve, QPoint, Qt, QParallelAnimationGroup
 

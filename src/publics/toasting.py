@@ -2,6 +2,10 @@ import pathlib
 import random
 from typing import Callable, Optional
 import platform
+import threading
+
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QTimer
 
 from publics import win8toast
 import consts
@@ -17,7 +21,7 @@ if IS_WINDOWS:
 if IS_AT_LEAST_WIN10:
     from windows_toasts import (InteractableWindowsToaster,
                                 Toast, ToastDisplayImage, ToastImagePosition,
-                                ToastImage, ToastButton, ToastAudio, AudioSource)
+                                ToastImage, ToastButton)
 
     windows_global_toaster = InteractableWindowsToaster('贴吧桌面', consts.WINDOWS_AUMID)
 
@@ -58,6 +62,22 @@ def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
                 winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
 
 
+def showMessageInTrayIcon(title: str,
+                          text: str,
+                          icon='', ):
+    """
+    通过全局共用的托盘图标，发送气球通知
+    """
+    def send_balloon():
+        from subwindow.main_ui_elements import tray_icon_instance
+        tray_icon_instance.showMessage(title, text, QIcon(icon))
+
+    if threading.current_thread() == threading.main_thread():
+        send_balloon()
+    else:
+        QTimer.singleShot(0, send_balloon)
+
+
 def showMessage(title: str,
                 text: str,
                 icon='',
@@ -81,7 +101,8 @@ def showMessage(title: str,
 
     Notes:
         在 Windows 8.1 系统中会调用 win8toast.send_msg_async 来发送消息，
-        此时 topicon 和 buttons 参数是无效的
+        此时 topicon 和 buttons 参数是无效的; \n
+        在 Win7 及以下版本系统或非 Windows 系统下，会调用托盘图标发送气球通知。
     """
     buttons = buttons if buttons else []
 
@@ -118,3 +139,5 @@ def showMessage(title: str,
             windows_global_toaster.show_toast(newToast)
         elif IS_WIN8:
             win8toast.send_msg_async(title.replace('\n', ' '), text.replace('\n', ' '), icon, callback)
+    else:
+        showMessageInTrayIcon(title, text, icon)
