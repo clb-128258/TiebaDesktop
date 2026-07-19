@@ -2,7 +2,7 @@
 主程序构建脚本
 
 Args:
-    -m, --makefile: 指定构建配置文件的路径
+    -m, --makefile: 指定构建配置文件的路径，可不填，如果不填则使用当前目录下的 build_config.json
 Notes:
     makefile 是一个 json 文件，用于指定各种配置选项，具体 json 架构可参考 ./build_config.json 文件\n
     在执行构建脚本前，请先删除本目录下的 work_temp 与 work_out 目录（如果有）\n
@@ -40,7 +40,7 @@ def load_json(filename):
 
 def get_cfg_path():
     arg_parser = argparse.ArgumentParser(prog='TiebaDesktop Builder')
-    arg_parser.add_argument('-m', '--makefile', required=True,
+    arg_parser.add_argument('-m', '--makefile', required=False, default='./build_config.json',
                             help='set the path of makefile that contains build config')
     args = arg_parser.parse_args()
     return args.makefile
