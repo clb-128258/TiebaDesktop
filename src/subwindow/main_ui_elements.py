@@ -7,6 +7,7 @@ import platform
 import shutil
 import subprocess
 import time
+from typing import Callable
 import aiotieba
 
 from PyQt5.QtCore import (QPoint, pyqtSignal, QPropertyAnimation, QEasingCurve,
@@ -52,20 +53,31 @@ class TrayIcon(QSystemTrayIcon):
         self.setIcon(QIcon('ui/tieba_logo_small.png'))
 
         self.main_window = main_window_instance
+        self.current_callback = None
 
         self.__showMessageSignal.connect(self.__showmsg_slot)
         self.activated.connect(self.handle_click)
+        self.messageClicked.connect(self.__on_msg_clicked)
         self.main_window.account_manager.accountSwitched.connect(self.update_tooltip)
         self.main_window.notice_syncer.noticeCountChanged.connect(self.update_tooltip)
 
         self.init_menu()
         self.update_tooltip()
 
+    def __on_msg_clicked(self):
+        if isinstance(self.current_callback, Callable):
+            try:
+                self.current_callback()
+            except Exception as e:
+                log_WARN('run tray icon callback failed')
+                log_exception(e)
+
     def __showmsg_slot(self, data):
         self.showMessage(data['title'], data['msg'], data['icon'], data['timeout'])
 
-    def show_balloon_message(self, title, text, icon, timeout=10000):
+    def show_balloon_message(self, title, text, icon, callback=None, timeout=10000):
         data = {'title': title, 'msg': text, 'icon': icon, 'timeout': timeout}
+        self.current_callback = callback
         self.__showMessageSignal.emit(data)
 
     def update_tooltip(self):
