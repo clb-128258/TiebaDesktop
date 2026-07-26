@@ -78,7 +78,8 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.pushButton_4.clicked.connect(
             lambda: open_url_in_browser(f'https://tieba.baidu.com/f?kw={self.forum_name}'))
         self.pushButton_6.clicked.connect(
-            lambda: open_url_in_browser(f'https://tieba.baidu.com/bawu2/platform/index?word={self.forum_name}&ie=utf-8'))
+            lambda: open_url_in_browser(
+                f'https://tieba.baidu.com/bawu2/platform/index?word={self.forum_name}&ie=utf-8'))
 
     def reset_theme(self):
         super().reset_theme()
@@ -153,10 +154,15 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
                     i.load_all_AsyncImage()
 
     def open_add_thread_window(self):
-        from subwindow.thread_publisher import ThreadPublisherWindow
-        add_thread_dialog = ThreadPublisherWindow(self.bduss, self.stoken, self.forum_name, self.forum_id)
-        add_thread_dialog.exec()
-        add_thread_dialog.deleteLater()
+        if not self.bduss:
+            toast = top_toast_widget.ToastMessage('你还未登录，登录后即可发贴子',
+                                                  icon_type=top_toast_widget.ToastIconType.INFORMATION)
+            self.toast_widget.showToast(toast)
+        else:
+            from subwindow.thread_publisher import ThreadPublisherWindow
+            add_thread_dialog = ThreadPublisherWindow(self.bduss, self.stoken, self.forum_name, self.forum_id)
+            add_thread_dialog.exec()
+            add_thread_dialog.deleteLater()
 
     def open_search_window(self):
         from subwindow.tieba_search_entry import TiebaSearchWindow

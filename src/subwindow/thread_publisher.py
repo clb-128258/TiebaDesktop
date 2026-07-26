@@ -31,6 +31,7 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
                              content: typing.Optional[bytes]):
             if statusCode == 200 and not self.is_captcha_token_got:
                 json_data = json.loads(content.decode())
+                print(json_data)
                 if json_data['code'] == 0:
                     self.is_captcha_token_got = True
                     time.sleep(1)  # 休眠一秒，保证ui显示效果
@@ -141,14 +142,6 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
     def closeEvent(self, a0):
         self.save_window_position()
         a0.accept()
-
-    def showEvent(self, a0):
-        super().showEvent(a0)
-
-        # 未登录检测
-        if not self.bduss:
-            QMessageBox.critical(self, '尚未登录', '你还没有登录账号，不能使用发贴功能，请登录后再试。', QMessageBox.Ok)
-            self.close()
 
     def eventFilter(self, source, event):
         if (event.type() == QEvent.KeyRelease and
