@@ -20,7 +20,7 @@ def get_user_self_info(bduss, stoken):
                 error = getattr(user_info, 'err')
             except AttributeError:
                 error = None
-            if isinstance(error, Exception):
+            if isinstance(error, aiotieba.exception.TiebaServerError):
                 raise error
 
             return user_info
@@ -211,9 +211,9 @@ class AccountManager(QObject):
         account_object = TiebaAccount()
         account_object.bduss = bduss
         account_object.stoken = stoken
-        account_object.uid = user_info.user_id
-        account_object.portrait = user_info.portrait
-        account_object.nickname = user_info.nick_name if user_info.nick_name else f'百度用户#{user_info.user_id}'
+        account_object.uid = user_info.user_id if user_info.user_id else -1
+        account_object.portrait = user_info.portrait if user_info.portrait else "tb.1.0000"
+        account_object.nickname = user_info.nick_name if user_info.nick_name else f'未知贴吧用户{user_info.user_id}'
 
         if not self.has_any_accounts():  # 在没有账号登上去的情况下，把这个账号设置为当前账号
             account_object.is_current = True
