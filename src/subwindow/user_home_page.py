@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
 from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image, account_mgr
 from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
-    get_exception_string, cleanup_listWidget, show_label_pixmap_with_animation
+    get_exception_string, cleanup_listWidget, show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging
 from publics.qt_image import get_pixmap_icon_from_file
 
@@ -616,25 +616,44 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         datas = data[1]
         if data[0] == 'thread':
             item = QListWidgetItem()
-            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken)
+            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken,
+                                datas['author_portrait'])
+
+            widget.threadItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_4, item))
+            widget.messagePushed.connect(self.top_toaster.showToast)
+
             widget.load_by_callback = True
-            widget.set_thread_values(datas['view_count'], datas['agree_count'], datas['reply_count'],
-                                     datas['repost_count'], datas['post_time'])
-            widget.set_infos(datas['author_portrait'], datas['user_name'], datas['title'], datas['content'],
-                             None, datas['forum_name'])
-            widget.set_picture(list(AsyncLoadImage(image.src, image.hash) for image in datas['view_pixmap']))
+            widget.allow_open_home_page = False
+            widget.set_thread_values(datas['view_count'],
+                                     datas['agree_count'],
+                                     datas['reply_count'],
+                                     datas['repost_count'],
+                                     datas['post_time'])
+            widget.set_infos(datas['author_portrait'],
+                             datas['user_name'],
+                             datas['title'],
+                             datas['content'],
+                             None,
+                             datas['forum_name'])
+            widget.set_picture([AsyncLoadImage(image.src, image.hash) for image in datas['view_pixmap']])
+
             widget.label.hide()
             widget.adjustSize()
             item.setSizeHint(widget.size())
+
             self.listWidget_4.addItem(item)
             self.listWidget_4.setItemWidget(item, widget)
         elif data[0] == 'reply':
             item = QListWidgetItem()
             widget = ReplyItem(self.bduss, self.stoken)
 
+            widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_2, item))
+            widget.messageAdded.connect(self.top_toaster.showToast)
+
             widget.portrait = datas['portrait']
             widget.thread_id = datas['thread_id']
             widget.post_id = datas['post_id']
+            widget.forum_id = datas['forum_id']
             widget.allow_home_page = False
             widget.subcomment_show_thread_button = True
             widget.load_by_callback = True

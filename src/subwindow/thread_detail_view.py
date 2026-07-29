@@ -15,7 +15,7 @@ from publics.qt_image import get_pixmap_icon_from_file
 from publics.winrt_url_share import winrt_share
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
-    cleanup_listWidget, show_label_pixmap_with_animation
+    cleanup_listWidget, show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import add_post, agree_thread_or_post, OpAgreeObjectType, store_thread, \
     cancel_store_thread, \
@@ -442,7 +442,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         if os.name == 'nt':
             if int(platform.version().split('.')[-1]) >= 10240:
-                winrt_share.execute_share_window_for_qwidget(self, share_url, '分享贴子')
+                winrt_share.execute_share_window_for_qwidget(self, share_url, self.windowTitle())
             else:
                 toast = top_toast_widget.ToastMessage('系统分享仅支持 Windows 10 及以上系统',
                                                       icon_type=top_toast_widget.ToastIconType.INFORMATION)
@@ -910,22 +910,28 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.post_area_flash_shower.hide()
 
     def add_reply_ui(self, datas):
-        item = QListWidgetItem()
         from subwindow.thread_reply_item import ReplyItem
+
+        item = QListWidgetItem()
         widget = ReplyItem(self.bduss, self.stoken)
+
         widget.portrait = datas['portrait']
         widget.is_comment = False
         widget.load_by_callback = True
         widget.thread_id = self.thread_id
         widget.post_id = datas['post_id']
+        widget.forum_id = datas['forum_id']
+
         widget.setdatas(datas['portrait'], datas['user_name'], datas['is_author'], datas['content'],
                         datas['view_pixmap'],
                         datas['floor'], datas['create_time_str'], datas['user_ip'], datas['reply_num'],
                         datas['agree_count'], datas['ulevel'], datas['is_bawu'], voice_info=datas['voice_info'])
         widget.set_grow_level(datas['grow_level'])
+
         widget.show_msg_outside = True
-        widget.messageAdded.connect(lambda text: self.top_toaster.showToast(
-            top_toast_widget.ToastMessage(text, 2000, top_toast_widget.ToastIconType.INFORMATION)))
+        widget.messageAdded.connect(self.top_toaster.showToast)
+        widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_4, item))
+
         item.setSizeHint(widget.size())
         self.listWidget_4.addItem(item)
         self.listWidget_4.setItemWidget(item, widget)
@@ -933,8 +939,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.height_count_replies += widget.height()
         self.listWidget_4.setMinimumHeight(self.height_count_replies)
 
-        if widget.width() > self.width_count_replies:
-            self.width_count_replies = widget.width()
+        if widget.minimumWidth() > self.width_count_replies:
+            self.width_count_replies = widget.minimumWidth()
             self.listWidget_4.setMinimumWidth(self.width_count_replies)
 
     def get_sub_thread_async(self):
@@ -1004,6 +1010,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     is_bawu = t.user.is_bawu
                     grow_level = t.user.glevel
                     post_id = t.pid
+                    forum_id = t.fid
 
                     voice_info = {'have_voice': False, 'src': '', 'length': 0}
                     if t.contents.voice:
@@ -1035,7 +1042,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                              'post_id': post_id,
                              'is_bawu': is_bawu,
                              'grow_level': grow_level,
-                             'voice_info': voice_info}
+                             'voice_info': voice_info,
+                             'forum_id': forum_id}
 
                     self.add_reply.emit(tdata)
 
@@ -1229,7 +1237,10 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     from subwindow.thread_preview_item import ThreadView
 
                     repost_widget = ThreadView(self.bduss, datas['repost_info']['thread_id'],
-                                               datas['repost_info']['forum_id'], self.stoken)
+                                               datas['repost_info']['forum_id'], self.stoken,
+                                               datas['repost_info']['author_portrait'])
+                    repost_widget.messagePushed.connect(self.top_toaster.showToast)
+
                     repost_widget.set_infos(datas['repost_info']['author_portrait'],
                                             datas['repost_info']['author_name'],
                                             datas['repost_info']['title'],

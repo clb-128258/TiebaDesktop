@@ -31,8 +31,7 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
                              content: typing.Optional[bytes]):
             if statusCode == 200 and not self.is_captcha_token_got:
                 json_data = json.loads(content.decode())
-                print(json_data)
-                if json_data['code'] == 0:
+                if json_data['code'] == 0 and json_data['data']['pass']:
                     self.is_captcha_token_got = True
                     time.sleep(1)  # 休眠一秒，保证ui显示效果
                     self.captchaTokenGot.emit(json_data['data'])

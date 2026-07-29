@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import request_mgr, top_toast_widget, profile_mgr
 from publics.funcs import start_background_thread, timestamp_to_string, listWidget_get_visible_widgets, \
-    get_exception_string, cleanup_listWidget
+    get_exception_string, cleanup_listWidget, delete_listWidget_item
 import publics.app_logger as logging
 from subwindow import base_ui
 
@@ -104,11 +104,14 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
             from subwindow.thread_reply_item import ReplyItem
             widget = ReplyItem(self.bduss, self.stoken)
 
+            widget.messageAdded.connect(self.parent_window.toast_widget.showToast)
+
             widget.load_by_callback = True
             widget.is_comment = data['is_subfloor']
             widget.portrait = data['portrait']
             widget.thread_id = data['thread_id']
             widget.post_id = data['post_id']
+            widget.forum_id = data['forum_id']
             widget.subcomment_show_thread_button = True
             widget.set_reply_text(
                 '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> '
@@ -149,9 +152,11 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
         item.setSizeHint(widget.size())
 
         if data['type'] == 'reply':
+            widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget, item))
             self.listWidget.addItem(item)
             self.listWidget.setItemWidget(item, widget)
         elif data['type'] == 'at':
+            widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_2, item))
             self.listWidget_2.addItem(item)
             self.listWidget_2.setItemWidget(item, widget)
         elif data['type'] == 'agree':

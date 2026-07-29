@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 import publics.app_logger as logging
 from publics import request_mgr, profile_mgr, top_toast_widget
 from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string, \
-    listWidget_get_visible_widgets, large_num_to_string, cleanup_listWidget
+    listWidget_get_visible_widgets, large_num_to_string, cleanup_listWidget, delete_listWidget_item
 
 from subwindow import base_ui
 
@@ -97,8 +97,11 @@ class RecommendWindow(QListWidget):
     def add_thread(self, infos):
         item = QListWidgetItem()
         from subwindow.thread_preview_item import ThreadView
-        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken, infos['author_portrait'])
         widget.load_by_callback = True
+        widget.messagePushed.connect(self.parent_window.toast_widget.showToast)
+        widget.threadItemDeleted.connect(lambda: delete_listWidget_item(self, item))
+
         widget.set_infos(infos['author_portrait'],
                          infos['user_name'],
                          infos['title'],

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 from publics import qt_window_mgr, top_toast_widget, profile_mgr, qt_image
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, LoadingFlashWidget, large_num_to_string, \
-    show_label_pixmap_with_animation
+    show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging
 from subwindow import base_ui
 
@@ -186,14 +186,19 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
     def ui_add_comment(self, datas):
         from subwindow.thread_reply_item import ReplyItem
+
+        item = QListWidgetItem()
         widget = ReplyItem(self.bduss, self.stoken)
+
         widget.show_msg_outside = True
         widget.load_by_callback = True
-        widget.messageAdded.connect(lambda text: self.top_toaster.showToast(
-            top_toast_widget.ToastMessage(text, 2000, top_toast_widget.ToastIconType.INFORMATION)))
+
+        widget.messageAdded.connect(self.top_toaster.showToast)
+
         widget.portrait = datas['portrait']
         widget.thread_id = datas['thread_id']
         widget.post_id = datas['post_id']
+        widget.forum_id = datas['forum_id']
 
         if not datas['is_floor']:
             widget.is_comment = True
@@ -223,8 +228,9 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                             datas['create_time_str'], '', -1, -1, datas['ulevel'], datas['is_bawu'],
                             voice_info=datas['voice_info'])
 
-        item = QListWidgetItem()
         item.setSizeHint(widget.size())
+        widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget, item))
+
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
 
@@ -250,6 +256,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                 post_id = t.pid
                 be_replied_user = t.reply_to_nick_name_new
                 replyer_uid = t.reply_to_id
+                forum_id = t.fid
 
                 voice_info = {'have_voice': False, 'src': '', 'length': 0}
                 if t.contents.voice:
@@ -272,7 +279,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                          'thread_id': thread_id,
                          'post_id': post_id,
                          'voice_info': voice_info,
-                         'is_position_post': post_id == pos_pid}
+                         'is_position_post': post_id == pos_pid,
+                         'forum_id': forum_id}
 
                 self.add_comment.emit(tdata)
 
@@ -310,6 +318,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
             post_id = floor_thread.pid
             floor = floor_thread.floor if floor_thread.floor != 0 else -1
             reply_num = comments.page.total_count
+            forum_id = floor_thread.fid
 
             from_subfloor = False
             old_pid = 0
@@ -352,7 +361,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                      'floor': floor,
                      'reply_num': reply_num,
                      'load_from_subfloor': from_subfloor,
-                     'is_position_post': False}
+                     'is_position_post': False,
+                     'forum_id': forum_id}
 
             self.add_comment.emit(tdata)
 

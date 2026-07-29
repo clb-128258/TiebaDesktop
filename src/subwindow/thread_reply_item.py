@@ -1,12 +1,17 @@
-from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtGui import QPixmap, QCursor
-from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
+import asyncio
+import aiotieba
+
+from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QSize, QPoint
+from PyQt5.QtGui import QPixmap, QCursor, QIcon
+from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QAction, QListWidget, QWidget
+
 from typing import Union
-from publics import qt_window_mgr, profile_mgr, qt_image
+
+from publics import qt_window_mgr, profile_mgr, qt_image, account_mgr, app_logger, top_toast_widget
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string, \
     show_label_pixmap_with_animation
 import publics.app_logger as logging
-from publics.baidu_features.tieba_apis import agree_thread_or_post, OpAgreeObjectType
+from publics.baidu_features.tieba_apis import agree_thread_or_post, OpAgreeObjectType, store_thread
 from subwindow import base_ui
 
 from ui import comment_view
@@ -37,20 +42,26 @@ def find_first_reply_window(post_id, show_thread_button) -> bool:
 class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
     """嵌入在列表里的回复贴内容"""
     height_count = 0
-    portrait = ''
     c_count = -1
     floor = -1
+
+    portrait = ''
     thread_id = -1
     post_id = -1
+    forum_id = -1
+
     allow_home_page = True
     subcomment_show_thread_button = False
     agree_num = 0
     is_comment = False
-    agree_thread_signal = pyqtSignal(str)
-    load_by_callback = False
 
+    load_by_callback = False
     show_msg_outside = False
-    messageAdded = pyqtSignal(str)
+    is_agreed = False
+
+    agree_thread_signal = pyqtSignal(str)
+    messageAdded = pyqtSignal(top_toast_widget.ToastMessage)
+    postItemDeleted = pyqtSignal()
 
     def __init__(self, bduss, stoken):
         super().__init__()
@@ -61,6 +72,10 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
         self.image_list = []
         self.__is_loaded = False
 
+        icon_size = QSize(20, 20)
+        self.pushButton_3.setIconSize(icon_size)
+        self.pushButton.setIconSize(icon_size)
+
         self.label_13.hide()
         self.label_10.hide()
         self.listWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -68,24 +83,34 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
         self.label_10.setContextMenuPolicy(Qt.NoContextMenu)
         self.label_6.linkActivated.connect(self.handle_link_event)
         self.label_6.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.label_6.customContextMenuRequested.connect(self.show_content_menu)
+        self.label_6.customContextMenuRequested.connect(self.show_text_content_menu)
         self.label_10.linkActivated.connect(self.handle_link_event)
         self.pushButton.clicked.connect(self.show_subcomment_window)
-        self.label_3.installEventFilter(self)  # 重写事件过滤器
-        self.label_4.installEventFilter(self)  # 重写事件过滤器
-        self.pushButton_3.clicked.connect(self.agree_thread_async)
+        self.pushButton_3.clicked.connect(self.agree_thread_from_click)
         self.agree_thread_signal.connect(self.agree_thread_ok_action)
+        self.toolButton.clicked.connect(self.init_more_menu)
 
         self.portrait_image = qt_image.MultipleImage()
         self.portrait_image.currentPixmapChanged.connect(
             lambda pixmap: show_label_pixmap_with_animation(self.label_4, pixmap))
         self.destroyed.connect(self.portrait_image.destroyImage)
 
+        # 重写事件过滤器
+        self.label_3.installEventFilter(self)
+        self.label_4.installEventFilter(self)
+        self.label_9.installEventFilter(self)
+
     def reset_theme(self):
         from subwindow.thread_picture_label import ThreadPictureLabel
 
         super().reset_theme()
         self.add_extend_qss(f'QPushButton{{color: {profile_mgr.get_theme_font_color_string()};}}')
+
+        bg_policy, font_policy = profile_mgr.get_theme_policy_string()
+        self.toolButton.setIcon(QIcon(f'ui/icon_{font_policy}/more_horiz.png'))
+        self.pushButton.setIcon(QIcon(f'ui/icon_{font_policy}/comment.png'))
+
+        self.set_agree_button_status()
 
         # 设置列表内容的样式
         for i in range(self.listWidget.count()):
@@ -94,12 +119,24 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
                 widget.reset_theme()
 
     def eventFilter(self, source, event):
-        if event.type() == QEvent.Type.MouseButtonRelease and source in (
-                self.label_3, self.label_4) and self.allow_home_page:
-            self.open_user_homepage(self.portrait)
+        if event.type() == QEvent.Type.MouseButtonRelease:
+            if source in (self.label_3, self.label_4) and self.allow_home_page:
+                self.open_user_homepage(self.portrait)
+            elif source is self.label_9:
+                self.open_forum_detail_page()
+
         return super(ReplyItem, self).eventFilter(source, event)  # 照常处理事件
 
-    def show_content_menu(self):
+    def set_agree_button_status(self):
+        self.pushButton_3.setText(f' {large_num_to_string(self.agree_num)}')
+
+        bg_policy, font_policy = profile_mgr.get_theme_policy_string()
+        if not self.is_agreed:
+            self.pushButton_3.setIcon(QIcon(f'ui/icon_{font_policy}/thumb_up.png'))
+        else:
+            self.pushButton_3.setIcon(QIcon(f'ui/thumb_up_filled.png'))
+
+    def show_text_content_menu(self):
         menu = base_ui.create_thread_content_menu(self.label_6)
         menu.exec(QCursor.pos())
 
@@ -114,16 +151,23 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
             self.__is_loaded = True
 
     def agree_thread_ok_action(self, isok):
-        self.pushButton_3.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
+        self.set_agree_button_status()
+
         if isok == '[ALREADY_AGREE]':
             if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
                 self.agree_thread_async(True)
         else:
             if self.show_msg_outside:
-                self.messageAdded.emit(isok)
+                toast = top_toast_widget.ToastMessage()
+                toast.icon_type = top_toast_widget.ToastIconType.INFORMATION
+                toast.title = isok
+                self.messageAdded.emit(toast)
             else:
                 QMessageBox.information(self, '点赞操作完成', isok)
+
+    def agree_thread_from_click(self):
+        self.agree_thread_async(self.is_agreed)
 
     def agree_thread_async(self, is_cancel=False):
         start_background_thread(self.agree_thread, (is_cancel,))
@@ -144,13 +188,16 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
                                                 OpAgreeObjectType.SubComment if self.is_comment else OpAgreeObjectType.FloorPost)
                 if int(response['error_code']) == 0:
                     if iscancel:
+                        self.is_agreed = False
                         self.agree_num -= 1
                         self.agree_thread_signal.emit('取消点赞成功')
                     else:
+                        self.is_agreed = True
                         self.agree_num += 1
                         is_expa2 = bool(int(response["data"]["agree"]["is_first_agree"]))
                         self.agree_thread_signal.emit("点赞成功 首赞经验 +2" if is_expa2 else "点赞成功")
                 elif int(response['error_code']) == 3280001:
+                    self.is_agreed = True
                     self.agree_thread_signal.emit('[ALREADY_AGREE]')
                 else:
                     self.agree_thread_signal.emit(response['error_msg'])
@@ -174,9 +221,22 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
                 qt_window_mgr.add_window(replyWindow)
         else:
             if self.show_msg_outside:
-                self.messageAdded.emit(f'第 {self.floor} 楼还没有任何回复')
+                toast = top_toast_widget.ToastMessage()
+                toast.icon_type = top_toast_widget.ToastIconType.INFORMATION
+                toast.title = f'第 {self.floor} 楼还没有任何回复'
+                self.messageAdded.emit(toast)
             else:
                 QMessageBox.information(self, '暂无回复', f'第 {self.floor} 楼还没有任何回复。', QMessageBox.Ok)
+
+    def open_forum_detail_page(self):
+        from subwindow.forum_detail import ForumDetailWindow
+        forum_detail_page = ForumDetailWindow(self.bduss, self.stoken, self.forum_id, 2)
+        qt_window_mgr.add_window(forum_detail_page)
+
+    def open_user_blacklister(self):
+        from subwindow.single_blacklist import SingleUserBlacklistWindow
+        blacklister = SingleUserBlacklistWindow(self.bduss, self.stoken, self.portrait)
+        qt_window_mgr.add_window(blacklister)
 
     def update_listwidget_size(self, h):
         # 动态更新内容列表大小
@@ -253,26 +313,20 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
         else:
             self.c_count = reply_count
             if reply_count == -2:
-                self.pushButton.setText('查看楼中楼')
+                self.pushButton.setText(' 查看楼中楼')
             else:
-                self.pushButton.setText(f'查看楼中楼 ({reply_count})')
+                self.pushButton.setText(f' {large_num_to_string(reply_count)}')
+
         if agree_count != -1:
             self.agree_num = agree_count
-            self.pushButton_3.setText(large_num_to_string(self.agree_num, endspace=True) + '个赞')
+            self.set_agree_button_status()
         else:
             self.pushButton_3.hide()
-        if not text:
-            self.label_6.hide()
-        else:
-            self.label_6.setText(text)
-        if islz:
-            self.label_8.show()
-        else:
-            self.label_8.hide()
-        if isbawu:
-            self.label_11.show()
-        else:
-            self.label_11.hide()
+
+        self.label_6.setVisible(bool(text))
+        self.label_6.setText(f'<div style=\"white-space:normal;word-break: break-all;\">{text}</div>')
+        self.label_8.setVisible(islz)
+        self.label_11.setVisible(isbawu)
 
         if level == -1:
             self.label_9.hide()
@@ -317,4 +371,81 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
 
         if not self.load_by_callback:
             self.load_images()
+
+        self.label_6.adjustSize()
         self.adjustSize()
+
+    def init_more_menu(self):
+        author_is_self = account_mgr.GlobalAccountContainer.get_current_account().portrait == self.portrait
+
+        menu = base_ui.BaseQMenu()
+
+        store_thread = QAction('收藏到此楼', self)
+        store_thread.triggered.connect(lambda: self.do_action_async("store_thread"))
+        menu.addAction(store_thread)
+
+        block_author = QAction('拉黑用户', self)
+        block_author.setVisible(not author_is_self)
+        block_author.triggered.connect(self.open_user_blacklister)
+        menu.addAction(block_author)
+
+        delete_thread = QAction('删除此回复', self)
+        delete_thread.setVisible(author_is_self)
+        delete_thread.triggered.connect(lambda: self.do_action_async("del_post"))
+        menu.addAction(delete_thread)
+
+        bt_pos = self.toolButton.mapToGlobal(QPoint(0, 0))
+        menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.toolButton.height()))
+
+    def do_action_async(self, action_type=""):
+        run_flag = True
+        if action_type == 'del_post':
+            if QMessageBox.warning(self, '删除回复贴',
+                                   '确认要删除这条回复贴吗？此操作不可撤销。',
+                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                run_flag = False
+        if run_flag:
+            start_background_thread(self.do_action, (action_type,))
+
+    def do_action(self, action_type=""):
+        async def doaction():
+            turn_data = {'success': False, 'text': '', 'delete_item': False}
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    if action_type == 'del_post':
+                        r = await client.del_post(self.forum_id, self.thread_id, self.post_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['text'] = '回复删除成功'
+                            turn_data['delete_item'] = True
+                        else:
+                            turn_data['success'] = False
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'store_thread':
+                        result = store_thread(self.bduss, self.stoken, self.thread_id, self.post_id)
+                        if result['error_code'] == '0':
+                            turn_data['success'] = True
+                            turn_data['text'] = '收藏成功'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['text'] = result['error_msg']
+            except Exception as e:
+                app_logger.log_exception(e)
+                turn_data['success'] = False
+                turn_data['text'] = str(e)
+            finally:
+                toast = top_toast_widget.ToastMessage()
+                toast.icon_type = top_toast_widget.ToastIconType.SUCCESS if turn_data[
+                    'success'] else top_toast_widget.ToastIconType.ERROR
+                toast.title = turn_data['text']
+                self.messageAdded.emit(toast)
+
+                if turn_data['delete_item']:
+                    self.postItemDeleted.emit()
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(doaction())
+
+        start_async()

@@ -1,9 +1,14 @@
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
+import asyncio
 
-from publics import qt_window_mgr, qt_image, profile_mgr
-from publics.funcs import timestamp_to_string, large_num_to_string, show_label_pixmap_with_animation
+import aiotieba
+from PyQt5.QtWidgets import QLabel, QAction, QMessageBox
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QEvent
+
+from publics import qt_window_mgr, qt_image, profile_mgr, account_mgr, top_toast_widget, app_logger
+from publics.baidu_features import tieba_apis
+from publics.funcs import timestamp_to_string, large_num_to_string, show_label_pixmap_with_animation, \
+    start_background_thread, open_url_in_browser
 from subwindow import base_ui
 
 from ui import tie_preview
@@ -52,14 +57,24 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
     load_by_callback = False
     is_loaded = False
 
-    def __init__(self, bduss, tid, fid, stoken):
+    allow_open_home_page = True
+
+    threadItemDeleted = pyqtSignal()
+    messagePushed = pyqtSignal(top_toast_widget.ToastMessage)
+
+    def __init__(self, bduss: str, tid: int, fid: int, stoken: str, author_portrait: str):
         super().__init__()
         self.setupUi(self)
         self.bduss = bduss
         self.stoken = stoken
+
         self.thread_id = tid
         self.forum_id = fid
+        self.author_portrait = author_portrait
+        self.first_post_id = 0
+
         self.piclist = None
+
         self.agree_num = 0
         self.reply_num = 0
         self.send_time = 0
@@ -67,6 +82,7 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
         self.label_11.hide()
         self.pushButton_3.clicked.connect(self.open_ba_detail)
         self.pushButton_2.clicked.connect(self.open_thread_detail)
+        self.toolButton.clicked.connect(self.init_more_menu)
 
         self.portrait_image = qt_image.MultipleImage()
         self.forum_image = qt_image.MultipleImage()
@@ -77,9 +93,23 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
         self.destroyed.connect(self.portrait_image.destroyImage)
         self.destroyed.connect(self.forum_image.destroyImage)
 
+        self.label_3.installEventFilter(self)  # 重写事件过滤器
+        self.label_4.installEventFilter(self)  # 重写事件过滤器
+
     def reset_theme(self):
         super().reset_theme()
         self.add_extend_qss(f'QPushButton{{color: {profile_mgr.get_theme_font_color_string()};}}')
+
+        bg_policy, font_policy = profile_mgr.get_theme_policy_string()
+        self.toolButton.setIcon(QIcon(f'ui/icon_{font_policy}/more_horiz.png'))
+
+    def eventFilter(self, source, event):
+        if (event.type() == QEvent.Type.MouseButtonRelease
+                and source in (self.label_3, self.label_4)
+                and self.allow_open_home_page):
+            open_url_in_browser(f'user://{self.author_portrait}')
+
+        return super(ThreadView, self).eventFilter(source, event)  # 照常处理事件
 
     def load_all_AsyncImage(self):
         if not self.is_loaded:
@@ -105,6 +135,11 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
                                          self.is_top, preview_info)
         qt_window_mgr.add_window(thread_window)
 
+    def open_user_blacklister(self):
+        from subwindow.single_blacklist import SingleUserBlacklistWindow
+        blacklister = SingleUserBlacklistWindow(self.bduss, self.stoken, self.author_portrait)
+        qt_window_mgr.add_window(blacklister)
+
     def open_ba_detail(self):
         from subwindow.forum_show_window import ForumShowWindow
 
@@ -112,6 +147,46 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
         qt_window_mgr.add_window(forum_window)
         forum_window.load_info_async()
         forum_window.get_threads_async()
+
+    def init_more_menu(self):
+        author_is_self = account_mgr.GlobalAccountContainer.get_current_account().portrait == self.author_portrait
+
+        menu = base_ui.BaseQMenu()
+
+        dislike_thread = QAction('不想看该贴子', self)
+        dislike_thread.setVisible(not author_is_self)
+        dislike_thread.triggered.connect(lambda: self.do_action_async("dislike_thread"))
+        menu.addAction(dislike_thread)
+
+        dislike_forum = QAction('屏蔽所在吧', self)
+        dislike_forum.setVisible(bool(self.forum_id))
+        dislike_forum.triggered.connect(lambda: self.do_action_async("block_forum"))
+        menu.addAction(dislike_forum)
+
+        block_author = QAction('拉黑楼主', self)
+        block_author.setVisible(not author_is_self)
+        block_author.triggered.connect(self.open_user_blacklister)
+        menu.addAction(block_author)
+
+        menu.addSeparator()
+
+        private_thread = QAction('个人主页隐藏', self)
+        private_thread.setVisible(author_is_self)
+        private_thread.triggered.connect(lambda: self.do_action_async("private_thread"))
+        menu.addAction(private_thread)
+
+        public_thread = QAction('个人主页公开', self)
+        public_thread.setVisible(author_is_self)
+        public_thread.triggered.connect(lambda: self.do_action_async("public_thread"))
+        menu.addAction(public_thread)
+
+        delete_thread = QAction('删除此贴', self)
+        delete_thread.setVisible(author_is_self)
+        delete_thread.triggered.connect(lambda: self.do_action_async("del_thread"))
+        menu.addAction(delete_thread)
+
+        bt_pos = self.toolButton.mapToGlobal(QPoint(0, 0))
+        menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.toolButton.height()))
 
     def set_thread_values(self, view, agree, reply, repost, send_time=0):
         self.agree_num = agree
@@ -125,6 +200,7 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
         if send_time > 0:
             timestr = '发布于 ' + timestamp_to_string(send_time)
             text += '\n' + timestr
+
         self.label_11.show()
         self.label_11.setText(text)
 
@@ -137,6 +213,7 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
                                              (20, 20))
             if not self.load_by_callback and not self.is_loaded:
                 self.portrait_image.loadImage()
+
         self.label_3.setText(uname)
         self.label_5.setText(title)
         self.label_6.setText(text)
@@ -188,3 +265,93 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
 
             if not self.load_by_callback:
                 self._load_pictures()
+
+    def do_action_async(self, action_type=""):
+        run_flag = True
+        if action_type == 'del_thread':
+            if QMessageBox.warning(self, '删除贴子',
+                                   '删除该主题贴会导致该贴子下的所有回复被一并删除，且该操作不可恢复。\n确认要删除该主题贴吗？',
+                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                run_flag = False
+        if run_flag:
+            start_background_thread(self.do_action, (action_type,))
+
+    def do_action(self, action_type=""):
+        async def init_post_id(client):
+            if self.first_post_id:
+                return
+
+            thread_info = await client.get_posts(self.thread_id)
+            self.first_post_id = thread_info.thread.pid
+
+        async def doaction():
+            turn_data = {'success': False, 'text': '', 'delete_item': False}
+            try:
+                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
+                    if action_type == 'del_thread':
+                        r = await client.del_thread(self.forum_id, self.thread_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['text'] = '贴子删除成功'
+                            turn_data['delete_item'] = True
+                        else:
+                            turn_data['success'] = False
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'block_forum':
+                        r = await client.dislike_forum(self.forum_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['text'] = f'屏蔽该吧成功，可以在手机 APP 中查看'
+                            turn_data['delete_item'] = True
+                        else:
+                            turn_data['success'] = False
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'dislike_thread':
+                        result = tieba_apis.submit_dislike_thread(self.bduss, self.stoken,
+                                                                  self.thread_id,
+                                                                  self.forum_id)
+                        if result['error_code'] == '0':
+                            turn_data['success'] = True
+                            turn_data['delete_item'] = True
+                            turn_data['text'] = '反馈成功，系统将减少此类内容推荐'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['text'] = result['error_msg']
+                    elif action_type == 'private_thread':
+                        await init_post_id(client)
+                        r = await client.set_thread_private(self.forum_id, self.thread_id, self.first_post_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['text'] = f'隐藏贴子成功'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['text'] = f'{r.err}'
+                    elif action_type == 'public_thread':
+                        await init_post_id(client)
+                        r = await client.set_thread_public(self.forum_id, self.thread_id, self.first_post_id)
+                        if r:
+                            turn_data['success'] = True
+                            turn_data['text'] = f'公开贴子成功'
+                        else:
+                            turn_data['success'] = False
+                            turn_data['text'] = f'{r.err}'
+            except Exception as e:
+                app_logger.log_exception(e)
+                turn_data['success'] = False
+                turn_data['text'] = str(e)
+            finally:
+                toast = top_toast_widget.ToastMessage()
+                toast.icon_type = top_toast_widget.ToastIconType.SUCCESS if turn_data[
+                    'success'] else top_toast_widget.ToastIconType.ERROR
+                toast.title = turn_data['text']
+                self.messagePushed.emit(toast)
+
+                if turn_data['delete_item']:
+                    self.threadItemDeleted.emit()
+
+        def start_async():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            asyncio.run(doaction())
+
+        start_async()

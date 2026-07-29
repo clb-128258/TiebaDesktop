@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget, app_logger
 from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
-    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget
+    listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, delete_listWidget_item
 from subwindow import base_ui
 
 from ui import forum_search
@@ -172,7 +172,10 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         if datas['type'] == 'thread':
             from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
             item = QListWidgetItem()
-            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken)
+            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken, datas['portrait'])
+            widget.messagePushed.connect(self.top_toaster.showToast)
+            widget.threadItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_2, item))
+
             widget.load_by_callback = True
 
             widget.set_infos(datas['portrait'], datas['user_name'], datas['title'], datas['text'],
@@ -211,7 +214,8 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         elif datas['type'] == 'thread_single_forum':
             from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
             item = QListWidgetItem()
-            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken)
+            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken, datas['portrait'])
+            widget.messagePushed.connect(self.top_toaster.showToast)
             widget.load_by_callback = True
 
             widget.set_infos(datas['portrait'], datas['user_name'], datas['title'], datas['text'],
@@ -228,10 +232,14 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             item = QListWidgetItem()
             widget = ReplyItem(self.bduss, self.stoken)
 
+            widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_5, item))
+            widget.messageAdded.connect(self.top_toaster.showToast)
+
             widget.load_by_callback = True
             widget.portrait = datas['portrait']
             widget.thread_id = datas['thread_id']
             widget.post_id = datas['post_id']
+            widget.forum_id = datas['forum_id']
             widget.allow_home_page = True
             widget.subcomment_show_thread_button = True
             widget.set_reply_text(

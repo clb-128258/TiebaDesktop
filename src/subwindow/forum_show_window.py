@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 from publics import profile_mgr, qt_window_mgr, cache_mgr, qt_image, top_toast_widget
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
-    cleanup_listWidget, show_label_pixmap_with_animation
+    cleanup_listWidget, show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import fetch_frs_bottom, sign_forum
 
@@ -39,6 +39,11 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.is_followed = False
         self.is_signed = False
         self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
+        self.page_lw_index = {'latest_reply': self.listWidget,
+                              'latest_send': self.listWidget_5,
+                              'hot': self.listWidget_3,
+                              'top': self.listWidget_4,
+                              'treasure': self.listWidget_2}
 
         for i in range(len(self.listwidgets)):
             lw = self.listwidgets[i]
@@ -244,39 +249,33 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         start_background_thread(start_async)
 
     def add_thread_(self, infos):
-        item = QListWidgetItem()
         from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
-        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+
+        item = QListWidgetItem()
+        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken, infos['user_portrait'])
+        widget.messagePushed.connect(self.toast_widget.showToast)
         widget.load_by_callback = True
 
         widget.set_infos(infos['user_portrait'], infos['user_name'], infos['title'], infos['content'],
                          infos['forum_pixmap'], infos['forum_name'])
         widget.set_picture(list(AsyncLoadImage(image.src, image.hash) for image in infos['view_pixmap']))
         widget.set_thread_values(infos['view_count'], infos['agree_count'], infos['reply_count'], infos['repost_count'])
+
         widget.is_treasure = infos['is_treasure']
         widget.is_top = infos['is_top']
+
         widget.label.hide()
         widget.label_10.hide()
         widget.pushButton_3.hide()
         widget.label_2.setText(infos['time_stamp'])
+
         widget.adjustSize()
         item.setSizeHint(widget.size())
 
-        if infos['type'] == 'latest_reply':
-            self.listWidget.addItem(item)
-            self.listWidget.setItemWidget(item, widget)
-        elif infos['type'] == 'latest_send':
-            self.listWidget_5.addItem(item)
-            self.listWidget_5.setItemWidget(item, widget)
-        elif infos['type'] == 'hot':
-            self.listWidget_3.addItem(item)
-            self.listWidget_3.setItemWidget(item, widget)
-        elif infos['type'] == 'top':
-            self.listWidget_4.addItem(item)
-            self.listWidget_4.setItemWidget(item, widget)
-        elif infos['type'] == 'treasure':
-            self.listWidget_2.addItem(item)
-            self.listWidget_2.setItemWidget(item, widget)
+        goal_lw = self.page_lw_index[infos['type']]
+        widget.threadItemDeleted.connect(lambda: delete_listWidget_item(goal_lw, item))
+        goal_lw.addItem(item)
+        goal_lw.setItemWidget(item, widget)
 
     def show_load_ok_msg(self):
         self.threadList_load_image()

@@ -112,7 +112,8 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
     def add_star_threads_ui(self, infos):
         item = QListWidgetItem()
         from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
-        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+        widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken, infos['user_portrait'])
+        widget.messagePushed.connect(self.top_toaster.showToast)
         widget.load_by_callback = True
 
         widget.set_infos(infos['user_portrait'],
@@ -152,7 +153,7 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
             self.listWidget.clear()
             QPixmapCache.clear()
             gc.collect()
-            self.page = 1
+            self.page = 0
 
             self.get_star_threads_async()
 
@@ -165,7 +166,7 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
             for thread in resp['store_thread']:
                 data = {'user_name': thread['author']['name_show'],
                         'user_portrait': thread["author"]["user_portrait"],
-                        'thread_id': thread['thread_id'],
+                        'thread_id': int(thread['thread_id']),
                         'forum_id': get_forum_id(thread['forum_name']),
                         'forum_name': thread['forum_name'],
                         'title': thread["title"],

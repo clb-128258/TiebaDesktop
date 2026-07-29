@@ -439,10 +439,10 @@ def add_thread(bduss, stoken,
         current_account = aiotieba_client.account
         result = await aiotieba_client.get_self_info()
 
-        z_id = current_account.aiotieba_account.z_id
-        client_id, sample_id = current_account.aiotieba_account.client_id, current_account.aiotieba_account.sample_id
+        z_id = current_account.z_id
+        client_id, sample_id = current_account.client_id, current_account.sample_id
         show_name = result.show_name
-        tbs = current_account.aiotieba_account.tbs
+        tbs = current_account.tbs
 
         return z_id, client_id, sample_id, show_name, tbs
 
@@ -606,10 +606,10 @@ def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json
         current_account = aiotieba_client.account
         result = await aiotieba_client.get_self_info()
 
-        z_id = current_account.aiotieba_account.z_id
-        client_id, sample_id = current_account.aiotieba_account.client_id, current_account.aiotieba_account.sample_id
+        z_id = current_account.z_id
+        client_id, sample_id = current_account.client_id, current_account.sample_id
         show_name = result.show_name
-        tbs = current_account.aiotieba_account.tbs
+        tbs = current_account.tbs
 
         return z_id, client_id, sample_id, show_name, tbs
 
@@ -722,3 +722,37 @@ def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json
         return asyncio.run(run())
 
     return start_async()
+
+
+def submit_dislike_thread(bduss, stoken, thread_id, forum_id):
+    """
+    向贴吧报告对贴子不感兴趣
+
+    Args:
+        thread_id (int): 贴子id
+        forum_id (int): 所在吧id
+    """
+
+    dislike_info = [{"tid": str(thread_id),
+                     "dislike_ids": "0",
+                     "fid": str(forum_id),
+                     "click_time": int(time.time() * 1000),
+                     "extra": ""}]
+    payload = {
+        'BDUSS': bduss,
+        '_client_type': "2",
+        '_client_version': consts.TIEBA_CLIENT_VERSION,
+        'dislike': json.dumps(dislike_info, ensure_ascii=False, separators=(',', ':')),
+        'dislike_from': "homepage",
+        'personalized_rec_switch': "1",
+        'stoken': stoken,
+    }
+
+    resp = request_mgr.run_post_api('/c/c/excellent/submitDislike',
+                                    request_mgr.calc_sign(payload),
+                                    bduss=bduss,
+                                    stoken=stoken,
+                                    host_type=2,
+                                    use_mobile_header=True)
+
+    return resp

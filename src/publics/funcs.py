@@ -174,6 +174,21 @@ def tableWidget_get_visible_items(tableWidget: QTableWidget):
     return result
 
 
+def delete_listWidget_item(lw: QListWidget, item: QListWidgetItem):
+    """删除 ListWidget 的某个条目，并释放内存"""
+    index = lw.indexFromItem(item).row()
+    widget = lw.itemWidget(item)
+
+    if widget:
+        widget.destroy()
+        widget.deleteLater()
+
+    lw.takeItem(index)
+    del widget
+    del item
+    gc.collect()
+
+
 def cleanup_listWidget(lw: QListWidget):
     """清理 QListWidget 的所有条目，并释放内存"""
     for i in range(lw.count()):

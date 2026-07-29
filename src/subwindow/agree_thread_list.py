@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets, \
-    cleanup_listWidget, LoadingFlashWidget, get_exception_string
+    cleanup_listWidget, LoadingFlashWidget, get_exception_string, delete_listWidget_item
 from subwindow import base_ui
 from ui import star_list
 
@@ -105,7 +105,8 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
 
         if infos['type'] == 0:
             from subwindow.thread_preview_item import ThreadView, AsyncLoadImage
-            widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken)
+            widget = ThreadView(self.bduss, infos['thread_id'], infos['forum_id'], self.stoken, infos['portrait'])
+            widget.messagePushed.connect(self.top_toaster.showToast)
             widget.load_by_callback = True
 
             widget.set_infos(infos['portrait'], infos['user_name'], infos['title'], infos['text'],
@@ -118,14 +119,20 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         else:
             from subwindow.thread_reply_item import ReplyItem
             widget = ReplyItem(self.bduss, self.stoken)
+
+            widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget, item))
+            widget.messageAdded.connect(self.top_toaster.showToast)
+
             timestr = timestamp_to_string(infos['timestamp'])
             widget.portrait = infos['portrait']
             widget.thread_id = infos['thread_id']
             widget.post_id = infos['post_id']
+            widget.forum_id = infos['forum_id']
             widget.is_comment = infos['is_subfloor']
             widget.allow_home_page = True
             widget.subcomment_show_thread_button = True
             widget.load_by_callback = True
+
             widget.set_reply_text(
                 '<a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下的回复：'.format(
                     fname=infos['forum_name'], tname=infos['title'], tid=infos['thread_id'],
