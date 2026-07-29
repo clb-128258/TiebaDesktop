@@ -242,6 +242,7 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
             widget.forum_id = datas['forum_id']
             widget.allow_home_page = True
             widget.subcomment_show_thread_button = True
+            widget.show_msg_outside = True
             widget.set_reply_text(
                 '<a href=\"tieba_thread://{tid}\">{title}</a>'.format(tid=datas['thread_id'], title=datas['title']))
             widget.setdatas(datas['portrait'], datas['user_name'], False, datas['text'],

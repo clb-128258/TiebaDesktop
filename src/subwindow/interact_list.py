@@ -106,6 +106,7 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
 
             widget.messageAdded.connect(self.parent_window.toast_widget.showToast)
 
+            widget.show_msg_outside = True
             widget.load_by_callback = True
             widget.is_comment = data['is_subfloor']
             widget.portrait = data['portrait']

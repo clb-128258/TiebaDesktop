@@ -123,22 +123,26 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
             widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget, item))
             widget.messageAdded.connect(self.top_toaster.showToast)
 
+            widget.allow_home_page = True
+            widget.subcomment_show_thread_button = True
+            widget.load_by_callback = True
+            widget.show_msg_outside = True
+
             timestr = timestamp_to_string(infos['timestamp'])
             widget.portrait = infos['portrait']
             widget.thread_id = infos['thread_id']
             widget.post_id = infos['post_id']
             widget.forum_id = infos['forum_id']
             widget.is_comment = infos['is_subfloor']
-            widget.allow_home_page = True
-            widget.subcomment_show_thread_button = True
-            widget.load_by_callback = True
 
             widget.set_reply_text(
                 '<a href=\"tieba_forum://{fid}\">{fname}吧</a> 的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> 下的回复：'.format(
                     fname=infos['forum_name'], tname=infos['title'], tid=infos['thread_id'],
                     fid=infos['forum_id']))
-            widget.setdatas(infos['portrait'], infos['user_name'], False, infos['text'],
-                            infos['picture'], -1, timestr, '', -2, -1, -1, False)
+            widget.setdatas(infos['portrait'], infos['user_name'],
+                            False, infos['text'], infos['picture'],
+                            -1, timestr, '',
+                            -2, infos['thread_data']['ag'], -1, False)
 
         item.setSizeHint(widget.size())
         self.listWidget.addItem(item)

@@ -658,6 +658,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             widget.subcomment_show_thread_button = True
             widget.load_by_callback = True
             widget.is_comment = datas['is_subfloor']
+            widget.show_msg_outside = True
 
             forum_link_html = '<a href=\"tieba_forum://{fid}\">{fname}吧</a>'.format(fname=datas['forum_name'],
                                                                                      fid=datas['forum_id'])
