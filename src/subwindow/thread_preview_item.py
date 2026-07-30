@@ -5,11 +5,11 @@ from PyQt5.QtWidgets import QLabel, QAction, QMessageBox
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QEvent
 
-from publics import qt_window_mgr, qt_image, profile_mgr, account_mgr, top_toast_widget, app_logger
+from publics import qt_window_mgr, qt_image, profile_mgr, account_mgr, app_logger
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.baidu_features import tieba_apis
 from publics.funcs import timestamp_to_string, large_num_to_string, show_label_pixmap_with_animation, \
     start_background_thread, open_url_in_browser
-from subwindow import base_ui
 
 from ui import tie_preview
 
@@ -50,7 +50,7 @@ class AsyncLoadImage(qt_image.MultipleImage):
             self.isLoaded = True
 
 
-class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
+class ThreadView(base_ui.InsideWidgetBaseQWidget, tie_preview.Ui_Form):
     """贴子在列表内的预览小组件"""
     is_treasure = False
     is_top = False
@@ -65,6 +65,8 @@ class ThreadView(base_ui.WindowBaseQWidget, tie_preview.Ui_Form):
     def __init__(self, bduss: str, tid: int, fid: int, stoken: str, author_portrait: str):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
+
         self.bduss = bduss
         self.stoken = stoken
 

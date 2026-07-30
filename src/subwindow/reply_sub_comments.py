@@ -6,12 +6,12 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, top_toast_widget, profile_mgr, qt_image
+from publics import qt_window_mgr, profile_mgr, qt_image
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, LoadingFlashWidget, large_num_to_string, \
     show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging
-from subwindow import base_ui
 
 from ui import reply_comments
 
@@ -34,6 +34,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                  is_subfloor=False):
         super().__init__()
         self.setupUi(self)
+
         self.bduss = bduss
         self.stoken = stoken
         self.thread_id = thread_id
@@ -47,6 +48,9 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.listWidget.verticalScrollBar().setSingleStep(25)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_ui_elements()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.add_comment.connect(self.ui_add_comment)
         self.set_thread_info.connect(self.ui_set_thread_info)

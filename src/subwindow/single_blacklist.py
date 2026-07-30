@@ -10,7 +10,7 @@ from publics import qt_window_mgr, profile_mgr, cache_mgr, qt_image
 from publics.funcs import LoadingFlashWidget, start_background_thread, get_exception_string
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import get_user_black_info
-from subwindow import base_ui
+from publics.base_ui_elements import base_ui
 from ui import user_blacklist_setter
 
 
@@ -30,6 +30,9 @@ class SingleUserBlacklistWindow(base_ui.WindowBaseQWidget, user_blacklist_setter
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_loading_flash()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.get_black_status_ok_signal.connect(self.get_black_status_ok_slot)
         self.set_black_status_ok_signal.connect(self.set_black_status_ok_slot)

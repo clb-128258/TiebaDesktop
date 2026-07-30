@@ -7,10 +7,10 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
 
-from publics import top_toast_widget, app_logger, profile_mgr
+from publics import app_logger, profile_mgr
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.baidu_features import tieba_apis
 from publics.funcs import start_background_thread, get_exception_string
-from subwindow import base_ui
 from ui import sign
 
 if os.name == 'nt':
@@ -33,6 +33,9 @@ class SignAllDialog(base_ui.WindowBaseQDialog, sign.Ui_Dialog):
         self.lineEdit.setText(f'\"{sys.executable}\" --sign-all-forums --sign-grows')
         self.init_top_toaster()
         self.init_window_position()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.update_label_count.connect(lambda text: self.label_3.setText(text))
         self.sign_grow_ok.connect(self.show_grow_sign_msg)

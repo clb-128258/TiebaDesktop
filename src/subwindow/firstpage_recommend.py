@@ -9,11 +9,10 @@ from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 
 import publics.app_logger as logging
-from publics import request_mgr, profile_mgr, top_toast_widget
+from publics import request_mgr, profile_mgr
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, format_second, cut_string, LoadingFlashWidget, get_exception_string, \
     listWidget_get_visible_widgets, large_num_to_string, cleanup_listWidget, delete_listWidget_item
-
-from subwindow import base_ui
 
 
 class RecommendWindow(QListWidget):

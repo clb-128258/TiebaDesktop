@@ -5,10 +5,10 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget
+from publics import qt_window_mgr, request_mgr, profile_mgr
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets, \
     cleanup_listWidget, LoadingFlashWidget, get_exception_string, delete_listWidget_item
-from subwindow import base_ui
 from ui import star_list
 
 
@@ -32,6 +32,9 @@ class AgreedThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowTitle('点赞列表')
         self.resize(720, 520)
+
+        # 初始化主题
+        self.reset_theme()
 
         self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_list_info)
         self.listWidget.verticalScrollBar().setSingleStep(25)

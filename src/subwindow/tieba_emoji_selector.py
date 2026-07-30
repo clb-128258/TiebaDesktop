@@ -6,7 +6,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QTableWidgetItem, QWidgetAction
 
 from publics import profile_mgr, app_logger, funcs
-from subwindow.base_ui import WindowBaseQWidget, BaseQMenu
+from publics.base_ui_elements.base_ui import BaseQMenu, InsideWidgetBaseQWidget
 from ui import tb_emoji_selector
 
 
@@ -33,7 +33,7 @@ class EmojiItem(QTableWidgetItem):
             self._is_img_loaded = True
 
 
-class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
+class TiebaEmojiSelector(InsideWidgetBaseQWidget, tb_emoji_selector.Ui_Form):
     """贴吧黄豆表情选择器组件"""
     emoji_selector_instance = None
     emoji_selector_menu_instance = None
@@ -42,6 +42,7 @@ class TiebaEmojiSelector(WindowBaseQWidget, tb_emoji_selector.Ui_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
         self.setFixedSize(self.size())
         self.tableWidget.setIconSize(QSize(30, 30))
         self.label_2.setPixmap(

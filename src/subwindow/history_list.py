@@ -1,9 +1,9 @@
 from datetime import datetime
 
 from publics.funcs import cleanup_listWidget
-from subwindow import base_ui
 from ui import view_history, view_history_item, view_history_single_item
-from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, top_toast_widget, qt_image
+from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, qt_image
+from publics.base_ui_elements import top_toast_widget, base_ui
 
 from PyQt5.QtWidgets import QWidget, QListWidgetItem, QMessageBox, QGraphicsDropShadowEffect
 from PyQt5.QtGui import QIcon, QPixmap, QColor
@@ -23,13 +23,14 @@ def get_day_str(ts: int):
     return f"{dt.year}年{dt.month}月{dt.day}日 星期{weekIndex[dt.weekday()]}"
 
 
-class SingleHistoryItem(base_ui.WindowBaseQWidget, view_history_single_item.Ui_Form):
+class SingleHistoryItem(base_ui.InsideWidgetBaseQWidget, view_history_single_item.Ui_Form):
     history_info = {}
     setIconAsync = pyqtSignal(QPixmap)
 
     def __init__(self, parent_listwidget: QWidget, info: dict = None):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.parent_listwidget = parent_listwidget
 
@@ -101,12 +102,14 @@ class SingleHistoryItem(base_ui.WindowBaseQWidget, view_history_single_item.Ui_F
         self.adjustSize()
 
 
-class DayHistoryItem(base_ui.WindowBaseQWidget, view_history_item.Ui_Form):
+class DayHistoryItem(base_ui.InsideWidgetBaseQWidget, view_history_item.Ui_Form):
     def __init__(self, date_str: str, parent_listwidget: QWidget):
         super().__init__()
         self.setupUi(self)
-        self.label.setText(date_str)
+        self.reset_theme()
         self.init_shadow_effect()
+
+        self.label.setText(date_str)
 
         self.list_height = 0
         self.parent_listwidget = parent_listwidget
@@ -177,6 +180,7 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.widget_list = {}
         self.read_index = 0

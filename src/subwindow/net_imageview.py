@@ -8,10 +8,10 @@ from PyQt5.QtGui import QPixmap, QIcon, QDrag, QImage, QTransform, QMovie
 from PyQt5.QtWidgets import QApplication, QAction, QFileDialog
 
 import publics.app_logger as logging
-from publics import request_mgr, top_toast_widget, profile_mgr
+from publics import request_mgr, profile_mgr
+from publics.base_ui_elements import top_toast_widget, base_ui
 
-from subwindow import base_ui
-from subwindow.base_ui import BaseQMenu
+from publics.base_ui_elements.base_ui import BaseQMenu
 
 import consts
 from ui import image_viewer
@@ -38,6 +38,8 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
     def __init__(self, src):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
+
         self.src = src
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))

@@ -1,14 +1,11 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
-
 from publics import audio_stream_player, profile_mgr
 from publics.funcs import format_second
 from publics.qt_image import get_pixmap_icon_from_file
-from subwindow import base_ui
+from publics.base_ui_elements import base_ui
 from ui import thread_voice_item
 
 
-class ThreadVoiceItem(base_ui.WindowBaseQWidget, thread_voice_item.Ui_Form):
+class ThreadVoiceItem(base_ui.InsideWidgetBaseQWidget, thread_voice_item.Ui_Form):
     """嵌入在列表的语音贴播放组件"""
     source_link = ''
     length = 0
@@ -17,6 +14,8 @@ class ThreadVoiceItem(base_ui.WindowBaseQWidget, thread_voice_item.Ui_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
+
         self.play_engine = audio_stream_player.HttpMp3Player()
         self.pushButton_2.hide()
 

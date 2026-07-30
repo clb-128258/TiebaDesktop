@@ -3,12 +3,12 @@ from PyQt5.QtGui import QCursor
 
 from publics import qt_window_mgr, qt_image, profile_mgr
 from publics.funcs import open_url_in_browser, show_label_pixmap_with_animation
-from subwindow import base_ui
+from publics.base_ui_elements import base_ui
 
 from ui import agreed_item
 
 
-class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
+class AgreedThreadItem(base_ui.InsideWidgetBaseQWidget, agreed_item.Ui_Form):
     """互动列表中被点赞的内容"""
     portrait = ''
     thread_id = -1
@@ -18,6 +18,7 @@ class AgreedThreadItem(base_ui.WindowBaseQWidget, agreed_item.Ui_Form):
     def __init__(self, bduss, stoken):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.bduss = bduss
         self.stoken = stoken

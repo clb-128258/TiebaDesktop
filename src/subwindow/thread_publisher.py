@@ -11,11 +11,13 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
 
 import consts
-from publics import profile_mgr, top_toast_widget, app_logger, webview2
+from publics import profile_mgr, app_logger
+from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, get_exception_string, LoadingFlashWidget, get_dict_value_treely, \
     open_url_in_browser
 from publics.baidu_features.tieba_apis import getRecomForumList, add_thread
-from subwindow import base_ui, tieba_user_selector, tieba_emoji_selector
+from subwindow import tieba_user_selector, tieba_emoji_selector
 from subwindow.tieba_image_uploader import TiebaImageUploader
 from ui import thread_publisher
 
@@ -53,6 +55,9 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.resize(800, 600)
+
+        # 初始化主题
+        self.reset_theme()
 
         self.webview = webview2.QWebView2View()
         self.http_catcher = self.CaptchaDataGetter()
@@ -126,6 +131,9 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_elements()
         self.init_window_position()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.forumInfoLoaded.connect(self.on_forum_inited)
         self.comboBox.installEventFilter(self)

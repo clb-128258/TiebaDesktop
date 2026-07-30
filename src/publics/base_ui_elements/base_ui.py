@@ -4,7 +4,6 @@ import enum
 from ctypes import wintypes
 import yarl
 import pyperclip
-import os
 import re
 
 from PyQt5.QtCore import Qt
@@ -13,18 +12,10 @@ from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit,
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
+from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_dark_mode
 
 # 邮箱判别正则
 email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-
-# --- Windows API 常量与定义 ---
-WM_THEMECHANGED = 0x031A
-WM_SETTINGCHANGE = 0x001A
-# DWM 属性 ID
-DWMWA_USE_IMMERSIVE_DARK_MODE = 20  # Windows 11/Win10 20H1+
-DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19  # 旧版 Win10，从 1809 版本开始
-
-dwmapi = ctypes.WinDLL("dwmapi")
 
 # 标记上一次是否启用深色模式
 last_apps_dark_mode = funcs.get_system_dark_mode_status()
@@ -102,35 +93,6 @@ def create_thread_content_menu(parent_label: QLabel):
     menu.addAction(search_network)
 
     return menu
-
-
-def set_window_dark_mode(hwnd, enabled: bool):
-    """设置窗口标题栏的深色模式"""
-    is_dark = ctypes.c_int(1 if enabled else 0)
-
-    # 尝试使用新版 ID
-    res = dwmapi.DwmSetWindowAttribute(
-        hwnd,
-        DWMWA_USE_IMMERSIVE_DARK_MODE,
-        ctypes.byref(is_dark),
-        ctypes.sizeof(is_dark)
-    )
-
-    # 如果失败，尝试旧版 ID
-    if res != 0:
-        dwmapi.DwmSetWindowAttribute(
-            hwnd,
-            DWMWA_USE_IMMERSIVE_DARK_MODE_OLD,
-            ctypes.byref(is_dark),
-            ctypes.sizeof(is_dark)
-        )
-
-
-def set_widget_dark_mode(widget: QWidget):
-    """为 Qt 窗口设置标题栏颜色"""
-    if os.name == 'nt' and widget.isWindow():
-        is_dark = profile_mgr.get_theme_policy() == 2
-        set_window_dark_mode(int(widget.winId()), is_dark)
 
 
 def update_placeholder_color(parent_widget, color_hex="#808080"):
@@ -244,17 +206,10 @@ class BaseQMenu(QMenu):
 
 
 class WindowBaseQWidget(QWidget):
-    """所有 独立窗口/嵌入组件 引用的 QWidget 父类"""
+    """所有独立窗口引用的 QWidget 父类"""
 
     def __init__(self):
         super().__init__()
-        self.isWindowShowed = False
-
-    def showEvent(self, a0):
-        a0.accept()
-        if not self.isWindowShowed:
-            self.isWindowShowed = True
-            self.reset_theme()
 
     def nativeEvent(self, eventType, message):
         is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
@@ -276,18 +231,36 @@ class WindowBaseQWidget(QWidget):
         self.set_theme_qss()
 
 
+class InsideWidgetBaseQWidget(QWidget):
+    """所有嵌入组件引用的 QWidget 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
+        return super().nativeEvent(eventType, message)
+
+    def set_theme_qss(self):
+        """载入标准样式主题"""
+        set_theme_qss_as_cfg(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
+
+
 class WindowBaseQDialog(QDialog):
     """所有独立模态窗口引用的 QDialog 父类"""
 
     def __init__(self):
         super().__init__()
-        self.isWindowShowed = False
-
-    def showEvent(self, a0):
-        a0.accept()
-        if not self.isWindowShowed:
-            self.isWindowShowed = True
-            self.reset_theme()
 
     def nativeEvent(self, eventType, message):
         is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)

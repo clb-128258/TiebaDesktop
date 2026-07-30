@@ -4,14 +4,14 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QMessageBox
 
-from publics import qt_window_mgr, qt_image, top_toast_widget
+from publics import qt_window_mgr, qt_image
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, show_label_pixmap_with_animation
 from publics.baidu_features.tieba_apis import sign_forum
-from subwindow import base_ui
 from ui import ba_item
 
 
-class ForumItem(base_ui.WindowBaseQWidget, ba_item.Ui_Form):
+class ForumItem(base_ui.InsideWidgetBaseQWidget, ba_item.Ui_Form):
     """列表内嵌入的吧组件"""
     signok = pyqtSignal(tuple)
     load_by_callback = False
@@ -20,6 +20,8 @@ class ForumItem(base_ui.WindowBaseQWidget, ba_item.Ui_Form):
     def __init__(self, fid, issign, bduss, stoken, fname, toast_widget=None):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
+
         self.forum_id = fid
         self.is_sign = issign
         self.bduss = bduss

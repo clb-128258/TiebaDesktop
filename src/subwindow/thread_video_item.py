@@ -5,8 +5,9 @@ from PyQt5.QtWidgets import QFileDialog
 import consts
 from publics.funcs import start_background_thread, http_downloader, format_second, large_num_to_string, \
     open_url_in_browser
-from publics import qt_image, webview2, profile_mgr, funcs
-from subwindow import base_ui
+from publics import qt_image, profile_mgr, funcs
+from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import base_ui
 from ui import thread_video_item
 import base64
 import os
@@ -65,7 +66,7 @@ class VideoWebView(webview2.QWebView2View):
         self.show()
 
 
-class ThreadVideoItem(base_ui.WindowBaseQWidget, thread_video_item.Ui_Form):
+class ThreadVideoItem(base_ui.InsideWidgetBaseQWidget, thread_video_item.Ui_Form):
     """嵌入在列表的视频贴入口组件"""
     source_link = ''
     cover_link = ''
@@ -81,6 +82,7 @@ class ThreadVideoItem(base_ui.WindowBaseQWidget, thread_video_item.Ui_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.toolButton_2.setIcon(QIcon(f'ui/icon_white/play_arrow.png'))
         self.toolButton.setIcon(QIcon(f'ui/icon_white/download.png'))

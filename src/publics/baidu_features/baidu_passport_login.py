@@ -14,12 +14,13 @@ from PyQt5.QtWidgets import QMessageBox
 
 import consts
 
-from publics import qt_image, profile_mgr, request_mgr, account_mgr, app_logger, webview2
+from publics import qt_image, profile_mgr, request_mgr, account_mgr, app_logger
+from publics.base_ui_elements.windows_features import webview2
 from publics.app_logger import log_exception, log_INFO
 from publics.funcs import LoadingFlashWidget, start_background_thread, get_exception_string, get_dict_value_treely, \
     save_json
 
-from subwindow import base_ui
+from publics.base_ui_elements import base_ui
 from ui import qr_login, login_by_bduss
 
 
@@ -46,6 +47,10 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
         self.loading_widget = LoadingFlashWidget(caption='二维码加载中...')
         self.loading_widget.cover_widget(self.label_3)
         self.loading_widget.hide()
+
+        # 初始化主题
+        self.reset_theme()
+
         self.qr_code_image = qt_image.MultipleImage()
         self.qr_code_image.currentPixmapChanged.connect(self.label_3.setPixmap)
         self.qr_code_image.imageLoadSucceed.connect(lambda: self.on_qrimg_loaded(True))
@@ -60,6 +65,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
 
     def reset_theme(self):
         super().reset_theme()
+        self.loading_widget.reset_theme()
         self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/refresh.png'))
 
     def closeEvent(self, a0):
@@ -348,6 +354,7 @@ class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
@@ -404,6 +411,9 @@ class LoginWebView(base_ui.WindowBaseQDialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.closeSignal.connect(self.close)
         self.init_flash_widget()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.webview = webview2.QWebView2View()
         self.http_catcher = self.LoginRewriter()

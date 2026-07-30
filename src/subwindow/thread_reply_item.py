@@ -8,12 +8,12 @@ from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QAction
 
 from typing import Union
 
-from publics import qt_window_mgr, profile_mgr, qt_image, account_mgr, app_logger, top_toast_widget
+from publics import qt_window_mgr, profile_mgr, qt_image, account_mgr, app_logger
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string, \
     show_label_pixmap_with_animation
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import agree_thread_or_post, OpAgreeObjectType, store_thread
-from subwindow import base_ui
 
 from ui import comment_view
 
@@ -40,7 +40,7 @@ def find_first_reply_window(post_id, show_thread_button) -> bool:
     return False
 
 
-class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
+class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
     """嵌入在列表里的回复贴内容"""
     height_count = 0
     c_count = -1
@@ -67,6 +67,7 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
     def __init__(self, bduss, stoken):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.bduss = bduss
         self.stoken = stoken

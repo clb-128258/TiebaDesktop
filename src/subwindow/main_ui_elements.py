@@ -19,7 +19,9 @@ from PyQt5.QtWidgets import (QSystemTrayIcon, QAction, QMessageBox, QWidgetActio
 import consts
 
 from publics import (qt_window_mgr, profile_mgr, cache_mgr, qt_image,
-                     top_toast_widget, webview2, account_mgr, app_logger, request_mgr)
+                     account_mgr, app_logger, request_mgr)
+from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.baidu_features.baidu_passport_login import QRLoginDialog, LoginWebView, SeniorLoginDialog
 from publics.funcs import (save_json, load_json, start_background_thread,
@@ -27,7 +29,6 @@ from publics.funcs import (save_json, load_json, start_background_thread,
                            filesize_tostr, open_url_in_browser, LoadingFlashWidget)
 from publics.tb_syncer import UnreadMessageType, ClipboardSyncer, TiebaMsgSyncer
 
-from subwindow import base_ui
 from subwindow.agree_thread_list import AgreedThreadsList
 from subwindow.firstpage_recommend import RecommendWindow
 from subwindow.follow_forum_list import FollowForumList
@@ -196,6 +197,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.init_top_toaster()
         self.init_load_animation()
         self.init_hover_buttons()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.set_debug_info()
         self.get_logon_accounts()

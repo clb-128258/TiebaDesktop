@@ -1,21 +1,22 @@
 """贴子内的投票内容"""
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QListWidgetItem
-from publics import profile_mgr, request_mgr, top_toast_widget, app_logger, funcs
+from publics import profile_mgr, request_mgr, app_logger, funcs
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import get_exception_string
 from publics.qt_image import get_pixmap_icon_from_file
-from subwindow import base_ui
 
 from ui import thread_vote_info, thread_vote_option_item
 
 
-class VoteItem(base_ui.WindowBaseQWidget, thread_vote_option_item.Ui_Form):
+class VoteItem(base_ui.InsideWidgetBaseQWidget, thread_vote_option_item.Ui_Form):
     voteSubmitted = pyqtSignal(int)
 
     def __init__(self, vop_id: int):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
+
         self.vote_option_id = vop_id
 
         self.pushButton.clicked.connect(lambda: self.voteSubmitted.emit(self.vote_option_id))
@@ -35,13 +36,15 @@ class VoteItem(base_ui.WindowBaseQWidget, thread_vote_option_item.Ui_Form):
         self.label.show()
 
 
-class ThreadVoteItem(base_ui.WindowBaseQWidget, thread_vote_info.Ui_Form):
+class ThreadVoteItem(base_ui.InsideWidgetBaseQWidget, thread_vote_info.Ui_Form):
     msgPopped = pyqtSignal(top_toast_widget.ToastMessage)
     voteok = pyqtSignal(dict)
 
     def __init__(self, is_multi: bool, thread_id: int, forum_id: int):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
+
         self.total_height = 0
         self.is_multi_vote = is_multi
         self.thread_id = thread_id

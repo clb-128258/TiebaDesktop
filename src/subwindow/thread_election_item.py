@@ -1,13 +1,12 @@
 """贴子内的吧主竞选信息"""
 import time
 
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QTimer
 
 from publics import profile_mgr
 from publics.qt_image import get_pixmap_icon_from_file
 from ui import manager_election_item
-from subwindow import base_ui
+from publics.base_ui_elements import base_ui
 
 
 def get_day_during_string(during):
@@ -22,10 +21,11 @@ def get_day_during_string(during):
     return during_string[1:]
 
 
-class ThreadManagerElectionItem(base_ui.WindowBaseQWidget, manager_election_item.Ui_Form):
+class ThreadManagerElectionItem(base_ui.InsideWidgetBaseQWidget, manager_election_item.Ui_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.can_vote = False
         self.vote_start_time = -1

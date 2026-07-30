@@ -7,14 +7,14 @@ from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, cache_mgr, qt_image, top_toast_widget
+from publics import profile_mgr, qt_window_mgr, cache_mgr, qt_image
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import open_url_in_browser, LoadingFlashWidget, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
     cleanup_listWidget, show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import fetch_frs_bottom, sign_forum
 
-from subwindow import base_ui
 from ui import ba_head
 
 
@@ -31,6 +31,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
     def __init__(self, bduss, stoken, fid):
         super().__init__()
         self.setupUi(self)
+
         self.bduss = bduss
         self.stoken = stoken
         self.forum_id = fid
@@ -67,6 +68,9 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         icon_size = QSize(23, 23)
         for b in self.flat_buttons:
             b.setIconSize(icon_size)
+
+        # 初始化主题
+        self.reset_theme()
 
         self.tabWidget.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
 

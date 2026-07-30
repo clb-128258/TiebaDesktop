@@ -2,7 +2,7 @@
 程序入口点
 """
 
-from publics import webview2
+from publics.base_ui_elements.windows_features import webview2
 from publics.baidu_features import tieba_apis
 from publics import proxytool
 from publics.winrt_url_share import winrt_share

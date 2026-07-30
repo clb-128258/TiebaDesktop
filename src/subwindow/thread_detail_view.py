@@ -10,7 +10,8 @@ from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor
 from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
-from publics import profile_mgr, qt_window_mgr, top_toast_widget, qt_image
+from publics import profile_mgr, qt_window_mgr, qt_image
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.qt_image import get_pixmap_icon_from_file
 from publics.winrt_url_share import winrt_share
 from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
@@ -21,7 +22,7 @@ from publics.baidu_features.tieba_apis import add_post, agree_thread_or_post, Op
     cancel_store_thread, \
     pb_page
 
-from subwindow import base_ui, tieba_emoji_selector, tieba_user_selector, thread_publisher
+from subwindow import tieba_emoji_selector, tieba_user_selector, thread_publisher
 from subwindow.tieba_image_uploader import TiebaImageUploader
 
 from ui import tie_detail_view
@@ -114,6 +115,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def __init__(self, bduss, stoken, tid, is_treasure=False, is_top=False, preview_info=None, last_post_id=0):
         super().__init__()
         self.setupUi(self)
+
         self.bduss = bduss
         self.stoken = stoken
         self.thread_id = tid
@@ -153,6 +155,9 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.init_narrow_switch_button()
         self.init_load_flash()
         self.init_top_toaster()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.label_6.linkActivated.connect(self.handle_link_event)
         self.label_6.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -939,8 +944,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.height_count_replies += widget.height()
         self.listWidget_4.setMinimumHeight(self.height_count_replies)
 
-        if widget.minimumWidth() > self.width_count_replies:
-            self.width_count_replies = widget.minimumWidth()
+        if widget.width() > self.width_count_replies:
+            self.width_count_replies = widget.width()
             self.listWidget_4.setMinimumWidth(self.width_count_replies)
 
     def get_sub_thread_async(self):

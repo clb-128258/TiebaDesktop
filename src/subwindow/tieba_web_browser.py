@@ -9,10 +9,11 @@ from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
 from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QAction, QMessageBox
 
 from consts import datapath, APP_VERSION_STR
-from publics import webview2, profile_mgr, qt_window_mgr, cache_mgr, top_toast_widget, app_logger
+from publics import profile_mgr, qt_window_mgr, cache_mgr, app_logger
+from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread, get_dict_value_treely
 from publics.winrt_url_share import winrt_share
-from subwindow import base_ui
 
 from ui import tb_browser
 
@@ -305,6 +306,9 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.tabWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tabWidget.customContextMenuRequested.connect(self.onMenuShow)
+
+        # 初始化主题
+        self.reset_theme()
 
         font_family = ["Microsoft YaHei",
                        "MS Shell Dlg 2",

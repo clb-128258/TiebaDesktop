@@ -6,12 +6,12 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, profile_mgr, top_toast_widget
+from publics import qt_window_mgr, profile_mgr
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.baidu_features import tieba_apis
 from publics.funcs import start_background_thread, listWidget_get_visible_widgets, cleanup_listWidget, \
     LoadingFlashWidget, get_exception_string, timestamp_to_string
 import publics.app_logger as logging
-from subwindow import base_ui
 from ui import star_list
 
 
@@ -46,6 +46,9 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint | Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_ui_elements()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.listWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_list_info)
         self.listWidget.verticalScrollBar().setSingleStep(25)

@@ -10,7 +10,7 @@ from publics.funcs import start_background_thread, http_downloader, open_url_in_
     show_label_pixmap_with_animation
 from publics.baidu_features import online_graph
 from publics.qt_image import ImageType
-from subwindow import base_ui
+from publics.base_ui_elements import base_ui
 
 
 class ThreadPictureLabel(QLabel):

@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import qApp, QMenu
 
 from publics import request_mgr, profile_mgr, funcs, qt_window_mgr, qt_image, app_logger
-from subwindow import base_ui
+from publics.base_ui_elements import base_ui
 from subwindow.history_list import HistoryViewWindow
 from subwindow.star_thread_list import StaredThreadsList
 from subwindow.user_home_page import UserHomeWindow
@@ -15,7 +15,7 @@ from subwindow.user_home_page import UserHomeWindow
 from ui import mw_popup
 
 
-class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
+class MainPopupMenu(base_ui.InsideWidgetBaseQWidget, mw_popup.Ui_Form):
     """主窗口右上角菜单中个人信息条目"""
     infoLoaded = pyqtSignal(dict)
     followForumClicked = pyqtSignal()
@@ -25,6 +25,7 @@ class MainPopupMenu(base_ui.WindowBaseQWidget, mw_popup.Ui_Form):
     def __init__(self, parent_menu: QMenu):
         super().__init__()
         self.setupUi(self)
+        self.reset_theme()
 
         self.parent_menu = parent_menu
         self.label_16.setPixmap(

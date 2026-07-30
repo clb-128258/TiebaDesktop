@@ -10,13 +10,13 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
     QTableWidgetItem
 
-from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image, top_toast_widget
+from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import LoadingFlashWidget, start_background_thread, http_downloader, ExtTreeWidgetItem, \
     large_num_to_string, get_exception_string, show_label_pixmap_with_animation
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import get_forum_level_info, sign_forum
 
-from subwindow import base_ui
 from ui import forum_detail
 
 
@@ -33,6 +33,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
     def __init__(self, bduss, stoken, forum_id, default_index=0):
         super().__init__()
         self.setupUi(self)
+
         self.bduss = bduss
         self.stoken = stoken
         self.forum_id = forum_id
@@ -42,6 +43,9 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         self.tableWidget.verticalHeader().setVisible(False)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_ui_elements()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.listWidget_2.currentRowChanged.connect(lambda row: self.stackedWidget.setCurrentIndex(row))
         self.set_main_info_signal.connect(self.ui_set_main_info)

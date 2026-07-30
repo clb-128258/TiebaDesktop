@@ -3,7 +3,7 @@ from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtWidgets import QWidgetAction
 
 from publics import profile_mgr, funcs, app_logger, request_mgr
-from subwindow.base_ui import WindowBaseQWidget, BaseQMenu
+from publics.base_ui_elements.base_ui import BaseQMenu, InsideWidgetBaseQWidget
 from ui import tb_user_selector
 
 import aiotieba
@@ -64,7 +64,7 @@ def get_user_list():
     return start_async()
 
 
-class TiebaUserSelector(WindowBaseQWidget, tb_user_selector.Ui_Form):
+class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
     """在 QMenu 中弹出的用户选择器"""
 
     add_user = pyqtSignal(object)  # emit Follow object or dict-like
@@ -79,6 +79,7 @@ class TiebaUserSelector(WindowBaseQWidget, tb_user_selector.Ui_Form):
 
         self.loading_widget = funcs.LoadingFlashWidget()
         self.loading_widget.cover_widget(self.listWidget)
+        self.reset_theme()
 
         # 文本输入插值 QTimer
         self.search_input_interpolation_timer = QTimer(self)

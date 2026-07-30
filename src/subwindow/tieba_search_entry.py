@@ -4,10 +4,10 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, profile_mgr, top_toast_widget, app_logger
+from publics import qt_window_mgr, request_mgr, profile_mgr, app_logger
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, delete_listWidget_item
-from subwindow import base_ui
 
 from ui import forum_search
 
@@ -32,6 +32,9 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                      'thread_single_forum': {'loading': False, 'page': 1},
                      'reply_single_forum': {'loading': False, 'page': 1}}
         self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
+
+        # 初始化主题
+        self.reset_theme()
 
         for i in self.listwidgets:
             i.verticalScrollBar().setSingleStep(20)

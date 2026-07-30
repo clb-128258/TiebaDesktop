@@ -6,16 +6,16 @@ from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import request_mgr, top_toast_widget, profile_mgr
+from publics import request_mgr, profile_mgr
+from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, timestamp_to_string, listWidget_get_visible_widgets, \
     get_exception_string, cleanup_listWidget, delete_listWidget_item
 import publics.app_logger as logging
-from subwindow import base_ui
 
 from ui import reply_at_me_page
 
 
-class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
+class UserInteractionsList(base_ui.InsideWidgetBaseQWidget, reply_at_me_page.Ui_Form):
     """点赞、回复和@当前用户的列表"""
     add_post_data = pyqtSignal(dict)
     error_happened = pyqtSignal(top_toast_widget.ToastMessage)
@@ -40,6 +40,7 @@ class UserInteractionsList(base_ui.WindowBaseQWidget, reply_at_me_page.Ui_Form):
         for lw in self.listwidgets:
             lw.verticalScrollBar().setSingleStep(25)
         self.label.hide()
+        self.reset_theme()
 
         self.listWidget.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('reply'))
         self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('at'))

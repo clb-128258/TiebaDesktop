@@ -755,7 +755,7 @@ class UserItem(QWidget, user_item.Ui_Form):
         self.reset_theme()
 
     def reset_theme(self):
-        from subwindow.base_ui import set_theme_qss_as_cfg
+        from publics.base_ui_elements.base_ui import set_theme_qss_as_cfg
 
         set_theme_qss_as_cfg(self)
         self.toolButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/content_copy.png'))

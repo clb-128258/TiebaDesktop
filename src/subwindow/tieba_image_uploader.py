@@ -8,11 +8,11 @@ import time
 
 from PyQt5.QtCore import Qt, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache, QMovie, QImage
-from PyQt5.QtWidgets import QFileDialog, QApplication, QMenu, QAction, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QApplication, QAction, QMessageBox
 
-from publics import request_mgr, top_toast_widget, funcs, profile_mgr, app_logger, qt_image
-from subwindow import base_ui
-from subwindow.base_ui import BaseQMenu
+from publics import request_mgr, funcs, profile_mgr, app_logger, qt_image
+from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.base_ui import BaseQMenu
 
 import consts
 from ui import tb_image_uploader
@@ -114,6 +114,9 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
 
         self.init_ui_elements()
         self.init_add_image_menu()
+
+        # 初始化主题
+        self.reset_theme()
 
         self.imageLoaded.connect(self._on_image_loaded)
         self.pushButton_10.clicked.connect(lambda: self.delete_image())

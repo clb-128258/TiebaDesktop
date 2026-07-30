@@ -1,4 +1,6 @@
-"""webview2模块，实现了webview2与pyqt的绑定"""
+"""
+Windows 平台上 WebView2 的实现
+"""
 # 先引入跨平台库
 import os
 import typing
@@ -262,7 +264,7 @@ class WebViewProfile:
     """
 
     def __init__(self,
-                 data_folder: str = os.getenv("TEMP", '.') + "/TiebaDesktopWebViewCache",
+                 data_folder: str = os.getenv("TEMP", '../..') + "/TiebaDesktopWebViewCache",
                  private_mode=False,
                  user_agent: str = None,
                  enable_error_page: bool = True,
