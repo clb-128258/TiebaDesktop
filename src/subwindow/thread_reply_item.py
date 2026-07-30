@@ -1,9 +1,10 @@
 import asyncio
 import aiotieba
+import pyperclip
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QSize, QPoint
 from PyQt5.QtGui import QPixmap, QCursor, QIcon
-from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QAction, QListWidget, QWidget
+from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QAction
 
 from typing import Union
 
@@ -380,6 +381,16 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
 
         menu = base_ui.BaseQMenu()
 
+        copy_link = QAction('复制链接', self)
+        copy_link.triggered.connect(lambda: self.do_action_async("copy_post_link"))
+        menu.addAction(copy_link)
+
+        open_in_browser = QAction('浏览器打开', self)
+        open_in_browser.triggered.connect(self.open_post_in_browser)
+        menu.addAction(open_in_browser)
+
+        menu.addSeparator()
+
         store_thread = QAction('收藏到此楼', self)
         store_thread.triggered.connect(lambda: self.do_action_async("store_thread"))
         menu.addAction(store_thread)
@@ -429,6 +440,11 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
                         else:
                             turn_data['success'] = False
                             turn_data['text'] = result['error_msg']
+                    elif action_type == 'copy_post_link':
+                        link = f'https://tieba.baidu.com/p/{self.thread_id}?pid={self.post_id}'
+                        pyperclip.copy(link)
+                        turn_data['success'] = True
+                        turn_data['text'] = '复制成功'
             except Exception as e:
                 app_logger.log_exception(e)
                 turn_data['success'] = False
@@ -449,3 +465,7 @@ class ReplyItem(base_ui.WindowBaseQWidget, comment_view.Ui_Form):
             asyncio.run(doaction())
 
         start_async()
+
+    def open_post_in_browser(self):
+        link = f'https://tieba.baidu.com/p/{self.thread_id}?pid={self.post_id}'
+        open_url_in_browser(link)
