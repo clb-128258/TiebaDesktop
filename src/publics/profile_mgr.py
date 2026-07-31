@@ -47,7 +47,14 @@ local_config_model = {
         "transparent_bg_color": False
     },
     "theme_settings": {
-        "bright_dark_policy": 0
+        "bright_dark_policy": 0,
+        "background": {
+            "dwm_bg": {"enable": True, "mode": 0},
+            "common_bg": {
+                "window_opacity": 100,
+                "bg_picture": {"enable": False, "image_path": "", "image_opacity": 100}
+            }
+        }
     },
     "sign_settings": {
         "use_widget_sign_flag": False
@@ -106,6 +113,11 @@ def get_theme_policy_string():
         tuple[str,str]: 主题背景方案, 主题文字方案
     """
     return ('black', 'white') if get_theme_policy() == 2 else ('white', 'black')
+
+
+def get_theme_bg_color_rgb():
+    """获取当前主题方案的背景颜色 RGB 值"""
+    return consts.rgb_dark_bg_color if get_theme_policy() == 2 else consts.rgb_bright_bg_color
 
 
 def get_theme_color_string():

@@ -9,16 +9,19 @@ import re
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
     QTextEdit, QPlainTextEdit, QToolButton, QGraphicsDropShadowEffect
-from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon
+from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon, QPainter, QPixmap
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
-from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_dark_mode
+from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_background_mode
 
 # 邮箱判别正则
 email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 # 标记上一次是否启用深色模式
 last_apps_dark_mode = funcs.get_system_dark_mode_status()
+
+background_pixmap = None
+background_pixmap_hex = ''
 
 
 def create_thread_content_menu(parent_label: QLabel):
@@ -123,6 +126,22 @@ def set_theme_qss_as_cfg(widget, extended_qss=''):
 
         return qss
 
+    def get_bg_color_qss():
+        # 处理纯色背景
+        bg_config = funcs.get_dict_value_treely(profile_mgr.local_config,
+                                                ['theme_settings', 'background'],
+                                                profile_mgr.local_config_model['theme_settings']['background'])
+
+        if bg_config['dwm_bg']['enable']:
+            return ''
+        else:
+            bg_color = profile_mgr.get_theme_color_string()
+            bg_qss = (f'QMainWindow {{background-color: {bg_color};}}'
+                      f'QDialog {{background-color: {bg_color};}}'
+                      f'QWidget#Form {{background-color: {bg_color};}}')
+
+            return bg_qss
+
     qss_list = []
     policy = profile_mgr.get_theme_policy()
 
@@ -131,6 +150,7 @@ def set_theme_qss_as_cfg(widget, extended_qss=''):
     elif policy == 2:
         qss_list.append(replace_color_flags(profile_mgr.theme_qss['dark']))
     qss_list.append(replace_color_flags(profile_mgr.theme_qss['common']))
+    qss_list.append(get_bg_color_qss())
 
     widget.setStyleSheet('\n'.join(qss_list) + extended_qss)
     update_placeholder_color(widget, '#666666' if policy == 2 else '#abb2bf')  # 为输入框专门设置占位符颜色
@@ -175,111 +195,74 @@ def handle_native_event(widget, refreshThemeFunc, eventType, message):
     return False
 
 
+def init_bg_pixmap():
+    global background_pixmap, background_pixmap_hex
+
+    bg_config = funcs.get_dict_value_treely(profile_mgr.local_config,
+                                            ['theme_settings', 'background'],
+                                            profile_mgr.local_config_model['theme_settings']['background'])
+    enable = bg_config['common_bg']['bg_picture']['enable'] and not bg_config['dwm_bg']['enable']
+    file_path = bg_config['common_bg']['bg_picture']['image_path']
+    image_opacity = bg_config['common_bg']['bg_picture']['image_opacity']
+    image_hex = f'{file_path}+{image_opacity}'
+
+    position = int(255 * (image_opacity / 100))
+
+    if enable and image_hex != background_pixmap_hex:
+        background_pixmap_hex = file_path
+        del background_pixmap
+
+        original_pixmap = QPixmap(background_pixmap_hex)
+        if not original_pixmap.isNull():
+            background_pixmap = QPixmap(original_pixmap.size())
+            background_pixmap.fill(Qt.transparent)
+
+            p1 = QPainter(background_pixmap)
+            p1.setCompositionMode(QPainter.CompositionMode_Source)
+            p1.drawPixmap(0, 0, original_pixmap)
+            p1.setCompositionMode(QPainter.CompositionMode_DestinationIn)
+            p1.fillRect(background_pixmap.rect(), QColor(0, 0, 0, position))
+            p1.end()
+        else:
+            del original_pixmap
+            background_pixmap = None
+            background_pixmap_hex = ''
+    elif not enable:
+        del background_pixmap
+        background_pixmap = None
+        background_pixmap_hex = ''
+
+
+def draw_bg_on_painter(widget: QWidget):
+    if background_pixmap is None or background_pixmap.isNull():
+        return
+
+    painter = QPainter(widget)
+    # 开启平滑抗锯齿缩放
+    painter.setRenderHint(QPainter.SmoothPixmapTransform)
+
+    # 1. 将图片按 "KeepAspectRatioByExpanding" 缩放
+    # 这会保证图片刚好覆盖整个 widget.size()，同时保持原图宽高比（多出的部分会被自动裁剪）
+    scaled_pixmap = background_pixmap.scaled(
+        widget.size(),
+        Qt.KeepAspectRatioByExpanding,
+        Qt.SmoothTransformation
+    )
+
+    # 2. 计算居中绘制的偏移量（把多余裁剪的部分均匀分配在四周）
+    x = (widget.width() - scaled_pixmap.width()) // 2
+    y = (widget.height() - scaled_pixmap.height()) // 2
+
+    # 3. 绘制图片（超过 widget 区域的部分会被 Qt 自动剪裁）
+    painter.drawPixmap(x, y, scaled_pixmap)
+
+
 class NarrowButtonStatus(enum.Enum):
     ArrowLeft = enum.auto()
     ArrowRight = enum.auto()
     Refresh = enum.auto()
     Add = enum.auto()
     Settings = enum.auto()
-
-
-class BaseQMenu(QMenu):
-    """所有上下文菜单引用的 QMenu 父类"""
-
-    def __init__(self, parent=None):
-        super().__init__()
-        self.setWindowFlags(self.windowFlags() | Qt.NoDropShadowWindowHint | Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.set_theme_qss()
-
-    def set_theme_qss(self):
-        """载入标准样式主题"""
-        set_theme_qss_as_cfg(self)
-
-    def add_extend_qss(self, qss):
-        """在标准主题上添加自定义样式表"""
-        self.setStyleSheet(self.styleSheet() + '\n' + qss)
-
-    def reset_theme(self):
-        """动态重载主题/使用自定义主题 时应当调用此方法"""
-        self.set_theme_qss()
-
-
-class WindowBaseQWidget(QWidget):
-    """所有独立窗口引用的 QWidget 父类"""
-
-    def __init__(self):
-        super().__init__()
-
-    def nativeEvent(self, eventType, message):
-        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
-        if is_changed and self not in qt_window_mgr.distributed_window:
-            self.reset_theme()
-        return super().nativeEvent(eventType, message)
-
-    def set_theme_qss(self):
-        """载入标准样式主题，同时为窗口标题栏设置颜色"""
-        set_theme_qss_as_cfg(self)
-        set_widget_dark_mode(self)
-
-    def add_extend_qss(self, qss):
-        """在标准主题上添加自定义样式表"""
-        self.setStyleSheet(self.styleSheet() + '\n' + qss)
-
-    def reset_theme(self):
-        """动态重载主题/使用自定义主题 时应当调用此方法"""
-        self.set_theme_qss()
-
-
-class InsideWidgetBaseQWidget(QWidget):
-    """所有嵌入组件引用的 QWidget 父类"""
-
-    def __init__(self):
-        super().__init__()
-
-    def nativeEvent(self, eventType, message):
-        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
-        if is_changed and self not in qt_window_mgr.distributed_window:
-            self.reset_theme()
-        return super().nativeEvent(eventType, message)
-
-    def set_theme_qss(self):
-        """载入标准样式主题"""
-        set_theme_qss_as_cfg(self)
-
-    def add_extend_qss(self, qss):
-        """在标准主题上添加自定义样式表"""
-        self.setStyleSheet(self.styleSheet() + '\n' + qss)
-
-    def reset_theme(self):
-        """动态重载主题/使用自定义主题 时应当调用此方法"""
-        self.set_theme_qss()
-
-
-class WindowBaseQDialog(QDialog):
-    """所有独立模态窗口引用的 QDialog 父类"""
-
-    def __init__(self):
-        super().__init__()
-
-    def nativeEvent(self, eventType, message):
-        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
-        if is_changed and self not in qt_window_mgr.distributed_window:
-            self.reset_theme()
-        return super().nativeEvent(eventType, message)
-
-    def set_theme_qss(self):
-        """载入标准样式主题，同时为窗口标题栏设置颜色"""
-        set_theme_qss_as_cfg(self)
-        set_widget_dark_mode(self)
-
-    def add_extend_qss(self, qss):
-        """在标准主题上添加自定义样式表"""
-        self.setStyleSheet(self.styleSheet() + '\n' + qss)
-
-    def reset_theme(self):
-        """动态重载主题/使用自定义主题 时应当调用此方法"""
-        self.set_theme_qss()
 
 
 class FloatingButton(QToolButton):
@@ -359,3 +342,110 @@ class FloatingButton(QToolButton):
             x = move_value
             y = self.parent().height() - self.moveUpCount * (self.height() + move_value)
         self.move(x, y)
+
+
+class BaseQMenu(QMenu):
+    """所有上下文菜单引用的 QMenu 父类"""
+
+    def __init__(self, parent=None):
+        super().__init__()
+        self.setWindowFlags(self.windowFlags() | Qt.NoDropShadowWindowHint | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.set_theme_qss()
+
+    def set_theme_qss(self):
+        """载入标准样式主题"""
+        set_theme_qss_as_cfg(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
+
+
+class WindowBaseQWidget(QWidget):
+    """所有独立窗口引用的 QWidget 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
+        return super().nativeEvent(eventType, message)
+
+    def paintEvent(self, event):
+        draw_bg_on_painter(self)
+        super().paintEvent(event)
+
+    def set_theme_qss(self):
+        """载入标准样式主题，同时为窗口背景设置颜色"""
+        set_theme_qss_as_cfg(self)
+        set_widget_background_mode(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
+
+
+class InsideWidgetBaseQWidget(QWidget):
+    """所有嵌入组件引用的 QWidget 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
+        return super().nativeEvent(eventType, message)
+
+    def set_theme_qss(self):
+        """载入标准样式主题"""
+        set_theme_qss_as_cfg(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
+
+
+class WindowBaseQDialog(QDialog):
+    """所有独立模态窗口引用的 QDialog 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
+        return super().nativeEvent(eventType, message)
+
+    def paintEvent(self, event):
+        draw_bg_on_painter(self)
+        super().paintEvent(event)
+
+    def set_theme_qss(self):
+        """载入标准样式主题，同时为窗口背景设置颜色"""
+        set_theme_qss_as_cfg(self)
+        set_widget_background_mode(self)
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()

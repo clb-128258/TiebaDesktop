@@ -77,7 +77,9 @@ datapath = get_default_datapath()
 
 # 主题色调信息
 qss_dark_bg_color = 'rgb(20, 20, 20)'
+rgb_dark_bg_color = (20, 20, 20)
 qss_dark_font_color = 'rgb(245, 245, 245)'
 
 qss_bright_bg_color = 'white'
+rgb_bright_bg_color = (255, 255, 255)
 qss_bright_font_color = 'black'

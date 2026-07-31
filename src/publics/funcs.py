@@ -15,8 +15,8 @@ import aiohttp.client_exceptions
 import pyperclip
 import requests
 
-from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer, QPropertyAnimation, QEasingCurve
-from PyQt5.QtGui import QMovie, QIcon, QPixmap
+from PyQt5.QtCore import pyqtSignal, Qt, QByteArray, QSize, QEvent, QTimer, QPropertyAnimation, QEasingCurve, QRect
+from PyQt5.QtGui import QMovie, QIcon, QPixmap, QPainter, QColor
 from PyQt5.QtWidgets import QWidget, QListWidgetItem, QTreeWidgetItem, QTableWidget, QListWidget, QLabel, \
     QGraphicsOpacityEffect
 
@@ -633,22 +633,41 @@ def show_label_pixmap_with_animation(label: QLabel, pixmap: QPixmap):
 class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
     """覆盖在其它widget上层的加载动画组件"""
 
+    need_clean_bottom_rect = True
+
     def __init__(self, show_caption=True, caption=''):
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)  # 始终置顶
         self.reset_theme()
-        self.setAttribute(Qt.WA_TranslucentBackground, False)  # 背景不透明
+        self.setAttribute(Qt.WA_TranslucentBackground, True)  # 背景透明
         self.set_caption(show_caption, caption)
 
         self.init_load_flash()
 
+    def paintEvent(self, event):
+        if self.need_clean_bottom_rect:
+            painter = QPainter(self)
+            # 1. 设置混合模式为 Clear (擦除模式)
+            painter.setCompositionMode(QPainter.CompositionMode_Clear)
+            # 2. 填充整个 c 组件的区域，使其 Alpha 变为 0
+            painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
+            # 3. 恢复正常绘制模式 (如果 c 里面还要画文字或图标)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+
     def reset_theme(self):
         color = profile_mgr.get_theme_color_string()
         color_reversed = profile_mgr.get_theme_font_color_string()
+
+        # 处理纯色背景
+        bg_config = get_dict_value_treely(profile_mgr.local_config,
+                                          ['theme_settings', 'background'],
+                                          profile_mgr.local_config_model['theme_settings']['background'])
+        final_bg_color = color if not bg_config['dwm_bg']['enable'] else 'transparent'
+
         self.setStyleSheet(f"""
             QWidget{{font-family: "微软雅黑";}}
-            QWidget{{background-color:{color};color:{color};}}
+            QWidget{{background-color: {final_bg_color}; color:{color};}}
         """)
         self.label_17.setStyleSheet(f'QLabel{{color:{color_reversed};}}')
 

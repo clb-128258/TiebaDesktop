@@ -32,8 +32,14 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
                      'thread_single_forum': {'loading': False, 'page': 1},
                      'reply_single_forum': {'loading': False, 'page': 1}}
         self.listwidgets = [self.listWidget, self.listWidget_2, self.listWidget_3, self.listWidget_4, self.listWidget_5]
+        self.contain_thread_listwidgets = [self.listWidget_2, self.listWidget_4, self.listWidget_5]
+        for i in self.contain_thread_listwidgets:
+            i.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
+                            f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+                            f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
 
         # 初始化主题
+        self.tab_3.setStyleSheet(f'QWidget#tab_3{{background-color: transparent;}}')
         self.reset_theme()
 
         for i in self.listwidgets:
@@ -62,12 +68,6 @@ class TiebaSearchWindow(base_ui.WindowBaseQDialog, forum_search.Ui_Dialog):
         super().reset_theme()
 
         color = profile_mgr.get_theme_color_string()
-        contain_thread_listwidgets = [self.listWidget_2, self.listWidget_4, self.listWidget_5]
-        for i in contain_thread_listwidgets:
-            i.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
-                            f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                            f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
-        self.tab_3.setStyleSheet(f'QWidget#tab_3{{background-color: {color}}}')
 
         # 设置列表内容的样式
         for lw in self.listwidgets:

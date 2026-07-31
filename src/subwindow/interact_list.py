@@ -39,6 +39,9 @@ class UserInteractionsList(base_ui.InsideWidgetBaseQWidget, reply_at_me_page.Ui_
         self.listwidgets = [self.listWidget_3, self.listWidget_2, self.listWidget]
         for lw in self.listwidgets:
             lw.verticalScrollBar().setSingleStep(25)
+            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
+                             f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+                             f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
         self.label.hide()
         self.reset_theme()
 
@@ -55,11 +58,7 @@ class UserInteractionsList(base_ui.InsideWidgetBaseQWidget, reply_at_me_page.Ui_
         super().reset_theme()
 
         # 设置列表内容的样式
-        color = profile_mgr.get_theme_color_string()
         for lw in self.listwidgets:
-            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
-                             f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                             f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
             for i in range(lw.count()):
                 widget = lw.itemWidget(lw.item(i))
                 widget.reset_theme()

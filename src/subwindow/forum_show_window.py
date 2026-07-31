@@ -48,6 +48,9 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
 
         for i in range(len(self.listwidgets)):
             lw = self.listwidgets[i]
+            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
+                             f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+                             f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
             lw.verticalScrollBar().setSingleStep(20)
             lw.verticalScrollBar().valueChanged.connect(self.scroll_load_more)
             lw.verticalScrollBar().valueChanged.connect(self.threadList_load_image)
@@ -94,15 +97,10 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         super().reset_theme()
         self.thread_area_flash_shower.reset_theme()
 
-        color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
         bg_policy, font_policy = profile_mgr.get_theme_policy_string()
 
         for lw in self.listwidgets:
-            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
-                             f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                             f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
-
             # 设置列表内容的样式
             for i in range(lw.count()):
                 widget = lw.itemWidget(lw.item(i))

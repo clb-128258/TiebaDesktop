@@ -85,7 +85,6 @@ class ExtTabBar(QTabBar):
 
     def reset_theme(self):
         policy = profile_mgr.get_theme_policy()
-        color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
 
         self.setStyleSheet(f"""QTabBar {{
@@ -98,16 +97,16 @@ class ExtTabBar(QTabBar):
             padding: 6px 10px;
             border-radius: 14px;
             color: {font_color};
-            background: {color};
+            background: transparent;
         }}
         
         QTabBar::tab:hover {{
             font: 9pt "微软雅黑";
-            background: {'rgb(40, 40, 40)' if policy == 2 else 'rgb(232, 232, 232)'};
+            background: {'rgba(40, 40, 40, 0.35)' if policy == 2 else 'rgba(232, 232, 232, 0.35)'};
         }}
         QTabBar::tab:selected {{
             font: 9pt "微软雅黑";
-            background: {'rgb(60, 60, 60)' if policy == 2 else 'rgb(202, 202, 202)'};
+            background: {'rgba(60, 60, 60, 0.5)' if policy == 2 else 'rgba(202, 202, 202, 0.5)'};
             border-bottom: none;
         }}
         QTabBar::close-button {{
@@ -399,7 +398,6 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         self.tab_bar.reset_theme()
 
         policy = profile_mgr.get_theme_policy()
-        color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
 
         self.frame.setStyleSheet(f"""{toolbutton_qss}
@@ -411,7 +409,7 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             }}
         """)
         self.lineEdit.setStyleSheet(f"""QLineEdit {{
-            background-color: {color};
+            background-color: transparent;
             border: 1px solid {'rgb(100,100,100)' if policy == 2 else '#cccccc'};
             border-radius: 15px;
             padding: 5px;
@@ -420,13 +418,13 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         
         QLineEdit:hover {{
             border: 1px solid {'rgb(100,100,100)' if policy == 2 else '#cccccc'};
-            background-color: {'rgb(50,50,50)' if policy == 2 else '#f0f0f0'}; /* 悬浮时的背景颜色 */
+            background-color: {'rgba(50,50,50,0.3)' if policy == 2 else 'rgba(240,240,240,0.3)'}; /* 悬浮时的背景颜色 */
             border-color: #999999; /* 悬浮时的边框颜色 */
         }}
         
         QLineEdit:focus {{
             border: 2px solid {'rgb(100,100,100)' if policy == 2 else '#cccccc'};
-            background-color: {color};
+            background-color: transparent;
             border-color: #0078d7; /* 选中时的边框颜色 */
         }}""")
         base_ui.update_placeholder_color(self.frame, '#666666' if policy == 2 else '#abb2bf')

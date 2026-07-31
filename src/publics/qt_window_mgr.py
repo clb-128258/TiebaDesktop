@@ -6,12 +6,11 @@ from publics import profile_mgr
 distributed_window = []
 
 
-def refresh_all_windows_theme(need_refresh_main=True):
-    if need_refresh_main:
-        from subwindow import main_ui_elements
+def refresh_all_windows_theme():
+    from subwindow import main_ui_elements
 
-        main_ui_elements.tray_icon_instance.menu.set_theme_qss()
-        main_ui_elements.main_window_instance.set_theme_qss()
+    main_ui_elements.tray_icon_instance.menu.set_theme_qss()
+    main_ui_elements.main_window_instance.set_theme_qss()
 
     for w in distributed_window:
         w.reset_theme()

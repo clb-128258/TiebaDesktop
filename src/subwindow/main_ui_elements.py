@@ -14,7 +14,8 @@ from PyQt5.QtCore import (QPoint, pyqtSignal, QPropertyAnimation, QEasingCurve,
                           QParallelAnimationGroup, QT_VERSION_STR, QT_VERSION, QTimer, Qt)
 from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache, QFont, QCloseEvent
 from PyQt5.QtWidgets import (QSystemTrayIcon, QAction, QMessageBox, QWidgetAction,
-                             QGraphicsOpacityEffect, QMainWindow, QFileDialog, QInputDialog)
+                             QGraphicsOpacityEffect, QMainWindow, QFileDialog, QInputDialog, QAbstractButton,
+                             QAbstractSlider, QLineEdit, QComboBox)
 
 import consts
 
@@ -179,6 +180,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
     clearFinish = pyqtSignal(bool)
     scannedDetailData = {}
     brightDarkPolicyFlag = 0  # 用于标记主题颜色是否被修改
+    backgroundConfigHasChanged = False  # 标记背景颜色设置是否被修改
 
     def __init__(self):
         super().__init__()
@@ -201,6 +203,14 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         # 初始化主题
         self.reset_theme()
 
+        self.bg_settings_widgets = [self.radioButton_8,
+                                    self.radioButton_10,
+                                    self.checkBox_16,
+                                    self.horizontalSlider,
+                                    self.horizontalSlider_2,
+                                    self.lineEdit_3,
+                                    self.comboBox_8]
+
         self.set_debug_info()
         self.get_logon_accounts()
         self.load_local_config()
@@ -217,6 +227,18 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.pushButton_7.clicked.connect(self.select_all_caches)
         self.pushButton_5.clicked.connect(self.add_search_engine)
         self.pushButton_8.clicked.connect(self.reset_local_config)
+        self.pushButton.clicked.connect(self.explore_bg_img_file)
+
+        for w in self.bg_settings_widgets:
+            slot = lambda: self.update_bg_settings_widget_status()
+            if isinstance(w, QAbstractButton):
+                w.toggled.connect(slot)
+            elif isinstance(w, QAbstractSlider):
+                w.valueChanged.connect(slot)
+            elif isinstance(w, QLineEdit):
+                w.textChanged.connect(slot)
+            elif isinstance(w, QComboBox):
+                w.currentIndexChanged.connect(slot)
 
         self.commandLinkButton.clicked.connect(
             lambda: self.open_web_link('https://www.github.com/clb-128258/TiebaDesktop'))
@@ -351,10 +373,19 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.manage_account_button.setVisible(index == 0)
 
     def scroll_common_settings(self, row):
-        groupbox_map = [self.groupBox_8, self.groupBox_4,
+        groupbox_map = [self.groupBox_8, self.groupBox_11, self.groupBox_4,
                         self.groupBox_7, self.groupBox_5,
                         self.groupBox_10, self.groupBox_9]
         self.scrollArea.ensureWidgetVisible(groupbox_map[row])
+
+    def update_bg_settings_widget_status(self, is_first_setting=False):
+        self.backgroundConfigHasChanged = not is_first_setting
+        self.frame_2.setVisible(self.radioButton_8.isChecked())
+        self.frame_4.setVisible(self.radioButton_10.isChecked())
+        self.frame_3.setVisible(self.checkBox_16.isChecked())
+
+        self.label_67.setText(f'{self.horizontalSlider.value()}%')
+        self.label_69.setText(f'{self.horizontalSlider_2.value()}%')
 
     def reset_local_config(self):
         if QMessageBox.warning(self,
@@ -365,6 +396,86 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.load_local_config()
             self.top_toaster.showToast(
                 top_toast_widget.ToastMessage('设置重置成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
+
+    def load_local_config(self):
+        try:
+            self.brightDarkPolicyFlag = profile_mgr.local_config["theme_settings"]["bright_dark_policy"]
+
+            self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
+            self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
+            self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
+            self.checkBox_12.setChecked(profile_mgr.local_config['thread_view_settings']['play_gif'])
+            self.checkBox_24.setChecked(profile_mgr.local_config["thread_view_settings"]["show_statement"])
+            self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
+            (self.radioButton if profile_mgr.local_config['thread_view_settings'][
+                                     'tb_emoticon_size'] == 0 else self.radioButton_2).setChecked(True)
+
+            self.checkBox_13.setChecked(profile_mgr.local_config["notify_settings"]["enable_interact_notify"])
+            self.checkBox_17.setChecked(profile_mgr.local_config["notify_settings"]["offline_notify"])
+            self.checkBox_23.setChecked(profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"])
+
+            self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
+
+            self.checkBox_28.setChecked(
+                profile_mgr.local_config['other_settings']['animation_switches']['enable_image_fade_in'])
+            self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
+            self.comboBox_6.setCurrentIndex(self.brightDarkPolicyFlag)
+            self.comboBox_7.setCurrentIndex(profile_mgr.local_config["other_settings"]["close_main_window_action"])
+
+            self.checkBox_29.setChecked(
+                profile_mgr.local_config['other_settings']['animation_switches']['disable_top_toast_animation'])
+            self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
+            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
+            self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
+            self.checkBox_27.setChecked(profile_mgr.local_config["other_settings"]["disable_ssl_verify"])
+            self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
+            self.checkBox_30.setChecked(
+                profile_mgr.local_config['other_settings']['animation_switches']['disable_mw_switch_animation'])
+
+            self.checkBox_26.setChecked(profile_mgr.local_config['sign_settings']['use_widget_sign_flag'])
+
+            search_engine_settings = profile_mgr.local_config["other_settings"]["context_menu_search_engine"]
+            if search_engine_settings['preset']:
+                self.comboBox_5.setCurrentText(profile_mgr.sep_name_map_inverted[search_engine_settings['preset']])
+            else:
+                self.comboBox_5.addItem(search_engine_settings['custom_url'])
+                self.comboBox_5.setCurrentIndex(self.comboBox_5.count() - 1)
+
+            rdbtn_index = [self.radioButton_3, self.radioButton_4, self.radioButton_5]
+            port = profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port']
+            rdbtn_index[profile_mgr.local_config['proxy_settings']['proxy_switch']].setChecked(True)
+            self.lineEdit.setText(profile_mgr.local_config['proxy_settings']['custom_proxy_server']['ip'])
+            self.lineEdit_2.setText(str(port) if port != -1 else '')
+            self.checkBox_14.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['http'])
+            self.checkBox_15.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['https'])
+
+            if profile_mgr.local_config['other_settings']['reset_dpi'] == -1:
+                self.radioButton_6.setChecked(True)
+            else:
+                self.radioButton_7.setChecked(True)
+                self.spinBox.setValue(int(profile_mgr.local_config['other_settings']['reset_dpi'] * 100))
+
+            # ---- 背景设置相关部分 ----
+            for w in self.bg_settings_widgets:
+                w.blockSignals(True)
+
+            theme_bg_cfg = profile_mgr.local_config['theme_settings']['background']
+            self.comboBox_8.setCurrentIndex(theme_bg_cfg['dwm_bg']['mode'])
+            self.checkBox_16.setChecked(theme_bg_cfg['common_bg']['bg_picture']['enable'])
+            self.horizontalSlider.setValue(theme_bg_cfg['common_bg']['window_opacity'])
+            self.horizontalSlider_2.setValue(theme_bg_cfg['common_bg']['bg_picture']['image_opacity'])
+            self.lineEdit_3.setText(theme_bg_cfg['common_bg']['bg_picture']['image_path'])
+
+            bg_mode_radiobtn = self.radioButton_10 if theme_bg_cfg['dwm_bg']['enable'] else self.radioButton_8
+            bg_mode_radiobtn.setChecked(True)
+
+            self.update_bg_settings_widget_status(is_first_setting=True)
+
+            for w in self.bg_settings_widgets:
+                w.blockSignals(False)
+
+        except KeyError:
+            app_logger.log_WARN('settings profile load failed, use default settings')
 
     def save_local_config(self):
         try:
@@ -428,6 +539,18 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             else:
                 profile_mgr.local_config['other_settings']['reset_dpi'] = self.spinBox.value() / 100
 
+            profile_mgr.local_config['theme_settings']['background']['dwm_bg'][
+                'enable'] = self.radioButton_10.isChecked()
+            profile_mgr.local_config['theme_settings']['background']['dwm_bg']['mode'] = self.comboBox_8.currentIndex()
+            profile_mgr.local_config['theme_settings']['background']['common_bg'][
+                'window_opacity'] = self.horizontalSlider.value()
+            profile_mgr.local_config['theme_settings']['background']['common_bg']['bg_picture'][
+                'enable'] = self.checkBox_16.isChecked()
+            profile_mgr.local_config['theme_settings']['background']['common_bg']['bg_picture'][
+                'image_opacity'] = self.horizontalSlider_2.value()
+            profile_mgr.local_config['theme_settings']['background']['common_bg']['bg_picture'][
+                'image_path'] = self.lineEdit_3.text()
+
             profile_mgr.save_local_config()
         except KeyError:
             profile_mgr.fix_local_config()
@@ -435,8 +558,19 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         except Exception as e:
             log_exception(e)
         else:
-            if self.brightDarkPolicyFlag != self.comboBox_6.currentIndex():  # 只在选项改变时执行切换主题
+            # 只在设置更改时执行切换主题
+            is_dark_mode_cfg_changed = self.brightDarkPolicyFlag != self.comboBox_6.currentIndex()
+            if is_dark_mode_cfg_changed or self.backgroundConfigHasChanged:
                 QTimer.singleShot(300, lambda: qt_window_mgr.refresh_all_windows_theme())  # 延迟执行，防止UI卡顿
+
+    def explore_bg_img_file(self):
+        file_path, file_type = QFileDialog.getOpenFileName(self, '选择背景图片', '',
+                                                           '所有受支持格式 (*.png;*.jpg;*.jpeg;*.webp);;'
+                                                           'PNG 图片 (*.png);;'
+                                                           'JPEG 图片 (*.jpg;*.jpeg);;'
+                                                           'WebP 图像 (*.webp)')
+        if os.path.isfile(file_path):
+            self.lineEdit_3.setText(file_path)
 
     def add_search_engine(self):
         text, click_ok = QInputDialog.getText(self, '添加自定义搜索引擎',
@@ -724,66 +858,6 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                                    QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.account_mgr.delete_account_async(uid)
 
-    def load_local_config(self):
-        try:
-            self.brightDarkPolicyFlag = profile_mgr.local_config["theme_settings"]["bright_dark_policy"]
-
-            self.checkBox_3.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
-            self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['hide_video'])
-            self.checkBox_2.setChecked(profile_mgr.local_config['thread_view_settings']['hide_ip'])
-            self.checkBox_12.setChecked(profile_mgr.local_config['thread_view_settings']['play_gif'])
-            self.checkBox_24.setChecked(profile_mgr.local_config["thread_view_settings"]["show_statement"])
-            self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
-            (self.radioButton if profile_mgr.local_config['thread_view_settings'][
-                                     'tb_emoticon_size'] == 0 else self.radioButton_2).setChecked(True)
-
-            self.checkBox_13.setChecked(profile_mgr.local_config["notify_settings"]["enable_interact_notify"])
-            self.checkBox_17.setChecked(profile_mgr.local_config["notify_settings"]["offline_notify"])
-            self.checkBox_23.setChecked(profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"])
-
-            self.comboBox_2.setCurrentIndex(profile_mgr.local_config['forum_view_settings']['default_sort'])
-
-            self.checkBox_28.setChecked(
-                profile_mgr.local_config['other_settings']['animation_switches']['enable_image_fade_in'])
-            self.comboBox_4.setCurrentIndex(profile_mgr.local_config["other_settings"]["mw_default_page"])
-            self.comboBox_6.setCurrentIndex(self.brightDarkPolicyFlag)
-            self.comboBox_7.setCurrentIndex(profile_mgr.local_config["other_settings"]["close_main_window_action"])
-
-            self.checkBox_29.setChecked(
-                profile_mgr.local_config['other_settings']['animation_switches']['disable_top_toast_animation'])
-            self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
-            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
-            self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
-            self.checkBox_27.setChecked(profile_mgr.local_config["other_settings"]["disable_ssl_verify"])
-            self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
-            self.checkBox_30.setChecked(
-                profile_mgr.local_config['other_settings']['animation_switches']['disable_mw_switch_animation'])
-
-            self.checkBox_26.setChecked(profile_mgr.local_config['sign_settings']['use_widget_sign_flag'])
-
-            search_engine_settings = profile_mgr.local_config["other_settings"]["context_menu_search_engine"]
-            if search_engine_settings['preset']:
-                self.comboBox_5.setCurrentText(profile_mgr.sep_name_map_inverted[search_engine_settings['preset']])
-            else:
-                self.comboBox_5.addItem(search_engine_settings['custom_url'])
-                self.comboBox_5.setCurrentIndex(self.comboBox_5.count() - 1)
-
-            rdbtn_index = [self.radioButton_3, self.radioButton_4, self.radioButton_5]
-            port = profile_mgr.local_config['proxy_settings']['custom_proxy_server']['port']
-            rdbtn_index[profile_mgr.local_config['proxy_settings']['proxy_switch']].setChecked(True)
-            self.lineEdit.setText(profile_mgr.local_config['proxy_settings']['custom_proxy_server']['ip'])
-            self.lineEdit_2.setText(str(port) if port != -1 else '')
-            self.checkBox_14.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['http'])
-            self.checkBox_15.setChecked(profile_mgr.local_config['proxy_settings']['enabled_scheme']['https'])
-
-            if profile_mgr.local_config['other_settings']['reset_dpi'] == -1:
-                self.radioButton_6.setChecked(True)
-            else:
-                self.radioButton_7.setChecked(True)
-                self.spinBox.setValue(int(profile_mgr.local_config['other_settings']['reset_dpi'] * 100))
-        except KeyError:
-            app_logger.log_WARN('settings profile load failed, use default settings')
-
     def get_logon_accounts(self):
         # 清空数据
         self.listWidget_2.clear()
@@ -910,6 +984,10 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         base_ui.handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
         return super().nativeEvent(eventType, message)
 
+    def paintEvent(self, event):
+        base_ui.draw_bg_on_painter(self)
+        super().paintEvent(event)
+
     def closeEvent(self, a0):
         close_action = get_dict_value_treely(profile_mgr.local_config,
                                              ['other_settings', 'close_main_window_action'],
@@ -948,15 +1026,15 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                              window_rect[3])
 
     def set_theme_qss(self, is_init_setting=False):
-        base_ui.set_widget_dark_mode(self)
-
-        color = profile_mgr.get_theme_color_string()
         color_reversed = profile_mgr.get_theme_font_color_string()
 
         # 设置自己的样式
-        base_ui.set_theme_qss_as_cfg(self, f'\nQFrame#frame{{background-color:{color};}}')
+        base_ui.set_theme_qss_as_cfg(self, f'\nQFrame#frame{{background-color:transparent;}}')
         self.frame.setStyleSheet(f'QPushButton{{color:{color_reversed};}}')
         self.pushButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/more.png'))
+
+        base_ui.init_bg_pixmap()
+        base_ui.set_widget_background_mode(self)
 
         # 初始化阶段不对子页面设置，初始化时子页面会自己设置
         if not is_init_setting:
@@ -968,7 +1046,7 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
             self.popup_menu.reset_theme()
 
             # 弹出通知
-            toast = top_toast_widget.ToastMessage('主题切换成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
+            toast = top_toast_widget.ToastMessage('主题设置应用成功', icon_type=top_toast_widget.ToastIconType.SUCCESS)
             self.toast_widget.showToast(toast)
 
     def exit_app(self, close_event: QCloseEvent = None):

@@ -117,11 +117,10 @@ class DayHistoryItem(base_ui.InsideWidgetBaseQWidget, view_history_item.Ui_Form)
 
     def reset_theme(self):
         self.set_theme_qss()
-        color = profile_mgr.get_theme_color_string()
         policy = profile_mgr.get_theme_policy()
 
         self.frame.setStyleSheet(f"""QFrame#frame {{
-            background-color: {color};
+            background-color: transparent;
             border-radius: 20px; /* 圆角半径 */
             border: 1px solid {'rgba(255, 255, 255, 0.1)' if policy == 2 else '#D3D3D3'};
         }}""")

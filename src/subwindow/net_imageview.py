@@ -47,6 +47,7 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
         self.init_menu()
         self.init_top_toaster()
         self.scrollArea.viewport().installEventFilter(self)  # 重写事件过滤器
+        self.frame.setStyleSheet(f'QFrame#frame{{background-color:transparent;}}')
 
         self.updateImage.connect(self._resizeslot)
         self.spinBox.valueChanged.connect(self.resize_image)
@@ -54,10 +55,6 @@ class NetworkImageViewer(base_ui.WindowBaseQWidget, image_viewer.Ui_Form):
         self.gifLoaded.connect(self.show_gif)
 
         self.load_image()
-
-    def reset_theme(self):
-        super().reset_theme()
-        self.frame.setStyleSheet(f'QFrame#frame{{background-color:{profile_mgr.get_theme_color_string()};}}')
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.Wheel and source is self.scrollArea.viewport():

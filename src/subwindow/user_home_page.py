@@ -65,6 +65,9 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.listwidgets = {'follow_forum': self.listWidget, 'reply': self.listWidget_2, 'follow': self.listWidget_3,
                             'thread': self.listWidget_4, 'fans': self.listWidget_5}
         for v in self.listwidgets.values():
+            v.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
+                             f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+                             f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
             v.verticalScrollBar().setSingleStep(20)
             v.verticalScrollBar().valueChanged.connect(self.load_thread_image)
 
@@ -98,14 +101,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
     def reset_theme(self):
         super().reset_theme()
-        color = profile_mgr.get_theme_color_string()
         bg_style, font_style = profile_mgr.get_theme_policy_string()
-        self.listWidget_4.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
-                                        f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                                        f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
-        self.listWidget_2.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
-                                        f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                                        f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
 
         self.toolButton.setIcon(QIcon(f'ui/icon_{font_style}/content_copy.png'))
         self.label_29.setPixmap(qt_image.get_pixmap_icon_from_file(f'ui/icon_{font_style}/currency_exchange.png', 18))

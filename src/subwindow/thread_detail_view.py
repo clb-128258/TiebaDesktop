@@ -156,6 +156,14 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.init_load_flash()
         self.init_top_toaster()
 
+        self.list_widgets = [self.listWidget, self.listWidget_4]
+        for lw in self.list_widgets:
+            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
+                             f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+                             f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
+            lw.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            lw.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
         # 初始化主题
         self.reset_theme()
 
@@ -225,20 +233,12 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         from subwindow.thread_picture_label import ThreadPictureLabel
         super().reset_theme()
 
-        listwidgets = [self.listWidget, self.listWidget_4]
         flat_buttons = [self.pushButton, self.pushButton_4, self.pushButton_11, self.pushButton_13, self.pushButton_12,
                         self.pushButton_9]
-        color = profile_mgr.get_theme_color_string()
         font_color = profile_mgr.get_theme_font_color_string()
         bg_policy, font_policy = profile_mgr.get_theme_policy_string()
 
-        for lw in listwidgets:
-            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
-                             f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                             f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
-            lw.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            lw.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
+        for lw in self.list_widgets:
             # 设置列表内容的样式
             for i in range(lw.count()):
                 widget = lw.itemWidget(lw.item(i))
@@ -251,7 +251,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.post_area_flash_shower.reset_theme()
         self.flash_shower.reset_theme()
         self.scrollAreaWidgetContents_2.setStyleSheet(
-            f'QWidget#scrollAreaWidgetContents_2 {{background-color: {color};}}')
+            f'QWidget#scrollAreaWidgetContents_2 {{background-color: transparent;}}')
 
         self.label_19.setPixmap(get_pixmap_icon_from_file(f'ui/icon_{font_policy}/warning.png', 20))
         self.toolButton_2.setIcon(QIcon(f'ui/icon_{font_policy}/close.png'))
@@ -314,9 +314,9 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 widget.on_destroyed()
                 break
 
-        lw_list = [self.listWidget, self.listWidget_4]
-        for lw in lw_list:
+        for lw in self.list_widgets:
             cleanup_listWidget(lw)
+        del self.list_widgets
 
         qt_window_mgr.del_window(self)
 
@@ -1096,7 +1096,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.label_14.hide()
         self.label_21.hide()
 
-        self.pushButton_4.setText(large_num_to_string(datas.agree_num, endspace=True) + '个赞')
+        self.pushButton_4.setText(f' {large_num_to_string(datas.agree_num)}')
         self.label_3.setText(datas.user_name)
         if datas.send_time:
             self.label.setText(timestamp_to_string(datas.send_time))

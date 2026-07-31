@@ -58,13 +58,12 @@ class RecommendWindow(QListWidget):
         self.refresh_button.hide()
 
     def set_theme_qss(self):
-        color = profile_mgr.get_theme_color_string()
-        lw_qss = (f'\nQListWidget{{outline:0px; color:{color}; background-color:{color};}}'
-                  f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                  f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
-        base_ui.set_theme_qss_as_cfg(self, lw_qss)
-
         self.loading_widget.reset_theme()  # 设置加载动画页的样式
+
+        lw_qss=(f'QListWidget{{outline:0px; background-color:transparent;}}'
+               f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+               f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
+        base_ui.set_theme_qss_as_cfg(self,lw_qss)
 
         # 设置列表内容的样式
         for i in range(self.count()):

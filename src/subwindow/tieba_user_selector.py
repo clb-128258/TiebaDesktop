@@ -77,7 +77,9 @@ class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
         super().__init__()
         self.setupUi(self)
 
+        self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}')
         self.loading_widget = funcs.LoadingFlashWidget()
+        self.loading_widget.need_clean_bottom_rect = False
         self.loading_widget.cover_widget(self.listWidget)
         self.reset_theme()
 
@@ -102,10 +104,6 @@ class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
         super().reset_theme()
 
         self.loading_widget.reset_theme()
-
-        # apply theme to listWidget
-        color = profile_mgr.get_theme_color_string()
-        self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}')
 
         # reset theme for existing widgets
         for i in range(self.listWidget.count()):

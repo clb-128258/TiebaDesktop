@@ -47,6 +47,10 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.init_ui_elements()
 
+        self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
+                                      f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+                                      f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
+
         # 初始化主题
         self.reset_theme()
 
@@ -63,10 +67,6 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         super().reset_theme()
         self.loading_widget.reset_theme()
 
-        color = profile_mgr.get_theme_color_string()
-        self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:{color};}}'
-                                      f'QListWidget::item:hover {{color:{color}; background-color:{color};}}'
-                                      f'QListWidget::item:selected {{color:{color}; background-color:{color};}}')
         # 设置列表内容的样式
         for i in range(self.listWidget.count()):
             widget = self.listWidget.itemWidget(self.listWidget.item(i))
