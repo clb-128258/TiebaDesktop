@@ -364,6 +364,13 @@ class BackgroundImageManager(QObject):
 
     def scale_bg_image(self, use_high_quality=False):
         if background_pixmap is None or background_pixmap.isNull() or self.width() <= 0 or self.height() <= 0:
+            if self.cached_pixmap:
+                # 清除遗留的缓存
+                del self.cached_pixmap
+                self.cached_pixmap = None
+                self.cached_x = self.cached_y = 0
+                QPixmapCache.clear()
+
             return
 
         if use_high_quality:
@@ -433,7 +440,7 @@ class BaseQMainWindow(QMainWindow, BackgroundImageManager):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
-        self.scale_bg_image()
+        self.scale_bg_image(True)
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
@@ -468,7 +475,7 @@ class WindowBaseQWidget(QWidget, BackgroundImageManager):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
-        self.scale_bg_image()
+        self.scale_bg_image(True)
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
@@ -531,7 +538,7 @@ class WindowBaseQDialog(QDialog, BackgroundImageManager):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
-        self.scale_bg_image()
+        self.scale_bg_image(True)
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
