@@ -461,6 +461,7 @@ class LoginWebView(base_ui.WindowBaseQDialog):
             a0.accept()
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         self.webview.setGeometry(0, 0, self.width(), self.height())
         self.flash_widget.sync_parent_widget_size()
 

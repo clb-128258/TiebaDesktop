@@ -21,6 +21,7 @@ import consts
 
 from publics import (qt_window_mgr, profile_mgr, cache_mgr, qt_image,
                      account_mgr, app_logger, request_mgr)
+from publics.base_ui_elements.base_ui import BaseQMainWindow
 from publics.base_ui_elements.windows_features import webview2
 from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.app_logger import log_exception, log_INFO, log_WARN
@@ -280,6 +281,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         a0.accept()
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         self.login_button.move_button()
         self.manage_account_button.move_button()
 
@@ -933,7 +935,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.top_toaster.showToast(toast)
 
 
-class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
+class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
     """主窗口，整个程序的入口点"""
     user_data = {'bduss': '', 'stoken': ''}
     self_user_portrait = ''
@@ -946,10 +948,12 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+
         self.init_ui_elements()
         self.set_theme_qss(True)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.pushButton.setStyleSheet("QPushButton::menu-indicator{image:none;}")
+
         self.notice_syncer = TiebaMsgSyncer()
         self.clipboard_syncer = ClipboardSyncer()
 
@@ -979,14 +983,6 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
         self.free_current_session()
         self.account_manager.load_accounts_list_async()
         self.move_as_config()
-
-    def nativeEvent(self, eventType, message):
-        base_ui.handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
-        return super().nativeEvent(eventType, message)
-
-    def paintEvent(self, event):
-        base_ui.draw_bg_on_painter(self)
-        super().paintEvent(event)
 
     def closeEvent(self, a0):
         close_action = get_dict_value_treely(profile_mgr.local_config,
@@ -1026,15 +1022,14 @@ class MainWindow(QMainWindow, mainwindow.Ui_MainWindow):
                              window_rect[3])
 
     def set_theme_qss(self, is_init_setting=False):
-        color_reversed = profile_mgr.get_theme_font_color_string()
+        super().set_theme_qss()
 
         # 设置自己的样式
-        base_ui.set_theme_qss_as_cfg(self, f'\nQFrame#frame{{background-color:transparent;}}')
+        color_reversed = profile_mgr.get_theme_font_color_string()
+        self.add_extend_qss(f'\nQFrame#frame{{background-color:transparent;}}')
         self.frame.setStyleSheet(f'QPushButton{{color:{color_reversed};}}')
-        self.pushButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/more.png'))
 
-        base_ui.init_bg_pixmap()
-        base_ui.set_widget_background_mode(self)
+        self.pushButton.setIcon(QIcon(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/more.png'))
 
         # 初始化阶段不对子页面设置，初始化时子页面会自己设置
         if not is_init_setting:

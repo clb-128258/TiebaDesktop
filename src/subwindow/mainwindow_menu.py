@@ -66,6 +66,7 @@ class MainPopupMenu(base_ui.InsideWidgetBaseQWidget, mw_popup.Ui_Form):
         self.get_self_info_async()
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         resizeEvent = QResizeEvent(QSize(self.width(), self.height() + 100), self.parent_menu.size())
         qApp.sendEvent(self.parent_menu, resizeEvent)  # 使菜单调整到正确大小
 

@@ -187,8 +187,14 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
 
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label.hide()
-        self.listWidget_2.verticalScrollBar().setSingleStep(20)
         self.init_top_toaster()
+
+        self.listWidget_2.verticalScrollBar().setSingleStep(20)
+        self.listWidget_2.setStyleSheet(f'QListWidget#listWidget_2{{outline:0px;background-color: transparent;}}'
+                                        f'QListWidget#listWidget_2::item:hover '
+                                        f'{{color: transparent; background-color: transparent;}}'
+                                        f'QListWidget#listWidget_2::item:selected '
+                                        f'{{color:transparent; background-color:transparent;}}')
 
         self.listWidget_2.verticalScrollBar().valueChanged.connect(self.scroll_load)
         self.listWidget.currentRowChanged.connect(self.reload_history)
@@ -211,11 +217,7 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
         self.top_toaster.setCoverWidget(self)
 
     def reset_theme(self):
-        self.set_theme_qss()
-        color = profile_mgr.get_theme_color_string()
-        self.listWidget_2.setStyleSheet(f'QListWidget#listWidget_2{{outline:0px;background-color:{color};}}'
-                                        f'QListWidget#listWidget_2::item:hover {{color:{color}; background-color:{color};}}'
-                                        f'QListWidget#listWidget_2::item:selected {{color:{color}; background-color:{color};}}')
+        super().reset_theme()
 
         # 设置列表内容的样式
         for i in range(self.listWidget_2.count()):

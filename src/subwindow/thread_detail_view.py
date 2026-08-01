@@ -321,6 +321,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         qt_window_mgr.del_window(self)
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         self.adjust_narrow_button()
 
     def init_load_flash(self):

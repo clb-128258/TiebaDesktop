@@ -129,6 +129,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         qt_window_mgr.del_window(self)
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         self.refresh_button.move_button()
         self.create_thread_button.move_button()
 

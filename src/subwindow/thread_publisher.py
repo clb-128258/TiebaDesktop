@@ -81,6 +81,7 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
         self.webview.initRender()
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         self.webview.setGeometry(0, 0, self.width(), self.height())
 
     def keyPressEvent(self, a0):

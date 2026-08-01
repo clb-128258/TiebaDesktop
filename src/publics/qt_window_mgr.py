@@ -8,6 +8,9 @@ distributed_window = []
 
 def refresh_all_windows_theme():
     from subwindow import main_ui_elements
+    from publics.base_ui_elements.base_ui import init_bg_pixmap
+
+    init_bg_pixmap()
 
     main_ui_elements.tray_icon_instance.menu.set_theme_qss()
     main_ui_elements.main_window_instance.set_theme_qss()

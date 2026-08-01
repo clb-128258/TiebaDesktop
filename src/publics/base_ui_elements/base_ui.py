@@ -6,10 +6,10 @@ import yarl
 import pyperclip
 import re
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer, QObject
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
-    QTextEdit, QPlainTextEdit, QToolButton, QGraphicsDropShadowEffect
-from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon, QPainter, QPixmap
+    QTextEdit, QPlainTextEdit, QToolButton, QGraphicsDropShadowEffect, QMainWindow
+from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon, QPainter, QPixmap, QPixmapCache
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
 from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_background_mode
@@ -196,6 +196,8 @@ def handle_native_event(widget, refreshThemeFunc, eventType, message):
 
 
 def init_bg_pixmap():
+    """初始化背景 QPixmap"""
+
     global background_pixmap, background_pixmap_hex
 
     bg_config = funcs.get_dict_value_treely(profile_mgr.local_config,
@@ -211,6 +213,7 @@ def init_bg_pixmap():
     if enable and image_hex != background_pixmap_hex:
         background_pixmap_hex = file_path
         del background_pixmap
+        QPixmapCache.clear()
 
         original_pixmap = QPixmap(background_pixmap_hex)
         if not original_pixmap.isNull():
@@ -227,34 +230,12 @@ def init_bg_pixmap():
             del original_pixmap
             background_pixmap = None
             background_pixmap_hex = ''
+            QPixmapCache.clear()
     elif not enable:
         del background_pixmap
         background_pixmap = None
         background_pixmap_hex = ''
-
-
-def draw_bg_on_painter(widget: QWidget):
-    if background_pixmap is None or background_pixmap.isNull():
-        return
-
-    painter = QPainter(widget)
-    # 开启平滑抗锯齿缩放
-    painter.setRenderHint(QPainter.SmoothPixmapTransform)
-
-    # 1. 将图片按 "KeepAspectRatioByExpanding" 缩放
-    # 这会保证图片刚好覆盖整个 widget.size()，同时保持原图宽高比（多出的部分会被自动裁剪）
-    scaled_pixmap = background_pixmap.scaled(
-        widget.size(),
-        Qt.KeepAspectRatioByExpanding,
-        Qt.SmoothTransformation
-    )
-
-    # 2. 计算居中绘制的偏移量（把多余裁剪的部分均匀分配在四周）
-    x = (widget.width() - scaled_pixmap.width()) // 2
-    y = (widget.height() - scaled_pixmap.height()) // 2
-
-    # 3. 绘制图片（超过 widget 区域的部分会被 Qt 自动剪裁）
-    painter.drawPixmap(x, y, scaled_pixmap)
+        QPixmapCache.clear()
 
 
 class NarrowButtonStatus(enum.Enum):
@@ -366,7 +347,104 @@ class BaseQMenu(QMenu):
         self.set_theme_qss()
 
 
-class WindowBaseQWidget(QWidget):
+class BackgroundImageManager(QObject):
+    """背景图片缩放管理器"""
+
+    def __init__(self):
+        super().__init__()
+
+        self.cached_pixmap = None  # 用于缓存缩放后的图
+        self.cached_x = 0
+        self.cached_y = 0
+
+        # 防抖定时器
+        self.resize_timer = QTimer(self)
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(lambda: self.scale_bg_image(True))
+
+    def scale_bg_image(self, use_high_quality=False):
+        if background_pixmap is None or background_pixmap.isNull() or self.width() <= 0 or self.height() <= 0:
+            return
+
+        if use_high_quality:
+            # 1. 在尺寸改变时，才进行像素缩放
+            scaled = background_pixmap.scaled(
+                self.size(),
+                Qt.KeepAspectRatioByExpanding,
+                Qt.SmoothTransformation
+            )
+
+            # 2. 计算居中偏移
+            self.cached_x = (self.width() - scaled.width()) // 2
+            self.cached_y = (self.height() - scaled.height()) // 2
+        else:
+            # 低质量模式下
+            scaled = background_pixmap.scaled(
+                self.size(),
+                Qt.IgnoreAspectRatio,
+                Qt.FastTransformation
+            )
+
+            # 2. 计算居中偏移
+            self.cached_x = self.cached_y = 0
+
+        del self.cached_pixmap
+        # 3. 缓存结果
+        QPixmapCache.clear()
+        self.cached_pixmap = scaled
+
+        if not use_high_quality:
+            self.resize_timer.start(300)
+        else:
+            # 触发一次重绘，无缝变为高清
+            self.update()
+
+    def draw_bg_on_painter(self, event):
+        if self.cached_pixmap is None or self.cached_pixmap.isNull():
+            return
+
+        painter = QPainter(self)
+
+        # 直接使用缓存好的 pixmap，CPU 占用极低
+        painter.drawPixmap(self.cached_x, self.cached_y, self.cached_pixmap)
+
+
+class BaseQMainWindow(QMainWindow, BackgroundImageManager):
+    """所有主窗口引用的 QMainWindow 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
+        return super().nativeEvent(eventType, message)
+
+    def paintEvent(self, event):
+        self.draw_bg_on_painter(event)
+        super().paintEvent(event)
+
+    def resizeEvent(self, a0):
+        super().resizeEvent(a0)
+        self.scale_bg_image()
+
+    def set_theme_qss(self):
+        """载入标准样式主题，同时为窗口背景设置颜色"""
+        set_theme_qss_as_cfg(self)
+        set_widget_background_mode(self)
+        self.scale_bg_image()
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
+
+
+class WindowBaseQWidget(QWidget, BackgroundImageManager):
     """所有独立窗口引用的 QWidget 父类"""
 
     def __init__(self):
@@ -379,13 +457,18 @@ class WindowBaseQWidget(QWidget):
         return super().nativeEvent(eventType, message)
 
     def paintEvent(self, event):
-        draw_bg_on_painter(self)
+        self.draw_bg_on_painter(event)
         super().paintEvent(event)
+
+    def resizeEvent(self, a0):
+        super().resizeEvent(a0)
+        self.scale_bg_image()
 
     def set_theme_qss(self):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
+        self.scale_bg_image()
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
@@ -408,6 +491,9 @@ class InsideWidgetBaseQWidget(QWidget):
             self.reset_theme()
         return super().nativeEvent(eventType, message)
 
+    def resizeEvent(self, a0):
+        super().resizeEvent(a0)
+
     def set_theme_qss(self):
         """载入标准样式主题"""
         set_theme_qss_as_cfg(self)
@@ -421,7 +507,7 @@ class InsideWidgetBaseQWidget(QWidget):
         self.set_theme_qss()
 
 
-class WindowBaseQDialog(QDialog):
+class WindowBaseQDialog(QDialog, BackgroundImageManager):
     """所有独立模态窗口引用的 QDialog 父类"""
 
     def __init__(self):
@@ -434,13 +520,18 @@ class WindowBaseQDialog(QDialog):
         return super().nativeEvent(eventType, message)
 
     def paintEvent(self, event):
-        draw_bg_on_painter(self)
+        self.draw_bg_on_painter(event)
         super().paintEvent(event)
+
+    def resizeEvent(self, a0):
+        super().resizeEvent(a0)
+        self.scale_bg_image()
 
     def set_theme_qss(self):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
+        self.scale_bg_image()
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""

@@ -1,7 +1,7 @@
 """
 程序入口点
 """
-
+from publics.base_ui_elements import base_ui
 from publics.base_ui_elements.windows_features import webview2
 from publics.baidu_features import tieba_apis
 from publics import proxytool
@@ -13,6 +13,7 @@ from publics import account_mgr
 
 from PyQt5.QtCore import QLocale, QTranslator
 from PyQt5.QtWidgets import QMessageBox, QApplication
+
 import sys
 import os
 import requests
@@ -220,6 +221,7 @@ if __name__ == "__main__":
 
     # Qt high dpi support
     set_qt_scale_factor()
+    QApplication.setAttribute(Qt.AA_UseOpenGLES)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
@@ -234,6 +236,9 @@ if __name__ == "__main__":
     # init .net/cpp libraries
     winrt_share.init_library()
     check_webview2()
+
+    # init theme elements
+    base_ui.init_bg_pixmap()
 
     # init main window, tray icon
     log_INFO('Initing main window')

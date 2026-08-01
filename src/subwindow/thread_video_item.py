@@ -111,6 +111,7 @@ class ThreadVideoItem(base_ui.InsideWidgetBaseQWidget, thread_video_item.Ui_Form
             self.webview.deleteLater()
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         self.move_widgets()
 
     def set_cover_pixmap(self):

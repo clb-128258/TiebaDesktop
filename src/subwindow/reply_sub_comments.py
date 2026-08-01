@@ -95,6 +95,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         qt_window_mgr.del_window(self)
 
     def resizeEvent(self, a0):
+        super().resizeEvent(a0)
         self.refresh_button.move_button()
 
     def init_ui_elements(self):
