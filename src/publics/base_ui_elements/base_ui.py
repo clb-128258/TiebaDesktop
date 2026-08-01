@@ -12,7 +12,8 @@ from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit,
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon, QPainter, QPixmap, QPixmapCache
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
-from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_background_mode
+from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_background_mode, \
+    is_dwm_bg_enabled
 
 # 邮箱判别正则
 email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -128,11 +129,7 @@ def set_theme_qss_as_cfg(widget, extended_qss=''):
 
     def get_bg_color_qss():
         # 处理纯色背景
-        bg_config = funcs.get_dict_value_treely(profile_mgr.local_config,
-                                                ['theme_settings', 'background'],
-                                                profile_mgr.local_config_model['theme_settings']['background'])
-
-        if bg_config['dwm_bg']['enable']:
+        if is_dwm_bg_enabled():
             return ''
         else:
             bg_color = profile_mgr.get_theme_color_string()
@@ -203,7 +200,7 @@ def init_bg_pixmap():
     bg_config = funcs.get_dict_value_treely(profile_mgr.local_config,
                                             ['theme_settings', 'background'],
                                             profile_mgr.local_config_model['theme_settings']['background'])
-    enable = bg_config['common_bg']['bg_picture']['enable'] and not bg_config['dwm_bg']['enable']
+    enable = bg_config['common_bg']['bg_picture']['enable'] and not is_dwm_bg_enabled()
     file_path = bg_config['common_bg']['bg_picture']['image_path']
     image_opacity = bg_config['common_bg']['bg_picture']['image_opacity']
     image_hex = f'{file_path}+{image_opacity}'

@@ -14,7 +14,7 @@ from PyQt5.QtCore import (QPoint, pyqtSignal, QPropertyAnimation, QEasingCurve,
                           QParallelAnimationGroup, QT_VERSION_STR, QT_VERSION, QTimer, Qt)
 from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache, QFont, QCloseEvent
 from PyQt5.QtWidgets import (QSystemTrayIcon, QAction, QMessageBox, QWidgetAction,
-                             QGraphicsOpacityEffect, QMainWindow, QFileDialog, QInputDialog, QAbstractButton,
+                             QGraphicsOpacityEffect, QFileDialog, QInputDialog, QAbstractButton,
                              QAbstractSlider, QLineEdit, QComboBox)
 
 import consts
@@ -26,6 +26,7 @@ from publics.base_ui_elements.windows_features import webview2
 from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.baidu_features.baidu_passport_login import QRLoginDialog, LoginWebView, SeniorLoginDialog
+from publics.base_ui_elements.windows_features import dwm_visual
 from publics.funcs import (save_json, load_json, start_background_thread,
                            get_dict_value_treely, ExtListWidgetItem, UserItem,
                            filesize_tostr, open_url_in_browser, LoadingFlashWidget)
@@ -458,18 +459,28 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 self.spinBox.setValue(int(profile_mgr.local_config['other_settings']['reset_dpi'] * 100))
 
             # ---- 背景设置相关部分 ----
+            theme_bg_cfg = profile_mgr.local_config['theme_settings']['background']
+
             for w in self.bg_settings_widgets:
                 w.blockSignals(True)
 
-            theme_bg_cfg = profile_mgr.local_config['theme_settings']['background']
             self.comboBox_8.setCurrentIndex(theme_bg_cfg['dwm_bg']['mode'])
             self.checkBox_16.setChecked(theme_bg_cfg['common_bg']['bg_picture']['enable'])
             self.horizontalSlider.setValue(theme_bg_cfg['common_bg']['window_opacity'])
             self.horizontalSlider_2.setValue(theme_bg_cfg['common_bg']['bg_picture']['image_opacity'])
             self.lineEdit_3.setText(theme_bg_cfg['common_bg']['bg_picture']['image_path'])
 
-            bg_mode_radiobtn = self.radioButton_10 if theme_bg_cfg['dwm_bg']['enable'] else self.radioButton_8
+            dwm_bg_enabled = dwm_visual.is_dwm_bg_enabled()
+            bg_mode_radiobtn = self.radioButton_10 if dwm_bg_enabled else self.radioButton_8
             bg_mode_radiobtn.setChecked(True)
+
+            if os.name != 'nt' or 9200 <= int(platform.version().split('.')[-1]) <= 9600:
+                self.radioButton_10.setText(f'视觉效果背景 (当前系统不支持)')
+
+                self.radioButton_10.setEnabled(False)
+                self.frame_4.setEnabled(False)
+                self.radioButton_8.setChecked(True)
+                self.radioButton_10.setChecked(False)
 
             self.update_bg_settings_widget_status(is_first_setting=True)
 

@@ -663,7 +663,7 @@ class LoadingFlashWidget(QWidget, loading_amt.Ui_loadFlashForm):
         bg_config = get_dict_value_treely(profile_mgr.local_config,
                                           ['theme_settings', 'background'],
                                           profile_mgr.local_config_model['theme_settings']['background'])
-        final_bg_color = color if not bg_config['dwm_bg']['enable'] else 'transparent'
+        final_bg_color = color if bg_config['dwm_bg']['enable'] is False else 'transparent'
 
         self.setStyleSheet(f"""
             QWidget{{font-family: "微软雅黑";}}

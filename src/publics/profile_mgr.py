@@ -3,6 +3,7 @@ import json
 import time
 import copy
 from publics import proxytool
+
 import consts
 
 local_config_model = {
@@ -49,7 +50,7 @@ local_config_model = {
     "theme_settings": {
         "bright_dark_policy": 0,
         "background": {
-            "dwm_bg": {"enable": True, "mode": 0},
+            "dwm_bg": {"enable": None, "mode": 0},
             "common_bg": {
                 "window_opacity": 100,
                 "bg_picture": {"enable": False, "image_path": "", "image_opacity": 100}

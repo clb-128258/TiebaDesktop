@@ -7,7 +7,7 @@ from ctypes import wintypes
 
 from PyQt5.QtWidgets import QWidget
 
-from publics import profile_mgr, app_logger, funcs
+from publics import profile_mgr, funcs
 
 # --- Windows API 常量与定义 ---
 WM_SETTINGCHANGE = 0x001A
@@ -111,8 +111,9 @@ def set_window_backdrop(hwnd: int, backdrop_type=DWMBACKDROPTYPE.MICA, dark_mode
     win_build = int(platform.version().split('.')[-1])
 
     # 1. 通用操作：扩展 DWM 帧到整个客户区 (防止背景变黑)
-    margins = MARGINS(-1, -1, -1, -1)
-    dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
+    if backdrop_type != DWMBACKDROPTYPE.NONE:
+        margins = MARGINS(-1, -1, -1, -1)
+        dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
 
     # -------------------------------------------------------------
     # 策略 A: Windows 11 (22H2+, Build >= 22621) -> 使用标准 API
@@ -166,16 +167,23 @@ def set_window_backdrop(hwnd: int, backdrop_type=DWMBACKDROPTYPE.MICA, dark_mode
 
 
 def _apply_win10_acrylic(hwnd: int, dark_mode: bool) -> bool:
-    """Win10 专属亚克力材质底层逻辑"""
+    """Win10 专属亚克力材质"""
     try:
         accent = ACCENT_POLICY()
-        accent.AccentState = 3  # ACCENT_ENABLE_BLURBEHIND / ACCENT_ENABLE_ACRYLICBLURBEHIND
+        # State 4: ACCENT_ENABLE_ACRYLICBLURBEHIND
+        accent.AccentState = 4
 
-        # ABGR 格式的叠加遮罩颜色 (半透明黑/白)
+        # ⚠️ 关键修正：AccentFlags 必须设为 2，DWM 才会绘制 GradientColor 的颜色叠加层！
+        accent.AccentFlags = 2
+
+        # 格式为 0xAABBGGRR (Alpha-Blue-Green-Red)
+        # AA 建议设在 80 ~ CC 之间 (如 CC = 80% 不透明度)，颜色混合才明显
         if dark_mode:
-            accent.GradientColor = 0x99000000  # 99 为 alpha 透明度
+            # 深色模式：深灰色叠加 (Alpha: CC, B: 2C, G: 2C, R: 2C)
+            accent.GradientColor = 0xCC2C2C2C
         else:
-            accent.GradientColor = 0x99FFFFFF
+            # 浅色模式：半透明白色/浅灰色叠加 (Alpha: B0, B: F5, G: F5, R: F5)
+            accent.GradientColor = 0xB0F5F5F5
 
         data = WINDOWCOMPOSITIONATTRIBDATA()
         data.Attribute = 19  # WCA_ACCENT_POLICY
@@ -184,8 +192,7 @@ def _apply_win10_acrylic(hwnd: int, dark_mode: bool) -> bool:
 
         user32.SetWindowCompositionAttribute(hwnd, ctypes.byref(data))
         return True
-    except Exception as e:
-        app_logger.log_exception(e)
+    except Exception:
         return False
 
 
@@ -213,6 +220,18 @@ def get_prefer_backdrop_type():
         return DWMBACKDROPTYPE.AUTO
 
 
+def is_dwm_bg_enabled():
+    """读取用户是否开启了 DWM 背景"""
+    bg_config = funcs.get_dict_value_treely(profile_mgr.local_config,
+                                            ['theme_settings', 'background'],
+                                            profile_mgr.local_config_model['theme_settings']['background'])
+
+    if bg_config['dwm_bg']['enable'] is None:
+        return get_prefer_backdrop_type() != DWMBACKDROPTYPE.NONE
+    else:
+        return bg_config['dwm_bg']['enable']
+
+
 def set_widget_background_mode(widget: QWidget):
     """
     根据用户配置为 Qt 窗口设置背景颜色
@@ -232,7 +251,7 @@ def set_widget_background_mode(widget: QWidget):
         hwnd = int(widget.winId())
         set_dwm_dark_mode(hwnd, is_dark)
 
-        if bg_config['dwm_bg']['enable']:
+        if is_dwm_bg_enabled():
             widget.setWindowOpacity(1.0)
 
             bd_type = backdrop_type_index[bg_config['dwm_bg']['mode']]
