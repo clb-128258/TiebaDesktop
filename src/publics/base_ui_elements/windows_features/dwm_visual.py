@@ -7,7 +7,7 @@ from ctypes import wintypes
 
 from PyQt5.QtWidgets import QWidget
 
-from publics import profile_mgr, funcs
+from publics import profile_mgr, funcs, app_logger
 
 # --- Windows API 常量与定义 ---
 WM_SETTINGCHANGE = 0x001A
@@ -114,6 +114,9 @@ def set_window_backdrop(hwnd: int, backdrop_type=DWMBACKDROPTYPE.MICA, dark_mode
     if backdrop_type != DWMBACKDROPTYPE.NONE:
         margins = MARGINS(-1, -1, -1, -1)
         dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
+    else:
+        normal_margins = MARGINS(0, 0, 0, 0)
+        dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(normal_margins))
 
     # -------------------------------------------------------------
     # 策略 A: Windows 11 (22H2+, Build >= 22621) -> 使用标准 API
@@ -143,6 +146,16 @@ def set_window_backdrop(hwnd: int, backdrop_type=DWMBACKDROPTYPE.MICA, dark_mode
             return res == 0
         elif backdrop_type == DWMBACKDROPTYPE.ACRYLIC:
             return _apply_win10_acrylic(hwnd, dark_mode)
+        elif backdrop_type == DWMBACKDROPTYPE.NONE:
+            enable_mica = ctypes.c_int(0)
+            res = dwmapi.DwmSetWindowAttribute(
+                hwnd,
+                DWMWA_MICA_EFFECT,
+                ctypes.byref(enable_mica),
+                ctypes.sizeof(enable_mica)
+            )
+            res2 = remove_win10_acrylic(hwnd)
+            return res or res2
 
     # -------------------------------------------------------------
     # 策略 C: Windows 10 (Build >= 10240) -> 使用 Accent Policy 降级为亚克力
@@ -150,40 +163,34 @@ def set_window_backdrop(hwnd: int, backdrop_type=DWMBACKDROPTYPE.MICA, dark_mode
     elif win_build >= 10240:
         if backdrop_type != DWMBACKDROPTYPE.NONE:
             return _apply_win10_acrylic(hwnd, dark_mode)
+        else:
+            return remove_win10_acrylic(hwnd)
 
     # -------------------------------------------------------------
     # 策略 D: Windows 7 / 8 -> 降级使用 DWM Aero 玻璃效果
     # -------------------------------------------------------------
     else:
-        if backdrop_type != DWMBACKDROPTYPE.NONE:
-            bb = DWM_BLURBEHIND()
-            bb.dwFlags = 0x00000001  # DWM_BB_ENABLE
-            bb.fEnable = True
-            bb.hRgnBlur = None
-            res = dwmapi.DwmEnableBlurBehindWindow(hwnd, ctypes.byref(bb))
-            return res == 0
+        bb = DWM_BLURBEHIND()
+        bb.dwFlags = 0x00000001  # DWM_BB_ENABLE
+        bb.fEnable = backdrop_type != DWMBACKDROPTYPE.NONE
+        bb.hRgnBlur = None
+        res = dwmapi.DwmEnableBlurBehindWindow(hwnd, ctypes.byref(bb))
+        return res == 0
 
     return False
 
 
 def _apply_win10_acrylic(hwnd: int, dark_mode: bool) -> bool:
-    """Win10 专属亚克力材质"""
+    """Win10 专属亚克力材质底层逻辑"""
     try:
         accent = ACCENT_POLICY()
-        # State 4: ACCENT_ENABLE_ACRYLICBLURBEHIND
-        accent.AccentState = 4
+        accent.AccentState = 3  # ACCENT_ENABLE_BLURBEHIND / ACCENT_ENABLE_ACRYLICBLURBEHIND
 
-        # ⚠️ 关键修正：AccentFlags 必须设为 2，DWM 才会绘制 GradientColor 的颜色叠加层！
-        accent.AccentFlags = 2
-
-        # 格式为 0xAABBGGRR (Alpha-Blue-Green-Red)
-        # AA 建议设在 80 ~ CC 之间 (如 CC = 80% 不透明度)，颜色混合才明显
+        # ABGR 格式的叠加遮罩颜色 (半透明黑/白)
         if dark_mode:
-            # 深色模式：深灰色叠加 (Alpha: CC, B: 2C, G: 2C, R: 2C)
-            accent.GradientColor = 0xCC2C2C2C
+            accent.GradientColor = 0x99000000  # 99 为 alpha 透明度
         else:
-            # 浅色模式：半透明白色/浅灰色叠加 (Alpha: B0, B: F5, G: F5, R: F5)
-            accent.GradientColor = 0xB0F5F5F5
+            accent.GradientColor = 0x99FFFFFF
 
         data = WINDOWCOMPOSITIONATTRIBDATA()
         data.Attribute = 19  # WCA_ACCENT_POLICY
@@ -192,7 +199,29 @@ def _apply_win10_acrylic(hwnd: int, dark_mode: bool) -> bool:
 
         user32.SetWindowCompositionAttribute(hwnd, ctypes.byref(data))
         return True
-    except Exception:
+    except Exception as e:
+        app_logger.log_exception(e)
+        return False
+
+
+def remove_win10_acrylic(hwnd: int) -> bool:
+    """清除 Win10 亚克力/模糊效果，恢复为普通的标准背景"""
+    try:
+        accent = ACCENT_POLICY()
+        # 0: ACCENT_DISABLED (完全禁用所有合成效果与模糊，恢复默认)
+        accent.AccentState = 0
+        accent.AccentFlags = 0
+        accent.GradientColor = 0
+
+        data = WINDOWCOMPOSITIONATTRIBDATA()
+        data.Attribute = 19  # WCA_ACCENT_POLICY
+        data.pData = ctypes.cast(ctypes.byref(accent), ctypes.c_void_p)
+        data.SizeOfData = ctypes.sizeof(accent)
+
+        user32.SetWindowCompositionAttribute(hwnd, ctypes.byref(data))
+        return True
+    except Exception as e:
+        app_logger.log_exception(e)
         return False
 
 

@@ -370,35 +370,23 @@ class BackgroundImageManager(QObject):
 
             return
 
-        if use_high_quality:
-            # 1. 在尺寸改变时，才进行像素缩放
-            scaled = background_pixmap.scaled(
-                self.size(),
-                Qt.KeepAspectRatioByExpanding,
-                Qt.SmoothTransformation
-            )
+        # 1. 在尺寸改变时，才进行像素缩放
+        scaled = background_pixmap.scaled(
+            self.size(),
+            Qt.KeepAspectRatioByExpanding,
+            Qt.SmoothTransformation if use_high_quality else Qt.FastTransformation
+        )
 
-            # 2. 计算居中偏移
-            self.cached_x = (self.width() - scaled.width()) // 2
-            self.cached_y = (self.height() - scaled.height()) // 2
-        else:
-            # 低质量模式下
-            scaled = background_pixmap.scaled(
-                self.size(),
-                Qt.IgnoreAspectRatio,
-                Qt.FastTransformation
-            )
+        # 2. 计算居中偏移
+        self.cached_x = (self.width() - scaled.width()) // 2
+        self.cached_y = (self.height() - scaled.height()) // 2
 
-            # 2. 计算居中偏移
-            self.cached_x = self.cached_y = 0
-
-        del self.cached_pixmap
         # 3. 缓存结果
-        QPixmapCache.clear()
+        del self.cached_pixmap
         self.cached_pixmap = scaled
 
         if not use_high_quality:
-            self.resize_timer.start(300)
+            self.resize_timer.start(150)
         else:
             # 触发一次重绘，无缝变为高清
             self.update()
@@ -437,7 +425,7 @@ class BaseQMainWindow(QMainWindow, BackgroundImageManager):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
-        self.scale_bg_image(True)
+        self.scale_bg_image()
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
@@ -472,35 +460,7 @@ class WindowBaseQWidget(QWidget, BackgroundImageManager):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
-        self.scale_bg_image(True)
-
-    def add_extend_qss(self, qss):
-        """在标准主题上添加自定义样式表"""
-        self.setStyleSheet(self.styleSheet() + '\n' + qss)
-
-    def reset_theme(self):
-        """动态重载主题/使用自定义主题 时应当调用此方法"""
-        self.set_theme_qss()
-
-
-class InsideWidgetBaseQWidget(QWidget):
-    """所有嵌入组件引用的 QWidget 父类"""
-
-    def __init__(self):
-        super().__init__()
-
-    def nativeEvent(self, eventType, message):
-        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
-        if is_changed and self not in qt_window_mgr.distributed_window:
-            self.reset_theme()
-        return super().nativeEvent(eventType, message)
-
-    def resizeEvent(self, a0):
-        super().resizeEvent(a0)
-
-    def set_theme_qss(self):
-        """载入标准样式主题"""
-        set_theme_qss_as_cfg(self)
+        self.scale_bg_image()
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
@@ -535,7 +495,35 @@ class WindowBaseQDialog(QDialog, BackgroundImageManager):
         """载入标准样式主题，同时为窗口背景设置颜色"""
         set_theme_qss_as_cfg(self)
         set_widget_background_mode(self)
-        self.scale_bg_image(True)
+        self.scale_bg_image()
+
+    def add_extend_qss(self, qss):
+        """在标准主题上添加自定义样式表"""
+        self.setStyleSheet(self.styleSheet() + '\n' + qss)
+
+    def reset_theme(self):
+        """动态重载主题/使用自定义主题 时应当调用此方法"""
+        self.set_theme_qss()
+
+
+class InsideWidgetBaseQWidget(QWidget):
+    """所有嵌入组件引用的 QWidget 父类"""
+
+    def __init__(self):
+        super().__init__()
+
+    def nativeEvent(self, eventType, message):
+        is_changed = handle_native_event(self, qt_window_mgr.refresh_all_windows_theme, eventType, message)
+        if is_changed and self not in qt_window_mgr.distributed_window:
+            self.reset_theme()
+        return super().nativeEvent(eventType, message)
+
+    def resizeEvent(self, a0):
+        super().resizeEvent(a0)
+
+    def set_theme_qss(self):
+        """载入标准样式主题"""
+        set_theme_qss_as_cfg(self)
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
