@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit,
     QTextEdit, QPlainTextEdit, QToolButton, QGraphicsDropShadowEffect, QMainWindow
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon, QPainter, QPixmap, QPixmapCache
 
-from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr
+from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr,qt_image
 from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_background_mode, \
     is_dwm_bg_enabled
 
@@ -213,8 +213,10 @@ def init_bg_pixmap():
         QPixmapCache.clear()
 
         original_pixmap = QPixmap(background_pixmap_hex)
+        original_pixmap.setDevicePixelRatio(1.0)
         if not original_pixmap.isNull():
             background_pixmap = QPixmap(original_pixmap.size())
+            background_pixmap.setDevicePixelRatio(1.0)
             background_pixmap.fill(Qt.transparent)
 
             p1 = QPainter(background_pixmap)
@@ -376,6 +378,7 @@ class BackgroundImageManager(QObject):
             Qt.KeepAspectRatioByExpanding,
             Qt.SmoothTransformation if use_high_quality else Qt.FastTransformation
         )
+        scaled.setDevicePixelRatio(1.0)
 
         # 2. 计算居中偏移
         self.cached_x = (self.width() - scaled.width()) // 2
@@ -396,6 +399,10 @@ class BackgroundImageManager(QObject):
             return
 
         painter = QPainter(self)
+
+        # 关键：开启平滑变换，防止放缩产生的锯齿
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.setRenderHint(QPainter.Antialiasing)
 
         # 直接使用缓存好的 pixmap，CPU 占用极低
         painter.drawPixmap(self.cached_x, self.cached_y, self.cached_pixmap)
