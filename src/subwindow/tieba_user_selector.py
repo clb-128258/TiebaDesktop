@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QWidgetAction
 
 from publics import profile_mgr, funcs, app_logger, request_mgr
 from publics.base_ui_elements.base_ui import BaseQMenu, InsideWidgetBaseQWidget
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
+from subwindow.user_item import ExtListWidgetItem, UserItem
 from ui import tb_user_selector
 
 import aiotieba
@@ -78,7 +80,7 @@ class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
         self.setupUi(self)
 
         self.listWidget.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}')
-        self.loading_widget = funcs.LoadingFlashWidget()
+        self.loading_widget = LoadingFlashWidget()
         self.loading_widget.need_clean_bottom_rect = False
         self.loading_widget.cover_widget(self.listWidget)
         self.reset_theme()
@@ -162,8 +164,8 @@ class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
     def _ui_add_user(self, user):
         # follow is aiotieba Follow object with attributes user_id, portrait, show_name
         try:
-            item = funcs.ExtListWidgetItem(profile_mgr.current_bduss, profile_mgr.current_stoken)
-            widget = funcs.UserItem(profile_mgr.current_bduss, profile_mgr.current_stoken)
+            item = ExtListWidgetItem(profile_mgr.current_bduss, profile_mgr.current_stoken)
+            widget = UserItem(profile_mgr.current_bduss, profile_mgr.current_stoken)
             widget.load_by_callback = True
             portrait = user['portrait']
             name = user['name']

@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, qt_image, account_mgr
 from publics.base_ui_elements import top_toast_widget, base_ui
-from publics.funcs import LoadingFlashWidget, UserItem, start_background_thread, cut_string, \
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
+from publics.funcs import start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
     get_exception_string, cleanup_listWidget, show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging
@@ -19,6 +20,7 @@ from publics.qt_image import get_pixmap_icon_from_file
 
 from publics.baidu_features.tieba_apis import get_user_profile
 from publics.base_ui_elements.base_ui import BaseQMenu
+from subwindow.user_item import UserItem
 
 from ui import user_home_page
 

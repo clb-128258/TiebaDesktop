@@ -4,14 +4,16 @@
 from publics.base_ui_elements import base_ui
 from publics.base_ui_elements.windows_features import webview2
 from publics.baidu_features import tieba_apis
-from publics import proxytool
 from publics.winrt_url_share import winrt_share
-from publics.funcs import *
+
 from publics.app_logger import init_log
 from publics.app_logger import log_exception, log_INFO, log_WARN
-from publics import account_mgr
 
-from PyQt5.QtCore import QLocale, QTranslator
+from publics.funcs import *
+from publics import account_mgr
+from publics import proxytool
+
+from PyQt5.QtCore import QLocale, QTranslator, Qt
 from PyQt5.QtWidgets import QMessageBox, QApplication
 
 import sys

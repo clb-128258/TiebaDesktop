@@ -12,9 +12,10 @@ from PyQt5.QtWidgets import QMessageBox
 
 import consts
 from publics import profile_mgr, app_logger
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.windows_features import webview2
 from publics.base_ui_elements import top_toast_widget, base_ui
-from publics.funcs import start_background_thread, get_exception_string, LoadingFlashWidget, get_dict_value_treely, \
+from publics.funcs import start_background_thread, get_exception_string, get_dict_value_treely, \
     open_url_in_browser
 from publics.baidu_features.tieba_apis import getRecomForumList, add_thread
 from subwindow import tieba_user_selector, tieba_emoji_selector

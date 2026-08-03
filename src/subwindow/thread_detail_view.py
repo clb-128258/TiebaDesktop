@@ -12,9 +12,10 @@ from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.qt_image import get_pixmap_icon_from_file
 from publics.winrt_url_share import winrt_share
-from publics.funcs import LoadingFlashWidget, open_url_in_browser, start_background_thread, make_thread_content, \
+from publics.funcs import open_url_in_browser, start_background_thread, make_thread_content, \
     timestamp_to_string, cut_string, large_num_to_string, get_exception_string, get_dict_value_treely, \
     cleanup_listWidget, show_label_pixmap_with_animation, delete_listWidget_item
 import publics.app_logger as logging

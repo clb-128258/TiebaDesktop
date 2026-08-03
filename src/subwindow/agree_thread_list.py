@@ -5,10 +5,11 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
-from publics import qt_window_mgr, request_mgr, profile_mgr
+from publics import qt_window_mgr, request_mgr
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import timestamp_to_string, start_background_thread, cut_string, listWidget_get_visible_widgets, \
-    cleanup_listWidget, LoadingFlashWidget, get_exception_string, delete_listWidget_item
+    cleanup_listWidget, get_exception_string, delete_listWidget_item
 from ui import star_list
 
 

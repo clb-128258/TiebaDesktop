@@ -22,14 +22,15 @@ import consts
 from publics import (qt_window_mgr, profile_mgr, cache_mgr, qt_image,
                      account_mgr, app_logger, request_mgr)
 from publics.base_ui_elements.base_ui import BaseQMainWindow
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.windows_features import webview2
 from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.baidu_features.baidu_passport_login import QRLoginDialog, LoginWebView, SeniorLoginDialog
 from publics.base_ui_elements.windows_features import dwm_visual
 from publics.funcs import (save_json, load_json, start_background_thread,
-                           get_dict_value_treely, ExtListWidgetItem, UserItem,
-                           filesize_tostr, open_url_in_browser, LoadingFlashWidget)
+                           get_dict_value_treely,
+                           filesize_tostr, open_url_in_browser)
 from publics.tb_syncer import UnreadMessageType, ClipboardSyncer, TiebaMsgSyncer
 
 from subwindow.agree_thread_list import AgreedThreadsList
@@ -38,6 +39,7 @@ from subwindow.follow_forum_list import FollowForumList
 from subwindow.interact_list import UserInteractionsList
 from subwindow.mainwindow_menu import MainPopupMenu
 from subwindow.tieba_search_entry import TiebaSearchWindow
+from subwindow.user_item import ExtListWidgetItem, UserItem
 
 from ui import settings, mainwindow
 

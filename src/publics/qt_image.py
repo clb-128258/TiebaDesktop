@@ -35,7 +35,7 @@ def add_cover_radius_angle(image: QImage,
         resize_rate = 1.0
     else:
         resize_rate = round((width / image.width() + height / image.height()) / 2, 2)
-    round_diameter_original = 9
+    round_diameter_original = 12
     round_diameter_actually = int(round_diameter_original * (1 / resize_rate))
 
     image = image.convertToFormat(QImage.Format_ARGB32)

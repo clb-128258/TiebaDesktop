@@ -15,6 +15,7 @@ from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.base_ui_elements.base_ui import BaseQMenu
 
 import consts
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from ui import tb_image_uploader
 
 
@@ -186,7 +187,7 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
 
-        self.loading_widget = funcs.LoadingFlashWidget()
+        self.loading_widget = LoadingFlashWidget()
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()
 

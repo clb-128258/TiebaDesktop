@@ -3,6 +3,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog
 
 import consts
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, http_downloader, format_second, large_num_to_string, \
     open_url_in_browser
 from publics import qt_image, profile_mgr, funcs
@@ -19,7 +20,7 @@ class VideoWebView(webview2.QWebView2View):
         self.setParent(parent)
         self.parent_window = parent
 
-        self.loading_widget = funcs.LoadingFlashWidget(caption='视频正在赶来的路上...')
+        self.loading_widget = LoadingFlashWidget(caption='视频正在赶来的路上...')
         self.loading_widget.cover_widget(self)
 
         self.webview_profile = webview2.WebViewProfile(

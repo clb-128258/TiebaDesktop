@@ -7,7 +7,8 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QMessageBox
 
 from publics import qt_window_mgr, profile_mgr, cache_mgr, qt_image
-from publics.funcs import LoadingFlashWidget, start_background_thread, get_exception_string
+from publics.base_ui_elements.loading_widget import LoadingFlashWidget
+from publics.funcs import start_background_thread, get_exception_string
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import get_user_black_info
 from publics.base_ui_elements import base_ui

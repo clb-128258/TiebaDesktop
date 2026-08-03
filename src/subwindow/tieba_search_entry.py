@@ -6,8 +6,9 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 
 from publics import qt_window_mgr, request_mgr, profile_mgr, app_logger
 from publics.base_ui_elements import top_toast_widget, base_ui
-from publics.funcs import UserItem, start_background_thread, cut_string, timestamp_to_string, \
+from publics.funcs import start_background_thread, cut_string, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, delete_listWidget_item
+from subwindow.user_item import UserItem
 
 from ui import forum_search
 

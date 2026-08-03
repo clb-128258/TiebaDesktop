@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit,
     QTextEdit, QPlainTextEdit, QToolButton, QGraphicsDropShadowEffect, QMainWindow
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QIcon, QPainter, QPixmap, QPixmapCache
 
-from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr,qt_image
+from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr, qt_image
 from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_background_mode, \
     is_dwm_bg_enabled
 
@@ -213,10 +213,10 @@ def init_bg_pixmap():
         QPixmapCache.clear()
 
         original_pixmap = QPixmap(background_pixmap_hex)
-        original_pixmap.setDevicePixelRatio(1.0)
+        original_pixmap.setDevicePixelRatio(qt_image.get_screen_ratio())
         if not original_pixmap.isNull():
             background_pixmap = QPixmap(original_pixmap.size())
-            background_pixmap.setDevicePixelRatio(1.0)
+            background_pixmap.setDevicePixelRatio(qt_image.get_screen_ratio())
             background_pixmap.fill(Qt.transparent)
 
             p1 = QPainter(background_pixmap)
@@ -373,16 +373,18 @@ class BackgroundImageManager(QObject):
             return
 
         # 1. 在尺寸改变时，才进行像素缩放
+
+        real_size = self.size() * qt_image.get_screen_ratio()
         scaled = background_pixmap.scaled(
-            self.size(),
+            real_size,
             Qt.KeepAspectRatioByExpanding,
             Qt.SmoothTransformation if use_high_quality else Qt.FastTransformation
         )
-        scaled.setDevicePixelRatio(1.0)
+        scaled.setDevicePixelRatio(qt_image.get_screen_ratio())
 
         # 2. 计算居中偏移
-        self.cached_x = (self.width() - scaled.width()) // 2
-        self.cached_y = (self.height() - scaled.height()) // 2
+        self.cached_x = (real_size.width() - scaled.width()) // 2
+        self.cached_y = (real_size.height() - scaled.height()) // 2
 
         # 3. 缓存结果
         del self.cached_pixmap
@@ -399,10 +401,6 @@ class BackgroundImageManager(QObject):
             return
 
         painter = QPainter(self)
-
-        # 关键：开启平滑变换，防止放缩产生的锯齿
-        painter.setRenderHint(QPainter.SmoothPixmapTransform)
-        painter.setRenderHint(QPainter.Antialiasing)
 
         # 直接使用缓存好的 pixmap，CPU 占用极低
         painter.drawPixmap(self.cached_x, self.cached_y, self.cached_pixmap)
