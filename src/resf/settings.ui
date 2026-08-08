@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1047</width>
-    <height>664</height>
+    <width>1023</width>
+    <height>624</height>
    </rect>
   </property>
   <property name="font">
@@ -156,8 +156,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>802</width>
-            <height>2060</height>
+            <width>641</width>
+            <height>2100</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -3423,10 +3423,92 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
      </widget>
      <widget class="QWidget" name="page_6">
       <layout class="QGridLayout" name="gridLayout_14">
+       <item row="3" column="0">
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="2" column="0">
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>诊断信息</string>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_11">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_25">
+            <property name="text">
+             <string>如果使用本程序时遇到了问题，也请把这些诊断信息一并提供给开发者。</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_21">
+            <property name="text">
+             <string>内部版本信息：</string>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>当前系统时间：</string>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_20">
+            <property name="text">
+             <string>操作系统版本：</string>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_23">
+            <property name="text">
+             <string>Qt 版本：</string>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_22">
+            <property name="text">
+             <string>用户数据目录：</string>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
-          <string>日志查看</string>
+          <string>日志与用户数据</string>
          </property>
          <property name="flat">
           <bool>true</bool>
@@ -3434,13 +3516,45 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
          <layout class="QGridLayout" name="gridLayout_13">
           <item row="0" column="0">
            <widget class="QLabel" name="label_24">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
-             <string>可以在日志文件夹中查看日志文件。如需清理日志文件，请转到“存储空间”页面。</string>
+             <string>用户数据目录中存放了本软件产生的所有配置、缓存等数据。具有高级需求的用户可打开用户配置目录进行操作。</string>
             </property>
            </widget>
           </item>
           <item row="1" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <item>
+             <widget class="QPushButton" name="pushButton_10">
+              <property name="text">
+               <string>打开用户数据目录</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_75">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item row="3" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QPushButton" name="pushButton_3">
               <property name="text">
@@ -3463,144 +3577,20 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
             </item>
            </layout>
           </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="groupBox">
-         <property name="title">
-          <string>诊断信息</string>
-         </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_11">
           <item row="2" column="0">
-           <widget class="QLabel" name="label_20">
+           <widget class="QLabel" name="label_71">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
-             <string>操作系统版本：</string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_16">
-            <property name="text">
-             <string>当前系统时间：</string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_21">
-            <property name="text">
-             <string>内部版本信息：</string>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,1">
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label_22">
-              <property name="text">
-               <string>用户数据目录：</string>
-              </property>
-              <property name="textInteractionFlags">
-               <set>Qt::TextBrowserInteraction</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="pushButton_10">
-              <property name="text">
-               <string>打开目录</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_7">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-          <item row="6" column="0">
-           <layout class="QHBoxLayout" name="horizontalLayout_9" stretch="0,0,1">
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label_23">
-              <property name="text">
-               <string>Qt 版本：</string>
-              </property>
-              <property name="textInteractionFlags">
-               <set>Qt::TextBrowserInteraction</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="pushButton_11">
-              <property name="text">
-               <string>关于 Qt...</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_8">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_25">
-            <property name="text">
-             <string>如果使用本程序时遇到了问题，也请把这些诊断信息一并提供给开发者。</string>
+             <string>可以在日志文件夹中查看日志文件。如需清理日志文件，请转到“存储空间”页面。</string>
             </property>
            </widget>
           </item>
          </layout>
         </widget>
-       </item>
-       <item row="2" column="0">
-        <spacer name="verticalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-        </spacer>
        </item>
       </layout>
      </widget>
@@ -3622,7 +3612,7 @@ GUI 可能会短暂卡死，这是正常现象，表明正在更改主题。
         <widget class="QFrame" name="frame">
          <property name="styleSheet">
           <string notr="true">QFrame#frame{
-	background-color: rgba(99, 85, 255, 200);
+	background-color: rgba(99, 85, 255, 100);
 	border-radius: 20px;
 }
 QLabel{
@@ -3710,23 +3700,13 @@ QLabel{
         </widget>
        </item>
        <item row="1" column="0">
-        <layout class="QGridLayout" name="gridLayout_8" rowstretch="0,0,0,0">
+        <layout class="QGridLayout" name="gridLayout_8" rowstretch="0,0,0,0,0">
          <property name="leftMargin">
           <number>0</number>
          </property>
          <property name="topMargin">
           <number>0</number>
          </property>
-         <item row="2" column="0">
-          <widget class="QCommandLinkButton" name="commandLinkButton_2">
-           <property name="text">
-            <string>查看法律信息</string>
-           </property>
-           <property name="description">
-            <string>查看 MIT License 的内容</string>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="0">
           <widget class="QCommandLinkButton" name="commandLinkButton">
            <property name="text">
@@ -3737,7 +3717,7 @@ QLabel{
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <spacer name="verticalSpacer_4">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -3749,6 +3729,26 @@ QLabel{
             </size>
            </property>
           </spacer>
+         </item>
+         <item row="2" column="0">
+          <widget class="QCommandLinkButton" name="commandLinkButton_2">
+           <property name="text">
+            <string>查看法律信息</string>
+           </property>
+           <property name="description">
+            <string>查看 MIT License 的内容</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QCommandLinkButton" name="commandLinkButton_3">
+           <property name="text">
+            <string>查看 Qt 版本</string>
+           </property>
+           <property name="description">
+            <string>本程序基于 Qt 开发，点击打开关于 Qt 对话框</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>

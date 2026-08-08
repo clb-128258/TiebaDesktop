@@ -224,7 +224,6 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
         self.manage_account_button.clicked.connect(self.init_manage_acount_button_menu)
         self.login_button.clicked.connect(self.init_login_button_menu)
-        self.pushButton_11.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
         self.pushButton_12.clicked.connect(self.scan_use_detail_async)
         self.pushButton_4.clicked.connect(self.clear_caches_async)
         self.pushButton_6.clicked.connect(self.open_proxy_settings)
@@ -248,6 +247,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             lambda: self.open_web_link('https://www.github.com/clb-128258/TiebaDesktop'))
         self.commandLinkButton_2.clicked.connect(
             lambda: self.open_web_link('https://www.github.com/clb-128258/TiebaDesktop?tab=MIT-1-ov-file'))
+        self.commandLinkButton_3.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
         self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{datapath}/logs'))
         self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
 

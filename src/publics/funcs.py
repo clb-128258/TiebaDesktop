@@ -191,8 +191,9 @@ def delete_listWidget_item(lw: QListWidget, item: QListWidgetItem):
 def cleanup_listWidget(lw: QListWidget):
     """清理 QListWidget 的所有条目，并释放内存"""
 
-    lw.verticalScrollBar().blockSignals(True)
     lw.verticalScrollBar().setValue(0)
+    lw.verticalScrollBar().blockSignals(True)
+
     for i in range(lw.count()):
         item = lw.item(i)
         widget = lw.itemWidget(item)
