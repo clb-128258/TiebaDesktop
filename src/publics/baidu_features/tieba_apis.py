@@ -405,7 +405,7 @@ def add_thread(bduss, stoken,
                forum_id, title, content,
                tab_name="", tab_id=0,
                hide_in_homepage=False, content_statement="", is_question=False,
-               captcha_md5="", captcha_json_info=None):
+               captcha_md5="", captcha_json_info=None, captcha_type=''):
     """
     发布主题贴
 
@@ -552,8 +552,9 @@ def add_thread(bduss, stoken,
 
             # 验证码特判
             if captcha_json_info and captcha_md5:
-                vcode_stringify = json.dumps(captcha_json_info, separators=(',', ':'))
-                request_body_proto.data.vcode_type = "6"
+                vcode_stringify = json.dumps(captcha_json_info,
+                                             separators=(',', ':')) if captcha_type == '6' else captcha_json_info
+                request_body_proto.data.vcode_type = captcha_type
                 request_body_proto.data.vcode_md5 = captcha_md5
                 request_body_proto.data.vcode = vcode_stringify
 
@@ -578,7 +579,7 @@ def add_thread(bduss, stoken,
     return start_async()
 
 
-def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json_info):
+def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json_info, captcha_type):
     """
     回复主题贴
 
@@ -698,8 +699,9 @@ def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json
 
             # 验证码特判
             if captcha_json_info and captcha_md5:
-                vcode_stringify = json.dumps(captcha_json_info, separators=(',', ':'))
-                request_body_proto.data.vcode_type = "6"
+                vcode_stringify = json.dumps(captcha_json_info,
+                                             separators=(',', ':')) if captcha_type == '6' else captcha_json_info
+                request_body_proto.data.vcode_type = captcha_type
                 request_body_proto.data.vcode_md5 = captcha_md5
                 request_body_proto.data.vcode = vcode_stringify
 

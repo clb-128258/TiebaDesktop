@@ -595,16 +595,31 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         if msg['is_captcha']:
             md5 = msg['captcha_info']['md5']
             h5_link = msg['captcha_info']['link']
+            captcha_type = msg['captcha_info']['type']
 
-            dialog = thread_publisher.AddPostCaptchaWebView(md5, h5_link)
-            md5, json_info = dialog.exec_window()
-            if json_info:
-                self.add_post_async(md5, json_info)
+            if captcha_type == '6':
+                dialog = thread_publisher.AddPostCaptchaWebView(md5, h5_link)
+                md5, json_info = dialog.exec_window()
+                if json_info:
+                    self.add_post_async(md5, json_info, captcha_type)
+                else:
+                    self.top_toaster.showToast(top_toast_widget.ToastMessage('用户已取消网页交互验证',
+                                                                             icon_type=top_toast_widget.ToastIconType.INFORMATION))
+            elif captcha_type == '1':
+                dialog = thread_publisher.AddPostImageCaptchaDialog(md5, h5_link)
+                vcode = dialog.exec_with_vcode()
+                if vcode:
+                    self.add_post_async(md5, vcode, captcha_type)
+                else:
+                    self.top_toaster.showToast(top_toast_widget.ToastMessage('用户已取消图片验证',
+                                                                             icon_type=top_toast_widget.ToastIconType.INFORMATION))
             else:
-                self.top_toaster.showToast(top_toast_widget.ToastMessage('用户已取消交互验证',
-                                                                         icon_type=top_toast_widget.ToastIconType.INFORMATION))
+                toast = top_toast_widget.ToastMessage(
+                    f'未知的验证码类型 {captcha_type}，贴吧桌面无法解析此类验证码，请通过官方途径发贴',
+                    icon_type=top_toast_widget.ToastIconType.ERROR)
+                self.top_toaster.showToast(toast)
 
-    def add_post_async(self, captcha_md5=None, captcha_json_info=None):
+    def add_post_async(self, captcha_md5=None, captcha_json_info=None, captcha_type: str = ''):
         if not self.textEdit.toPlainText():
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title='请输入内容后再回贴',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
@@ -612,7 +627,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.top_toaster.showToast(top_toast_widget.ToastMessage(title='目前处于游客状态，请登录后再回贴',
                                                                      icon_type=top_toast_widget.ToastIconType.INFORMATION))
         else:
-            if not (captcha_md5 and captcha_json_info):
+            if not (captcha_md5 and captcha_json_info and captcha_type):
                 show_string = ('回复功能目前还处于测试阶段。\n'
                                '使用本软件回贴可能会遇到发贴失败、弹验证码等情况，甚至可能导致你的账号被全吧永久封禁。\n'
                                '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
@@ -632,17 +647,17 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             if flag:
                 self.frame.setEnabled(False)
                 self.pushButton_3.setText('发送中...')
-                start_background_thread(self.add_post, args=(captcha_md5, captcha_json_info))
+                start_background_thread(self.add_post, args=(captcha_md5, captcha_json_info, captcha_type))
 
-    def add_post(self, captcha_md5, captcha_json_info):
+    def add_post(self, captcha_md5, captcha_json_info, captcha_type):
         emit_data = {'success': False,
                      'text': '',
                      'is_captcha': False,
-                     'captcha_info': {'md5': '', 'link': ''}
+                     'captcha_info': {'md5': '', 'link': '', 'type': ''}
                      }
         try:
             result = add_post(self.bduss, self.stoken, self.forum_id, self.thread_id, self.textEdit.toPlainText(),
-                              captcha_md5, captcha_json_info)
+                              captcha_md5, captcha_json_info, captcha_type)
             if result.error.errorno == 0:
                 emit_data['success'] = True
                 exp_text = f'，本吧经验 +{result.data.exp.inc}' if result.data.exp.inc not in ('0', '') else ''
@@ -652,7 +667,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 emit_data['is_captcha'] = True
                 emit_data['captcha_info']['md5'] = result.data.info.vcode_md5
                 emit_data['captcha_info']['link'] = result.data.info.vcode_pic_url
-                emit_data['text'] = '服务器要求输入验证码，请在弹出的验证网页中完成验证。如多次弹出验证，建议使用官方客户端发贴'
+                emit_data['captcha_info']['type'] = result.data.info.vcode_type
+                emit_data['text'] = '服务器要求输入验证码，请在弹出的窗口中完成验证。如多次弹出验证，建议使用官方客户端发贴'
             else:
                 emit_data['success'] = False
                 emit_data['text'] = f'{result.error.errmsg} (错误代码 {result.error.errorno})'
