@@ -197,7 +197,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_6.setPixmap(
-            QPixmap('ui/tieba_logo_big_transparent.png').scaled(55, 55, transformMode=Qt.SmoothTransformation))
+            qt_image.get_pixmap_icon_from_file('ui/tieba_logo_big_transparent.png', 57))
         self.groupBox_3.hide()
 
         self.init_top_toaster()
@@ -244,9 +244,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 w.currentIndexChanged.connect(slot)
 
         self.commandLinkButton.clicked.connect(
-            lambda: self.open_web_link('https://www.github.com/clb-128258/TiebaDesktop'))
+            lambda: self.open_web_link(consts.GITHUB_REPO_URL))
         self.commandLinkButton_2.clicked.connect(
-            lambda: self.open_web_link('https://www.github.com/clb-128258/TiebaDesktop?tab=MIT-1-ov-file'))
+            lambda: self.open_web_link(f'{consts.GITHUB_REPO_URL}?tab=MIT-1-ov-file'))
         self.commandLinkButton_3.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
         self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{datapath}/logs'))
         self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
@@ -610,11 +610,13 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             QMessageBox.information(self, '提示', '该功能暂不支持你的系统，请手动调整系统的代理设置。', QMessageBox.Ok)
 
     def set_debug_info(self):
-        self.label_8.setText(f'版本 {consts.APP_VERSION_STR} ({consts.APP_VERSION_NUM})')
+        self.label_8.setText(f'版本 {consts.APP_VERSION_STR} by {consts.AUTHOR_NAME}')
         self.label_23.setText(f'Qt 版本：{QT_VERSION_STR} ({QT_VERSION})')
         self.label_22.setText(f'用户数据目录：{consts.datapath}')
-        self.label_21.setText(f'内部版本信息：version {consts.APP_VERSION_NUM} '
-                              f'with aiotieba {aiotieba.__version__}, TiebaRequestMgr Client Version {request_mgr.TIEBA_CLIENT_VERSION}')
+        self.label_21.setText(f'内部版本信息：{consts.APP_VERSION_STR}|{consts.APP_VERSION_NUM} '
+                              f'author {consts.AUTHOR_NAME} '
+                              f'with aiotieba {aiotieba.__version__}, '
+                              f'TiebaRequestMgr Client Version {request_mgr.TIEBA_CLIENT_VERSION}')
         self.label_20.setText(f'操作系统版本：{platform.system()} {platform.version()}, on {platform.machine()} CPU')
         self.label_16.setText('当前系统时间：' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 

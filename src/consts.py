@@ -15,6 +15,10 @@ def get_default_datapath():
 APP_VERSION_STR = '1.3.2-release'
 APP_VERSION_NUM = 11
 
+# 作者信息
+AUTHOR_NAME = 'CLB'
+GITHUB_REPO_URL = 'https://github.com/clb-128258/TiebaDesktop'
+
 # 网络请求信息
 HTTP_TIMEOUT = 12
 

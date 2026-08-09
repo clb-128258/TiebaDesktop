@@ -18,7 +18,8 @@ QWidget#Form {
     background-color: transparent;
 }
 
-QWidget#scrollAreaWidgetContents {
+QWidget#scrollAreaWidgetContents,
+#scrollAreaWidgetContents_2 {
     background-color: transparent;
 }
 
@@ -152,7 +153,7 @@ QGroupBox {
     background-color: transparent;
     border: 1px solid #9c9c9c;
     border-radius: 8px;
-    margin-top: 7px; 
+    margin-top: 7px;
     padding-top: 5px;
     color: FONT_COLOR;
 }
@@ -183,6 +184,7 @@ QToolButton {
     icon-size: 19px;
     color: FONT_COLOR;
 }
+
 QToolButton:disabled {
     background-color: transparent;
     opacity: 0.4;
@@ -196,16 +198,19 @@ QLabel {
 }
 
 
-QSpinBox::up-button, QDoubleSpinBox::up-button {
+QSpinBox::up-button,
+QDoubleSpinBox::up-button {
     subcontrol-position: top right;
     border-top-right-radius: 6px;
 }
 
-QSpinBox::down-button, QDoubleSpinBox::down-button {
+QSpinBox::down-button,
+QDoubleSpinBox::down-button {
     subcontrol-position: bottom right;
     border-bottom-right-radius: 6px;
 }
 
-QSpinBox:hover, QDoubleSpinBox:hover {
+QSpinBox:hover,
+QDoubleSpinBox:hover {
     border: 1px solid #5b44c8;
 }

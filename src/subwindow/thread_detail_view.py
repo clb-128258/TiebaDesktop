@@ -251,8 +251,6 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         self.post_area_flash_shower.reset_theme()
         self.flash_shower.reset_theme()
-        self.scrollAreaWidgetContents_2.setStyleSheet(
-            f'QWidget#scrollAreaWidgetContents_2 {{background-color: transparent;}}')
 
         self.label_19.setPixmap(get_pixmap_icon_from_file(f'ui/icon_{font_policy}/warning.png', 20))
         self.toolButton_2.setIcon(QIcon(f'ui/icon_{font_policy}/close.png'))
