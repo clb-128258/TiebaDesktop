@@ -6,8 +6,15 @@ import threading
 
 def send_msg(title: str, msgitem: str, icon: str = '', callback=None):
     icon_arg = f'-p \"{os.path.abspath(icon)}\"' if icon else ''
-    rtv = subprocess.call(
-        f'\"{os.getcwd()}\\binres\\toast.exe\" -w -t \"{title}\" -m \"{msgitem}\" {icon_arg}', shell=True)
+    shell = f'\"{os.getcwd()}\\binres\\toast.exe\" -w -t \"{title}\" -m \"{msgitem}\" {icon_arg}'
+
+    process = subprocess.Popen(shell, shell=True)
+    try:
+        rtv = process.wait(300)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        rtv = -1
+
     if rtv == 0 and callback is not None:
         callback()
     return rtv
