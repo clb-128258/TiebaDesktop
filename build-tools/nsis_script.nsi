@@ -136,6 +136,9 @@ SectionEnd
 
 Section Uninstall
 	!insertmacro MUI_STARTMENU_GETFOLDER "Application" $ICONS_GROUP
+
+	ExecShellWait open "$INSTDIR\TiebaDesktop.exe" "--uninstall-cleanup"
+
 	Delete "$INSTDIR\uninst.exe"
 
 	Delete "$SMPROGRAMS\$ICONS_GROUP\卸载.lnk"

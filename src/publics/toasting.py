@@ -2,12 +2,10 @@ import pathlib
 import random
 from typing import Callable, Optional
 import platform
-import threading
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QTimer
 
-from publics import win8toast
+from publics import win8toast, app_logger
 import consts
 
 Win10_MIN_VERSION = 10240
@@ -47,19 +45,89 @@ class Button:
 
 
 def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
-    if IS_AT_LEAST_WIN10:
-        if iconPath is not None:
-            if not iconPath.exists():
-                raise ValueError(f"Could not register the application: File {iconPath} does not exist")
-            elif iconPath.suffix != ".ico":
-                raise ValueError(f"Could not register the application: File {iconPath} must be of type .ico")
+    if not IS_AT_LEAST_WIN10:
+        return
 
-        winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
-        keyPath = f"SOFTWARE\\Classes\\AppUserModelId\\{appId}"
-        with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, keyPath) as masterKey:
-            winreg.SetValueEx(masterKey, "DisplayName", 0, winreg.REG_SZ, appName)
-            if iconPath is not None:
-                winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
+    if iconPath is not None:
+        if not iconPath.exists():
+            raise ValueError(f"Could not register the application: File {iconPath} does not exist")
+        elif iconPath.suffix != ".ico":
+            raise ValueError(f"Could not register the application: File {iconPath} must be of type .ico")
+
+    winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+    keyPath = f"SOFTWARE\\Classes\\AppUserModelId\\{appId}"
+    with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, keyPath) as masterKey:
+        winreg.SetValueEx(masterKey, "DisplayName", 0, winreg.REG_SZ, appName)
+        if iconPath is not None:
+            winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
+
+
+def recursive_delete_key(key_handle, sub_key_name, access=winreg.KEY_WOW64_64KEY):
+    """
+    递归删除指定的注册表项及其所有子项。
+
+    :param key_handle: 已打开的父项句柄 (例如: HKEY_CURRENT_USER)。
+    :param sub_key_name: 要删除的子项名称字符串。
+    :param access: 用于 RegDeleteKeyEx 的访问权限，默认为 KEY_WOW64_64KEY。
+    """
+    try:
+        # 尝试打开要删除的子项，用于枚举其子项和值。
+        # KEY_ALL_ACCESS 或 KEY_SET_VALUE + KEY_ENUMERATE_SUB_KEYS + KEY_QUERY_VALUE
+        # KEY_READ 是用于枚举的最小权限，这里我们用一个能打开的权限。
+        key_to_delete = winreg.OpenKey(
+            key_handle,
+            sub_key_name,
+            0,
+            winreg.KEY_READ | access
+        )
+    except FileNotFoundError:
+        app_logger.log_INFO(f"Registry key '{sub_key_name}' does not exist, no need to delete.")
+        return
+
+    # 1. 递归删除所有子项 (Subkeys)
+    while True:
+        try:
+            # 枚举子项。由于每次删除后索引都会变化，所以总是从索引 0 开始。
+            sub_key = winreg.EnumKey(key_to_delete, 0)
+            full_path = f"{sub_key_name}\\{sub_key}"
+
+            # 对子项进行递归调用
+            # 注意：这里需要传入 key_handle 和 full_path，而不是 key_to_delete。
+            # 简化起见，我们直接调用自身来删除 sub_key_name 下的 sub_key
+            recursive_delete_key(key_handle, full_path, access)
+
+        except OSError as e:
+            # 当没有更多子项时，EnumKey 会抛出 OSError
+            # (Python 3.3+ 的 winreg 模块通常将 Windows 错误码转换为 OSError)
+            if e.winerror == 259:  # ERROR_NO_MORE_ITEMS
+                break
+            # 其他 OSError 可能是权限问题等，应该被抛出
+            app_logger.log_exception(e)
+
+    # 2. 关闭句柄
+    winreg.CloseKey(key_to_delete)
+
+    # 3. 删除父项自身
+    app_logger.log_INFO(f"Deleting registry key: {sub_key_name}")
+    try:
+        # 使用 DeleteKeyEx 来执行实际的删除操作
+        winreg.DeleteKeyEx(key_handle, sub_key_name, access)
+    except PermissionError as e:
+        app_logger.log_WARN(f"Permission error: Unable to delete '{sub_key_name}'. Please run as administrator.")
+        app_logger.log_exception(e)
+    except OSError as e:
+        app_logger.log_WARN(f"Deletion failed (possibly already deleted or other reasons): {sub_key_name} - {e}")
+        app_logger.log_exception(e)
+
+
+def delete_AUMID(appId: str):
+    if not IS_AT_LEAST_WIN10:
+        return
+
+    key_type = winreg.HKEY_CURRENT_USER
+    keyPath = f"SOFTWARE\\Classes\\AppUserModelId\\{appId}"
+
+    recursive_delete_key(key_type, keyPath)
 
 
 def showMessageInTrayIcon(title: str,

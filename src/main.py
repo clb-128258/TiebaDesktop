@@ -1,16 +1,15 @@
 """
 程序入口点
 """
-from publics.base_ui_elements import base_ui
-from publics.base_ui_elements.windows_features import webview2
-from publics.baidu_features import tieba_apis
-from publics.winrt_url_share import winrt_share
-
 from publics.app_logger import init_log
 from publics.app_logger import log_exception, log_INFO, log_WARN
 
+from publics.cli_feats import handle_command_events, reset_udf
+from publics.base_ui_elements import base_ui
+from publics.base_ui_elements.windows_features import webview2
+from publics.winrt_url_share import winrt_share
+
 from publics.funcs import *
-from publics import account_mgr
 from publics import proxytool
 
 from PyQt5.QtCore import QLocale, QTranslator, Qt
@@ -19,17 +18,9 @@ from PyQt5.QtWidgets import QMessageBox, QApplication
 import sys
 import os
 import requests
-import aiotieba
-import aiotieba.helper.cache
-import asyncio
-import consts
 import pathlib
 
 from subwindow import main_ui_elements
-
-if os.name == 'nt':
-    import win32api
-    import win32con
 
 requests.session().trust_env = True
 requests.session().verify = False
@@ -66,126 +57,6 @@ def check_webview2():
         msgbox.warning(None, '运行警告',
                        '你的电脑上似乎还未安装 WebView2 运行时。本程序的部分功能（如登录等）将不可用。',
                        QMessageBox.Ok)
-
-
-def reset_udf():
-    """根据命令行参数重设datapath"""
-    cmds = sys.argv
-    if '--reset-udf' in cmds:
-        udf = ''
-        for i in cmds:
-            if i.startswith('--udf-path='):
-                udf = i.split('=')[1]
-        if os.path.isdir(udf):
-            consts.datapath = udf
-            log_INFO(f'UserDataPath is reset by --reset-udf.')
-        else:
-            logging.log_INFO(f'{udf} is not a valid folder, please create it first.')
-        log_INFO(f'Now UserDataPath is {consts.datapath}.')
-
-
-def handle_command_events():
-    """处理命令行参数，与命令行参数有关的代码均在此执行"""
-    cmds = sys.argv
-    dont_run_gui = False
-    log_INFO('Handling command args')
-
-    def get_current_user():
-        account_mgr_obj = account_mgr.GlobalAccountContainer.get_current_manager()
-        account_mgr_obj.load_accounts_list()
-        return account_mgr_obj.current_account.bduss, account_mgr_obj.current_account.stoken
-
-    def msgbox(text, title='贴吧桌面'):
-        if '--quiet' not in cmds and os.name == 'nt':
-            win32api.MessageBox(None, text, title, win32con.MB_OK | win32con.MB_ICONINFORMATION)
-
-    async def sign_grow():
-        bduss, stoken = get_current_user()
-        if not bduss:
-            msgbox('请先登录账号再签到。')
-            return
-        async with aiotieba.Client(bduss, stoken, proxy=True) as client:
-            r1 = await client.sign_growth()
-            r2 = await client.sign_growth_share()
-
-            err_msg = '成长等级签到成功。'
-            if not (r1 and r2):
-                err_msg = '签到失败，详情如下：'
-                if not r1:
-                    err_msg += f'\n成长等级签到：{r1.err}'
-                if not r2:
-                    err_msg += f'\n成长等级分享任务：{r2.err}'
-            msgbox(err_msg)
-
-    async def sign_all():
-        bduss, stoken = get_current_user()
-        signed_count = 0
-
-        if not bduss:
-            msgbox('请先登录账号再签到。')
-            return
-
-        async with aiotieba.Client(bduss, stoken, proxy=True) as client:
-            await client.sign_forums()  # 先一键签到
-
-            bars = tieba_apis.newmoindex(bduss)['data']['like_forum']
-            bars.sort(key=lambda k: int(k["user_exp"]), reverse=True)  # 按吧等级排序
-
-            for forum in bars:
-                if forum["is_sign"] != 1:
-                    fid = forum['forum_id']
-                    fname = forum['forum_name']
-                    r = tieba_apis.sign_forum(bduss, stoken, fid, fname)['error_code'] == '0'
-
-                    signed_count += (1 if r else 0)
-                    await asyncio.sleep(0.3)  # 休眠0.3秒，防止贴吧服务器抽风
-                else:
-                    # 已签到的直接跳过
-                    signed_count += 1
-        msgbox(f'签到完成，已签到 {signed_count} 个吧，{len(bars) - signed_count} 个吧签到失败。')
-
-    async def switch_account():
-        uid = -1
-        for i in cmds:
-            if i.startswith('--userid='):
-                try:
-                    uid = int(i.split('=')[1])
-                except:
-                    uid = -1
-
-        if uid <= 0:
-            msgbox('请指定正确的用户 ID。')
-        else:
-            account_mgr_obj = account_mgr.GlobalAccountContainer.get_current_manager()
-            account_mgr_obj.load_accounts_list()
-
-            for i in account_mgr_obj.account_list:
-                if i.uid == uid:
-                    account_mgr_obj.switch_to_account(uid)
-                    msgbox(f'已将账号切换到 {uid}。')
-                    return
-            msgbox(f'未在本地找到 {uid} 的登录信息。')
-
-    def start_async(func):
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        asyncio.run(func)
-
-    if '--set-current-account' in cmds:
-        dont_run_gui = True
-        log_INFO('--set-current-account started')
-        start_async(switch_account())
-    else:
-        if '--sign-all-forums' in cmds:
-            dont_run_gui = True
-            log_INFO('--sign-all-forums started')
-            start_async(sign_all())
-        if '--sign-grows' in cmds:
-            dont_run_gui = True
-            log_INFO('--sign-grows started')
-            start_async(sign_grow())
-    if dont_run_gui:
-        sys.exit(0)
 
 
 def set_qt_scale_factor():

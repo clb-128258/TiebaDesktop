@@ -75,7 +75,7 @@ http_header_protobuf = {
 
 # 其它全局信息
 enable_log_file = True
-WINDOWS_AUMID = 'CLB.TiebaDesktop'
+WINDOWS_AUMID = f'{AUTHOR_NAME}.TiebaDesktop'
 encrypt_key = 'G6WxHyBcliRT5KqcaLkskO5SKB3JJ9dX'
 datapath = get_default_datapath()
 

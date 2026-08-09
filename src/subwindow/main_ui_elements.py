@@ -43,8 +43,6 @@ from subwindow.user_item import ExtListWidgetItem, UserItem
 
 from ui import settings, mainwindow
 
-datapath = consts.datapath
-
 # 全局统一保存核心对象
 QApp_instance = None
 main_window_instance = None
@@ -248,8 +246,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.commandLinkButton_2.clicked.connect(
             lambda: self.open_web_link(f'{consts.GITHUB_REPO_URL}?tab=MIT-1-ov-file'))
         self.commandLinkButton_3.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
-        self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{datapath}/logs'))
-        self.pushButton_10.clicked.connect(lambda: open_url_in_browser(datapath))
+        self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{consts.datapath}/logs'))
+        self.pushButton_10.clicked.connect(lambda: open_url_in_browser(consts.datapath))
 
         self.scanFinish.connect(self._set_use_detail_ui)
         self.clearFinish.connect(self._on_caches_cleared)
@@ -697,7 +695,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.load_animation.show()
             webview = webview2.QWebView2View()
             webview.setProfile(
-                webview2.WebViewProfile(data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}'))
+                webview2.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}'))
             webview.initRender()
 
             start_background_thread(self.clear_caches, args=(webview,))
@@ -722,11 +720,11 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 time.sleep(1)
 
             if self.checkBox_4.isChecked():
-                clear_folder(f'{datapath}/image_caches')
+                clear_folder(f'{consts.datapath}/image_caches')
             if self.checkBox_5.isChecked():
-                clear_folder(f'{datapath}/logs')
+                clear_folder(f'{consts.datapath}/logs')
             if self.checkBox_9.isChecked():
-                clear_folder(f'{datapath}/webview_data/default')
+                clear_folder(f'{consts.datapath}/webview_data/default')
             if self.checkBox_10.isChecked():
                 aiotieba.helper.cache._fname2fid.clear()
                 aiotieba.helper.cache._fid2fname.clear()
@@ -813,30 +811,30 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 'window_rect_num': 0,
                 'window_rect_size': 0}
 
-        lsc_log = scan_tree_total_size(f'{datapath}/logs')  # 日志文件总大小
-        lsc_img = scan_tree_total_size(f'{datapath}/image_caches')  # 图片缓存文件总大小
+        lsc_log = scan_tree_total_size(f'{consts.datapath}/logs')  # 日志文件总大小
+        lsc_img = scan_tree_total_size(f'{consts.datapath}/image_caches')  # 图片缓存文件总大小
         data['image_cache_size'] = lsc_img
         data['log_size'] = lsc_log
 
         main_pf_exclude = ['view_history', 'post_drafts', 'window_rects.json']  # 排除特定文件
-        for i in os.listdir(datapath):
-            if os.path.isfile(f'{datapath}/{i}') and i not in main_pf_exclude:
-                data['main_profile_size'] += os.stat(f'{datapath}/{i}').st_size
+        for i in os.listdir(consts.datapath):
+            if os.path.isfile(f'{consts.datapath}/{i}') and i not in main_pf_exclude:
+                data['main_profile_size'] += os.stat(f'{consts.datapath}/{i}').st_size
 
-        data['default_webview_size'] = scan_tree_total_size(f'{datapath}/webview_data/default')
+        data['default_webview_size'] = scan_tree_total_size(f'{consts.datapath}/webview_data/default')
         data['current_webview_cache_size'] = scan_tree_total_size(
-            f'{datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Cache')
+            f'{consts.datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Cache')
         data['current_webview_cookie_size'] = scan_tree_total_size(
-            f'{datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Network')
-        data['total_webview_size'] = scan_tree_total_size(f'{datapath}/webview_data')
+            f'{consts.datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Network')
+        data['total_webview_size'] = scan_tree_total_size(f'{consts.datapath}/webview_data')
         data['fidcache_num'] = len(aiotieba.helper.cache._fname2fid.keys())
-        data['fidcache_size'] = os.stat(f'{datapath}/cache_index/fidfname_index.json').st_size
-        data['post_draft_size'] = os.stat(f'{datapath}/post_drafts').st_size
+        data['fidcache_size'] = os.stat(f'{consts.datapath}/cache_index/fidfname_index.json').st_size
+        data['post_draft_size'] = os.stat(f'{consts.datapath}/post_drafts').st_size
         data['post_draft_num'] = len(profile_mgr.post_drafts.keys())
-        data['history_size'] = os.stat(f'{datapath}/view_history').st_size
+        data['history_size'] = os.stat(f'{consts.datapath}/view_history').st_size
         data['history_num'] = len(profile_mgr.view_history)
         data['window_rect_num'] = len(profile_mgr.window_rects.keys())
-        data['window_rect_size'] = os.stat(f'{datapath}/window_rects.json').st_size
+        data['window_rect_size'] = os.stat(f'{consts.datapath}/window_rects.json').st_size
 
         data['total_data_size'] = (lsc_img +
                                    lsc_log +
@@ -1375,19 +1373,19 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
         d.exec()
 
     def handle_d2id_flag(self):
-        data = load_json(f'{datapath}/d2id_flag')
+        data = load_json(f'{consts.datapath}/d2id_flag')
         uid = data['uid']
         if uid:
             try:
-                if os.path.isdir(f'{datapath}/webview_data/{uid}'):  # 把旧的数据删掉
-                    shutil.rmtree(f'{datapath}/webview_data/{uid}')
-                os.rename(f'{datapath}/webview_data/default', f'{datapath}/webview_data/{uid}')
-                os.mkdir(f'{datapath}/webview_data/default')
+                if os.path.isdir(f'{consts.datapath}/webview_data/{uid}'):  # 把旧的数据删掉
+                    shutil.rmtree(f'{consts.datapath}/webview_data/{uid}')
+                os.rename(f'{consts.datapath}/webview_data/default', f'{consts.datapath}/webview_data/{uid}')
+                os.mkdir(f'{consts.datapath}/webview_data/default')
             except Exception as e:
                 log_WARN('handle_d2id_flag failed')
                 log_exception(e)
             else:
-                save_json({'uid': ''}, f'{datapath}/d2id_flag')
+                save_json({'uid': ''}, f'{consts.datapath}/d2id_flag')
 
     def _add_uinfo(self, datas):
         self.frame.setEnabled(True)

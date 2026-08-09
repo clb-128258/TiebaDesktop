@@ -67,7 +67,7 @@ def create_data():
     """识别用户的电脑上是否存在用户数据，如不存在则创建"""
     logging.log_INFO('Creating user data')
 
-    if not os.path.isdir(consts.datapath):
+    if not os.path.isdir(consts.datapath) or len(os.listdir(consts.datapath)) == 0:
         init_AUMID(consts.WINDOWS_AUMID, '贴吧桌面', pathlib.Path(f"{os.getcwd()}/ui/tieba_logo_big_single.ico"))
 
     expect_folder = [consts.datapath,
