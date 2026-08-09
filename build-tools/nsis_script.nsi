@@ -1,6 +1,7 @@
 ﻿Unicode true
 
 !include "MUI2.nsh"
+!include nsDialogs.nsh
 !include WinVer.nsh
 !include "x64.nsh"
 !include "LogicLib.nsh"
@@ -27,10 +28,15 @@ SetCompressor lzma
 ; 许可协议页面
 !define MUI_LICENSEPAGE_CHECKBOX
 !insertmacro MUI_PAGE_LICENSE "mit_license.txt"
+; 已安装程序选择页面
+Page custom SelectModeCreate SelectModeLeave
 ; 安装目录选择页面
 !insertmacro MUI_PAGE_DIRECTORY
 ; 开始菜单设置页面
-var ICONS_GROUP
+Var ICONS_GROUP
+Var INSTALLED
+Var RADIO_INSTALL
+Var RADIO_UNINSTALL
 !define MUI_STARTMENUPAGE_NODISABLE
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER "贴吧桌面"
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT "${PRODUCT_UNINST_ROOT_KEY}"
@@ -45,41 +51,83 @@ var ICONS_GROUP
 ; 安装卸载过程页面
 !insertmacro MUI_UNPAGE_INSTFILES
 
+; 已安装程序操作页面
+Function SelectModeCreate
+	${If} $INSTALLED == 0
+		Abort
+	${EndIf}
+
+	nsDialogs::Create 1018
+	Pop $0
+
+	${If} $0 == error
+		Abort
+	${EndIf}
+
+	${NSD_CreateLabel} 0 0 100% 12u "检测到系统内已安装本软件。请选择操作："
+	Pop $0
+
+	${NSD_CreateRadioButton} 0 25 100% 12u "覆盖安装（保留原安装目录）"
+	Pop $RADIO_INSTALL
+	${NSD_CreateRadioButton} 0 42 100% 12u "卸载已安装程序"
+	Pop $RADIO_UNINSTALL
+
+	${NSD_SetState} $RADIO_INSTALL ${BST_CHECKED}
+	nsDialogs::Show
+FunctionEnd
+
+Function SelectModeLeave
+	${NSD_GetState} $RADIO_UNINSTALL $0
+	StrCmp $0 ${BST_CHECKED} uninstall done
+
+	done:
+	Return
+
+	uninstall:
+	IfFileExists "$INSTDIR\uninst.exe" 0 uninstNotFound
+	ExecWait '"$INSTDIR\uninst.exe"'
+	Quit
+
+	uninstNotFound:
+	MessageBox MB_ICONEXCLAMATION|MB_OK "未能找到卸载程序，请检查安装目录。"
+	Abort
+FunctionEnd
+
 ; 安装界面包含的语言设置
 !insertmacro MUI_LANGUAGE "SimpChinese"
 
 ; 安装预释放文件
 
-Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+Name "${PRODUCT_NAME}"
 OutFile "work_out\[installer_name]"
 InstallDir "$PROGRAMFILES\TiebaDesktop"
 ShowInstDetails show
-ShowUnInstDetails show
+ShowUninstDetails show
 
 Section "MainSection" SEC01
-  SetOutPath "$INSTDIR"
-  SetOverwrite ifnewer
-  File /r "work_temp\*.*"
+	SetOutPath "$INSTDIR"
+	SetOverwrite ifnewer
+	File /r "work_temp\*.*"
 
-; 创建开始菜单快捷方式
-  !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
-  CreateDirectory "$SMPROGRAMS\$ICONS_GROUP"
-  CreateShortCut "$DESKTOP\贴吧桌面.lnk" "$INSTDIR\TiebaDesktop.exe"
-  CreateShortCut "$SMPROGRAMS\$ICONS_GROUP\贴吧桌面.lnk" "$INSTDIR\TiebaDesktop.exe"
-  CreateShortCut "$SMPROGRAMS\$ICONS_GROUP\卸载.lnk" "$INSTDIR\uninst.exe"
-  !insertmacro MUI_STARTMENU_WRITE_END
+	; 创建开始菜单快捷方式
+	!insertmacro MUI_STARTMENU_WRITE_BEGIN Application
+	CreateDirectory "$SMPROGRAMS\$ICONS_GROUP"
+	CreateShortcut "$DESKTOP\贴吧桌面.lnk" "$INSTDIR\TiebaDesktop.exe"
+	CreateShortcut "$SMPROGRAMS\$ICONS_GROUP\贴吧桌面.lnk" "$INSTDIR\TiebaDesktop.exe"
+	CreateShortcut "$SMPROGRAMS\$ICONS_GROUP\卸载.lnk" "$INSTDIR\uninst.exe"
+	!insertmacro MUI_STARTMENU_WRITE_END
 SectionEnd
 
 Section -Post
-  WriteUninstaller "$INSTDIR\uninst.exe"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_GITHUB_PAGE}"
+	WriteUninstaller "$INSTDIR\uninst.exe"
+	WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
+	WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+	WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+	WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_GITHUB_PAGE}"
 
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "InstallLocation" "$INSTDIR"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\ui\tieba_logo_big_single.ico"
+	WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
+	WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "InstallLocation" "$INSTDIR"
+	WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\ui\tieba_logo_big_single.ico"
 SectionEnd
 
 /******************************
@@ -87,53 +135,60 @@ SectionEnd
  ******************************/
 
 Section Uninstall
-  !insertmacro MUI_STARTMENU_GETFOLDER "Application" $ICONS_GROUP
-  Delete "$INSTDIR\uninst.exe"
+	!insertmacro MUI_STARTMENU_GETFOLDER "Application" $ICONS_GROUP
+	Delete "$INSTDIR\uninst.exe"
 
-  Delete "$SMPROGRAMS\$ICONS_GROUP\卸载.lnk"
-  Delete "$SMPROGRAMS\$ICONS_GROUP\贴吧桌面.lnk"
-  Delete "$DESKTOP\贴吧桌面.lnk"
+	Delete "$SMPROGRAMS\$ICONS_GROUP\卸载.lnk"
+	Delete "$SMPROGRAMS\$ICONS_GROUP\贴吧桌面.lnk"
+	Delete "$DESKTOP\贴吧桌面.lnk"
 
-  RMDir /r "$SMPROGRAMS\$ICONS_GROUP"
+	RMDir /r "$SMPROGRAMS\$ICONS_GROUP"
 
-  RMDir /r "$INSTDIR\ui"
-  RMDir /r "$INSTDIR\_internal"
-  RMDir /r "$INSTDIR\binres"
+	RMDir /r "$INSTDIR\ui"
+	RMDir /r "$INSTDIR\_internal"
+	RMDir /r "$INSTDIR\binres"
 
-  RMDir /r "$INSTDIR"
+	RMDir /r "$INSTDIR"
 
-  DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
-  SetAutoClose true
+	DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
+	SetAutoClose true
 SectionEnd
 
-
 Function .onInit
-  ${If} ${IsNativeAMD64}
-    # 如果是 AMD64 (标准 64位 Intel/AMD) 系统，允许通过，不做任何操作
-    DetailPrint "系统架构为: AMD64"
-      
-  ${ElseIf} ${IsNativeARM64}
-    # 如果是 ARM64 (比如 骁龙 处理器笔记本) 系统，允许通过，不做任何操作
-    DetailPrint "系统架构为: ARM64"
-      
-  ${Else}
-    MessageBox MB_ICONSTOP|MB_OK "本软件仅支持 AMD64/ARM64 架构的系统。单击确认键以退出安装程序。"
-    Quit
-  
+	StrCpy $INSTALLED 0
+	ReadRegStr $0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "InstallLocation"
+
+	${If} $0 != ""
+		StrCpy $INSTALLED 1
+		StrCpy $INSTDIR $0
 	${EndIf}
 
-  ${IfNot} ${AtLeastWin7}
-    MessageBox MB_ICONSTOP|MB_OK "你的 Windows 版本过低，请至少使用 Win7 及以上版本的系统。单击确认键以退出安装程序。"
-    Quit
-  ${EndIf}
+	${If} ${IsNativeAMD64}
+		# 如果是 AMD64 (标准 64位 Intel/AMD) 系统，允许通过，不做任何操作
+		DetailPrint "系统架构为: AMD64"
+
+	${ElseIf} ${IsNativeARM64}
+		# 如果是 ARM64 (比如 骁龙 处理器笔记本) 系统，允许通过，不做任何操作
+		DetailPrint "系统架构为: ARM64"
+
+	${Else}
+		MessageBox MB_ICONSTOP|MB_OK "本软件仅支持 AMD64/ARM64 架构的系统。单击确认键以退出安装程序。"
+		Quit
+
+	${EndIf}
+
+	${IfNot} ${AtLeastWin7}
+		MessageBox MB_ICONSTOP|MB_OK "你的 Windows 版本过低，请至少使用 Win7 及以上版本的系统。单击确认键以退出安装程序。"
+		Quit
+	${EndIf}
 FunctionEnd
 
 Function un.onInit
-  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "确认要从你的电脑上卸载 $(^Name) 吗？" IDYES +2
-  Abort
+	MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "确认要从你的电脑上卸载 $(^Name) 吗？" IDYES +2
+	Abort
 FunctionEnd
 
 Function un.onUninstSuccess
-  HideWindow
-  MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) 已卸载完成。"
+	HideWindow
+	MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) 已卸载完成。"
 FunctionEnd
