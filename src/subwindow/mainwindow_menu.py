@@ -64,6 +64,7 @@ class MainPopupMenu(base_ui.InsideWidgetBaseQWidget, mw_popup.Ui_Form):
     def showEvent(self, a0):
         super().showEvent(a0)
         self.get_self_info_async()
+        self.resize_menu()
 
     def resizeEvent(self, a0):
         super().resizeEvent(a0)
@@ -126,11 +127,11 @@ class MainPopupMenu(base_ui.InsideWidgetBaseQWidget, mw_popup.Ui_Form):
             self.label_2.setText(data['nickname'])
             self.label_3.setText('贴吧 ID: ' + str(data['tieba_id']))
 
-            self.label_8.setText(str(data['agree_me_num']))
-            self.label_10.setText(str(data['follow_forum_num']))
-            self.label_4.setText(str(data['follow']))
-            self.label_6.setText(str(data['fans']))
-            self.label_14.setText(str(data['store_num']))
+            self.label_8.setText(funcs.large_num_to_string(data['agree_me_num']))
+            self.label_10.setText(funcs.large_num_to_string(data['follow_forum_num']))
+            self.label_4.setText(funcs.large_num_to_string(data['follow']))
+            self.label_6.setText(funcs.large_num_to_string(data['fans']))
+            self.label_14.setText(funcs.large_num_to_string(data['store_num']))
 
             if data['is_banned']:
                 self.frame_7.show()
