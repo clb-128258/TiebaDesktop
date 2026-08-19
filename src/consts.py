@@ -12,8 +12,8 @@ def get_default_datapath():
 
 
 # 版本信息
-APP_VERSION_STR = '1.3.2-release'
-APP_VERSION_NUM = 11
+APP_VERSION_STR = '1.3.3-release'
+APP_VERSION_NUM = 12
 
 # 作者信息
 AUTHOR_NAME = 'CLB'
