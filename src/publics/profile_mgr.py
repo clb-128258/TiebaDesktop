@@ -17,7 +17,7 @@ local_config_model = {
         'show_statement': True
     },
     'forum_view_settings': {
-        'default_sort': 0
+        'default_sort': 2
     },
     'web_browser_settings': {
         'url_open_policy': 0
