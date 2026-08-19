@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(1084, 639)
+        Form.resize(1245, 772)
         font = QtGui.QFont()
         font.setPointSize(9)
         Form.setFont(font)
@@ -26,7 +26,7 @@ class Ui_Form(object):
         self.scrollArea_2.setWidgetResizable(True)
         self.scrollArea_2.setObjectName("scrollArea_2")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 530, 621))
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 611, 754))
         self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
         self.gridLayout_9 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents_2)
         self.gridLayout_9.setContentsMargins(0, 0, 0, 0)
@@ -455,7 +455,7 @@ class Ui_Form(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 526, 481))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 606, 614))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)

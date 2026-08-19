@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>996</width>
-    <height>662</height>
+    <width>1163</width>
+    <height>747</height>
    </rect>
   </property>
   <property name="font">
@@ -708,7 +708,7 @@ QWidget#scrollAreaWidgetContents{
         <x>0</x>
         <y>0</y>
         <width>300</width>
-        <height>556</height>
+        <height>641</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0">

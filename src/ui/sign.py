@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(446, 398)
+        Dialog.resize(446, 411)
         font = QtGui.QFont()
         font.setPointSize(9)
         Dialog.setFont(font)
