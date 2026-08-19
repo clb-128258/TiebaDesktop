@@ -50,7 +50,35 @@
         </size>
        </property>
        <property name="styleSheet">
-        <string notr="true">QListWidget::item { margin-bottom: 15px; }</string>
+        <string notr="true">QListWidget {
+    background-color: transparent;
+    border: none;
+    outline: none;
+	font-size: 10pt;
+}
+
+QListWidget::item {
+    min-height: 30px;
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+    border-top-right-radius: 15px;
+	border-bottom-right-radius: 15px;
+    padding-left: 5px;
+    margin-bottom: 7px;
+}
+
+QListWidget::item:hover {
+    background-color: rgba(91, 68, 200, 50);
+}
+
+QListWidget::item:selected {
+    background-color: rgba(91, 68, 200, 255);
+    font-weight: bold;
+}
+
+QListWidget::item:selected:hover {
+    background-color: rgba(91, 68, 200, 240);
+}</string>
        </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>

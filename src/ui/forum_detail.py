@@ -537,7 +537,7 @@ class Ui_Dialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 805, 518))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 100, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -594,7 +594,35 @@ class Ui_Dialog(object):
         self.listWidget_2 = QtWidgets.QListWidget(Dialog)
         self.listWidget_2.setMinimumSize(QtCore.QSize(91, 0))
         self.listWidget_2.setMaximumSize(QtCore.QSize(91, 16777215))
-        self.listWidget_2.setStyleSheet("QListWidget::item { margin-bottom: 15px; }")
+        self.listWidget_2.setStyleSheet("QListWidget {\n"
+"    background-color: transparent;\n"
+"    border: none;\n"
+"    outline: none;\n"
+"    font-size: 10pt;\n"
+"}\n"
+"\n"
+"QListWidget::item {\n"
+"    min-height: 30px;\n"
+"    border-top-left-radius: 4px;\n"
+"    border-bottom-left-radius: 4px;\n"
+"    border-top-right-radius: 15px;\n"
+"    border-bottom-right-radius: 15px;\n"
+"    padding-left: 5px;\n"
+"    margin-bottom: 7px;\n"
+"}\n"
+"\n"
+"QListWidget::item:hover {\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
+"}\n"
+"\n"
+"QListWidget::item:selected {\n"
+"    background-color: rgba(91, 68, 200, 255);\n"
+"    font-weight: bold;\n"
+"}\n"
+"\n"
+"QListWidget::item:selected:hover {\n"
+"    background-color: rgba(91, 68, 200, 240);\n"
+"}")
         self.listWidget_2.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.listWidget_2.setObjectName("listWidget_2")
         item = QtWidgets.QListWidgetItem()

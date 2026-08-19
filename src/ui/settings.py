@@ -27,7 +27,35 @@ class Ui_Dialog(object):
         self.gridLayout_12.addWidget(self.line, 0, 1, 1, 1)
         self.listWidget = QtWidgets.QListWidget(Dialog)
         self.listWidget.setMaximumSize(QtCore.QSize(91, 16777215))
-        self.listWidget.setStyleSheet("QListWidget::item { margin-bottom: 15px; }")
+        self.listWidget.setStyleSheet("QListWidget {\n"
+"    background-color: transparent;\n"
+"    border: none;\n"
+"    outline: none;\n"
+"    font-size: 10pt;\n"
+"}\n"
+"\n"
+"QListWidget::item {\n"
+"    min-height: 30px;\n"
+"    border-top-left-radius: 4px;\n"
+"    border-bottom-left-radius: 4px;\n"
+"    border-top-right-radius: 15px;\n"
+"    border-bottom-right-radius: 15px;\n"
+"    padding-left: 5px;\n"
+"    margin-bottom: 7px;\n"
+"}\n"
+"\n"
+"QListWidget::item:hover {\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
+"}\n"
+"\n"
+"QListWidget::item:selected {\n"
+"    background-color: rgba(91, 68, 200, 255);\n"
+"    font-weight: bold;\n"
+"}\n"
+"\n"
+"QListWidget::item:selected:hover {\n"
+"    background-color: rgba(91, 68, 200, 240);\n"
+"}")
         self.listWidget.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.listWidget.setObjectName("listWidget")
         item = QtWidgets.QListWidgetItem()
@@ -1039,7 +1067,35 @@ class Ui_Dialog(object):
         self.gridLayout_7.addWidget(self.line_3, 0, 1, 1, 1)
         self.listWidget_3 = QtWidgets.QListWidget(self.page_4)
         self.listWidget_3.setMaximumSize(QtCore.QSize(91, 16777215))
-        self.listWidget_3.setStyleSheet("QListWidget::item { margin-bottom: 15px; }")
+        self.listWidget_3.setStyleSheet("QListWidget {\n"
+"    background-color: transparent;\n"
+"    border: none;\n"
+"    outline: none;\n"
+"    font-size: 10pt;\n"
+"}\n"
+"\n"
+"QListWidget::item {\n"
+"    min-height: 30px;\n"
+"    border-top-left-radius: 4px;\n"
+"    border-bottom-left-radius: 4px;\n"
+"    border-top-right-radius: 15px;\n"
+"    border-bottom-right-radius: 15px;\n"
+"    padding-left: 5px;\n"
+"    margin-bottom: 7px;\n"
+"}\n"
+"\n"
+"QListWidget::item:hover {\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
+"}\n"
+"\n"
+"QListWidget::item:selected {\n"
+"    background-color: rgba(91, 68, 200, 255);\n"
+"    font-weight: bold;\n"
+"}\n"
+"\n"
+"QListWidget::item:selected:hover {\n"
+"    background-color: rgba(91, 68, 200, 240);\n"
+"}")
         self.listWidget_3.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.listWidget_3.setObjectName("listWidget_3")
         item = QtWidgets.QListWidgetItem()
@@ -1077,7 +1133,7 @@ class Ui_Dialog(object):
         self.scrollArea_2.setWidgetResizable(True)
         self.scrollArea_2.setObjectName("scrollArea_2")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 856, 569))
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 551, 368))
         self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
         self.gridLayout_31 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents_2)
         self.gridLayout_31.setContentsMargins(0, 0, 0, 0)
