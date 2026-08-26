@@ -156,34 +156,34 @@ class ThreadView(base_ui.InsideWidgetBaseQWidget, tie_preview.Ui_Form):
         menu = base_ui.BaseQMenu()
 
         dislike_thread = QAction('不想看该贴子', self)
-        dislike_thread.setVisible(not author_is_self)
+        dislike_thread.setVisible(not author_is_self and bool(self.bduss))
         dislike_thread.triggered.connect(lambda: self.do_action_async("dislike_thread"))
         menu.addAction(dislike_thread)
 
         dislike_forum = QAction('屏蔽所在吧', self)
-        dislike_forum.setVisible(bool(self.forum_id))
+        dislike_forum.setVisible(bool(self.forum_id) and bool(self.bduss))
         dislike_forum.triggered.connect(lambda: self.do_action_async("block_forum"))
         menu.addAction(dislike_forum)
 
         block_author = QAction('拉黑楼主', self)
-        block_author.setVisible(not author_is_self)
+        block_author.setVisible(not author_is_self and bool(self.bduss))
         block_author.triggered.connect(self.open_user_blacklister)
         menu.addAction(block_author)
 
         menu.addSeparator()
 
         private_thread = QAction('个人主页隐藏', self)
-        private_thread.setVisible(author_is_self)
+        private_thread.setVisible(author_is_self and bool(self.bduss))
         private_thread.triggered.connect(lambda: self.do_action_async("private_thread"))
         menu.addAction(private_thread)
 
         public_thread = QAction('个人主页公开', self)
-        public_thread.setVisible(author_is_self)
+        public_thread.setVisible(author_is_self and bool(self.bduss))
         public_thread.triggered.connect(lambda: self.do_action_async("public_thread"))
         menu.addAction(public_thread)
 
         delete_thread = QAction('删除此贴', self)
-        delete_thread.setVisible(author_is_self)
+        delete_thread.setVisible(author_is_self and bool(self.bduss))
         delete_thread.triggered.connect(lambda: self.do_action_async("del_thread"))
         menu.addAction(delete_thread)
 

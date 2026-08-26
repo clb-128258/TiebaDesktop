@@ -393,16 +393,17 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
         menu.addSeparator()
 
         store_thread = QAction('收藏到此楼', self)
+        store_thread.setVisible(bool(self.bduss))
         store_thread.triggered.connect(lambda: self.do_action_async("store_thread"))
         menu.addAction(store_thread)
 
         block_author = QAction('拉黑用户', self)
-        block_author.setVisible(not author_is_self)
+        block_author.setVisible(not author_is_self and bool(self.bduss))
         block_author.triggered.connect(self.open_user_blacklister)
         menu.addAction(block_author)
 
         delete_thread = QAction('删除此回复', self)
-        delete_thread.setVisible(author_is_self)
+        delete_thread.setVisible(author_is_self and bool(self.bduss))
         delete_thread.triggered.connect(lambda: self.do_action_async("del_post"))
         menu.addAction(delete_thread)
 
@@ -469,4 +470,8 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
 
     def open_post_in_browser(self):
         link = f'https://tieba.baidu.com/p/{self.thread_id}?pid={self.post_id}'
+
+        if self.is_comment:
+            link += f'&cid={self.post_id}'
+
         open_url_in_browser(link)
