@@ -349,12 +349,12 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
     def adjust_narrow_button(self):
         if self.width() <= 800:
             if self.narrow_mode_index == 1:
-                self.scrollArea_2.show()
+                self.frame_9.show()
                 self.frame_5.hide()
                 self.gridLayout_11.setColumnStretch(0, 1)
                 self.gridLayout_11.setColumnStretch(1, 0)
             elif self.narrow_mode_index == 2:
-                self.scrollArea_2.hide()
+                self.frame_9.hide()
                 self.frame_5.show()
                 self.gridLayout_11.setColumnStretch(0, 0)
                 self.gridLayout_11.setColumnStretch(1, 1)
@@ -364,7 +364,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         else:
             self.gridLayout_11.setColumnStretch(0, 1)
             self.gridLayout_11.setColumnStretch(1, 1)
-            self.scrollArea_2.show()
+            self.frame_9.show()
             self.frame_5.show()
             self.narrow_switch_button.hide()
 
@@ -372,13 +372,13 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         if self.narrow_mode_index == 1:
             self.gridLayout_11.setColumnStretch(0, 0)
             self.gridLayout_11.setColumnStretch(1, 1)
-            self.scrollArea_2.hide()
+            self.frame_9.hide()
             self.frame_5.show()
             self.narrow_mode_index = 2
         elif self.narrow_mode_index == 2:
             self.gridLayout_11.setColumnStretch(0, 1)
             self.gridLayout_11.setColumnStretch(1, 0)
-            self.scrollArea_2.show()
+            self.frame_9.show()
             self.frame_5.hide()
             self.narrow_mode_index = 1
 
@@ -1108,7 +1108,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             datas.forum_name = '未知贴吧'
 
         self.setWindowTitle(datas.title + ' - ' + datas.forum_name)
-        self.label_15.setText(datas.forum_name)
+        self.label_15.setText(cut_string(datas.forum_name, 30))
         self.label_14.hide()
         self.label_21.hide()
 
@@ -1119,14 +1119,21 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.label_5.setText(datas.title)
         self.label_6.setText(datas.text)
         self.label_7.setText('回复区 ({n} 条回复)'.format(n=str(datas.reply_num)))
+
+        has_tag_shown = False
         if self.is_treasure:
+            has_tag_shown = True
             self.label_13.show()
         else:
             self.horizontalLayout_2.removeWidget(self.label_13)
         if self.is_top:
+            has_tag_shown = True
             self.label_12.show()
         else:
             self.horizontalLayout_2.removeWidget(self.label_12)
+
+        if not has_tag_shown:
+            self.frame_8.hide()
 
     def update_ui_head_info(self, datas):
         if datas['err_info']:
@@ -1136,7 +1143,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             self.flash_shower.hide()
             if self.forum_id != 0:
                 self.setWindowTitle(datas['title'] + ' - ' + datas['forum_name'] + '吧')
-                self.label_15.setText(datas['forum_name'] + '吧')
+                self.label_15.setText(cut_string(datas['forum_name'], 30) + '吧')
                 if datas['forum_slogan']:
                     self.label_21.show()
                     self.label_21.setText(datas['forum_slogan'])
