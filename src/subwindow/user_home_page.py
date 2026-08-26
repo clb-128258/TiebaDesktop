@@ -189,6 +189,30 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
         menu.addSeparator()
 
+        show_follow_forum_strongly_menu = QMenu(self)
+        show_follow_forum_strongly_menu.setTitle('第三方工具箱')
+        show_follow_forum_strongly_menu.setToolTip('打开第三方工具箱页面，方便查询关注吧列表。可能需要你手动输入用户信息')
+
+        eztb = QAction('eztb 工具箱', self)
+        eztb.triggered.connect(
+            lambda: open_url_in_browser(f'https://www.eztb.org/likeforum?method=id&id=%22{self.real_user_id}%22'))
+        show_follow_forum_strongly_menu.addAction(eztb)
+
+        anova = QAction('恋文工具箱', self)
+        anova.triggered.connect(lambda: open_url_in_browser(f'https://tb.anova.me/'))
+        show_follow_forum_strongly_menu.addAction(anova)
+
+        ouotool = QAction('ouo 工具箱', self)
+        ouotool.triggered.connect(
+            lambda: open_url_in_browser(f'https://ouotool.com/tb?un={self.real_baidu_user_name}'))
+        show_follow_forum_strongly_menu.addAction(ouotool)
+
+        chengqing = QAction('澄清·工具箱', self)
+        chengqing.triggered.connect(lambda: open_url_in_browser(f'http://chengqing.cc/'))
+        show_follow_forum_strongly_menu.addAction(chengqing)
+
+        menu.addMenu(show_follow_forum_strongly_menu)
+
         copy_datas = QMenu(self)
         copy_datas.setToolTipsVisible(True)
         copy_datas.setTitle('复制...')
@@ -231,26 +255,6 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         copy_datas.addAction(copy_portrait)
 
         menu.addMenu(copy_datas)
-
-        show_follow_forum_strongly_menu = QMenu(self)
-        show_follow_forum_strongly_menu.setTitle('第三方工具箱')
-        show_follow_forum_strongly_menu.setToolTip('在第三方工具箱中查询该用户关注列表。')
-
-        ouotool = QAction('ouo 工具箱', self)
-        ouotool.triggered.connect(
-            lambda: open_url_in_browser(f'https://ouotool.com/tb?un={self.real_baidu_user_name}'))
-        show_follow_forum_strongly_menu.addAction(ouotool)
-
-        eztb = QAction('eztb 工具箱', self)
-        eztb.triggered.connect(
-            lambda: open_url_in_browser(f'https://www.eztb.org/likeforum?method=id&id=%22{self.real_user_id}%22'))
-        show_follow_forum_strongly_menu.addAction(eztb)
-
-        chengqing = QAction('澄清·工具箱', self)
-        chengqing.triggered.connect(lambda: open_url_in_browser(f'http://chengqing.cc/'))
-        show_follow_forum_strongly_menu.addAction(chengqing)
-
-        menu.addMenu(show_follow_forum_strongly_menu)
 
         open_in_browser = QAction('浏览器打开', self)
         open_in_browser.triggered.connect(
