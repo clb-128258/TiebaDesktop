@@ -50,12 +50,11 @@ class Ui_Form(object):
         self.gridLayout_2.addWidget(self.tableWidget, 2, 0, 1, 1)
         self.frame = QtWidgets.QFrame(Form)
         self.frame.setStyleSheet("QFrame#frame {\n"
-"    background-color: rgb(211, 205, 255);\n"
+"    background-color: rgba(91, 68, 200, 50);\n"
 "    border: 1px soild #c0c4cc;\n"
 "    border-radius: 12px;\n"
 "    border-color: #67C23A;\n"
 "}\n"
-"QLabel{color: black;}\n"
 "")
         self.frame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)

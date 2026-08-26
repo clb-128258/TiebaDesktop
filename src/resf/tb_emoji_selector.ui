@@ -96,12 +96,11 @@
     <widget class="QFrame" name="frame">
      <property name="styleSheet">
       <string notr="true">QFrame#frame {
-	background-color: rgb(211, 205, 255);
+	background-color: rgba(91, 68, 200, 50);
     border: 1px soild #c0c4cc;
     border-radius: 12px;
     border-color: #67C23A;
 }
-QLabel{color: black;}
 </string>
      </property>
      <property name="frameShape">

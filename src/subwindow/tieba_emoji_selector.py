@@ -1,12 +1,13 @@
 """贴吧表情选择器"""
 import os
 
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import QSize
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QTableWidgetItem, QWidgetAction
 
 from publics import profile_mgr, app_logger, funcs
 from publics.base_ui_elements.base_ui import BaseQMenu, InsideWidgetBaseQWidget
+from publics.qt_image import get_pixmap_icon_from_file
 from ui import tb_emoji_selector
 
 
@@ -45,8 +46,6 @@ class TiebaEmojiSelector(InsideWidgetBaseQWidget, tb_emoji_selector.Ui_Form):
         self.reset_theme()
         self.setFixedSize(self.size())
         self.tableWidget.setIconSize(QSize(30, 30))
-        self.label_2.setPixmap(
-            QPixmap('ui/icon_black/quiz.png').scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.frame.hide()
 
         self.tableWidget.verticalScrollBar().valueChanged.connect(self.scroll_load_images)
@@ -62,6 +61,12 @@ class TiebaEmojiSelector(InsideWidgetBaseQWidget, tb_emoji_selector.Ui_Form):
         super().showEvent(a0)
         self.activateWindow()
         self.scroll_load_images()
+
+    def reset_theme(self):
+        super().reset_theme()
+
+        icon = get_pixmap_icon_from_file(f'ui/icon_{profile_mgr.get_theme_policy_string()[1]}/quiz.png', 30)
+        self.label_2.setPixmap(icon)
 
     def on_emoji_selected(self, item):
         self.selected_emoji = item.emoji_name
