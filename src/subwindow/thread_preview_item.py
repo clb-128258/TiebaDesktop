@@ -190,15 +190,22 @@ class ThreadView(base_ui.InsideWidgetBaseQWidget, tie_preview.Ui_Form):
         bt_pos = self.toolButton.mapToGlobal(QPoint(0, 0))
         menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.toolButton.height()))
 
-    def set_thread_values(self, view, agree, reply, repost, send_time=0):
-        self.agree_num = agree
-        self.reply_num = reply
+    def set_thread_values(self, view=-1, agree=-1, reply=-1, repost=-1, send_time=0):
+        self.agree_num = agree if agree != -1 else 0
+        self.reply_num = reply if reply != -1 else 0
         self.send_time = send_time
 
-        text = (f'{large_num_to_string(view, endspace=True)}次浏览，'
-                f'{large_num_to_string(agree, endspace=True)}人点赞，'
-                f'{large_num_to_string(reply, endspace=True)}条回复，'
-                f'{large_num_to_string(repost, endspace=True)}次转发')
+        text = ''
+        value_strings = [[f'{large_num_to_string(view, endspace=True)}次浏览', view],
+                         [f'{large_num_to_string(agree, endspace=True)}人点赞', agree],
+                         [f'{large_num_to_string(reply, endspace=True)}条回复', reply],
+                         [f'{large_num_to_string(repost, endspace=True)}次转发', repost]]
+
+        for vstr, value in value_strings:
+            if value != -1:
+                text += vstr + ' | '
+        text = text[:-3]
+
         if send_time > 0:
             timestr = '发布于 ' + timestamp_to_string(send_time)
             text += '\n' + timestr

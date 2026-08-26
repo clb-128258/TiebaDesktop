@@ -422,7 +422,8 @@ def add_thread(bduss, stoken,
         is_question (bool): 是否作为求助贴发布
 
         captcha_md5 (str): 验证码md5
-        captcha_json_info (dict): 百度验证API返回的json信息
+        captcha_json_info (Any): 百度验证API返回的json信息，或是验证码文本
+        captcha_type (str): 验证码类型
 
     Notes:
         该接口不保证完全稳定，可能导致账号被风控（如发贴秒删、秒屏蔽、频繁验证码等），甚至账号被封禁，请<谨慎使用>!
@@ -590,7 +591,8 @@ def add_post(bduss, stoken, forum_id, thread_id, text, captcha_md5, captcha_json
         text (str): 文本内容，包括富文本标签
 
         captcha_md5 (str): 验证码md5
-        captcha_json_info (dict): 百度验证API返回的json信息
+        captcha_json_info (Any): 百度验证API返回的json信息，或是验证码文本
+        captcha_type (str): 验证码类型
 
     Notes:
         该接口不保证完全稳定，可能导致账号被风控（如发贴秒删、秒屏蔽、频繁验证码等），甚至账号被封禁，请<谨慎使用>!
@@ -758,3 +760,32 @@ def submit_dislike_thread(bduss, stoken, thread_id, forum_id):
                                     use_mobile_header=True)
 
     return resp
+
+
+def user_personal_page(bduss, stoken, uid, pn=1):
+    """
+    获取旧版个人主页信息\n
+    返回用户旧版信息，所有历史发贴（包括已删除或隐藏的）
+
+    Args:
+        uid (int): 用户id
+        pn (int): 页码
+    """
+
+    payload = {
+        'BDUSS': bduss,
+        '_client_type': "2",
+        '_client_version': "7.9.2",
+        'pn': str(pn),
+        'scr_dip': "1.9375",
+        'scr_h': "1600",
+        'scr_w': "900",
+        'stoken': stoken,
+        'uid': str(uid),
+    }
+
+    resp_json = request_mgr.run_post_api('/c/u/user/personal',
+                                         payloads=request_mgr.calc_sign(payload),
+                                         host_type=2, use_mobile_header=True)
+
+    return resp_json

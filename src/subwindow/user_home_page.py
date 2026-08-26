@@ -18,7 +18,7 @@ from publics.funcs import start_background_thread, cut_string, \
 import publics.app_logger as logging
 from publics.qt_image import get_pixmap_icon_from_file
 
-from publics.baidu_features.tieba_apis import get_user_profile
+from publics.baidu_features.tieba_apis import get_user_profile, user_personal_page
 from publics.base_ui_elements.base_ui import BaseQMenu
 from subwindow.user_item import UserItem
 
@@ -59,17 +59,21 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         self.frame_10.hide()
         self.frame_11.hide()
 
+        self.loaded_thread_items = []
         self.page = {'thread': {'loading': False, 'page': 1},
                      'reply': {'loading': False, 'page': 1},
                      'follow_forum': {'loading': False, 'page': 1},
                      'follow': {'loading': False, 'page': 1},
                      'fans': {'loading': False, 'page': 1}}
-        self.listwidgets = {'follow_forum': self.listWidget, 'reply': self.listWidget_2, 'follow': self.listWidget_3,
-                            'thread': self.listWidget_4, 'fans': self.listWidget_5}
+        self.listwidgets = {'follow_forum': self.listWidget,
+                            'reply': self.listWidget_2,
+                            'follow': self.listWidget_3,
+                            'thread': self.listWidget_4,
+                            'fans': self.listWidget_5}
         for v in self.listwidgets.values():
             v.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
-                             f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
-                             f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
+                            f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
+                            f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
             v.verticalScrollBar().setSingleStep(20)
             v.verticalScrollBar().valueChanged.connect(self.load_thread_image)
 
@@ -120,6 +124,8 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
     def closeEvent(self, a0):
         self.flash_shower.hide()
+
+        self.loaded_thread_items.clear()
         self.portrait_image.destroyImage()
         for i in self.listwidgets.values():
             cleanup_listWidget(i)
@@ -482,7 +488,10 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                 if data['follow_forums_show_permission'] == 2:
                     self.label_15.setText('该用户设置关注吧列表仅好友可见')
                 elif data['follow_forums_show_permission'] == 3:
-                    self.label_15.setText('该用户已隐藏关注吧列表')
+                    if self.real_user_id != account_mgr.GlobalAccountContainer.get_current_account().uid:
+                        self.label_15.setText('该用户已隐藏关注吧列表，以下为该用户与你共同关注的吧')
+                    else:
+                        self.label_15.setText('你已隐藏关注吧列表，但他人仍可通过工具箱查询部分关注吧')
                 elif not self.bduss:
                     self.label_15.setText('你还没有登录账号，无法获取关注吧列表，请先登录账号')
             if have_flag_showed:
@@ -614,11 +623,13 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         from subwindow.thread_preview_item import ThreadView
         from subwindow.thread_reply_item import ReplyItem
         from subwindow.forum_item import ForumItem
-        from subwindow.thread_preview_item import AsyncLoadImage
         datas = data[1]
         if data[0] == 'thread':
             item = QListWidgetItem()
-            widget = ThreadView(self.bduss, datas['thread_id'], datas['forum_id'], self.stoken,
+            widget = ThreadView(self.bduss,
+                                datas['thread_id'],
+                                datas['forum_id'],
+                                self.stoken,
                                 datas['author_portrait'])
 
             widget.threadItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_4, item))
@@ -626,18 +637,24 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
             widget.load_by_callback = True
             widget.allow_open_home_page = False
-            widget.set_thread_values(datas['view_count'],
-                                     datas['agree_count'],
-                                     datas['reply_count'],
-                                     datas['repost_count'],
-                                     datas['post_time'])
             widget.set_infos(datas['author_portrait'],
                              datas['user_name'],
                              datas['title'],
                              datas['content'],
                              None,
                              datas['forum_name'])
-            widget.set_picture([AsyncLoadImage(image.src, image.hash) for image in datas['view_pixmap']])
+            widget.set_picture(datas['view_pixmap'])
+
+            widget.set_thread_values(datas['view_count'],
+                                     datas['agree_count'],
+                                     datas['reply_count'],
+                                     datas['repost_count'],
+                                     datas['post_time'])
+            if datas['from_personal_api']:
+                widget.label_11.setText(widget.label_11.text() + '\n内容从旧版 API 拉取，可能无法访问')
+                widget.label_11.setToolTip('本贴内容是从贴吧旧版本的个人主页 API 获取的。\n'
+                                           '得益于该接口，即使贴子被删除、在个人主页隐藏、或被系统屏蔽，你仍能在本软件的个人主页看到贴子。\n'
+                                           '由于贴子本身可能已被屏蔽，你可能无法在贴子详情页查看该贴。')
 
             widget.label.hide()
             widget.adjustSize()
@@ -692,17 +709,25 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         elif data[0] == 'follow_forum':
             item = QListWidgetItem()
             widget = ForumItem(datas['forum_id'], True, self.bduss, self.stoken, datas['forum_name'])
+
             widget.load_by_callback = True
             widget.pushButton_2.hide()
-            widget.set_info(datas['forum_avatar'],
-                            datas['forum_name'] + '吧',
-                            datas['forum_desp'],
-                            '{common_follow_flag}Lv.{level} | 经验值 {exp}'.format(
-                                common_follow_flag='共同关注 | ' if datas['is_common_follow'] else '',
-                                level=datas['level'],
-                                exp=datas['exp']),
-                            )
-            widget.set_level_color(datas['level'])
+
+            if datas['level'] != -1:
+                widget.set_info(datas['forum_avatar'],
+                                datas['forum_name'] + '吧',
+                                datas['forum_desp'],
+                                '{common_follow_flag}Lv.{level} | 经验值 {exp}'.format(
+                                    common_follow_flag='共同关注 | ' if datas['is_common_follow'] else '',
+                                    level=datas['level'],
+                                    exp=datas['exp']),
+                                )
+                widget.set_level_color(datas['level'])
+            else:
+                widget.set_info(datas['forum_avatar'],
+                                datas['forum_name'] + '吧',
+                                datas['forum_desp'])
+
             item.setSizeHint(widget.size())
             self.listWidget.addItem(item)
             self.listWidget.setItemWidget(item, widget)
@@ -735,6 +760,9 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     if type_ == 'thread':
+                        from subwindow.thread_preview_item import AsyncLoadImage
+                        all_threads_list = []
+
                         thread_datas = await client.get_user_threads(self.user_id_portrait, self.page[type_]['page'])
                         for thread in thread_datas.objs:
                             data = {'thread_id': thread.tid,
@@ -744,14 +772,54 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                                     'author_portrait': thread.user.portrait,
                                     'user_name': thread.user.nick_name_new,
                                     'forum_name': thread.fname,
-                                    'view_pixmap': thread.contents.imgs,
+                                    'view_pixmap': [AsyncLoadImage(image.src, image.hash) for image in
+                                                    thread.contents.imgs],
                                     'view_count': thread.view_num,
                                     'agree_count': thread.agree,
                                     'reply_count': thread.reply_num,
                                     'repost_count': thread.share_num,
-                                    'post_time': thread.create_time}
+                                    'post_time': thread.create_time,
+                                    'from_personal_api': False}
+                            all_threads_list.append(data)
 
-                            self.set_list_info_signal.emit((type_, data))
+                        thread_data_old_api = user_personal_page(self.bduss, self.stoken, self.real_user_id,
+                                                                 self.page[type_]['page'])
+                        for dynamic in thread_data_old_api['dynamic_list']:
+                            if dynamic['type'] != '1':
+                                continue
+
+                            thread = dynamic['thread_dynamic']
+                            content_string = ''.join(c['text'] for c in thread['abstract'])
+                            image_list = []
+                            for media in thread.get('media', []):
+                                if media['type'] == '3':
+                                    async_image = AsyncLoadImage(media['small_pic'])
+                                    image_list.append(async_image)
+
+                            data = {'thread_id': int(thread['tid']),
+                                    'forum_id': int(thread['fid']),
+                                    'title': thread['title'],
+                                    'content': cut_string(content_string, 50),
+                                    'author_portrait': self.real_portrait,
+                                    'user_name': self.nick_name,
+                                    'forum_name': thread['fname'],
+                                    'view_pixmap': image_list,
+                                    'view_count': int(thread['view_num']),
+                                    'agree_count': -1,
+                                    'reply_count': int(thread['reply_num']),
+                                    'repost_count': -1,
+                                    'post_time': int(thread['create_time']),
+                                    'from_personal_api': True}
+                            all_threads_list.append(data)
+
+                        all_threads_list.sort(key=lambda t: t['post_time'], reverse=True)
+                        for t in all_threads_list:
+                            if t['thread_id'] in self.loaded_thread_items:
+                                continue
+
+                            self.loaded_thread_items.append(t['thread_id'])
+                            self.set_list_info_signal.emit((type_, t))
+
                     elif type_ == 'reply':
                         # 获取新版昵称
                         nick_name = self.nick_name
@@ -791,16 +859,35 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                             self.set_list_info_signal.emit((type_, data))
                     elif type_ == 'follow_forum':
                         forum_list = await client.get_follow_forums(self.user_id_portrait, self.page[type_]['page'])
-                        for f in forum_list.objs:
-                            data = {'forum_name': f.fname,
-                                    'forum_id': f.fid,
-                                    'forum_avatar': f.avatar,
-                                    'forum_desp': f.slogan,
-                                    'level': f.level,
-                                    'exp': f.exp,
-                                    'is_common_follow': f.is_common_follow}
+                        if forum_list.objs:
+                            for f in forum_list.objs:
+                                data = {'forum_name': f.fname,
+                                        'forum_id': f.fid,
+                                        'forum_avatar': f.avatar,
+                                        'forum_desp': f.slogan,
+                                        'level': f.level,
+                                        'exp': f.exp,
+                                        'is_common_follow': f.is_common_follow}
 
-                            self.set_list_info_signal.emit((type_, data))
+                                self.set_list_info_signal.emit((type_, data))
+                        elif self.page[type_]['page'] == 1:  # 第一页加载不出数据
+                            # 回退使用旧版个人主页接口
+                            resp = user_personal_page(self.bduss, self.stoken, self.real_user_id)
+                            if resp['error_code'] == '0':
+                                for f in resp.get('concerned_forum_list', []):
+                                    data = {'forum_name': f['forum_name'],
+                                            'forum_id': int(f['forum_id']),
+                                            'forum_avatar': f['avatar'],
+                                            'forum_desp': f'该用户发过 '
+                                                          f'{f["user_thread_count"] if f["user_thread_count"] else 0}'
+                                                          f' 条贴子',
+                                            'level': -1,
+                                            'exp': -1,
+                                            'is_common_follow': False}
+
+                                    self.set_list_info_signal.emit((type_, data))
+                            else:
+                                raise ValueError(f'tieba api error {resp["error_code"]} {resp["error_msg"]}')
                     elif type_ == 'follow':
                         follow_list = await client.get_follows(self.user_id_portrait, pn=self.page[type_]['page'])
                         for user in follow_list:
