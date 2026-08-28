@@ -170,41 +170,34 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
         unfollow.triggered.connect(lambda: self.do_action_async('unfollow'))
         menu.addAction(unfollow)
 
-        menu.addSeparator()
-
         blacklist = QAction('拉黑', self)
         blacklist.setToolTip('禁止该用户与你互动（转评赞等），以及禁止该用户关注你和给你发私信。')
         blacklist.triggered.connect(self.open_user_blacklister)
         menu.addAction(blacklist)
 
-        old_mute = QAction('禁言', self)
-        old_mute.triggered.connect(lambda: self.do_action_async('mute'))
-        old_mute.setToolTip('禁止该用户回复你的贴子。\n'
-                            'PS：该功能存在于旧版本贴吧中，已被新版本的拉黑功能取代，不推荐使用。')
-        menu.addAction(old_mute)
-
-        cancel_old_mute = QAction('取消禁言', self)
-        cancel_old_mute.triggered.connect(lambda: self.do_action_async('unmute'))
-        menu.addAction(cancel_old_mute)
-
         menu.addSeparator()
 
         show_follow_forum_strongly_menu = QMenu(self)
         show_follow_forum_strongly_menu.setTitle('第三方工具箱')
-        show_follow_forum_strongly_menu.setToolTip('打开第三方工具箱页面，方便查询关注吧列表。可能需要你手动输入用户信息')
+        show_follow_forum_strongly_menu.setToolTip('快捷打开第三方的贴吧工具箱')
 
-        eztb = QAction('eztb 工具箱', self)
-        eztb.triggered.connect(
-            lambda: open_url_in_browser(f'https://www.eztb.org/likeforum?method=id&id=%22{self.real_user_id}%22'))
-        show_follow_forum_strongly_menu.addAction(eztb)
+        link_eztb_follow = f'https://www.eztb.org/likeforum?method=id&id=%22{self.real_user_id}%22'
+        eztb_follow = QAction('eztb 工具箱 - 关注的吧', self)
+        eztb_follow.triggered.connect(lambda: open_url_in_browser(link_eztb_follow))
+        show_follow_forum_strongly_menu.addAction(eztb_follow)
+
+        link_eztb_post = f'https://www.eztb.org/postanalysis?method=id&id=%22{self.real_user_id}%22'
+        eztb_post = QAction('eztb 工具箱 - 发言分析', self)
+        eztb_post.triggered.connect(lambda: open_url_in_browser(link_eztb_post))
+        show_follow_forum_strongly_menu.addAction(eztb_post)
 
         anova = QAction('恋文工具箱', self)
         anova.triggered.connect(lambda: open_url_in_browser(f'https://tb.anova.me/'))
         show_follow_forum_strongly_menu.addAction(anova)
 
+        link_ouo = f'https://ouotool.com/tb?un={self.real_baidu_user_name}'
         ouotool = QAction('ouo 工具箱', self)
-        ouotool.triggered.connect(
-            lambda: open_url_in_browser(f'https://ouotool.com/tb?un={self.real_baidu_user_name}'))
+        ouotool.triggered.connect(lambda: open_url_in_browser(link_ouo))
         show_follow_forum_strongly_menu.addAction(ouotool)
 
         chengqing = QAction('澄清·工具箱', self)
@@ -265,8 +258,6 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             follow.setVisible(False)
             unfollow.setVisible(False)
             blacklist.setVisible(False)
-            old_mute.setVisible(False)
-            cancel_old_mute.setVisible(False)
 
         self.pushButton.setMenu(menu)
 
@@ -322,10 +313,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             if QMessageBox.warning(self, '取关用户', f'确定要取消关注用户 {self.nick_name} 吗？',
                                    QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
                 run_flag = False
-        elif action_type == 'mute':
-            if QMessageBox.warning(self, '禁言用户', f'禁言后，该用户将无法回复你。确定要禁言用户 {self.nick_name} 吗？',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
-                run_flag = False
+
         if run_flag:
             start_background_thread(self.do_action, (action_type,))
 
@@ -348,22 +336,6 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                         if r:
                             turn_data['success'] = True
                             turn_data['text'] = f'取消关注成功'
-                        else:
-                            turn_data['success'] = False
-                            turn_data['text'] = f'{r.err}'
-                    elif action_type == 'mute':
-                        r = await client.add_blacklist_old(self.real_user_id)
-                        if r:
-                            turn_data['success'] = True
-                            turn_data['text'] = f'禁言用户成功'
-                        else:
-                            turn_data['success'] = False
-                            turn_data['text'] = f'{r.err}'
-                    elif action_type == 'unmute':
-                        r = await client.del_blacklist_old(self.real_user_id)
-                        if r:
-                            turn_data['success'] = True
-                            turn_data['text'] = f'取消禁言用户成功'
                         else:
                             turn_data['success'] = False
                             turn_data['text'] = f'{r.err}'
@@ -402,6 +374,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             self.label_14.setText('发贴数 ' + large_num_to_string(data['post_c']))
 
             ts = time.time() - int(float(data['account_age']) * 31536000)
+            ts = ts if ts >= 0 else 0  # 某些远古账号的吧龄从 ts=0 开始计算，注册时间会出现负数
             dtobj = datetime.datetime.fromtimestamp(ts)
             register_date_string = f'{dtobj.year}年{dtobj.month}月'
             self.label_4.setToolTip(f'账号注册时间大约为 {register_date_string}')
