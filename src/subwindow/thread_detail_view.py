@@ -1202,6 +1202,9 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 self.horizontalLayout_2.removeWidget(self.label_12)
             if not self.label_8.isVisible() and not self.label_12.isVisible() and not self.label_13.isVisible():
                 self.frame_8.hide()
+            else:
+                self.frame_8.show()
+
             if datas['content_statement'] and get_dict_value_treely(profile_mgr.local_config,
                                                                     ['thread_view_settings', 'show_statement'], True):
                 self.frame_3.show()

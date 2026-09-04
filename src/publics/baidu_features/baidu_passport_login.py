@@ -335,7 +335,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
             if jsonify_data['errno'] != 0:
                 raise ValueError(f'Response status code is {jsonify_data["errno"]}')
             else:
-                emit_data['qr_code_url'] = request_mgr.SCHEME_HTTP + jsonify_data['imgurl']
+                emit_data['qr_code_url'] = request_mgr.SCHEME_HTTPS + jsonify_data['imgurl']
                 self.qr_sign = jsonify_data['sign']
         except Exception as e:
             app_logger.log_exception(e)
