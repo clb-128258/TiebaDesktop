@@ -27,7 +27,7 @@ SCHEME_HTTPS = 'https://'
 
 TIEBA_APP_HOST = 'tiebac.baidu.com'
 TIEBA_WEB_HOST = 'tieba.baidu.com'
-TIEBA_CLIENT_VERSION = '22.1.1.0'
+TIEBA_CLIENT_VERSION = '22.10.1.0'
 
 BAIDU_PASSPORT_HOST = 'passport.baidu.com'
 BAIDU_SOFIRE_HOST = "sofire.baidu.com"
