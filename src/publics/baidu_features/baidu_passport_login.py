@@ -194,7 +194,7 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
                     else:
                         self.qr_status_changed.emit({'type': 6})
         else:
-            raise Exception(f'errno is {resp["errno"]}')
+            raise ValueError(f'errno is {resp["errno"]}')
 
     def query_qr_status(self):
         header = {

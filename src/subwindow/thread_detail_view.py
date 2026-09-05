@@ -981,7 +981,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                       self.thread_id, 1, 30,
                                       only_see_lz=self.checkBox.isChecked())
                 if page_pbinfo.error.errorno != 0:
-                    raise Exception(f'获取最新页数失败: {page_pbinfo.error.errmsg} '
+                    raise ValueError(f'获取最新页数失败: {page_pbinfo.error.errmsg} '
                                     f'(错误代码 {page_pbinfo.error.errorno})')
                 else:
                     # 在获取到最大页数后也更新 first_loaded_page 的值
@@ -996,7 +996,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             thread_info = aiotieba.get_posts.Posts.from_tbdata(proto_response.data)
 
             if proto_response.error.errorno != 0:
-                raise Exception(f'回复加载失败: {proto_response.error.errmsg} '
+                raise ValueError(f'回复加载失败: {proto_response.error.errmsg} '
                                 f'(错误代码 {proto_response.error.errorno})')
             else:
                 self.reply_num = thread_info.thread.reply_num - 1
@@ -1342,7 +1342,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     thread_info = aiotieba.get_posts.Posts.from_tbdata(proto_response.data)
 
                     if proto_response.error.errorno != 0:
-                        raise Exception(f'{proto_response.error.errmsg} (错误代码 {proto_response.error.errorno})')
+                        raise ValueError(f'{proto_response.error.errmsg} '
+                                         f'(错误代码 {proto_response.error.errorno})')
 
                     self.forum_id = forum_id = thread_info.forum.fid
                     if self.forum_id != 0:

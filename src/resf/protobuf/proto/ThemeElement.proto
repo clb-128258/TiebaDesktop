@@ -1,0 +1,23 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message ThemeElement {
+    string common_color = 1;
+    string dark_color = 2;
+    string light_color = 3;
+    string pattern_image = 4;
+    string font_color = 5;
+    int64 pattern_image_height = 6;
+    int64 pattern_image_width = 7;
+    string pattern_text = 8;
+    int32 type = 9;
+    int32 pattern_num = 10;
+    string pattern_image_select = 11;
+    string pattern_image_not_selected = 12;
+    int32 cover_type = 13;
+    string animation_url = 14;
+    string assist_animation_url = 15;
+    int32 support_long_click = 16;
+    repeated string long_click_animation_urls = 17;
+    string schema = 18;
+}

@@ -1,12 +1,12 @@
-import asyncio
 import gc
+from aiotieba.api.get_comments import _classdef as get_comments_classdef
 
-import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, qt_image
+from publics.baidu_features import tieba_apis
 from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
@@ -216,7 +216,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                             datas['user_name'],
                             datas['is_author'],
                             datas['content'],
-                            [],
+                            datas['pictures'],
                             -1,
                             datas['create_time_str'],
                             '',
@@ -248,7 +248,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
             start_background_thread(self.load_comments)
 
     def load_comments(self):
-        async def add_posts_info(comments, pos_pid):
+        def add_posts_info(comments, pos_pid):
             for t in comments.objs:
                 content = make_thread_content(t.contents.objs)
                 portrait = t.user.portrait
@@ -271,6 +271,16 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                         'src'] = f'https://tiebac.baidu.com/c/p/voice?voice_md5={t.contents.voice.md5}&play_from=pb_voice_play'
                     voice_info['length'] = t.contents.voice.duration
 
+                preview_pixmap = []
+                for j in t.contents.imgs:
+                    # width, height, src, view_src
+                    src = j.origin_src
+                    view_src = j.src
+                    height = j.show_height
+                    width = j.show_width
+                    preview_pixmap.append(
+                        {'width': width, 'height': height, 'src': src, 'view_src': view_src})
+
                 tdata = {'is_floor': False,
                          'content': content,
                          'portrait': portrait,
@@ -286,11 +296,12 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
                          'post_id': post_id,
                          'voice_info': voice_info,
                          'is_position_post': post_id == pos_pid,
-                         'forum_id': forum_id}
+                         'forum_id': forum_id,
+                         'pictures': preview_pixmap}
 
                 self.add_comment.emit(tdata)
 
-        async def set_ui_top_info(comments):
+        def set_ui_top_info(comments):
             thread = comments.thread
             forum = comments.forum
             floor = comments.post
@@ -311,7 +322,7 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
             self.set_thread_info.emit(top_data)
 
-        async def add_current_floor_info(comments):
+        def add_current_floor_info(comments):
             # 获取当前楼层信息
             floor_thread = comments.post
             content = make_thread_content(floor_thread.contents.objs)
@@ -374,26 +385,30 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
 
             return old_pid
 
-        async def run_task():
+        def run_task():
             self.isLoading = True
             try:
                 logging.log_INFO(f'loading sub-replies '
                                  f'(thread_id {self.thread_id} '
                                  f'post_id {self.post_id} '
                                  f'page {self.page})')
-                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    comments = await client.get_comments(self.thread_id, self.post_id,
-                                                         self.page, is_comment=self.is_postId_from_subFloor)
-                    if comments.err:
-                        raise comments.err
 
-                    await set_ui_top_info(comments)
+                proto_response = tieba_apis.pb_floor(self.bduss, self.stoken,
+                                                     self.thread_id, self.post_id,
+                                                     self.page,
+                                                     is_sub_post=self.is_postId_from_subFloor)
+                comments = get_comments_classdef.Comments.from_tbdata(proto_response.data)
+                if proto_response.error.errorno != 0:
+                    raise ValueError(f'{proto_response.error.errmsg} '
+                                     f'(错误代码 {proto_response.error.errorno})')
 
-                    if self.page == 1:
-                        pos_pid = await add_current_floor_info(comments)
-                    else:
-                        pos_pid = 0
-                    await add_posts_info(comments, pos_pid)
+                set_ui_top_info(comments)
+
+                if self.page == 1:
+                    pos_pid = add_current_floor_info(comments)
+                else:
+                    pos_pid = 0
+                add_posts_info(comments, pos_pid)
 
             except Exception as e:
                 logging.log_exception(e)
@@ -411,9 +426,4 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
             finally:
                 self.isLoading = False
 
-        def start_async():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            asyncio.run(run_task())
-
-        start_async()
+        run_task()

@@ -39,6 +39,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_c]): 表情碎片列表
+        imgs (list[FragImage_cp]): 图像碎片列表
         ats (list[FragAt_c]): @碎片列表
         links (list[FragLink_c]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_c]): 贴吧plus碎片列表
@@ -47,6 +48,7 @@ class Contents_c(Containers[TypeFragment]):
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
     emojis: list[FragEmoji_c] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_cp] = dcs.field(default_factory=list, repr=False)
     ats: list[FragAt_c] = dcs.field(default_factory=list, repr=False)
     links: list[FragLink_c] = dcs.field(default_factory=list, repr=False)
     tiebapluses: list[FragTiebaPlus_c] = dcs.field(default_factory=list, repr=False)
@@ -58,6 +60,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts = []
         emojis = []
+        imgs = []
         ats = []
         links = []
         tiebapluses = []
@@ -97,6 +100,11 @@ class Contents_c(Containers[TypeFragment]):
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
+                # 新版楼中楼图片
+                elif _type in [3, 20]:
+                    frag = FragImage_cp.from_tbdata(proto)
+                    imgs.append(frag)
+                    yield frag
                 # outdated tiebaplus
                 elif _type == 34:
                     continue
@@ -105,7 +113,7 @@ class Contents_c(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_c(objs, texts, emojis, ats, links, tiebapluses, voice)
+        return Contents_c(objs, texts, emojis, imgs, ats, links, tiebapluses, voice)
 
     @cached_property
     def text(self) -> str:
@@ -237,6 +245,7 @@ class Comment:
         floor (int): 所在楼层数
         agree (int): 点赞数
         disagree (int): 点踩数
+        has_agreed (bool): 是否已点赞
         create_time (int): 创建时间 10位时间戳 以秒为单位
         is_thread_author (bool): 是否楼主
     """
@@ -255,6 +264,7 @@ class Comment:
     floor: int = 0
     agree: int = 0
     disagree: int = 0
+    has_agreed: bool = False
     create_time: int = 0
     is_thread_author: bool = False
 
@@ -285,9 +295,11 @@ class Comment:
         user = UserInfo_c.from_tbdata(data_proto.author)
         agree = data_proto.agree.agree_num
         disagree = data_proto.agree.disagree_num
+        has_agreed = bool(data_proto.agree.has_agree)
         create_time = data_proto.time
 
-        return Comment(contents, 0, "", 0, 0, pid, user, reply_to_id, reply_to_nick_name_new, 0, agree, disagree,
+        return Comment(contents, 0, "", 0, 0, pid, user,
+                       reply_to_id, reply_to_nick_name_new, 0, agree, disagree, has_agreed,
                        create_time, False)
 
     def __eq__(self, obj: Comment) -> bool:

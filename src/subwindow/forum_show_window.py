@@ -539,7 +539,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         def frs_bottom(kw):
             resp = fetch_frs_bottom(self.bduss, self.stoken, kw)
             if resp['error_code'] != 0:
-                raise Exception(f'{resp["error_msg"]} (错误代码 {resp["error_code"]})')
+                raise ValueError(f'{resp["error_msg"]} (错误代码 {resp["error_code"]})')
             else:
                 return resp
 

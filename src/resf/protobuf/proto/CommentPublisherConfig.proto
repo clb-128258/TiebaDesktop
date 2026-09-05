@@ -1,0 +1,9 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/PbPublisherBtnsConfig.proto";
+
+message CommentPublisherConfig {
+    repeated PbPublisherBtnsConfig bottom_btns = 1;
+    repeated PbPublisherBtnsConfig comment_btns = 2;
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/ThemeColorInfo.proto";
+
+message TabInfo {
+    string tab_type = 1;
+    uint64 tab_id = 2;
+    string tab_name = 3;
+    string ext = 4;
+    ThemeColorInfo tab_icon = 5;
+    ThemeColorInfo tab_icon_selected = 6;
+    uint32 count = 7;
+}

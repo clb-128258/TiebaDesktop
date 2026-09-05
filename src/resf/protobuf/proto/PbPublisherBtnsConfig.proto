@@ -1,0 +1,7 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+message PbPublisherBtnsConfig {
+    int32 type = 1;
+    string schema = 2;
+}

@@ -9,6 +9,7 @@ import consts
 
 from proto.AddPost import AddPostReqIdl_pb2, AddPostResIdl_pb2
 from proto.PbPage import PbPageReqIdl_pb2, PbPageResIdl_pb2
+from proto.PbFloor import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
 from proto.Profile import ProfileReqIdl_pb2, ProfileResIdl_pb2
 from proto.GetLevelInfo import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
 from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoResIdl_pb2
@@ -339,6 +340,47 @@ def pb_page(bduss, stoken, thread_id, pn=1, rn=30, sort_type=0, only_see_lz=Fals
                                                  host_type=2)
 
     proto_response = PbPageResIdl_pb2.PbPageResIdl()
+    proto_response.ParseFromString(byte_response)
+
+    return proto_response
+
+
+def pb_floor(bduss, stoken, thread_id, post_id, pn=1, sort_type=0, is_sub_post=False):
+    """
+    获取楼中楼信息
+
+    Args:
+        thread_id (int): 主题贴id
+        post_id (int): 回复id
+        pn (int): 页码
+        sort_type (int): 楼中楼排序，0为时间正序，2为热门排序
+        is_sub_post (bool): post_id 是否为楼中楼回复，当 post_id 指向一个楼中楼回复时请指定此选项
+    """
+
+    proto_request = PbFloorReqIdl_pb2.PbFloorReqIdl()
+    proto_request.data.common._client_type = 2
+    proto_request.data.common._client_version = request_mgr.TIEBA_CLIENT_VERSION
+    proto_request.data.common.BDUSS = bduss
+    proto_request.data.common.stoken = stoken
+
+    proto_request.data.kz = int(thread_id)  # 贴子id
+    proto_request.data.sort = int(sort_type)  # 排序类型
+    proto_request.data.pn = pn  # 页数
+
+    # 回复id
+    if is_sub_post:
+        proto_request.data.spid = post_id
+    else:
+        proto_request.data.pid = post_id
+
+    byte_response = request_mgr.run_protobuf_api('/c/f/pb/floor',
+                                                 payloads=proto_request.SerializeToString(),
+                                                 cmd_id=302002,
+                                                 bduss=bduss,
+                                                 stoken=stoken,
+                                                 host_type=2)
+
+    proto_response = PbFloorResIdl_pb2.PbFloorResIdl()
     proto_response.ParseFromString(byte_response)
 
     return proto_response

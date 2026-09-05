@@ -1,0 +1,36 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/Error.proto";
+import "proto/Anti.proto";
+import "proto/CommentPublisherConfig.proto";
+import "proto/FeedKV.proto";
+import "proto/Page.proto";
+import "proto/Post.proto";
+import "proto/SimpleForum.proto";
+import "proto/SubPostList.proto";
+import "proto/TabInfo.proto";
+import "proto/ThreadInfo.proto";
+
+message DataRes_PbFloor {
+    Page page = 1;
+    Anti anti = 2;
+    Post post = 3;
+    repeated SubPostList subpost_list = 4;
+    ThreadInfo thread = 5;
+    SimpleForum forum = 6;
+    int32 server_time = 7;
+    SimpleForum display_forum = 8;
+    int32 is_black_white = 9;
+    repeated FeedKV log_param = 10;
+    CommentPublisherConfig comment_publisher_config = 12;
+    int32 subpost_num = 13;
+    repeated TabInfo tab_info = 14;
+    uint32 current_tab = 15;
+}
+
+
+message PbFloorResIdl {
+    Error error = 1;
+    DataRes_PbFloor data = 2;
+}

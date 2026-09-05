@@ -1,0 +1,10 @@
+syntax = "proto3";
+package TiebaDesktop;
+
+import "proto/ThemeElement.proto";
+
+message ThemeColorInfo {
+    ThemeElement day = 1;
+    ThemeElement night = 2;
+    ThemeElement dark = 3;
+}
