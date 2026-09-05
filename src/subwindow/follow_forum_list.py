@@ -3,7 +3,6 @@ import gc
 
 import publics.app_logger as logging
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import request_mgr
@@ -18,6 +17,7 @@ class FollowForumList(base_ui.InsideWidgetBaseQWidget, follow_ba.Ui_Form):
     add_ba = pyqtSignal(list)
     ba_add_ok = pyqtSignal(str)
     is_first_show = False
+    is_loading = False
 
     def __init__(self, bduss, stoken, parent):
         super().__init__()
@@ -84,23 +84,27 @@ class FollowForumList(base_ui.InsideWidgetBaseQWidget, follow_ba.Ui_Form):
         self.scroll_load_images()
 
     def get_bars_async(self):
-        cleanup_listWidget(self.listWidget)
-        QPixmapCache.clear()
-        gc.collect()
-
         if self.bduss:
             self.label_2.hide()
             self.listWidget.show()
-            self.pushButton_2.setEnabled(False)
 
-            start_background_thread(self.get_bars)
+            if not self.is_loading:
+                cleanup_listWidget(self.listWidget)
+                gc.collect()
+
+                self.pushButton_2.setEnabled(False)
+                start_background_thread(self.get_bars)
         else:
+            cleanup_listWidget(self.listWidget)
+            gc.collect()
+
             self.listWidget.hide()
             self.label_2.show()
 
     def get_bars(self):
         async def func():
             try:
+                self.is_loading = True
                 logging.log_INFO('loading userself follow forum list')
 
                 payload = {
@@ -125,6 +129,7 @@ class FollowForumList(base_ui.InsideWidgetBaseQWidget, follow_ba.Ui_Form):
                 self.ba_add_ok.emit('')
             finally:
                 logging.log_INFO('load userself follow forum list complete')
+                self.is_loading = False
 
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
