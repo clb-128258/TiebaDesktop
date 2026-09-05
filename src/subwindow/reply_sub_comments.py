@@ -99,6 +99,10 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         super().resizeEvent(a0)
         self.refresh_button.move_button()
 
+    def keyPressEvent(self, a0):
+        if a0.key() == Qt.Key.Key_F5:
+            self.refresh_comments()
+
     def init_ui_elements(self):
         self.top_toaster = top_toast_widget.TopToaster()
         self.top_toaster.setCoverWidget(self)
