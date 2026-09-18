@@ -1,6 +1,8 @@
 /src/binres/ffmpeg.exe
 /.idea/
 /.venv/
+/.vscode/
+
 /src/resf/change_index.json
 /src/publics/winrt_url_share/build
 /src/binres/ShareBridge.dll
