@@ -24,7 +24,7 @@ from publics import (qt_window_mgr, profile_mgr, cache_mgr, qt_image,
 from publics.base_ui_elements.base_ui import BaseQMainWindow
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.windows_features import webview2
-from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.baidu_features.baidu_passport_login import QRLoginDialog, LoginWebView, SeniorLoginDialog
 from publics.base_ui_elements.windows_features import dwm_visual
@@ -300,12 +300,12 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                              window_rect[3])
 
     def init_hover_buttons(self):
-        self.manage_account_button = base_ui.FloatingButton(self, 1)
-        self.manage_account_button.set_button_status(base_ui.NarrowButtonStatus.Settings)
+        self.manage_account_button = float_button.FloatingButton(self, 1)
+        self.manage_account_button.set_button_status(float_button.NarrowButtonStatus.Settings)
         self.manage_account_button.move_button()
 
-        self.login_button = base_ui.FloatingButton(self, 2)
-        self.login_button.set_button_status(base_ui.NarrowButtonStatus.Add)
+        self.login_button = float_button.FloatingButton(self, 2)
+        self.login_button.set_button_status(float_button.NarrowButtonStatus.Add)
         self.login_button.move_button()
 
     def init_top_toaster(self):

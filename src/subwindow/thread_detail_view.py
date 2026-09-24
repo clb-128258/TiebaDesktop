@@ -11,7 +11,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor
 from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, qt_image
-from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.qt_image import get_pixmap_icon_from_file
 from publics.winrt_url_share import winrt_share
@@ -28,7 +28,7 @@ from subwindow.tieba_image_uploader import TiebaImageUploader
 
 from ui import tie_detail_view
 
-narrow_status_map = {1: base_ui.NarrowButtonStatus.ArrowRight, 2: base_ui.NarrowButtonStatus.ArrowLeft}
+narrow_status_map = {1: float_button.NarrowButtonStatus.ArrowRight, 2: float_button.NarrowButtonStatus.ArrowLeft}
 
 
 def get_item_top(list_widget, index):
@@ -385,7 +385,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
 
     def init_narrow_switch_button(self):
-        self.narrow_switch_button = base_ui.FloatingButton(self)
+        self.narrow_switch_button = float_button.FloatingButton(self)
         self.narrow_switch_button.clicked.connect(self.switch_narrow_button_status)
         self.narrow_switch_button.set_button_status(narrow_status_map[self.narrow_mode_index])
 
@@ -982,7 +982,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                       only_see_lz=self.checkBox.isChecked())
                 if page_pbinfo.error.errorno != 0:
                     raise ValueError(f'获取最新页数失败: {page_pbinfo.error.errmsg} '
-                                    f'(错误代码 {page_pbinfo.error.errorno})')
+                                     f'(错误代码 {page_pbinfo.error.errorno})')
                 else:
                     # 在获取到最大页数后也更新 first_loaded_page 的值
                     self.reply_page = page_pbinfo.data.page.total_page
@@ -997,7 +997,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
             if proto_response.error.errorno != 0:
                 raise ValueError(f'回复加载失败: {proto_response.error.errmsg} '
-                                f'(错误代码 {proto_response.error.errorno})')
+                                 f'(错误代码 {proto_response.error.errorno})')
             else:
                 self.reply_num = thread_info.thread.reply_num - 1
                 self.reply_total_pages = thread_info.page.total_page

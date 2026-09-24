@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr, qt_image
 from publics.baidu_features import tieba_apis
-from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, make_thread_content, timestamp_to_string, \
     listWidget_get_visible_widgets, get_exception_string, cleanup_listWidget, large_num_to_string, \
@@ -110,8 +110,8 @@ class ReplySubComments(base_ui.WindowBaseQDialog, reply_comments.Ui_Dialog):
         self.loading_widget = LoadingFlashWidget()
         self.loading_widget.cover_widget(self)
 
-        self.refresh_button = base_ui.FloatingButton(self)
-        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
+        self.refresh_button = float_button.FloatingButton(self)
+        self.refresh_button.set_button_status(float_button.NarrowButtonStatus.Refresh)
 
         self.thread_user_portrait_image = qt_image.MultipleImage()
         self.thread_user_portrait_image.currentPixmapChanged.connect(

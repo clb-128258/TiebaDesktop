@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import qt_window_mgr
-from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.baidu_features import tieba_apis
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, listWidget_get_visible_widgets, cleanup_listWidget, get_exception_string, timestamp_to_string
@@ -92,8 +92,8 @@ class StaredThreadsList(base_ui.WindowBaseQDialog, star_list.Ui_Dialog):
         self.loading_widget = LoadingFlashWidget()
         self.loading_widget.cover_widget(self.listWidget)
 
-        self.refresh_button = base_ui.FloatingButton(self)
-        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
+        self.refresh_button = float_button.FloatingButton(self)
+        self.refresh_button.set_button_status(float_button.NarrowButtonStatus.Refresh)
 
     def load_images(self):
         widgets = listWidget_get_visible_widgets(self.listWidget)  # 获取可见的widget列表

@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem
 
 import publics.app_logger as logging
 from publics import request_mgr, profile_mgr
-from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, format_second, cut_string, get_exception_string, \
     listWidget_get_visible_widgets, large_num_to_string, cleanup_listWidget, delete_listWidget_item
@@ -53,8 +53,8 @@ class RecommendWindow(QListWidget):
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()
 
-        self.refresh_button = base_ui.FloatingButton(self)
-        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
+        self.refresh_button = float_button.FloatingButton(self)
+        self.refresh_button.set_button_status(float_button.NarrowButtonStatus.Refresh)
         self.refresh_button.move_button()
         self.refresh_button.hide()
 

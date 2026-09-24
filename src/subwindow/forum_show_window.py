@@ -8,7 +8,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, qt_image
-from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import open_url_in_browser, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
@@ -144,13 +144,13 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         self.toast_widget = top_toast_widget.TopToaster()
         self.toast_widget.setCoverWidget(self)
 
-        self.refresh_button = base_ui.FloatingButton(self)
-        self.refresh_button.set_button_status(base_ui.NarrowButtonStatus.Refresh)
+        self.refresh_button = float_button.FloatingButton(self)
+        self.refresh_button.set_button_status(float_button.NarrowButtonStatus.Refresh)
         self.refresh_button.move_button()
         self.refresh_button.hide()
 
-        self.create_thread_button = base_ui.FloatingButton(self, 2)
-        self.create_thread_button.set_button_status(base_ui.NarrowButtonStatus.Add)
+        self.create_thread_button = float_button.FloatingButton(self, 2)
+        self.create_thread_button.set_button_status(float_button.NarrowButtonStatus.Add)
         self.create_thread_button.move_button()
         self.create_thread_button.setToolTip('发布主题贴')
         self.create_thread_button.hide()
