@@ -617,6 +617,7 @@ class Ui_Dialog(object):
 "\n"
 "QListWidget::item:selected {\n"
 "    background-color: rgba(91, 68, 200, 255);\n"
+"    color: white;\n"
 "    font-weight: bold;\n"
 "}\n"
 "\n"

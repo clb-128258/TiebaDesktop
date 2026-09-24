@@ -58,6 +58,7 @@ QListWidget::item:hover {
 
 QListWidget::item:selected {
     background-color: rgba(91, 68, 200, 255);
+	color: white;
     font-weight: bold;
 }
 
@@ -184,8 +185,8 @@ QListWidget::item:selected:hover {
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>753</width>
-            <height>2060</height>
+            <width>641</width>
+            <height>2100</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">

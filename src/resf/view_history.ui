@@ -73,6 +73,7 @@ QListWidget::item:hover {
 
 QListWidget::item:selected {
     background-color: rgba(91, 68, 200, 255);
+	color: white;
     font-weight: bold;
 }
 
