@@ -693,14 +693,21 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.pushButton_12.setEnabled(False)
             self.load_animation.set_caption(caption='正在清理数据，请稍等...')
             self.load_animation.show()
+
+            need_webview_options = [self.checkBox_7.isChecked(), self.checkBox_6.isChecked()]
+            need_load_webview = webview2.isWebView2Installed() and True in need_webview_options
             webview = webview2.QWebView2View()
-            webview.setProfile(
-                webview2.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}'))
-            webview.initRender()
+            if need_load_webview:
+                webview.setProfile(
+                    webview2.WebViewProfile(
+                        data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}'
+                    )
+                )
+                webview.initRender()
 
-            start_background_thread(self.clear_caches, args=(webview,))
+            start_background_thread(self.clear_caches, args=(webview, need_load_webview))
 
-    def clear_caches(self, webview_obj: webview2.QWebView2View):
+    def clear_caches(self, webview_obj: webview2.QWebView2View, webview_loaded):
         def clear_folder(path):
             if not os.path.isdir(path):
                 return
@@ -716,8 +723,14 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                     continue
 
         try:
-            while not webview_obj.isRenderInitOk():
-                time.sleep(1)
+            if webview_loaded:
+                retries = 10
+                while not webview_obj.isRenderInitOk() and retries > 0:
+                    time.sleep(1)
+                    retries -= 1
+                webview_available = retries > 0
+            else:
+                webview_available = False
 
             if self.checkBox_4.isChecked():
                 clear_folder(f'{consts.datapath}/image_caches')
@@ -739,14 +752,15 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             if self.checkBox_22.isChecked():
                 profile_mgr.window_rects.clear()
                 profile_mgr.save_window_rects()
-            if self.checkBox_7.isChecked():
-                webview_obj.clearCacheData()
-                time.sleep(4)
-            if self.checkBox_6.isChecked():
-                webview_obj.clearCookies()
-                time.sleep(4)
 
-            webview_obj.destroyWebviewUntilComplete()
+            if webview_available:
+                if self.checkBox_7.isChecked():
+                    webview_obj.clearCacheData()
+                if self.checkBox_6.isChecked():
+                    webview_obj.clearCookies()
+
+                time.sleep(4)
+                webview_obj.destroyWebviewUntilComplete()
         except Exception as e:
             log_exception(e)
             self.clearFinish.emit(False)

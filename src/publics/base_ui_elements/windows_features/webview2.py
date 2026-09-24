@@ -383,7 +383,6 @@ class QWebView2View(QWidget):
     def __init__(self):
         """初始化 QWebView2View 实例（不创建底层 WebView2 控件）。"""
         super().__init__()
-        self.__render_completed = False
         self.__webview = None
         self.__webview_core = None
         self.__current_icon = None
