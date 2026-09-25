@@ -145,7 +145,7 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
             a0.ignore()
         elif not self.image_list or self.uploaded_image_list:
             run_close()
-        elif MessageBox.warning(self, '警告', '确认要取消图片上传吗？你在此所做的任何更改都将不会保存。',
+        elif MessageBox.warning(self, '确认取消图片上传吗？', '你在此所做的任何更改都将不会保存。',
                                  MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             run_close()
         else:

@@ -264,14 +264,36 @@ class MessageBox(base_ui.WindowBaseQDialog, messagebox.Ui_messageBox):
             for _ in range(2):
                 if self.layout() is not None:
                     self.layout().activate()
+
                 text_width = max(1, self.messageBoxText.width())
                 text_height = self.messageBoxText.fontMetrics().boundingRect(
                     QRect(0, 0, text_width, 100000),
                     Qt.TextWordWrap | Qt.AlignLeft,
                     self.messageBoxText.text(),
                 ).height()
+
                 if text_height > 0:
                     self.messageBoxText.setFixedHeight(text_height)
+
+                if self.layout() is not None:
+                    self.layout().activate()
+                self.adjustSize()
+
+        if self.messageBoxTitle.text():
+            for _ in range(2):
+                if self.layout() is not None:
+                    self.layout().activate()
+
+                text_width = max(1, self.messageBoxTitle.width())
+                text_height = self.messageBoxTitle.fontMetrics().boundingRect(
+                    QRect(0, 0, text_width, 100000),
+                    Qt.TextWordWrap | Qt.AlignLeft,
+                    self.messageBoxTitle.text(),
+                ).height()
+
+                if text_height > 0:
+                    self.messageBoxTitle.setFixedHeight(text_height)
+
                 if self.layout() is not None:
                     self.layout().activate()
                 self.adjustSize()

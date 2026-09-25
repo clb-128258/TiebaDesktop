@@ -236,7 +236,7 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
             w.load_items_icon()
 
     def clear_history(self):
-        if MessageBox.warning(self, '警告', '确认要清空浏览记录吗？',
+        if MessageBox.warning(self, '确认要清空浏览记录吗？', '此操作不可撤销，你的浏览记录将被永久删除。',
                                MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             profile_mgr.view_history.clear()
             profile_mgr.save_view_history()

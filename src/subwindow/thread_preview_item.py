@@ -279,9 +279,9 @@ class ThreadView(base_ui.InsideWidgetBaseQWidget, tie_preview.Ui_Form):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'del_thread':
-            if MessageBox.warning(self, '删除贴子',
-                                   '删除该主题贴会导致该贴子下的所有回复被一并删除，且该操作不可恢复。\n确认要删除该主题贴吗？',
-                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
+            if MessageBox.warning(self, '确认要删除该主题贴吗？',
+                                  '删除该主题贴会导致该贴子下的所有回复被一并删除，且该操作不可恢复。',
+                                  MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
         if run_flag:
             start_background_thread(self.do_action, (action_type,))

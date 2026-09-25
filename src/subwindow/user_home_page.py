@@ -286,9 +286,9 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                         i.get_portrait()
 
     def switch_to_account(self):
-        if MessageBox.information(self, '切换到此账号',
-                                   f'切换账号操作会导致当前会话下打开的所有窗口被关闭。确认要继续切换到账号 {self.nick_name} 吗？',
-                                   MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+        if MessageBox.information(self, f'确认要切换到账号 {self.nick_name} 吗？',
+                                  '切换账号操作会导致当前会话下打开的所有窗口被关闭，确认继续吗？',
+                                  MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             mgr = account_mgr.GlobalAccountContainer.get_current_manager()
             mgr.switch_to_account_async(self.real_user_id)
             self.close()
@@ -311,8 +311,8 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'unfollow':
-            if MessageBox.warning(self, '取关用户', f'确定要取消关注用户 {self.nick_name} 吗？',
-                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
+            if MessageBox.warning(self, f'取消关注用户 {self.nick_name}', f'你确认要这么做吗？',
+                                  MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
 
         if run_flag:
@@ -359,7 +359,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
             MessageBox.critical(self, '用户信息加载失败', data['error'], MessageBox.Ok)
             self.close()
         elif data['deregistered']:
-            MessageBox.critical(self, '用户已注销', '你访问的用户已注销账号，个人信息无法查看。', MessageBox.Ok)
+            MessageBox.critical(self, '此用户已注销', '你访问的用户已注销账号，个人信息无法查看。', MessageBox.Ok)
             self.close()
         else:
             self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, self.real_portrait,

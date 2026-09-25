@@ -79,9 +79,9 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
             do_close()
         else:
             if MessageBox.information(self,
-                                       '提示',
-                                       '你确实要中止登录流程吗？',
-                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+                                      '确认要关闭登录窗口吗？',
+                                      '这将中止目前的登录流程。',
+                                      MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 do_close()
             else:
                 a0.ignore()
@@ -111,9 +111,9 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
         elif data['type'] == 4:
             self.label_3.setText('百度服务器要求短信验证，请使用网页登录')
         elif data['type'] == 5:
-            MessageBox.information(self, '登录成功',
-                                    f'你已成功登录账号 {data["user"]}。\n可以在 设置-账号管理 中找到你的账号。',
-                                    MessageBox.Ok)
+            MessageBox.information(self, '账号登录成功',
+                                   f'你已成功登录账号 {data["user"]}。\n可以在 设置-账号管理 中找到你的账号。',
+                                   MessageBox.Ok)
             self.close()
 
     def get_bduss_by_token(self, token):
@@ -370,9 +370,9 @@ class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
             account_manager.add_account_async(bduss, stoken)
             self.close()
         else:
-            MessageBox.critical(self, '填写错误',
-                                 '请正确填写 BDUSS 和 STOKEN 后再尝试登录。',
-                                 MessageBox.Ok)
+            MessageBox.critical(self, '请正确填写百度 Token 信息',
+                                '你输入的 Token 长度不正确或是已失效，请正确填写 BDUSS 和 STOKEN 后再试一次。',
+                                MessageBox.Ok)
 
 
 class LoginWebView(base_ui.WindowBaseQDialog):
@@ -444,17 +444,17 @@ class LoginWebView(base_ui.WindowBaseQDialog):
 
     def closeEvent(self, a0):
         if not self.islogin:
-            if MessageBox.information(self, '提示', '你确实要中止登录流程吗？',
-                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+            if MessageBox.information(self, '确认要关闭登录窗口吗？', '这将中止目前的登录流程。',
+                                      MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.webview.destroyWebviewUntilComplete()
                 a0.accept()
             else:
                 a0.ignore()
         else:
             if self.need_restart:
-                MessageBox.information(self, '提示',
-                                        '账号已登录成功，为保证本地数据完全加载，你需要重启本软件。点击确定键关闭本软件，软件将在下次重新打开时自动应用你的设置。',
-                                        MessageBox.Ok)
+                MessageBox.information(self, '账号已登录成功，但还需你完成最后一步',
+                                       '为保证本地数据完全加载，你需要重启本软件。点击确定键关闭本软件，软件将在下次重新打开时自动应用你的账号数据。',
+                                       MessageBox.Ok)
                 sys.exit(0)
 
             self.webview.destroyWebviewUntilComplete()
@@ -467,7 +467,7 @@ class LoginWebView(base_ui.WindowBaseQDialog):
         self.flash_widget.sync_parent_widget_size()
 
     def init_flash_widget(self):
-        self.flash_widget = LoadingFlashWidget(caption='登录成功，即将跳转...')
+        self.flash_widget = LoadingFlashWidget(caption='登录成功，数据正在加载...')
         self.flash_widget.cover_widget(self, enable_filler=False)
         self.flash_widget.hide()
 

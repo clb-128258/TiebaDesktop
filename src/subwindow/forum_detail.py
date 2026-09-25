@@ -124,7 +124,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'unfollow':
-            if MessageBox.warning(self, '取关贴吧', f'确定不再关注 {self.forum_name}吧？',
+            if MessageBox.warning(self, f'取消关注 {self.forum_name}吧', f'你确定要这么做吗？这会导致你的关注天数归零。',
                                    MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
 

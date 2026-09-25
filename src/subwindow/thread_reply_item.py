@@ -158,7 +158,7 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
 
         if isok == '[ALREADY_AGREE]':
             if MessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
-                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+                                      MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.agree_thread_async(True)
         else:
             if self.show_msg_outside:
@@ -414,9 +414,9 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'del_post':
-            if MessageBox.warning(self, '删除回复贴',
-                                   '确认要删除这条回复贴吗？此操作不可撤销。',
-                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
+            if MessageBox.warning(self, '确认要删除这条回复贴吗？',
+                                  '此操作不可撤销。',
+                                  MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
         if run_flag:
             start_background_thread(self.do_action, (action_type,))

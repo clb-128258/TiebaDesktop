@@ -54,8 +54,8 @@ def check_webview2():
 
     webview2.loadLibs()
     if not webview2.isWebView2Installed() and os.name == 'nt':
-        MessageBox.warning(None, '运行警告',
-                           '你的电脑上似乎还未安装 WebView2 运行时。本程序的部分功能（如登录等）将不可用。',
+        MessageBox.warning(None, 'WebView2 尚未安装',
+                           '如果 WebView2 未安装，本程序的部分功能（如内置浏览器、视频播放器、网页登录等）将不可用。',
                            MessageBox.Ok)
 
 

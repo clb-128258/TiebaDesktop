@@ -42,6 +42,7 @@ class Ui_messageBox(object):
         font.setPointSize(16)
         font.setBold(True)
         self.messageBoxTitle.setFont(font)
+        self.messageBoxTitle.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.messageBoxTitle.setWordWrap(True)
         self.messageBoxTitle.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
         self.messageBoxTitle.setObjectName("messageBoxTitle")

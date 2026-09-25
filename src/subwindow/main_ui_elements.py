@@ -393,9 +393,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
     def reset_local_config(self):
         if MessageBox.warning(self,
-                               '警告',
-                               '确认要重置所有设置吗？重置后，本页的所有选项都将恢复到默认状态。',
-                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+                              '确认重置所有设置吗？',
+                              '重置后，本页的所有选项都将恢复到默认状态。',
+                              MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             profile_mgr.fix_local_config()
             self.load_local_config()
             self.top_toaster.showToast(
@@ -593,7 +593,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                                               '请注意输入链接头部的 HTTP/HTTPS 前缀。')
         if click_ok and text:
             if not text.startswith((consts.SCHEME_HTTP, consts.SCHEME_HTTPS)):
-                MessageBox.critical(self, '输入错误', '请输入一个有效的 HTTP/HTTPS 链接。', MessageBox.Ok)
+                MessageBox.critical(self, '输入格式不正确', '请输入一个有效的 HTTP/HTTPS 链接。', MessageBox.Ok)
             else:
                 self.comboBox_5.addItem(text)
                 self.comboBox_5.setCurrentIndex(self.comboBox_5.count() - 1)
@@ -606,7 +606,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 # win10 以后系统调用 UWP 设置
                 open_url_in_browser('ms-settings:network-proxy')
         else:
-            MessageBox.information(self, '提示', '该功能暂不支持你的系统，请手动调整系统的代理设置。', MessageBox.Ok)
+            MessageBox.information(self, '很抱歉，该功能暂不支持你的系统', '还请手动调整系统的代理设置。', MessageBox.Ok)
 
     def set_debug_info(self):
         self.label_8.setText(f'版本 {consts.APP_VERSION_STR} by {consts.AUTHOR_NAME}')
@@ -688,9 +688,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.top_toaster.showToast(toast)
 
     def clear_caches_async(self):
-        if MessageBox.warning(self, '清理数据',
-                               '确认要清理这些数据吗？本操作需要一定时间，请耐心等待，清理数据时请不要关闭本窗口。',
-                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+        if MessageBox.warning(self, '确认要清理这些数据吗？',
+                              '清理数据需要一定时间，请耐心等待，清理数据时请不要关闭本窗口。',
+                              MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.pushButton_12.setEnabled(False)
             self.load_animation.set_caption(caption='正在清理数据，请稍等...')
             self.load_animation.show()
@@ -862,8 +862,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.scanFinish.emit(data)
 
     def clear_account_list(self):
-        if MessageBox.warning(self, '警告', '确认要清空本地的所有登录信息吗？这会导致所有用户退出登录。',
-                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+        if MessageBox.warning(self, '确认清空本地的所有登录信息吗？',
+                              '这会导致所有用户退出登录。账号登录态在服务器侧并不会失效。',
+                              MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.current_a = None
             self.account_mgr.clear_all_accounts_async()
 
@@ -873,9 +874,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         user_info = self.account_mgr.get_account_by_uid_portrait(uid)
 
         if user_info != self.current_a:
-            if MessageBox.information(self, '提示',
-                                       f'确认要切换到账号 {user_info.nickname} 吗？',
-                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+            if MessageBox.information(self, f'确认切换到账号 {user_info.nickname} 吗？',
+                                      f'目前账号会话下打开的所有窗口都将被关闭。',
+                                      MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.account_mgr.switch_to_account_async(user_info.uid)
 
     def delete_account(self, uid=0):
@@ -883,9 +884,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             uid = self.listWidget_2.currentItem().user_portrait_id
         user_info = self.account_mgr.get_account_by_uid_portrait(uid)
 
-        if MessageBox.information(self, '提示',
-                                   f'确认要删除账号 {user_info.nickname} 的登录信息吗？',
-                                   MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+        if MessageBox.information(self, f'确认删除账号 {user_info.nickname} 的登录信息吗？',
+                                  '该用户会在本地退出登录，不影响服务器侧的登录态。',
+                                  MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.account_mgr.delete_account_async(uid)
 
     def get_logon_accounts(self):
@@ -1021,11 +1022,12 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
             self.hide()
         elif close_action == 1:
             windows_num = len(qt_window_mgr.distributed_window)
-            show_text = (f'你还有 {windows_num} 个打开的窗口没有被关闭，' if windows_num > 0 else '') + '确认要退出软件吗？'
+            show_text = (
+                f'你还有 {windows_num} 个打开的窗口没有被关闭，退出软件会将它们全部关闭。' if windows_num > 0 else '')
             msgbox = MessageBox(MessageBox.Information,
-                                 '提示',
-                                 show_text,
-                                 parent=self)
+                                '确认要退出软件吗？',
+                                show_text,
+                                parent=self)
             msgbox.setStandardButtons(MessageBox.Yes | MessageBox.No)
 
             if msgbox.exec() == MessageBox.Yes:
@@ -1372,11 +1374,10 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
             self.exit_login_ac.setVisible(False)
 
     def exit_login(self):
-        if MessageBox.warning(self, '警告',
-                               '确认要退出当前账号吗？\n'
-                               '如果本机没有登录其他账号，那么你将会切换到游客模式下；\n'
-                               '如果你登录了其他账号，那么你将会被切换到下一个账号。',
-                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+        if MessageBox.warning(self, '确认退出当前账号吗？',
+                              '如果本机没有登录其他账号，那么你将会切换到游客模式下；\n'
+                              '如果你登录了其他账号，那么你将会被切换到下一个账号。',
+                              MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.account_manager.delete_account_async(self.account_manager.current_account.uid)
 
     def login_exec(self):

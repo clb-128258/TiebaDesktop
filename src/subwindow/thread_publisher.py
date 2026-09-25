@@ -92,8 +92,8 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
 
     def closeEvent(self, a0):
         if not self.http_catcher.is_captcha_token_got:
-            if MessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
-                                   MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+            if MessageBox.warning(self, '确认取消本次验证码校验吗？', '如果取消验证，那么本次发贴操作将被取消。',
+                                  MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.webview.destroyWebviewUntilComplete()
                 a0.accept()
             else:
@@ -151,8 +151,8 @@ class AddPostImageCaptchaDialog(base_ui.WindowBaseQDialog, post_verify_code.Ui_D
 
         if self.user_input_vcode:
             close_window()
-        elif MessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
-                                 MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+        elif MessageBox.warning(self, '确认取消本次验证码校验吗？', '如果取消验证，那么本次发贴操作将被取消。',
+                                MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             close_window()
         else:
             a0.ignore()
@@ -411,9 +411,9 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
 
     def add_thread_ok_action(self, msg):
         if msg['success']:
-            MessageBox.information(self, '发贴成功',
-                                    '恭喜你，这条主题贴已发布成功！\n点击确定键将打开贴子窗口，你可以立即查看刚才发布的贴子。',
-                                    MessageBox.Ok)
+            MessageBox.information(self, '恭喜你，发贴成功！',
+                                   '点击确定键将打开贴子窗口，你可以立即查看刚才发布的贴子。',
+                                   MessageBox.Ok)
             open_url_in_browser(f'tieba_thread://{msg["thread_info"]["thread_id"]}')
             self.close()
         else:
@@ -465,10 +465,10 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
                                                                       icon_type=top_toast_widget.ToastIconType.INFORMATION))
         else:
             if not (captcha_md5 and captcha_json_info and captcha_type):
-                show_string = ('发布主题贴功能目前还处于测试阶段。\n'
+                show_string = ('由于百度官方限制，本软件的发主贴功能并不稳定。\n'
                                '使用本软件发贴可能会遇到发贴失败、反复弹验证码等情况，甚至可能导致你的账号被全吧封禁，造成不必要损失。\n'
-                               '目前我们不建议使用此方法进行发贴，我们建议你使用官方网页版进行发贴。\n确认要继续吗？')
-                msgbox = MessageBox(MessageBox.Warning, '发贴风险提示', show_string, parent=self)
+                               '目前我们不建议使用本软件进行发贴，我们建议你使用官方的网页端进行发贴。\n确认要继续吗？')
+                msgbox = MessageBox(MessageBox.Warning, '发贴操作有风险，请谨慎操作', show_string, parent=self)
                 msgbox.setStandardButtons(MessageBox.Help | MessageBox.Yes | MessageBox.No)
                 msgbox.button(MessageBox.Help).setText("去网页发贴")
                 msgbox.button(MessageBox.Yes).setText("无视风险，继续发贴")
