@@ -10,12 +10,12 @@ import requests
 
 from PyQt5.QtCore import pyqtSignal, Qt, QObject
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMessageBox
 
 import consts
 
 from publics import qt_image, profile_mgr, request_mgr, account_mgr, app_logger
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.windows_features import webview2
 from publics.app_logger import log_exception, log_INFO
 from publics.funcs import start_background_thread, get_exception_string, get_dict_value_treely, \
@@ -78,10 +78,10 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
         if self.is_login_succeed:
             do_close()
         else:
-            if QMessageBox.information(self,
+            if MessageBox.information(self,
                                        '提示',
                                        '你确实要中止登录流程吗？',
-                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 do_close()
             else:
                 a0.ignore()
@@ -111,9 +111,9 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
         elif data['type'] == 4:
             self.label_3.setText('百度服务器要求短信验证，请使用网页登录')
         elif data['type'] == 5:
-            QMessageBox.information(self, '登录成功',
+            MessageBox.information(self, '登录成功',
                                     f'你已成功登录账号 {data["user"]}。\n可以在 设置-账号管理 中找到你的账号。',
-                                    QMessageBox.Ok)
+                                    MessageBox.Ok)
             self.close()
 
     def get_bduss_by_token(self, token):
@@ -370,9 +370,9 @@ class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
             account_manager.add_account_async(bduss, stoken)
             self.close()
         else:
-            QMessageBox.critical(self, '填写错误',
+            MessageBox.critical(self, '填写错误',
                                  '请正确填写 BDUSS 和 STOKEN 后再尝试登录。',
-                                 QMessageBox.Ok)
+                                 MessageBox.Ok)
 
 
 class LoginWebView(base_ui.WindowBaseQDialog):
@@ -444,17 +444,17 @@ class LoginWebView(base_ui.WindowBaseQDialog):
 
     def closeEvent(self, a0):
         if not self.islogin:
-            if QMessageBox.information(self, '提示', '你确实要中止登录流程吗？',
-                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            if MessageBox.information(self, '提示', '你确实要中止登录流程吗？',
+                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.webview.destroyWebviewUntilComplete()
                 a0.accept()
             else:
                 a0.ignore()
         else:
             if self.need_restart:
-                QMessageBox.information(self, '提示',
+                MessageBox.information(self, '提示',
                                         '账号已登录成功，为保证本地数据完全加载，你需要重启本软件。点击确定键关闭本软件，软件将在下次重新打开时自动应用你的设置。',
-                                        QMessageBox.Ok)
+                                        MessageBox.Ok)
                 sys.exit(0)
 
             self.webview.destroyWebviewUntilComplete()

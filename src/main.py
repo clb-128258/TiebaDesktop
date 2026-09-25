@@ -6,6 +6,7 @@ from publics.app_logger import log_exception, log_INFO, log_WARN
 
 from publics.cli_feats import handle_command_events, reset_udf
 from publics.base_ui_elements import base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.windows_features import webview2
 from publics.winrt_url_share import winrt_share
 
@@ -13,7 +14,7 @@ from publics.funcs import *
 from publics import proxytool
 
 from PyQt5.QtCore import QLocale, QTranslator, Qt
-from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt5.QtWidgets import QApplication
 
 import sys
 import os
@@ -53,10 +54,9 @@ def check_webview2():
 
     webview2.loadLibs()
     if not webview2.isWebView2Installed() and os.name == 'nt':
-        msgbox = QMessageBox()
-        msgbox.warning(None, '运行警告',
-                       '你的电脑上似乎还未安装 WebView2 运行时。本程序的部分功能（如登录等）将不可用。',
-                       QMessageBox.Ok)
+        MessageBox.warning(None, '运行警告',
+                           '你的电脑上似乎还未安装 WebView2 运行时。本程序的部分功能（如登录等）将不可用。',
+                           MessageBox.Ok)
 
 
 def set_qt_scale_factor():

@@ -2,10 +2,10 @@ import asyncio
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QMessageBox
 
 from publics import qt_window_mgr, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.funcs import start_background_thread, show_label_pixmap_with_animation
 from publics.baidu_features.tieba_apis import sign_forum
 from ui import ba_item
@@ -59,7 +59,7 @@ class ForumItem(base_ui.InsideWidgetBaseQWidget, ba_item.Ui_Form):
                 self.toast_widget.showToast(
                     top_toast_widget.ToastMessage(isok[2], icon_type=top_toast_widget.ToastIconType.SUCCESS))
             else:
-                QMessageBox.information(self, isok[1], isok[2])
+                MessageBox.information(self, isok[1], isok[2])
             self.pushButton_2.setEnabled(False)
             self.pushButton_2.setText('已签到')
         else:
@@ -67,7 +67,7 @@ class ForumItem(base_ui.InsideWidgetBaseQWidget, ba_item.Ui_Form):
                 self.toast_widget.showToast(
                     top_toast_widget.ToastMessage(isok[2], icon_type=top_toast_widget.ToastIconType.ERROR))
             else:
-                QMessageBox.critical(self, isok[1], isok[2])
+                MessageBox.critical(self, isok[1], isok[2])
             self.pushButton_2.setEnabled(True)
 
     def sign_async(self):

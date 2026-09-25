@@ -5,10 +5,11 @@ import aiotieba
 
 from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmapCache, QPixmap
-from PyQt5.QtWidgets import QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, cache_mgr, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui, float_button
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import open_url_in_browser, start_background_thread, timestamp_to_string, \
     make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
@@ -462,7 +463,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
 
     def update_info_ui(self, datas):
         if datas['error']:
-            QMessageBox.critical(self, '进吧失败', datas['error'], QMessageBox.Ok)
+            MessageBox.critical(self, '进吧失败', datas['error'], MessageBox.Ok)
             self.close()
         else:
             self.setWindowTitle(datas['name'] + '吧')

@@ -8,10 +8,11 @@ import pyperclip
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QSize, QRect, QTimer
 from PyQt5.QtGui import QIcon, QPixmapCache, QFont, QCursor
-from PyQt5.QtWidgets import QAction, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QAction, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui, float_button
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.qt_image import get_pixmap_icon_from_file
 from publics.winrt_url_share import winrt_share
@@ -629,14 +630,14 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                 show_string = ('回复功能目前还处于测试阶段。\n'
                                '使用本软件回贴可能会遇到发贴失败、弹验证码等情况，甚至可能导致你的账号被全吧永久封禁。\n'
                                '目前我们不建议使用此方法进行回贴，我们建议你使用官方网页版进行回贴。\n确认要继续吗？')
-                msgbox = QMessageBox(QMessageBox.Warning, '回贴风险提示', show_string, parent=self)
-                msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
-                msgbox.button(QMessageBox.Help).setText("去网页发贴")
-                msgbox.button(QMessageBox.Yes).setText("无视风险，继续发贴")
-                msgbox.button(QMessageBox.No).setText("取消发贴")
+                msgbox = MessageBox(MessageBox.Warning, '回贴风险提示', show_string, parent=self)
+                msgbox.setStandardButtons(MessageBox.Help | MessageBox.Yes | MessageBox.No)
+                msgbox.button(MessageBox.Help).setText("去网页发贴")
+                msgbox.button(MessageBox.Yes).setText("无视风险，继续发贴")
+                msgbox.button(MessageBox.No).setText("取消发贴")
                 r = msgbox.exec()
-                flag = r == QMessageBox.Yes
-                if r == QMessageBox.Help:
+                flag = r == MessageBox.Yes
+                if r == MessageBox.Help:
                     url = f'https://tieba.baidu.com/p/{self.thread_id}'
                     open_url_in_browser(url)
             else:
@@ -681,8 +682,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.update_agree_button_status()
 
         if isok == '[ALREADY_AGREE]':
-            if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
-                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            if MessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
+                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.agree_thread_async(True)
         else:
             toast = top_toast_widget.ToastMessage(isok, 2000, top_toast_widget.ToastIconType.INFORMATION)
@@ -785,11 +786,11 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
             QTimer.singleShot(2400, lambda: self.close())
 
     def delete_thread_async(self):
-        if QMessageBox.warning(self,
+        if MessageBox.warning(self,
                                '删贴警告',
                                '删除该主题贴会导致该贴子下的所有回复被一并删除，且该操作不可恢复。\n'
                                '确认要删除该主题贴吗？',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             start_background_thread(self.delete_thread)
 
     def delete_thread(self):
@@ -1137,7 +1138,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
     def update_ui_head_info(self, datas):
         if datas['err_info']:
-            QMessageBox.critical(self, '贴子加载失败', datas['err_info'], QMessageBox.Ok)
+            MessageBox.critical(self, '贴子加载失败', datas['err_info'], MessageBox.Ok)
             self.close()
         else:
             self.flash_shower.hide()

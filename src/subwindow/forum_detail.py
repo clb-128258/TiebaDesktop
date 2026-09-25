@@ -7,11 +7,12 @@ import requests
 
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QListWidgetItem, \
+from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QListWidgetItem, \
     QTableWidgetItem
 
 from publics import qt_window_mgr, request_mgr, cache_mgr, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, http_downloader, \
     large_num_to_string, get_exception_string, show_label_pixmap_with_animation
@@ -123,8 +124,8 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'unfollow':
-            if QMessageBox.warning(self, '取关贴吧', f'确定不再关注 {self.forum_name}吧？',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+            if MessageBox.warning(self, '取关贴吧', f'确定不再关注 {self.forum_name}吧？',
+                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
 
         if run_flag:
@@ -304,7 +305,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
             self.tableWidget.setHorizontalHeaderLabels(('等级', '头衔', '所需经验值'))
 
         else:
-            QMessageBox.critical(self, '吧信息加载失败', datas['err_info'], QMessageBox.Ok)
+            MessageBox.critical(self, '吧信息加载失败', datas['err_info'], MessageBox.Ok)
             self.close()
 
     def get_main_info_async(self):

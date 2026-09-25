@@ -107,7 +107,7 @@ class Ui_Dialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 641, 2100))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 753, 2060))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.gridLayout = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -1091,6 +1091,7 @@ class Ui_Dialog(object):
 "\n"
 "QListWidget::item:selected {\n"
 "    background-color: rgba(91, 68, 200, 255);\n"
+"    color: white;\n"
 "    font-weight: bold;\n"
 "}\n"
 "\n"

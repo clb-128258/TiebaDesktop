@@ -4,12 +4,13 @@ import pyperclip
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QSize, QPoint
 from PyQt5.QtGui import QPixmap, QCursor, QIcon
-from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QAction
+from PyQt5.QtWidgets import QListWidgetItem, QAction
 
 from typing import Union
 
 from publics import qt_window_mgr, profile_mgr, qt_image, account_mgr, app_logger
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.funcs import start_background_thread, open_url_in_browser, large_num_to_string, get_exception_string, \
     show_label_pixmap_with_animation
 import publics.app_logger as logging
@@ -156,8 +157,8 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
         self.set_agree_button_status()
 
         if isok == '[ALREADY_AGREE]':
-            if QMessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
-                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            if MessageBox.information(self, '已经点过赞了', '你已经点过赞了，是否要取消点赞？',
+                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.agree_thread_async(True)
         else:
             if self.show_msg_outside:
@@ -166,7 +167,7 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
                 toast.title = isok
                 self.messageAdded.emit(toast)
             else:
-                QMessageBox.information(self, '点赞操作完成', isok)
+                MessageBox.information(self, '点赞操作完成', isok)
 
     def agree_thread_from_click(self):
         self.agree_thread_async(self.is_agreed)
@@ -228,7 +229,7 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
                 toast.title = f'第 {self.floor} 楼还没有任何回复'
                 self.messageAdded.emit(toast)
             else:
-                QMessageBox.information(self, '暂无回复', f'第 {self.floor} 楼还没有任何回复。', QMessageBox.Ok)
+                MessageBox.information(self, '暂无回复', f'第 {self.floor} 楼还没有任何回复。', MessageBox.Ok)
 
     def open_forum_detail_page(self):
         from subwindow.forum_detail import ForumDetailWindow
@@ -413,9 +414,9 @@ class ReplyItem(base_ui.InsideWidgetBaseQWidget, comment_view.Ui_Form):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'del_post':
-            if QMessageBox.warning(self, '删除回复贴',
+            if MessageBox.warning(self, '删除回复贴',
                                    '确认要删除这条回复贴吗？此操作不可撤销。',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
         if run_flag:
             start_background_thread(self.do_action, (action_type,))

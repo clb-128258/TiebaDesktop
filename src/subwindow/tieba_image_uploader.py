@@ -8,10 +8,11 @@ import time
 
 from PyQt5.QtCore import Qt, pyqtSignal, QByteArray, QBuffer, QIODevice, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache, QMovie, QImage
-from PyQt5.QtWidgets import QFileDialog, QApplication, QAction, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QApplication, QAction
 
 from publics import request_mgr, funcs, profile_mgr, app_logger, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.base_ui import BaseQMenu
 
 import consts
@@ -144,8 +145,8 @@ class TiebaImageUploader(base_ui.WindowBaseQDialog, tb_image_uploader.Ui_Dialog)
             a0.ignore()
         elif not self.image_list or self.uploaded_image_list:
             run_close()
-        elif QMessageBox.warning(self, '警告', '确认要取消图片上传吗？你在此所做的任何更改都将不会保存。',
-                                 QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+        elif MessageBox.warning(self, '警告', '确认要取消图片上传吗？你在此所做的任何更改都将不会保存。',
+                                 MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             run_close()
         else:
             a0.ignore()

@@ -13,15 +13,16 @@ import aiotieba
 from PyQt5.QtCore import (QPoint, pyqtSignal, QPropertyAnimation, QEasingCurve,
                           QParallelAnimationGroup, QT_VERSION_STR, QT_VERSION, QTimer, Qt)
 from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache, QFont, QCloseEvent
-from PyQt5.QtWidgets import (QSystemTrayIcon, QAction, QMessageBox, QWidgetAction,
+from PyQt5.QtWidgets import (QSystemTrayIcon, QAction, QWidgetAction,
                              QGraphicsOpacityEffect, QFileDialog, QInputDialog, QAbstractButton,
-                             QAbstractSlider, QLineEdit, QComboBox)
+                             QAbstractSlider, QLineEdit, QComboBox, QMessageBox)
 
 import consts
 
 from publics import (qt_window_mgr, profile_mgr, cache_mgr, qt_image,
                      account_mgr, app_logger, request_mgr)
 from publics.base_ui_elements.base_ui import BaseQMainWindow
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.windows_features import webview2
 from publics.base_ui_elements import top_toast_widget, base_ui, float_button
@@ -391,10 +392,10 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.label_69.setText(f'{self.horizontalSlider_2.value()}%')
 
     def reset_local_config(self):
-        if QMessageBox.warning(self,
+        if MessageBox.warning(self,
                                '警告',
                                '确认要重置所有设置吗？重置后，本页的所有选项都将恢复到默认状态。',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             profile_mgr.fix_local_config()
             self.load_local_config()
             self.top_toaster.showToast(
@@ -592,7 +593,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                                               '请注意输入链接头部的 HTTP/HTTPS 前缀。')
         if click_ok and text:
             if not text.startswith((consts.SCHEME_HTTP, consts.SCHEME_HTTPS)):
-                QMessageBox.critical(self, '输入错误', '请输入一个有效的 HTTP/HTTPS 链接。', QMessageBox.Ok)
+                MessageBox.critical(self, '输入错误', '请输入一个有效的 HTTP/HTTPS 链接。', MessageBox.Ok)
             else:
                 self.comboBox_5.addItem(text)
                 self.comboBox_5.setCurrentIndex(self.comboBox_5.count() - 1)
@@ -605,7 +606,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 # win10 以后系统调用 UWP 设置
                 open_url_in_browser('ms-settings:network-proxy')
         else:
-            QMessageBox.information(self, '提示', '该功能暂不支持你的系统，请手动调整系统的代理设置。', QMessageBox.Ok)
+            MessageBox.information(self, '提示', '该功能暂不支持你的系统，请手动调整系统的代理设置。', MessageBox.Ok)
 
     def set_debug_info(self):
         self.label_8.setText(f'版本 {consts.APP_VERSION_STR} by {consts.AUTHOR_NAME}')
@@ -687,9 +688,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.top_toaster.showToast(toast)
 
     def clear_caches_async(self):
-        if QMessageBox.warning(self, '清理数据',
+        if MessageBox.warning(self, '清理数据',
                                '确认要清理这些数据吗？本操作需要一定时间，请耐心等待，清理数据时请不要关闭本窗口。',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.pushButton_12.setEnabled(False)
             self.load_animation.set_caption(caption='正在清理数据，请稍等...')
             self.load_animation.show()
@@ -861,8 +862,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.scanFinish.emit(data)
 
     def clear_account_list(self):
-        if QMessageBox.warning(self, '警告', '确认要清空本地的所有登录信息吗？这会导致所有用户退出登录。',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+        if MessageBox.warning(self, '警告', '确认要清空本地的所有登录信息吗？这会导致所有用户退出登录。',
+                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.current_a = None
             self.account_mgr.clear_all_accounts_async()
 
@@ -872,9 +873,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         user_info = self.account_mgr.get_account_by_uid_portrait(uid)
 
         if user_info != self.current_a:
-            if QMessageBox.information(self, '提示',
+            if MessageBox.information(self, '提示',
                                        f'确认要切换到账号 {user_info.nickname} 吗？',
-                                       QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.account_mgr.switch_to_account_async(user_info.uid)
 
     def delete_account(self, uid=0):
@@ -882,9 +883,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             uid = self.listWidget_2.currentItem().user_portrait_id
         user_info = self.account_mgr.get_account_by_uid_portrait(uid)
 
-        if QMessageBox.information(self, '提示',
+        if MessageBox.information(self, '提示',
                                    f'确认要删除账号 {user_info.nickname} 的登录信息吗？',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                                   MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.account_mgr.delete_account_async(uid)
 
     def get_logon_accounts(self):
@@ -1021,13 +1022,13 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
         elif close_action == 1:
             windows_num = len(qt_window_mgr.distributed_window)
             show_text = (f'你还有 {windows_num} 个打开的窗口没有被关闭，' if windows_num > 0 else '') + '确认要退出软件吗？'
-            msgbox = QMessageBox(QMessageBox.Information,
+            msgbox = MessageBox(MessageBox.Information,
                                  '提示',
                                  show_text,
                                  parent=self)
-            msgbox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msgbox.setStandardButtons(MessageBox.Yes | MessageBox.No)
 
-            if msgbox.exec() == QMessageBox.Yes:
+            if msgbox.exec() == MessageBox.Yes:
                 self.exit_app(a0)
             else:
                 a0.ignore()
@@ -1371,11 +1372,11 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
             self.exit_login_ac.setVisible(False)
 
     def exit_login(self):
-        if QMessageBox.warning(self, '警告',
+        if MessageBox.warning(self, '警告',
                                '确认要退出当前账号吗？\n'
                                '如果本机没有登录其他账号，那么你将会切换到游客模式下；\n'
                                '如果你登录了其他账号，那么你将会被切换到下一个账号。',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             self.account_manager.delete_account_async(self.account_manager.current_account.uid)
 
     def login_exec(self):

@@ -1,12 +1,13 @@
 import asyncio
 
 import aiotieba
-from PyQt5.QtWidgets import QLabel, QAction, QMessageBox
+from PyQt5.QtWidgets import QLabel, QAction
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QEvent
 
 from publics import qt_window_mgr, qt_image, profile_mgr, account_mgr, app_logger
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.baidu_features import tieba_apis
 from publics.funcs import timestamp_to_string, large_num_to_string, show_label_pixmap_with_animation, \
     start_background_thread, open_url_in_browser
@@ -278,9 +279,9 @@ class ThreadView(base_ui.InsideWidgetBaseQWidget, tie_preview.Ui_Form):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'del_thread':
-            if QMessageBox.warning(self, '删除贴子',
+            if MessageBox.warning(self, '删除贴子',
                                    '删除该主题贴会导致该贴子下的所有回复被一并删除，且该操作不可恢复。\n确认要删除该主题贴吗？',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
         if run_flag:
             start_background_thread(self.do_action, (action_type,))

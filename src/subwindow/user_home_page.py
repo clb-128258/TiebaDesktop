@@ -7,10 +7,11 @@ import pyperclip
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QMenu, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QAction, QMenu, QListWidgetItem
 
 from publics import profile_mgr, qt_window_mgr, qt_image, account_mgr
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, cut_string, \
     make_thread_content, timestamp_to_string, open_url_in_browser, listWidget_get_visible_widgets, large_num_to_string, \
@@ -285,9 +286,9 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
                         i.get_portrait()
 
     def switch_to_account(self):
-        if QMessageBox.information(self, '切换到此账号',
+        if MessageBox.information(self, '切换到此账号',
                                    f'切换账号操作会导致当前会话下打开的所有窗口被关闭。确认要继续切换到账号 {self.nick_name} 吗？',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                                   MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             mgr = account_mgr.GlobalAccountContainer.get_current_manager()
             mgr.switch_to_account_async(self.real_user_id)
             self.close()
@@ -310,8 +311,8 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
     def do_action_async(self, action_type=""):
         run_flag = True
         if action_type == 'unfollow':
-            if QMessageBox.warning(self, '取关用户', f'确定要取消关注用户 {self.nick_name} 吗？',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+            if MessageBox.warning(self, '取关用户', f'确定要取消关注用户 {self.nick_name} 吗？',
+                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
 
         if run_flag:
@@ -355,10 +356,10 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
     def set_head_info_ui(self, data):
         if data['error']:
-            QMessageBox.critical(self, '用户信息加载失败', data['error'], QMessageBox.Ok)
+            MessageBox.critical(self, '用户信息加载失败', data['error'], MessageBox.Ok)
             self.close()
         elif data['deregistered']:
-            QMessageBox.critical(self, '用户已注销', '你访问的用户已注销账号，个人信息无法查看。', QMessageBox.Ok)
+            MessageBox.critical(self, '用户已注销', '你访问的用户已注销账号，个人信息无法查看。', MessageBox.Ok)
             self.close()
         else:
             self.portrait_image.setImageInfo(qt_image.ImageLoadSource.TiebaPortrait, self.real_portrait,

@@ -8,11 +8,11 @@ import aiotieba
 
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent, QPoint, QObject
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMessageBox
 
 import consts
 from publics import profile_mgr, app_logger, qt_image
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.windows_features import webview2
 from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, get_exception_string, get_dict_value_treely, \
@@ -92,8 +92,8 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
 
     def closeEvent(self, a0):
         if not self.http_catcher.is_captcha_token_got:
-            if QMessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
-                                   QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            if MessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
+                                   MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.webview.destroyWebviewUntilComplete()
                 a0.accept()
             else:
@@ -151,8 +151,8 @@ class AddPostImageCaptchaDialog(base_ui.WindowBaseQDialog, post_verify_code.Ui_D
 
         if self.user_input_vcode:
             close_window()
-        elif QMessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
-                                 QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+        elif MessageBox.warning(self, '提示', '确认要取消本次验证码校验吗？如果取消验证，那么本次发贴操作将被取消。',
+                                 MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             close_window()
         else:
             a0.ignore()
@@ -411,9 +411,9 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
 
     def add_thread_ok_action(self, msg):
         if msg['success']:
-            QMessageBox.information(self, '发贴成功',
+            MessageBox.information(self, '发贴成功',
                                     '恭喜你，这条主题贴已发布成功！\n点击确定键将打开贴子窗口，你可以立即查看刚才发布的贴子。',
-                                    QMessageBox.Ok)
+                                    MessageBox.Ok)
             open_url_in_browser(f'tieba_thread://{msg["thread_info"]["thread_id"]}')
             self.close()
         else:
@@ -468,14 +468,14 @@ class ThreadPublisherWindow(base_ui.WindowBaseQDialog, thread_publisher.Ui_Dialo
                 show_string = ('发布主题贴功能目前还处于测试阶段。\n'
                                '使用本软件发贴可能会遇到发贴失败、反复弹验证码等情况，甚至可能导致你的账号被全吧封禁，造成不必要损失。\n'
                                '目前我们不建议使用此方法进行发贴，我们建议你使用官方网页版进行发贴。\n确认要继续吗？')
-                msgbox = QMessageBox(QMessageBox.Warning, '发贴风险提示', show_string, parent=self)
-                msgbox.setStandardButtons(QMessageBox.Help | QMessageBox.Yes | QMessageBox.No)
-                msgbox.button(QMessageBox.Help).setText("去网页发贴")
-                msgbox.button(QMessageBox.Yes).setText("无视风险，继续发贴")
-                msgbox.button(QMessageBox.No).setText("取消发贴")
+                msgbox = MessageBox(MessageBox.Warning, '发贴风险提示', show_string, parent=self)
+                msgbox.setStandardButtons(MessageBox.Help | MessageBox.Yes | MessageBox.No)
+                msgbox.button(MessageBox.Help).setText("去网页发贴")
+                msgbox.button(MessageBox.Yes).setText("无视风险，继续发贴")
+                msgbox.button(MessageBox.No).setText("取消发贴")
                 r = msgbox.exec()
-                flag = r == QMessageBox.Yes
-                if r == QMessageBox.Help:
+                flag = r == MessageBox.Yes
+                if r == MessageBox.Help:
                     url = f'https://tieba.baidu.com/f?kw={self.forum_name}'
                     open_url_in_browser(url)
             else:

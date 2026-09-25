@@ -5,10 +5,10 @@ import sys
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMessageBox
 
 from publics import app_logger, profile_mgr
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 from publics.baidu_features import tieba_apis
 from publics.funcs import start_background_thread, get_exception_string
 from ui import sign
@@ -76,7 +76,7 @@ class SignAllDialog(base_ui.WindowBaseQDialog, sign.Ui_Dialog):
             self.top_toaster.showToast(
                 top_toast_widget.ToastMessage('成长等级签到成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
         else:
-            QMessageBox.critical(self, '签到失败', result)
+            MessageBox.critical(self, '签到失败', result)
 
         self.pushButton_2.setEnabled(True)
 

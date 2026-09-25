@@ -4,8 +4,9 @@ from publics.funcs import cleanup_listWidget
 from ui import view_history, view_history_item, view_history_single_item
 from publics import profile_mgr, cache_mgr, qt_window_mgr, funcs, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui
+from publics.base_ui_elements.message_box import MessageBox
 
-from PyQt5.QtWidgets import QWidget, QListWidgetItem, QMessageBox, QGraphicsDropShadowEffect
+from PyQt5.QtWidgets import QWidget, QListWidgetItem, QGraphicsDropShadowEffect
 from PyQt5.QtGui import QIcon, QPixmap, QColor
 from PyQt5.QtCore import pyqtSignal, QSize
 
@@ -235,8 +236,8 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
             w.load_items_icon()
 
     def clear_history(self):
-        if QMessageBox.warning(self, '警告', '确认要清空浏览记录吗？',
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+        if MessageBox.warning(self, '警告', '确认要清空浏览记录吗？',
+                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             profile_mgr.view_history.clear()
             profile_mgr.save_view_history()
             self.reload_history()

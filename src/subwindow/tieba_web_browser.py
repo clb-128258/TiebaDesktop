@@ -6,11 +6,12 @@ import yarl
 import json
 from PyQt5.QtCore import Qt, QByteArray, QMimeData, QPoint, QTimer, QEvent
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
-from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QAction, QMessageBox
+from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QAction
 
 from consts import datapath, APP_VERSION_STR
 from publics import profile_mgr, qt_window_mgr, cache_mgr, app_logger
 from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import open_url_in_browser, cut_string, start_background_thread, get_dict_value_treely
 from publics.winrt_url_share import winrt_share
@@ -516,12 +517,12 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         widget = self.tabWidget.currentWidget()
         if (isinstance(widget, webview2.QWebView2View)
                 and widget.isRenderInitOk()
-                and QMessageBox.warning(self,
+                and MessageBox.warning(self,
                                         '数据清理提示',
                                         '确认要清理浏览器缓存吗？\n'
                                         '这会清理你的磁盘缓存、下载历史和浏览历史，'
                                         '且下次访问网站的速度可能会变慢。',
-                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes):
+                                        MessageBox.Yes | MessageBox.No) == MessageBox.Yes):
             widget.clearCacheData()
             self.top_toaster.showToast(
                 top_toast_widget.ToastMessage('缓存清理成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
@@ -530,13 +531,13 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         widget = self.tabWidget.currentWidget()
         if (isinstance(widget, webview2.QWebView2View)
                 and widget.isRenderInitOk()
-                and QMessageBox.warning(self,
+                and MessageBox.warning(self,
                                         '数据清理提示',
                                         '确认要清理浏览器状态性数据吗？\n'
                                         '这会清理你的 Cookies、自动填充、密码保存及所有 DOM 存储，'
                                         '你将丢失在浏览器内的账号登录状态。\n'
                                         '此操作不可撤销，请谨慎操作。',
-                                        QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes):
+                                        MessageBox.Yes | MessageBox.No) == MessageBox.Yes):
             widget.clearCookies()
             self.top_toaster.showToast(
                 top_toast_widget.ToastMessage('状态性数据清理成功', icon_type=top_toast_widget.ToastIconType.SUCCESS))
