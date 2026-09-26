@@ -101,7 +101,7 @@ class Ui_Form(object):
         self.label_11.setObjectName("label_11")
         self.gridLayout_3.addWidget(self.label_11, 2, 0, 1, 1)
         self.frame = QtWidgets.QFrame(Form)
-        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.frame)
