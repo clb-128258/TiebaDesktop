@@ -50,7 +50,8 @@
 
 > [!important]
 >
-> - ✅ 构建产物当前仅支持 **64 位 Windows 系统**（其他系统敬请期待）
+> - ✅ Windows 构建产物：`TiebaDesktop-<版本>-win64.zip` 与 NSIS 安装程序
+> - ✅ Linux 构建产物：`TiebaDesktop-<版本>-linux64.deb`（Debian/Ubuntu）与 `TiebaDesktop-<版本>-linux64.rpm`（Fedora/RHEL/openSUSE）
 > - ⏳ 构建产物保留期为 **2 天**，超期自动删除
 
 ## 🖼️ 界面预览

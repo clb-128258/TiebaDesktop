@@ -122,7 +122,6 @@ jobs:
           cfg_json_item['installer_cfg']['makensis_path'] = 'C:\\Program Files (x86)\\NSIS\\makensis.exe'
           
           cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions'
-          cfg_json_item['version']['git_last_commit_hash'] = short_sha
           
           with open(config_path, 'w', encoding='utf-8') as f:
               json.dump(cfg_json_item, f, indent=4)
@@ -144,5 +143,140 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TiebaDesktop-daily-build-version
+          path: ${{ github.workspace }}/build-tools/work_out/*
+          if-no-files-found: error # 如果 work_out 目录下没有文件，则让 Action 报错，方便排查构建脚本是否运行成功
+
+  build-and-pack-linux:
+    # 在 Linux 上构建 deb 与 rpm 安装包
+    # ubuntu-22.04 自带的 glibc 版本较旧，构建出的安装包可以覆盖更多发行版；
+    # 若该镜像退役，可以改成 ubuntu-latest（届时生成的安装包会要求更新的 glibc）
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      # ==========================================
+      # 0) 克隆仓库
+      # ==========================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # 1) 准备好相关工具链
+      # ==========================================
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # dpkg-deb 由 dpkg 提供，rpmbuild 由 rpm 提供，二者分别用于构建 deb 与 rpm
+      # p7zip-full 提供 7z 用于生成发行压缩包，portaudio19-dev 用于编译 pyaudio
+      - name: Install Packaging Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg rpm p7zip-full portaudio19-dev
+
+      # 验证工具链是否存在（可选步骤，方便在日志中查看版本）
+      - name: Verify Pre-installed Tools
+        run: |
+          7z | head -5
+          dpkg-deb --version | head -1
+          rpmbuild --version
+
+      # ==========================================
+      # 2) 根据 requirements-linux.txt 安装特定 python 库
+      # ==========================================
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ${{ github.workspace }}/src/requirements-linux.txt
+
+      # ==========================================
+      # 3) 修补 aiotieba
+      # ==========================================
+      - name: Patch aiotieba
+        run: |
+          AIOTIEBA_PATH="$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/aiotieba"
+
+          if [ -d "$AIOTIEBA_PATH" ]; then
+              cp -a "${GITHUB_WORKSPACE}/aiotieba-fix-files/." "$AIOTIEBA_PATH/"
+              echo "Patch aiotieba succeed: $AIOTIEBA_PATH"
+          else
+              echo "Patch aiotieba failed, because of dir does not exist: $AIOTIEBA_PATH"
+          fi
+
+      # ==========================================
+      # 4) 关于 binres 目录
+      # ==========================================
+      # Linux 下暂时不在 binres 中放置 ffmpeg：语音播放所在的 audio_stream_player 使用了仅 Windows
+      # 可用的 subprocess.CREATE_NO_WINDOW，尚未适配 Linux。后续适配时，把静态编译的 ffmpeg 放到
+      # src/binres/ffmpeg 即可，打包脚本会保留无后缀名的二进制文件并将其打进安装包。
+
+      # ==========================================
+      # 5) 安装 pyinstaller 库
+      # ==========================================
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      # ==========================================
+      # 6) 设置构建配置文件 (只在本地修改，不 push)
+      # ==========================================
+      - name: Generate Build Configuration JSON
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import pathlib
+          import sys
+
+          config_path = os.path.join(os.environ['GITHUB_WORKSPACE'], 'build-tools', 'build_config.json')
+          with open(config_path, 'rt', encoding='utf-8') as f:
+              cfg_json_item = json.loads(f.read())
+
+          # setup-python 安装的 python 位于 <prefix>/bin 目录下，pyinstaller 也会被安装到 <prefix>/bin
+          executable = pathlib.Path(sys.executable)
+          if executable.parent.name == 'bin':
+              cfg_json_item['py_environ_path'] = str(executable.parent.parent)
+          else:
+              cfg_json_item['py_environ_path'] = str(executable.parent)
+
+          cfg_json_item['src_code_path'] = os.path.join(os.environ['GITHUB_WORKSPACE'], 'src')
+          cfg_json_item['sevenzip_path'] = '/usr/bin/7z'
+
+          cfg_json_item['installer_cfg']['build_nsis'] = False
+          cfg_json_item['installer_cfg']['build_deb'] = True
+          cfg_json_item['installer_cfg']['build_rpm'] = True
+
+          cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions'
+
+          with open(config_path, 'w', encoding='utf-8') as f:
+              json.dump(cfg_json_item, f, indent=4)
+          print('Build config has successfully generated:')
+          print(json.dumps(cfg_json_item, indent=4))
+          PY
+
+      # ==========================================
+      # 7) 执行构建脚本
+      # ==========================================
+      - name: Run Build Script
+        working-directory: ${{ github.workspace }}/build-tools
+        run: python ${{ github.workspace }}/build-tools/build.py --makefile ${{ github.workspace }}/build-tools/build_config.json
+
+      # ==========================================
+      # 8) 校验生成的安装包
+      # ==========================================
+      - name: Verify Linux Packages
+        working-directory: ${{ github.workspace }}/build-tools
+        run: |
+          ls -lh work_out
+          dpkg-deb --info work_out/*.deb
+          rpm -qip work_out/*.rpm
+
+      # ==========================================
+      # 9) 保存产物 (Artifacts)，其余文件随虚拟机销毁自动丢弃
+      # ==========================================
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TiebaDesktop-daily-build-version-linux
           path: ${{ github.workspace }}/build-tools/work_out/*
           if-no-files-found: error # 如果 work_out 目录下没有文件，则让 Action 报错，方便排查构建脚本是否运行成功

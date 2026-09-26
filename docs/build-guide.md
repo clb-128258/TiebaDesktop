@@ -16,9 +16,24 @@ pip install pyinstaller
 除了虚拟环境，还需要准备以下工具:
 
 * 7-Zip 解压缩工具（用于生成发行压缩包）
-* NSIS 安装程序管理系统（可选，用于构建发行安装程序）
+* Windows：NSIS 安装程序管理系统（可选，用于构建发行安装程序）
+* Linux：dpkg-deb 与 rpmbuild（可选，分别用于构建 deb 与 rpm 安装包）
 
-以上工具请到网络上自行下载。
+7-Zip 与 NSIS 请到网络上自行下载，Linux 下的两个打包工具可以用发行版的包管理器安装：
+
+```commandline
+# Debian / Ubuntu
+sudo apt install dpkg rpm
+
+# Fedora / RHEL
+sudo dnf install dpkg rpm-build
+
+# openSUSE
+sudo zypper install dpkg rpm-build
+```
+
+其中 dpkg-deb 由 dpkg 软件包提供，rpmbuild 由 rpm / rpm-build 软件包提供。
+脚本只会构建当前系统上已安装对应工具的那一种安装包，缺少工具时会输出提示并跳过，不会影响其它产物的构建。
 
 ## 设置构建配置文件
 
@@ -38,7 +53,13 @@ pip install pyinstaller
     // 是否执行安装包构建，如果为 false 则无需关心 makensis_path 字段的值，且无需安装 NSIS 环境
     "build_nsis": true,
     // 如果执行安装包构建，请在这里指定 NSIS 安装目录下 makensis.exe 的路径
-    "makensis_path": "makensis.exe path"
+    "makensis_path": "makensis.exe path",
+    // Linux 下是否构建 deb 安装包，需要系统内已安装 dpkg-deb，不填时默认为 true
+    "build_deb": true,
+    // Linux 下是否构建 rpm 安装包，需要系统内已安装 rpmbuild，不填时默认为 true
+    "build_rpm": true,
+    // Linux 安装包的维护者信息，会写入 deb 的 Maintainer 字段与 rpm 的 changelog
+    "linux_maintainer": "CLB <clb-128258@users.noreply.github.com>"
   },
   // 版本信息
   "version": {
@@ -50,9 +71,7 @@ pip install pyinstaller
       2,
       2,
       0
-    ],
-    // 构建前的最后一次 git 提交 hash，可以在 github 的提交记录页面找到
-    "git_last_commit_hash": "b7521348"
+    ]
   }
 }
 ```
@@ -70,9 +89,63 @@ python build.py --makefile .\build_config.json
 
 当终端输出 `All processes were GONE. Everything is OK.` 字样时，代表构建工作已经成功。
 
-构建成功后，可以在 work_out 目录下找到发行文件，包括压缩包和安装程序。  
+构建成功后，可以在 work_out 目录下找到发行文件：
+
+| 产物 | 说明 |
+| --- | --- |
+| `TiebaDesktop-<版本>-win64.zip` / `TiebaDesktop-<版本>-linux64.zip` | 含可执行文件的发行压缩包 |
+| `TiebaDesktop-nsis-installer-<版本>-win64.exe` | Windows 安装程序（需要 NSIS） |
+| `TiebaDesktop-<版本>-linux64.deb` | Debian / Ubuntu 安装包（需要 dpkg-deb） |
+| `TiebaDesktop-<版本>-linux64.rpm` | Fedora / RHEL / openSUSE 安装包（需要 rpmbuild） |
+
 生成的 work_temp 目录是用于暂存构建文件的，构建脚本会复制一份源代码到此目录，并执行 pyinstaller 的打包操作。构建最终完成时，work_temp
-下存储的应当为原始的程序可执行文件。
+下存储的应当为原始的程序可执行文件。Linux 安装包所使用的 `work_linux_temp` 目录会在构建结束后自动删除。
+
+## Linux 安装包
+
+在 Linux 下构建时，脚本会把 pyinstaller 生成的程序目录整理成标准的系统安装结构，再调用系统自带的打包工具生成 deb 与 rpm 安装包。
+安装包内的文件布局如下：
+
+| 安装路径 | 说明 |
+| --- | --- |
+| `/opt/TiebaDesktop/` | 程序本体（可执行文件与其依赖文件） |
+| `/usr/bin/tiebadesktop` | 启动脚本，用于从终端或应用菜单启动程序 |
+| `/usr/share/applications/tiebadesktop.desktop` | 桌面菜单入口 |
+| `/usr/share/icons/hicolor/512x512/apps/tiebadesktop.png` | 应用图标 |
+| `/usr/share/pixmaps/tiebadesktop.png` | 应用图标（兼容旧环境） |
+| `/usr/share/doc/tiebadesktop/copyright` | 版权信息 |
+
+打包前脚本会自动清理 `work_temp/binres` 目录：Windows 专属的依赖文件（`ffmpeg.exe`、`toast.exe`、
+WebView2 与 ShareBridge 的 `.dll` 文件等）在 Linux 下不会被使用，会被删除，只保留没有后缀名的 linux 二进制文件
+（例如音频播放器使用的 `binres/ffmpeg`），清理后产生的空目录也会一并删除。因此 deb、rpm 与发行压缩包都不会
+再携带这些文件，可以省下可观的体积。
+
+用户可以像安装其它软件一样安装与卸载本程序：
+
+```commandline
+# Debian / Ubuntu
+sudo apt install ./TiebaDesktop-<版本>-linux64.deb
+sudo apt remove tiebadesktop
+
+# Fedora / RHEL / openSUSE
+sudo dnf install ./TiebaDesktop-<版本>-linux64.rpm
+sudo dnf remove tiebadesktop
+```
+
+安装包中的运行依赖来自 deb 的 Depends 字段与 rpm 的 Requires 字段，默认值写在 `build.py` 的 `DEFAULT_DEB_DEPENDS`
+与 `DEFAULT_RPM_REQUIRES` 中。如果目标系统的依赖包名与默认值不一致，可以在构建配置的 `installer_cfg` 中覆盖：
+
+```json lines
+{
+  "installer_cfg": {
+    "deb_depends": "libc6, libgcc-s1, libstdc++6, ...",
+    "rpm_requires": "glibc, libgcc, libstdc++, ..."
+  }
+}
+```
+
+用户数据（登录信息、偏好选项、历史记录等）保存在用户主目录下的 `~/.local/share/TiebaDesktop`，
+安装与卸载安装包都不会删除这些数据，需要清理时可以手动删除该目录。
 
 ## 常见问题
 
@@ -80,3 +153,11 @@ python build.py --makefile .\build_config.json
    work_temp 文件夹，请先删除这个文件夹再进行构建。
 2) 当控制台抛出错误 `pyinstaller process failed!` 时，代表 `pyinstaller` 进程执行失败，退出码不是
    0。此时需要检查构建配置文件是否正确，路径指定是否有问题。`pyinstaller` 在控制台输出的信息也许有助于解决问题。
+3) 当控制台输出 `dpkg-deb was not found` 或 `rpmbuild was not found` 时，代表系统内没有安装对应的打包工具，
+   脚本会跳过这种安装包的构建。按照本文档的说明安装对应工具后重新构建即可。
+4) 当控制台抛出错误 `dpkg-deb process failed!` 或 `rpmbuild process failed!` 时，代表打包工具执行失败，
+   终端中打包工具自身输出的信息有助于定位问题。
+5) rpm 的 `Version` 字段不允许出现 `-`，因此脚本会在版本号的第一个 `-` 处拆分，把之后的部分写入 rpm 的
+   `Release` 字段（其中的 `-` 会被替换为 `.`）。例如版本号 `1.3.3-release` 会生成名为
+   `tiebadesktop-1.3.3-release.x86_64.rpm` 的软件包，而 CI 使用的 `1.3.3-release-github-actions` 会生成
+   `tiebadesktop-1.3.3-release.github.actions.x86_64.rpm`。

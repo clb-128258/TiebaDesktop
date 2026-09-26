@@ -4,7 +4,10 @@
     "sevenzip_path": "C:\\Program Files\\7-Zip\\7z.exe",
     "installer_cfg": {
         "build_nsis": true,
-        "makensis_path": "D:\\Program Files (x86)\\NSIS\\makensis.exe"
+        "makensis_path": "D:\\Program Files (x86)\\NSIS\\makensis.exe",
+        "build_deb": true,
+        "build_rpm": true,
+        "linux_maintainer": "CLB <clb-128258@users.noreply.github.com>"
     },
     "version": {
         "version_string": "1.3.3-release",
@@ -13,7 +16,6 @@
             3,
             3,
             0
-        ],
-        "git_last_commit_hash": "8cc4440"
+        ]
     }
 }
