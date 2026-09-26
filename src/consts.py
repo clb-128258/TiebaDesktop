@@ -5,6 +5,8 @@ import os
 def get_default_datapath():
     if os.name == 'nt':
         datapath = os.getenv('userprofile').replace('\\', '/') + '/AppData/Local/TiebaDesktop'
+    elif os.name == 'posix':
+        datapath = os.getenv('HOME') + '/.local/share/TiebaDesktop'
     else:
         datapath = './TiebaDesktop_UserData'
 
