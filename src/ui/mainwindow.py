@@ -87,7 +87,7 @@ class Ui_MainWindow(object):
         spacerItem = QtWidgets.QSpacerItem(547, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_6.addItem(spacerItem)
         self.frame_5 = QtWidgets.QFrame(self.frame)
-        self.frame_5.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_5.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame_5.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_5.setObjectName("frame_5")
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.frame_5)

@@ -62,7 +62,7 @@ def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
             winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
 
 
-def recursive_delete_key(key_handle, sub_key_name, access=winreg.KEY_WOW64_64KEY):
+def recursive_delete_key(key_handle, sub_key_name, access):
     """
     递归删除指定的注册表项及其所有子项。
 

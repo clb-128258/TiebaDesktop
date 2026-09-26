@@ -13,8 +13,11 @@ from publics import profile_mgr, funcs, app_logger
 WM_SETTINGCHANGE = 0x001A
 
 # --- Win32 / DWM 常量定义 ---
-dwmapi = ctypes.WinDLL("dwmapi")
-user32 = ctypes.WinDLL("user32")
+if sys.platform == "win32":
+    dwmapi = ctypes.WinDLL("dwmapi")
+    user32 = ctypes.WinDLL("user32")
+else:
+    dwmapi = user32 = None
 
 # DWM 属性 ID
 DWMWA_USE_IMMERSIVE_DARK_MODE = 20  # Windows 11/Win10 20H1+

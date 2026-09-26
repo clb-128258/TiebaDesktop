@@ -44,8 +44,8 @@ def add_cover_radius_angle(image: QImage,
         imgsize = min(image.width(), image.height())
         width = height = min(width, height)
         rect = QRect(
-            (image.width() - imgsize) / 2,
-            (image.height() - imgsize) / 2,
+            int((image.width() - imgsize) / 2),
+            int((image.height() - imgsize) / 2),
             imgsize,
             imgsize,
         )
@@ -106,8 +106,8 @@ def add_round_cover(image: QImage, size=-1, high_dpi_support: bool = True) -> QI
     # Crop image to a square:
     imgsize = min(image.width(), image.height())
     rect = QRect(
-        (image.width() - imgsize) / 2,
-        (image.height() - imgsize) / 2,
+        int((image.width() - imgsize) / 2),
+        int((image.height() - imgsize) / 2),
         imgsize,
         imgsize,
     )

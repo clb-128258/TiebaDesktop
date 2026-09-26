@@ -66,6 +66,13 @@ def set_qt_scale_factor():
         os.environ['QT_SCALE_FACTOR'] = str(factor)
 
 
+def set_qpa():
+    """设置 QPA，Qt 平台抽象层"""
+    if os.name == 'posix':
+        # linux下使用wayland
+        os.environ['QT_QPA_PLATFORM'] = 'wayland'
+
+
 def reset_cwd():
     """把工作目录重设到可执行文件所在目录下"""
     exec_file = pathlib.Path(sys.executable)
@@ -93,6 +100,7 @@ if __name__ == "__main__":
     handle_command_events()
 
     # Qt high dpi support
+    set_qpa()
     set_qt_scale_factor()
     QApplication.setAttribute(Qt.AA_UseOpenGLES)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
