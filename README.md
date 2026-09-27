@@ -6,14 +6,13 @@
 
 # 贴吧桌面
 
-**现代化的第三方百度贴吧 Windows 桌面客户端**
-
 ![STARS](https://img.shields.io/github/stars/clb-128258/TiebaDesktop?style=round-square&logo=github&color=yellow)
 ![FORKS](https://img.shields.io/github/forks/clb-128258/TiebaDesktop?style=round-square)
 ![Test Build](https://github.com/clb-128258/TiebaDesktop/actions/workflows/auto_build.yml/badge.svg?branch=main)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 
-*使用 PyQt5 精心打造，为电脑用户提供量身定制的贴吧体验*
+**第三方的、适用于桌面端的贴吧客户端**
+
 
 </div>
 
@@ -21,40 +20,18 @@
 
 ## ✨ 核心特性
 
-| 特性              | 说明                                              |
-|-----------------|-------------------------------------------------|
-| 🎨 **现代化界面**    | 专为电脑设备优化，Mica/Acrylic/Aero 材质全支持、自定义图片背景、窗口透明度等 |
-| 📢 **完善的通知系统**  | Win7~Win11 所有系统原生兼容，通知体验优雅流畅                    |
-| 🧐 **强大的个人主页** | 直接查用户回贴/贴吧工具箱快捷入口/显示隐藏主页贴 等功能，让你查成分快人一步         |
-| 🔐 **灵活登录**     | 内置浏览器、扫码、Token 直接登录等多种方式                        |
-| 👥 **多账号管理**    | 轻松切换多个账号，各账号数据独立保存                              |
-| ⚡ **双倍签到经验**    | 基于官方小组件原理实现的经验翻倍机制                              |
-| 🛠️ **命令行支持**   | 支持启动参数调用，自动化工作流程                                |
-| 🎯 **丰富个性化设置**  | 屏蔽首页视频、隐藏 IP 属地、自定义排序等                          |
-| 🔒 **本地隐私保护**   | 所有数据仅在本地处理，绝不上传，账号信息加密存储                        |
+| 特性             | 说明                                              |
+|----------------|-------------------------------------------------|
+| 🎨 **现代化界面**   | 专为电脑设备优化，Mica/Acrylic/Aero 材质全支持、自定义图片背景、窗口透明度等 |
+| 🧐 **强大的个人主页** | 直接查回贴/贴吧工具箱快捷入口/显示隐藏主题贴 等功能，让你查成分快人一步           |
+| 🔐 **灵活登录**    | 内置浏览器、扫码、Token 直接登录等多种方式                        |
+| 👥 **多账号管理**   | 轻松切换多个账号，各账号数据独立保存                              |
+| ⚡ **双倍签到经验**   | 基于官方小组件原理实现的经验翻倍机制                              |
+| 🛠️ **命令行支持**  | 支持启动参数调用，自动化工作流程                                |
+| 🎯 **丰富个性化设置** | 屏蔽首页视频、隐藏 IP 属地、自定义排序等                          |
+| 🔒 **本地隐私保护**  | 所有数据仅在本地处理，绝不上传，账号信息加密存储                        |
 
-## 📦 每日自动构建版本
-
-### 🌙 什么是每夜版？
-
-本项目启用了 GitHub Actions 自动构建流程，每天都会生成最新的测试版本，让你随时体验最新功能！
-
-- ⏰ **自动构建时间**：每天凌晨 2:00（北京时间）
-- ⚠️ **构建延迟**：由于 GitHub Actions 虚拟机资源分配延迟，实际执行会晚 几分钟 ~ 2小时 不等
-
-### 📥 如何获取最新版本？
-
-1. 打开本项目的 [**Actions**](https://github.com/clb-128258/TiebaDesktop/actions) 页面
-2. 选择最新的一条 workflow
-3. 在 **Artifacts** 部分下载构建产物
-
-> [!important]
->
-> - ✅ Windows 构建产物：`TiebaDesktop-<版本>-win64.zip` 与 NSIS 安装程序
-> - ✅ Linux 构建产物：`TiebaDesktop-<版本>-linux64.deb`（Debian/Ubuntu）与 `TiebaDesktop-<版本>-linux64.rpm`（Fedora/RHEL/openSUSE）
-> - ⏳ 构建产物保留期为 **2 天**，超期自动删除
-
-## 🖼️ 界面预览
+## 🖼️ 界面概览
 
 <div align="center">
 
@@ -68,6 +45,37 @@
 <img src="./docs/app-ui-grabs/6.png" alt="个人主页" width="48%">
 
 </div>
+
+## 📦 兼容性与自动构建
+
+### 🎯 兼容的操作系统
+
+软件目前支持 Windows 与主流 Linux 发行版，具体系统要求如下：
+
+* Windows：**支持 Windows 7 及以上系统**，  
+  系统中需要安装 `Visual C++ Redistributable 2015-20xx` `.net Framework 4.8` `Edge WebView2` 才能使软件正常工作。
+* Linux：提供 `deb` `rpm` 包，**兼容 Debian/Ubuntu/Fedora 等 Linux 发行版**。
+
+> [!important]
+>
+> 目前提供的所有构建版本都只有 x86_64 的平台架构，其它架构暂不支持。
+
+~~（别问为什么不支持 MacOS，问就是没有 Mac 没法测试~~
+
+### 📥 自动构建
+
+本项目启用了 GitHub Actions 自动构建流程，每天都会生成最新的测试版本。
+
+1. 打开本项目的 [**Actions**](https://github.com/clb-128258/TiebaDesktop/actions) 页面
+2. 选择最新的一条 workflow
+3. 在 **Artifacts** 部分下载构建产物
+
+> [!important]
+>
+> - ✅ Windows 构建产物：`TiebaDesktop-<版本>-win64.zip` 与 NSIS 安装程序
+> - ✅ Linux
+    构建产物：`TiebaDesktop-<版本>-linux64.zip`、`TiebaDesktop-<版本>-linux64.deb`、`TiebaDesktop-<版本>-linux64.rpm`
+> - ⏳ 构建产物保留期为 **2 天**，超期自动删除
 
 ## 🚀 功能特性
 
@@ -161,17 +169,13 @@
 
 ---
 
-## ⚡ 特色功能说明
+## 🔨 开发指南
 
-### 翻倍签到经验值 🎁
+要进行二次开发或本地构建，请参阅以下文档：
 
-> [!warning]
->
-> `翻倍的签到经验值` 功能是基于 `官方小组件签到入口` 实现的。
->
-> 即通过手机端的桌面小组件进入贴吧再签到可获得双倍经验值。本软件通过这一原理实现了双倍签到经验。
->
-> 由于该特性可能涉及 `功能滥用`，因此**默认情况下是关闭的**，可以在软件设置中手动打开。
+- 📖 [如何配置开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)
+- 🏗️ [主程序构建指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
+- 💻 [命令行启动参数](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
 
 ## 📂 项目结构
 
@@ -197,14 +201,6 @@ TiebaDesktop/
    ├─ main.py             # 📍 主程序入口点
    └─ requirements.txt    # Python 依赖列表
 ```
-
-## 🔨 开发指南
-
-要进行二次开发或本地构建，请参阅以下文档：
-
-- 📖 [如何配置开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)
-- 🏗️ [主程序构建指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
-- 💻 [命令行启动参数](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
 
 ## 🙏 致谢
 
