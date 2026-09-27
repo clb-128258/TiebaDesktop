@@ -62,14 +62,51 @@ def init_AUMID(appId: str, appName: str, iconPath: Optional[pathlib.Path]):
             winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
 
 
-def recursive_delete_key(key_handle, sub_key_name, access):
+def is_AUMID_registered(appId: str) -> bool:
+    """
+    检查 AUMID 是否已经注册到注册表中。
+
+    注册表位置为 HKEY_CURRENT_USER\\SOFTWARE\\Classes\\AppUserModelId\\<appId>，
+    只有该键与其中的 DisplayName 值都存在时才视为已经注册。
+    非 Windows 平台没有注册表，始终返回 False。
+
+    Args:
+        appId (str): 应用的 AUMID，例如 consts.WINDOWS_AUMID
+
+    Returns:
+        bool: 注册表中已存在该 AUMID 时返回 True，否则返回 False
+    """
+    if not IS_AT_LEAST_WIN10:
+        return False
+
+    keyPath = f"SOFTWARE\\Classes\\AppUserModelId\\{appId}"
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, keyPath) as masterKey:
+            winreg.QueryValueEx(masterKey, "DisplayName")
+    except FileNotFoundError:
+        # 键或 DisplayName 值不存在，说明还没有注册过
+        return False
+
+    return True
+
+
+def recursive_delete_key(key_handle, sub_key_name, access=None):
     """
     递归删除指定的注册表项及其所有子项。
 
-    :param key_handle: 已打开的父项句柄 (例如: HKEY_CURRENT_USER)。
-    :param sub_key_name: 要删除的子项名称字符串。
-    :param access: 用于 RegDeleteKeyEx 的访问权限，默认为 KEY_WOW64_64KEY。
+    Args:
+        key_handle: 已打开的父项句柄 (例如: HKEY_CURRENT_USER)。
+        sub_key_name (str): 要删除的子项名称字符串。
+        access (int): 用于 RegDeleteKeyEx 的访问权限，默认为 KEY_WOW64_64KEY。
+            Windows 下才可用，其它平台请不要调用本函数。
     """
+    if not IS_WINDOWS:
+        # 非 Windows 平台没有注册表，winreg 也不可导入，直接返回
+        return
+
+    if access is None:
+        access = winreg.KEY_WOW64_64KEY
+
     try:
         # 尝试打开要删除的子项，用于枚举其子项和值。
         # KEY_ALL_ACCESS 或 KEY_SET_VALUE + KEY_ENUMERATE_SUB_KEYS + KEY_QUERY_VALUE

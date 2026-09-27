@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import QListWidgetItem, QTableWidget, QListWidget, QLabel, 
 import consts
 from publics import aes, profile_mgr, qt_window_mgr
 import publics.app_logger as logging
-from publics.toasting import init_AUMID
+from publics.toasting import init_AUMID, is_AUMID_registered
 
 if os.name == 'nt':
     import winreg
@@ -67,7 +67,8 @@ def create_data():
     """识别用户的电脑上是否存在用户数据，如不存在则创建"""
     logging.log_INFO('Creating user data')
 
-    if not os.path.isdir(consts.datapath) or len(os.listdir(consts.datapath)) == 0:
+    # AUMID 的注册与用户数据目录无关，只要注册表中还没有对应的键就写入一次
+    if not is_AUMID_registered(consts.WINDOWS_AUMID):
         init_AUMID(consts.WINDOWS_AUMID, '贴吧桌面', pathlib.Path(f"{os.getcwd()}/ui/tieba_logo_big_single.ico"))
 
     expect_folder = [consts.datapath,

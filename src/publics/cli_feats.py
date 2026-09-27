@@ -118,16 +118,17 @@ class CliFunctions:
         aiotieba.logging.set_logger(aiotieba.logging.TiebaLogger())
 
         # 结束正在运行的进程
-        killname = 'tiebadesktop.exe'
+        killname_windows = 'tiebadesktop.exe'
+        killname_linux = 'tiebadesktop'
         current_pid = os.getpid()
         if os.name == 'nt':
-            preq = os.popen('tasklist /fi "imagename eq {}"'.format(killname))
+            preq = os.popen('tasklist /fi "imagename eq {}"'.format(killname_windows))
             pidlist = []
 
             for p in preq:
                 plist = p.split(" ")
                 for pl in plist:
-                    if pl.isnumeric() and pl is not killname and int(pl) != current_pid:
+                    if pl.isnumeric() and pl is not killname_windows and int(pl) != current_pid:
                         pidlist.append(pl)
                         break
             for pid in pidlist:
@@ -136,7 +137,7 @@ class CliFunctions:
         elif os.name == 'posix':
             # Get the list of processes matching the name
             try:
-                result = subprocess.check_output(['pgrep', '-f', killname], text=True)
+                result = subprocess.check_output(['pgrep', '-f', killname_linux], text=True)
                 pidlist = [int(pid) for pid in result.split() if int(pid) != current_pid]
 
                 # Kill each process
