@@ -28,7 +28,7 @@ local_config_model = {
         'enable_clipboard_notify': True
     },
     "proxy_settings": {
-        "proxy_switch": 0,
+        "proxy_switch": 1,
         "custom_proxy_server": {"ip": '', "port": -1},
         "enabled_scheme": {"http": True, "https": True}
     },
@@ -58,7 +58,7 @@ local_config_model = {
         }
     },
     "sign_settings": {
-        "use_widget_sign_flag": False
+        "use_widget_sign_flag": True
     }
 }
 
