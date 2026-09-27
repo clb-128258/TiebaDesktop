@@ -188,6 +188,15 @@ class ThreadView(base_ui.InsideWidgetBaseQWidget, tie_preview.Ui_Form):
         delete_thread.triggered.connect(lambda: self.do_action_async("del_thread"))
         menu.addAction(delete_thread)
 
+        visible_items_num = 0
+        for i in menu.actions():
+            if i.text() and i.isVisible(): visible_items_num += 1
+
+        if visible_items_num == 0:
+            empty_menu = QAction('(菜单无可用操作)', self)
+            empty_menu.setEnabled(False)
+            menu.addAction(empty_menu)
+
         bt_pos = self.toolButton.mapToGlobal(QPoint(0, 0))
         menu.exec(QPoint(bt_pos.x(), bt_pos.y() + self.toolButton.height()))
 
