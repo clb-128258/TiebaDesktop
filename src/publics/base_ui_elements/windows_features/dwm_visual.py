@@ -245,12 +245,22 @@ def get_prefer_backdrop_type():
         # Win10 使用亚克力材质
         return DWMBACKDROPTYPE.ACRYLIC
     elif 9200 <= win_build <= 9600:
-        # Win8/8.1 不使用材质
-        return DWMBACKDROPTYPE.NONE
+        # Win8/8.1 使用系统纯色背景
+        return DWMBACKDROPTYPE.AUTO
     elif 6000 <= win_build <= 7601:
         # Vista/Win7 使用 Aero 特效
         return DWMBACKDROPTYPE.AUTO
 
+def is_dwm_recommended():
+    """
+    获取当前操作系统是否推荐开启 DWM 效果
+    """
+    if sys.platform != "win32":
+        return False
+
+    # 获取 Windows 构建号
+    win_build = int(platform.version().split('.')[-1])
+    return win_build >= 22000
 
 def is_dwm_bg_enabled():
     """读取用户是否开启了 DWM 背景"""
@@ -259,7 +269,7 @@ def is_dwm_bg_enabled():
                                             profile_mgr.local_config_model['theme_settings']['background'])
 
     if bg_config['dwm_bg']['enable'] is None:
-        return get_prefer_backdrop_type() != DWMBACKDROPTYPE.NONE
+        return is_dwm_recommended()
     else:
         return bg_config['dwm_bg']['enable']
 

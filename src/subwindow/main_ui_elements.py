@@ -197,6 +197,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
         self.label_6.setPixmap(
             qt_image.get_pixmap_icon_from_file('ui/tieba_logo_big_transparent.png', 57))
+
         self.groupBox_3.hide()
 
         self.init_top_toaster()
@@ -246,6 +247,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             lambda: self.open_web_link(consts.GITHUB_REPO_URL))
         self.commandLinkButton_2.clicked.connect(
             lambda: self.open_web_link(f'{consts.GITHUB_REPO_URL}?tab=MIT-1-ov-file'))
+        self.commandLinkButton_4.clicked.connect(lambda: self.open_web_link(f'{consts.GITHUB_REPO_URL}/releases'))
         self.commandLinkButton_3.clicked.connect(lambda: QMessageBox.aboutQt(self, '关于 Qt'))
         self.pushButton_3.clicked.connect(lambda: open_url_in_browser(f'{consts.datapath}/logs'))
         self.pushButton_10.clicked.connect(lambda: open_url_in_browser(consts.datapath))
@@ -291,6 +293,16 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         if a0.key() == Qt.Key.Key_Escape:
             a0.ignore()
             self.close()
+
+    def reset_theme(self):
+        super().reset_theme()
+
+        bg_style, font_style = profile_mgr.get_theme_policy_string()
+
+        info_icon = qt_image.get_pixmap_icon_from_file(f'ui/icon_{font_style}/info.png', 20)
+        warning_icon = qt_image.get_pixmap_icon_from_file(f'ui/icon_{font_style}/warning.png', 20)
+        self.label_73.setPixmap(warning_icon)
+        self.label_72.setPixmap(info_icon)
 
     def move_as_config(self):
         window_rect = profile_mgr.get_window_rects(type(self))
@@ -342,15 +354,15 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         menu.setToolTipsVisible(True)
 
         export_accounts = QAction('导出账号信息', self)
-        export_accounts.setToolTip('将所有已登录账号的信息导出到本地文件，便于保存账号信息。\n'
-                                   '注意：导出的文件中包括 BDUSS 等登录令牌信息，请妥善保管，否则可能导致你的账号被盗。')
+        export_accounts.setToolTip('将所有已登录账号的信息导出到本地文件\n'
+                                   '导出的文件中包括 BDUSS 等登录令牌信息，请妥善保管，否则可能导致你的账号被盗')
         export_accounts.triggered.connect(self.export_account_info)
         export_accounts.setEnabled(self.account_mgr.has_any_accounts())
         menu.addAction(export_accounts)
 
-        update_accounts_info = QAction('更新所有账号的信息', self)
+        update_accounts_info = QAction('更新本地账号信息', self)
         update_accounts_info.setToolTip(
-            '如果已登录账号的显示昵称与实际的不一致，或者需要清理登录失效的账号，可以选择更新所有账号的信息。')
+            '如果已登录账号的本地显示昵称与实际的不一致，或者需要清理登录失效的账号，可以选择更新本地账号信息')
         update_accounts_info.triggered.connect(self.refresh_all_users_info)
         update_accounts_info.setEnabled(self.account_mgr.has_any_accounts())
         menu.addAction(update_accounts_info)
@@ -390,6 +402,21 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
         self.label_67.setText(f'{self.horizontalSlider.value()}%')
         self.label_69.setText(f'{self.horizontalSlider_2.value()}%')
+
+        self.frame_6.hide()
+        if self.radioButton_10.isChecked():
+            windows_version = int(platform.version().split('.')[-1]) if os.name == "nt" else -1
+
+            dwm_effect_warnings = {(6000, 7601): 'Windows Aero 的透明毛玻璃背景可能导致文字可读性下降',
+                                   (9200, 9600): 'Windows 8/8.1 的 DWM 背景为纯色，可能导致文字可读性下降',
+                                   (10240, 19045): 'Windows 10 下的亚克力效果存在问题，'
+                                                   '可能导致拖动窗口时速度异常缓慢，并且会导致文字可读性下降'}
+
+            for ver, tip in dwm_effect_warnings.items():
+                if ver[0] <= windows_version <= ver[1]:
+                    self.frame_6.show()
+                    self.label_59.setText(tip)
+                    break
 
     def reset_local_config(self):
         if MessageBox.warning(self,
@@ -475,7 +502,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             bg_mode_radiobtn = self.radioButton_10 if dwm_bg_enabled else self.radioButton_8
             bg_mode_radiobtn.setChecked(True)
 
-            if os.name != 'nt' or 9200 <= int(platform.version().split('.')[-1]) <= 9600:
+            if os.name != 'nt':
                 self.radioButton_10.setText(f'视觉效果背景 (当前系统不支持)')
 
                 self.radioButton_10.setEnabled(False)
