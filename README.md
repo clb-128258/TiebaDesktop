@@ -11,8 +11,7 @@
 ![Test Build](https://github.com/clb-128258/TiebaDesktop/actions/workflows/auto_build.yml/badge.svg?branch=main)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 
-**第三方的、适用于桌面端的贴吧客户端**
-
+**适用于桌面端的第三方贴吧客户端**
 
 </div>
 
@@ -20,16 +19,16 @@
 
 ## ✨ 核心特性
 
-| 特性             | 说明                                              |
-|----------------|-------------------------------------------------|
-| 🎨 **现代化界面**   | 专为电脑设备优化，Mica/Acrylic/Aero 材质全支持、自定义图片背景、窗口透明度等 |
-| 🧐 **强大的个人主页** | 直接查回贴/贴吧工具箱快捷入口/显示隐藏主题贴 等功能，让你查成分快人一步           |
-| 🔐 **灵活登录**    | 内置浏览器、扫码、Token 直接登录等多种方式                        |
-| 👥 **多账号管理**   | 轻松切换多个账号，各账号数据独立保存                              |
-| ⚡ **双倍签到经验**   | 基于官方小组件原理实现的经验翻倍机制                              |
-| 🛠️ **命令行支持**  | 支持启动参数调用，自动化工作流程                                |
-| 🎯 **丰富个性化设置** | 屏蔽首页视频、隐藏 IP 属地、自定义排序等                          |
-| 🔒 **本地隐私保护**  | 所有数据仅在本地处理，绝不上传，账号信息加密存储                        |
+| 特性 | 说明 |
+|------|------|
+| 🎨 现代化界面 | 适配电脑操作，支持 Mica/Acrylic/Aero 材质、自定义图片背景、窗口透明度 |
+| 🧐 个人主页 | 查看回贴、贴吧工具箱快捷入口、显示隐藏主题贴等 |
+| 🔐 灵活登录 | 支持内置浏览器、扫码、Token 登录 |
+| 👥 多账号管理 | 多账号自由切换，数据各自独立保存 |
+| ⚡ 双倍签到经验 | 基于官方小组件原理实现经验翻倍 |
+| 🛠️ 命令行支持 | 通过启动参数执行任务，便于自动化 |
+| 🎯 丰富设置 | 屏蔽首页视频、隐藏 IP 属地、自定义排序等 |
+| 🔒 本地隐私保护 | 数据仅在本地处理，账号信息加密存储 |
 
 ## 🖼️ 界面概览
 
@@ -48,38 +47,29 @@
 
 ## 📦 兼容性与自动构建
 
-### 🎯 兼容的操作系统
+支持 Windows 与主流 Linux 发行版，仅提供 x86_64 版本（暂不支持 macOS 及其它架构）。
 
-软件目前支持 Windows 与主流 Linux 发行版，具体系统要求如下：
+- **Windows**：Windows 7 及以上，需安装 Visual C++ Redistributable 2015-20xx、.NET Framework 4.8 与 Edge WebView2。
+- **Linux**：提供 deb/rpm 包，兼容 Debian/Ubuntu/Fedora 等发行版。
 
-* Windows：**支持 Windows 7 及以上系统**，  
-  系统中需要安装 `Visual C++ Redistributable 2015-20xx` `.net Framework 4.8` `Edge WebView2` 才能使软件正常工作。
-* Linux：提供 `deb` `rpm` 包，**兼容 Debian/Ubuntu/Fedora 等 Linux 发行版**。
-
-> [!important]
->
-> 目前提供的所有构建版本都只有 x86_64 的平台架构，其它架构暂不支持。
-
-~~（别问为什么不支持 MacOS，问就是没有 Mac 没法测试~~
+> [!information]  
+> Linux 版已在 `Ubuntu 24.04 x64` 系统下进行过测试，  
+> Windows 版在 `Windows 7/8.1 x64` `Windows 10 1709/22H2 x64` `Windows 11 24H2 x64` 环境下均已测试过。
 
 ### 📥 自动构建
 
-本项目启用了 GitHub Actions 自动构建流程，每天都会生成最新的测试版本。
+GitHub Actions 每天构建最新测试版。打开 [Actions](https://github.com/clb-128258/TiebaDesktop/actions) 页面，选择最新 workflow，在 **Artifacts** 中下载产物：
 
-1. 打开本项目的 [**Actions**](https://github.com/clb-128258/TiebaDesktop/actions) 页面
-2. 选择最新的一条 workflow
-3. 在 **Artifacts** 部分下载构建产物
+- Windows：`TiebaDesktop-<版本>-win64.zip` 与 NSIS 安装程序
+- Linux：`TiebaDesktop-<版本>-linux64.zip`、`.deb`、`.rpm`
 
 > [!important]
->
-> - ✅ Windows 构建产物：`TiebaDesktop-<版本>-win64.zip` 与 NSIS 安装程序
-> - ✅ Linux
-    构建产物：`TiebaDesktop-<版本>-linux64.zip`、`TiebaDesktop-<版本>-linux64.deb`、`TiebaDesktop-<版本>-linux64.rpm`
-> - ⏳ 构建产物保留期为 **2 天**，超期自动删除
+> 构建产物保留 **2 天**，超期自动删除。
 
 ## 🚀 功能特性
 
-### 👤 账号管理
+<details>
+<summary>👤 账号管理</summary>
 
 - ✅ 内置浏览器登录
 - ✅ 扫码登录
@@ -87,7 +77,10 @@
 - ✅ 多账号切换
 - ✅ 导出账号信息
 
-### 📖 看贴浏览
+</details>
+
+<details>
+<summary>📖 看贴浏览</summary>
 
 - ✅ 首页推荐看贴
 - ✅ 吧内看贴
@@ -97,19 +90,25 @@
 - ✅ 保存贴内视频
 - ✅ 跳页功能
 
-### ✍️ 互动功能
+</details>
+
+<details>
+<summary>✍️ 互动功能</summary>
 
 - ✅ 发回复
 - ✅ 点赞
 - ✅ 收藏
 - ✅ 查看 点赞 / 回复 / @我 的人
 - ✅ 互动消息推送
-- ⏳ 点踩
 - ✅ 发主题
+- ⏳ 点踩
 
-> 💡 **关于发贴功能**：不建议使用，可能导致 `封号` `发贴秒删` 等后果
+> 💡 发主题可能导致 `封号`、`发贴秒删秒屏蔽`，不建议使用。
 
-### 🏘️ 吧内功能
+</details>
+
+<details>
+<summary>🏘️ 吧内功能</summary>
 
 - ✅ 查看自己关注的吧
 - ✅ 查看吧详情信息
@@ -117,27 +116,36 @@
 - ✅ 一键签到、成长等级签到
 - ✅ [命令行启动参数签到](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md#%E7%AD%BE%E5%88%B0%E6%89%80%E6%9C%89%E5%85%B3%E6%B3%A8%E7%9A%84%E5%90%A7)
 - ✅ 首页进吧页直接签到
-- ✅ **⚡ 翻倍的签到经验值**
+- ✅ ⚡ 签到经验翻倍
 
-### 👥 用户功能
+</details>
+
+<details>
+<summary>👥 用户功能</summary>
 
 - ✅ 个人主页
-    - ✅ 展示总发贴数、获赞数等信息
-    - ✅ 右侧展示用户名、百度用户 ID 等基础信息
-    - ✅ 直接查看用户的回贴列表
-    - ✅ 显示用户最完整的主题贴列表（包括被 选择隐藏/屏蔽/删除 的所有历史发贴）
-    - ✅ 用户隐藏关注吧列表时，显示你与该用户共同关注的吧
-- ✅ 关注 / 拉黑 / 禁言用户
+  - ✅ 展示总发贴数、获赞数等信息
+  - ✅ 右侧展示用户名、百度用户 ID 等基础信息
+  - ✅ 直接查看用户的回贴列表
+  - ✅ 显示用户最完整的主题贴列表（包括被隐藏、屏蔽、删除的所有历史发贴）
+  - ✅ 用户隐藏关注吧列表时，显示你与该用户共同关注的吧
+- ✅ 关注 / 拉黑用户
 
-> 💡 **用户功能限制**：如果用户设置了 `隐藏个人动态` 选项，回贴列表将不可查看，主题贴列表只能显示该用户选择公开的贴子。
+> 💡 若用户开启 `隐藏个人动态`，则无法查看其回贴列表，主题贴列表也仅显示公开贴子。
 
-### 📚 足迹管理
+</details>
+
+<details>
+<summary>📚 足迹管理</summary>
 
 - ✅ 收藏列表
 - ✅ 点赞历史列表
 - ✅ 内容浏览记录
 
-### 🛠️ 实用工具
+</details>
+
+<details>
+<summary>🛠️ 实用工具</summary>
 
 - ✅ 内置浏览器
 - ✅ 全吧搜索
@@ -148,14 +156,20 @@
 - ✅ 贴内图片百度识图
 - ⏳ 下载贴子数据
 
-### 🎨 个性化设置
+</details>
+
+<details>
+<summary>🎨 个性化设置</summary>
 
 - ✅ 首页屏蔽视频贴
 - ✅ 隐藏用户 IP 属地
 - ✅ 设置贴内默认楼层顺序
 - ✅ 设置吧内默认贴子排序
 
-### 🌙 视觉体验
+</details>
+
+<details>
+<summary>🌙 视觉体验</summary>
 
 - ✅ 深色 / 浅色主题
 - ✅ 跟随系统设置自动切换主题
@@ -163,19 +177,17 @@
 - ✅ 窗口透明度
 - ✅ 自定义图片背景（支持图片不透明度）
 - ✅ 特殊背景效果
-    - ✅ Win7 Aero 背景
-    - ✅ Win11 Mica 材质背景
-    - ✅ Win10/11 Acrylic 材质背景
+  - ✅ Win7 Aero 背景
+  - ✅ Win11 Mica 材质背景
+  - ✅ Win10/11 Acrylic 材质背景
+
+</details>
 
 ---
 
 ## 🔨 开发指南
 
-要进行二次开发或本地构建，请参阅以下文档：
-
-- 📖 [如何配置开发环境](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)
-- 🏗️ [主程序构建指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)
-- 💻 [命令行启动参数](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)
+二次开发或本地构建请参阅 [开发环境配置](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/how-to-set-up-env.md)、[主程序构建指南](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/build-guide.md)、[命令行启动参数](https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md)。
 
 ## 📂 项目结构
 
@@ -204,28 +216,24 @@ TiebaDesktop/
 
 ## 🙏 致谢
 
-感谢以下开源项目的支持和启发：
+感谢以下开源项目：
 
-| 项目                                                                 | 说明                               |
-|--------------------------------------------------------------------|----------------------------------|
-| [🎯 aiotieba](https://github.com/lumina37/aiotieba)                | 贴吧 API 的 Python 实现，本项目的核心基础      |
-| [📋 tbclient.protobuf](https://github.com/n0099/tbclient.protobuf) | 贴吧 .proto 定义合集，提供了 protobuf 开发基础 |
-| [🎬 xgplayer](https://h5player.bytedance.com/)                     | 西瓜播放器，本项目视频播放器的基础                |
-| [📢 toaster (Win8)](https://github.com/nels-o/toaster)             | 本软件在 Win8/8.1 系统下通知功能的实现基础       |
+| 项目 | 说明 |
+|------|------|
+| [🎯 aiotieba](https://github.com/lumina37/aiotieba) | 贴吧 API 的 Python 实现，本项目的核心基础 |
+| [📋 tbclient.protobuf](https://github.com/n0099/tbclient.protobuf) | 贴吧 .proto 定义合集 |
+| [🎬 xgplayer](https://h5player.bytedance.com/) | 西瓜播放器，本项目视频播放器的基础 |
+| [📢 toaster (Win8)](https://github.com/nels-o/toaster) | Win8/8.1 通知功能的实现基础 |
 
 ## 🔗 友情链接
 
-- 📱 [TiebaLite](https://github.com/HuanCheng65/TiebaLite) - 第三方安卓贴吧客户端（已停更）
-- 📱 [TiebaLite (维护版)](https://github.com/zzc10086/TiebaLite) - 由 [zzc10086](https://github.com/zzc10086) 维护的
-  TiebaLite
-- 🌐 [NeoTieBa](https://github.com/Vkango/NeoTieBa) - 基于 Tauri2.0 + Vue3 + TypeScript 构建的非官方贴吧客户端
-- 🛠️ [eazy-tieba](https://github.com/Dilettante258/eazy-tieba) - 强大且开源的百度贴吧工具箱
+- 📱 [TiebaLite](https://github.com/HuanCheng65/TiebaLite) — 第三方安卓贴吧客户端（已停更）
+- 📱 [TiebaLite（维护版）](https://github.com/zzc10086/TiebaLite) — 由 [zzc10086](https://github.com/zzc10086) 维护
+- 🌐 [NeoTieBa](https://github.com/Vkango/NeoTieBa) — 基于 Tauri 2.0 + Vue3 + TypeScript 的第三方贴吧客户端
+- 🛠️ [eazy-tieba](https://github.com/Dilettante258/eazy-tieba) — 开源的百度贴吧工具箱
 
 ## ⚖️ 免责声明
 
-> [!warning]
->
-> 1. 🔒 **隐私保护**：本软件只会在本地处理你的个人信息与账号数据，你的数据永远不会被分享或上传到其他任何地方；
-> 2. 📜 **开源协议**：本软件遵循 MIT License 发布，请在遵守 MIT License 的前提下使用本软件；
-> 3. ⚠️ **免责声明**：本软件仅供学习交流使用，请勿用于任何商业或非法用途。使用本软件所产生的任何后果都与作者无关。
-
+1. **隐私**：个人信息与账号数据仅在本地处理，不会上传或分享。
+2. **协议**：本项目基于 MIT License 发布，请在遵守该协议的前提下使用。
+3. **免责**：仅供学习交流，请勿用于商业或非法用途，使用本软件产生的后果与作者无关。

@@ -1,12 +1,12 @@
-# AGENT.md
+# AGENTS.md
 
 本文件面向参与 TiebaDesktop 开发的开发者与 Agent 工具，提供项目概览、常用命令、目录职责和修改注意事项。修改代码前请先阅读本文件，并优先遵循仓库已有模式。
 
 ## 项目概览
 
-TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客户端，主要面向 Windows 桌面体验。项目包含贴吧内容浏览、登录与多账号管理、签到、互动消息、用户主页、收藏/点赞/浏览历史、通知、内置浏览器、视频播放和若干 Windows 原生能力集成。
+TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客户端，支持 Windows 与 Linux（均为 x86_64）。功能包括贴吧内容浏览、登录与多账号管理、签到、互动消息、用户主页、收藏/点赞/浏览历史、通知、内置浏览器与视频播放等，其中部分能力依赖 Windows 原生组件（WebView2、WinRT 分享、系统通知）。
 
-核心入口是 `src/main.py`。应用启动时会初始化用户数据目录、日志、代理、命令行任务、Qt 高 DPI 配置、翻译文件、WebView2 检查、WinRT 分享库、主题背景、主窗口和系统托盘。
+核心入口是 `src/main.py`。应用启动时会初始化用户数据目录、日志、代理、命令行任务、Qt 高 DPI 配置、翻译文件、主题背景、主窗口和系统托盘。Windows 专属步骤（WinRT 分享库、WebView2 检查）会在非 Windows 平台自动跳过；Linux 下会设置 `QT_QPA_PLATFORM=wayland`。
 
 ## 技术栈与依赖
 
@@ -14,13 +14,11 @@ TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客�
 - GUI：PyQt5
 - 贴吧 API：`aiotieba==4.6.1`，并配套 `aiotieba-fix-files/` 中的补丁文件
 - 网络与解析：`requests`、`beautifulsoup4`
-- 加密与系统能力：`pycryptodome`、`pywin32`、`pythonnet`
-- 音频与媒体：`pyaudio`、`src/binres/` 下的二进制资源
-- Windows 通知：`windows_toasts`、`src/binres/toast.exe`
-- 内置网页/登录相关：WebView2 运行时及 `src/binres/Microsoft.Web.WebView2.*.dll`
-- 打包：PyInstaller、7-Zip，可选 NSIS
+- 加密与音频：`pycryptodome`、`pyaudio`（Linux 需要系统提供 portaudio，如 Debian 系的 `portaudio19-dev`）
+- Windows 专用：`pywin32`、`pythonnet`、`windows_toasts`，以及 `src/binres/` 下的 `.exe`/`.dll`（WebView2、toast、ShareBridge、ffmpeg.exe 等）
+- 打包：PyInstaller、7-Zip；Windows 可选 NSIS，Linux 可选 dpkg-deb 与 rpmbuild
 
-Windows 依赖见 `src/requirements.txt`，Linux 依赖见 `src/requirements-linux.txt`。本项目主要在 Windows 上开发，跨平台代码需要特别注意 `os.name` 判断和 Windows 专用依赖隔离。
+依赖清单按平台拆分：Windows 见 `src/requirements.txt`，Linux 见 `src/requirements-linux.txt`（不含 `pywin32`、`pythonnet`、`windows_toasts` 等 Windows 专用库）。跨平台代码依赖 `os.name`、`sys.platform`、`platform.system()` 做分支判断；Windows 专用库只能在对应分支内导入，否则会破坏 Linux 下的启动。
 
 ## 目录地图
 
@@ -37,113 +35,117 @@ Windows 依赖见 `src/requirements.txt`，Linux 依赖见 `src/requirements-lin
 - `src/ui/`：由 Qt `.ui` 文件生成的 Python UI 文件、QSS、图标、表情、播放器静态资源等。
 - `src/resf/`：原始 Qt Designer `.ui` 文件、PSD、protobuf 源定义和生成脚本。
 - `src/proto/`：由 `.proto` 生成的 Python protobuf 文件。
-- `src/binres/`：运行所需二进制资源，例如 WebView2、toast、ffmpeg 占位文件等。
+- `src/binres/`：运行所需二进制资源；Windows 为 `.exe`/`.dll`（WebView2、toast、ffmpeg.exe 等），Linux 为无后缀名二进制（如 ffmpeg）。
 - `aiotieba-fix-files/`：需要覆盖到虚拟环境 `site-packages/aiotieba` 的补丁文件。
-- `build-tools/`：构建脚本、PyInstaller 版本信息、NSIS 脚本和构建配置示例。
+- `build-tools/`：构建脚本、PyInstaller 版本信息、NSIS 脚本、Linux deb/rpm 打包逻辑和构建配置示例。
 - `docs/`：开发环境、构建、命令行参数说明和应用截图。
 
 ## 本地开发
 
-推荐在 Windows 上开发与验证。
+Windows 与 Linux 均可开发与验证，按平台选择对应步骤。
 
-1. 创建虚拟环境：
+### 1. 创建并激活虚拟环境
 
-   ```powershell
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   ```
-
-2. 安装依赖：
-
-   ```powershell
-   pip install -r src\requirements.txt
-   ```
-
-   Linux 环境使用：
-
-   ```bash
-   pip install -r src/requirements-linux.txt
-   ```
-
-3. 应用 `aiotieba` 补丁：
-
-   将 `aiotieba-fix-files/` 目录内的文件复制到虚拟环境中的 `Lib/site-packages/aiotieba/`，遇到同名文件时以本仓库补丁文件覆盖。不要把 `aiotieba-fix-files/` 目录本身复制进去。
-
-4. 补齐本地二进制依赖：
-
-   - 用真实 `ffmpeg.exe` 替换 `src/binres/ffmpeg.exe` 占位文件。
-   - Windows 分享功能需要在 `src/publics/winrt_url_share/` 中编译生成 `ShareBridge.dll` 到 `src/binres/`。非 Windows 平台可跳过。
-   - 登录/内置浏览器相关功能需要系统安装 WebView2 Runtime。
-
-5. 运行应用：
-
-   ```powershell
-   cd src
-   python main.py
-   ```
-
-## 常用命令
-
-从仓库根目录执行：
+Windows：
 
 ```powershell
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+```
+
+Linux：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 2. 安装依赖
+
+```powershell
+# Windows
+pip install -r src\requirements.txt
+```
+
+```bash
+# Linux
+pip install -r src/requirements-linux.txt
+```
+
+### 3. 应用 aiotieba 补丁
+
+把 `aiotieba-fix-files/` 目录内的文件复制到虚拟环境的 `site-packages/aiotieba/` 下，并覆盖同名文件（Windows 为 `Lib/site-packages`，Linux 为 `lib/python3.x/site-packages`）。不要把 `aiotieba-fix-files/` 目录本身复制进去。
+
+### 4. 补齐平台二进制依赖
+
+- Windows：
+  - 用真实 `ffmpeg.exe` 替换 `src/binres/ffmpeg.exe` 占位文件。
+  - 分享功能需要在 `src/publics/winrt_url_share/` 中编译生成 `ShareBridge.dll` 到 `src/binres/`。
+  - 登录/内置浏览器相关功能需要系统安装 WebView2 Runtime。
+- Linux：
+  - 无需 WebView2 与 `ShareBridge.dll`，可跳过上述步骤。
+  - 语音播放依赖 `src/binres/ffmpeg`（无后缀名），仓库默认不提供该文件；且 `src/publics/audio_stream_player.py` 仍使用 Windows 专用的 `subprocess.CREATE_NO_WINDOW`，尚未适配 Linux。需要时自行放入静态编译的 ffmpeg，并注意该限制。
+
+### 5. 运行应用
+
+```bash
 cd src
 python main.py
 ```
 
-静默启动 GUI，仅显示托盘：
+### 平台差异（重要）
 
-```powershell
+- 内置浏览器、网页登录、贴内视频播放基于 WebView2，目前仅 Windows 可用；`webview2.isWebView2Installed()` 在非 Windows 下固定返回 `False`，Linux 上这些功能不可用。改动相关代码时要确认非 Windows 下的降级行为。
+- WinRT 分享、`toast.exe`/`windows_toasts` 通知、Aero/Mica/Acrylic 窗口效果均为 Windows 专用，非 Windows 下应静默跳过。
+- 默认用户数据目录：Windows 为 `%USERPROFILE%/AppData/Local/TiebaDesktop`，Linux 为 `~/.local/share/TiebaDesktop`。
+- Linux 打包会清理 `work_temp/binres` 中的 `.exe`/`.dll`，只保留无后缀名的 Linux 二进制文件。
+
+## 常用命令
+
+以下命令从仓库根目录执行，先激活对应平台的虚拟环境（Windows：`.\.venv\Scripts\Activate.ps1`；Linux：`source .venv/bin/activate`）。
+
+运行应用：
+
+```bash
 cd src
-python main.py --quiet
+python main.py
 ```
 
-执行所有关注吧签到：
+其它常用启动方式：
 
-```powershell
+```bash
 cd src
-python main.py --sign-all-forums
-```
-
-执行成长等级签到：
-
-```powershell
-cd src
-python main.py --sign-grows
-```
-
-切换当前账号：
-
-```powershell
-cd src
+python main.py --quiet            # 静默启动，仅显示托盘
+python main.py --sign-all-forums  # 所有关注吧签到
+python main.py --sign-grows       # 成长等级签到
 python main.py --set-current-account --userid=YOUR_UID
-```
-
-重定向用户数据目录：
-
-```powershell
-cd src
 python main.py --reset-udf --udf-path=YOUR_PATH
 ```
 
 打包发布：
 
 ```powershell
+# Windows
 cd build-tools
 python build.py --makefile .\build_config.json
 ```
 
-打包前需要确认 `build-tools/build_config.json` 中的路径适配本机环境。构建脚本会创建 `build-tools/work_temp` 和 `build-tools/work_out`，这两个目录已被 `.gitignore` 忽略。
+```bash
+# Linux
+cd build-tools
+python build.py --makefile ./build_config.json
+```
+
+构建前需要在 `build_config.json` 中把 `src_code_path`、`py_environ_path`、`sevenzip_path` 等路径改成本机实际值。Linux 下 `sevenzip_path` 通常为 `/usr/bin/7z`，应将 `installer_cfg.build_nsis` 设为 `false`，并按需设置 `build_deb`/`build_rpm`（需要系统已安装 `dpkg-deb`、`rpmbuild`）。构建脚本会创建 `build-tools/work_temp` 和 `build-tools/work_out`，Linux 打包时还会使用 `work_linux_temp`，这些目录已被 `.gitignore` 忽略。
 
 ## UI 与 protobuf 生成
 
 Qt Designer 源文件位于 `src/resf/*.ui`，生成后的 Python 文件位于 `src/ui/*.py`。
 
-生成 UI 文件：
+生成 UI 文件（Windows 下用 `cd src\resf` 亦可）：
 
-```powershell
-cd src\resf
+```bash
+cd src/resf
 python make.py
 ```
 
@@ -153,8 +155,8 @@ protobuf 源定义位于 `src/resf/protobuf/proto/`，生成后的 Python 文件
 
 生成 protobuf 文件：
 
-```powershell
-cd src\resf\protobuf
+```bash
+cd src/resf/protobuf
 python make.py
 ```
 
@@ -169,13 +171,14 @@ python make.py
 - 第三层参数执行普通任务，并在完成后退出，例如 `--sign-all-forums`、`--sign-grows`。
 - `--quiet` 是标记参数，可叠加使用；单独使用时会进入 GUI 模式但不弹出主窗口，仅创建托盘。
 
-修改命令行任务时，要确认是否应该阻止 GUI 启动，并留意涉及账号、本地数据删除和系统弹窗的行为。
+修改命令行任务时，要确认是否应该阻止 GUI 启动，并留意涉及账号、本地数据删除和系统弹窗的行为。注意 Windows 下提示与确认使用 `win32api.MessageBox`；非 Windows 下 `msgbox` 不会弹窗、`msgbox_ask` 固定返回 `False`（等同拒绝），改动交互逻辑时要留意这一差异。
 
 ## 数据与隐私
 
 默认用户数据目录在 `src/consts.py` 中定义：
 
 - Windows：`%USERPROFILE%/AppData/Local/TiebaDesktop`
+- Linux：`$HOME/.local/share/TiebaDesktop`
 - 其他系统：`./TiebaDesktop_UserData`
 
 账号、登录态、偏好、缓存、历史记录等都属于敏感本地数据。开发和调试时不要提交真实用户数据，不要在日志、测试数据或 issue 输出中暴露 BDUSS、STOKEN、UID、Cookie、用户私密内容等信息。
@@ -187,7 +190,9 @@ python make.py
 - `src/ui/` 内含大量资源文件和生成代码，改动前确认它是源文件还是生成产物。
 - 网络请求相关改动优先放在 `src/publics/baidu_features/` 或既有 API 封装附近。
 - 用户数据读写优先复用 `profile_mgr.py`、`account_mgr.py`、`cache_mgr.py` 等现有管理器。
-- Windows 专有能力必须保留平台判断，避免破坏 Linux/macOS 下的基本导入和运行。
+- Windows 专有能力（WebView2、WinRT 分享、toast 通知、Aero/Mica/Acrylic 效果）必须保留平台判断，避免破坏 Linux 下的基本导入和运行；新增 Windows 专用依赖时只在 `os.name == 'nt'` 分支内导入。
+- 调整依赖时同步检查 `src/requirements.txt` 与 `src/requirements-linux.txt`，不要把 Windows 专用库写进 Linux 清单。
+- 修改 `build-tools/build.py` 的打包流程或 `binres` 清理规则时，确认 Windows 与 Linux 两条路径仍然可用。
 - 不要随意更改 `consts.encrypt_key`、默认数据目录、账号数据结构和 protobuf 生成文件，除非同步处理迁移与兼容。
 - 不要提交本地构建产物、虚拟环境、IDE 配置、`ShareBridge.dll`、真实 `ffmpeg.exe` 或用户数据。
 - 当前仓库未见统一测试套件；修改后至少运行受影响路径的应用入口或脚本，能做静态导入检查时也一并执行。
@@ -198,6 +203,7 @@ python make.py
 - 搜索文件优先使用 `rg` 或 `rg --files`。
 - 涉及运行应用、打包、安装依赖、下载文件或编译 C++ 时，先说明影响和本机依赖。
 - 涉及删除用户数据、构建目录、生成文件或覆盖补丁文件时，先确认目标路径。
+- 跨平台改动尽量在 Windows 与 Linux 上都验证；本地只有单一平台时，至少做静态导入检查，并在回复中说明未验证的平台。
 - 修改 UI、protobuf 或构建配置后，在最终回复中明确说明是否重新生成、是否运行验证命令。
 - 如果终端中文显示乱码，不要据此改写源码注释或文档编码；优先使用编辑器或 UTF-8 方式确认原文。
 
@@ -205,5 +211,5 @@ python make.py
 
 - `README.md`：项目介绍、功能列表和目录概览。
 - `docs/how-to-set-up-env.md`：开发环境配置。
-- `docs/build-guide.md`：主程序构建指南。
+- `docs/build-guide.md`：主程序构建指南（含 Linux deb/rpm 打包说明）。
 - `docs/command-usages.md`：命令行启动参数说明。
