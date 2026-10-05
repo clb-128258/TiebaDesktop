@@ -29,7 +29,7 @@ class FloatingButton(QToolButton):
         shadow_effect = QGraphicsDropShadowEffect()
         shadow_effect.setBlurRadius(20)  # 阴影模糊半径
         shadow_effect.setColor(QColor(0, 0, 0, 120))  # 阴影颜色和透明度
-        shadow_effect.setOffset(4, 4)  # 阴影偏移量
+        shadow_effect.setOffset(2, 2)  # 阴影偏移量
         self.setGraphicsEffect(shadow_effect)
 
         self.setStyleSheet(f"""QToolButton {{
