@@ -11,9 +11,7 @@ from publics import profile_mgr, qt_window_mgr, cache_mgr, qt_image
 from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
-from publics.funcs import open_url_in_browser, start_background_thread, timestamp_to_string, \
-    make_thread_content, cut_string, large_num_to_string, listWidget_get_visible_widgets, get_exception_string, \
-    cleanup_listWidget, show_label_pixmap_with_animation, delete_listWidget_item
+from publics.funcs import *
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import fetch_frs_bottom, sign_forum
 
@@ -468,7 +466,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
         else:
             self.setWindowTitle(datas['name'] + '吧')
             self.label_3.setText('{0}人关注 | {1}条贴子'.format(large_num_to_string(datas['follownum'], endspace=True),
-                                                                large_num_to_string(datas['postnum'], endspace=True)))
+                                                          large_num_to_string(datas['postnum'], endspace=True)))
             self.label_2.setText(datas['name'] + '吧')
             self.pushButton_6.setVisible(datas['is_admin'])
 
@@ -509,7 +507,7 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
             else:
                 self.label_6.hide()
                 self.gridLayout_5.removeWidget(self.label_6)
-                self.label_7.setText('本吧暂时没有吧主。')
+                self.label_7.setText('本吧暂无吧主')
 
             self.is_followed = datas['is_followed'] == 1
             if datas['is_followed'] == 1:
@@ -534,7 +532,11 @@ class ForumShowWindow(base_ui.WindowBaseQWidget, ba_head.Ui_Form):
 
             self.flash_shower.hide()
             self.refresh_button.show()
-            self.create_thread_button.show()
+
+            show_add_button = get_dict_value_treely(profile_mgr.local_config,
+                                                    ['thread_view_settings', 'show_add_post_entry'],
+                                                    True)
+            self.create_thread_button.setVisible(show_add_button)
 
     def load_info(self):
         def frs_bottom(kw):

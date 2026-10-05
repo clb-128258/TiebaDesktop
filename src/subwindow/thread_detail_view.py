@@ -153,7 +153,12 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
         self.comboBox.setCurrentIndex(profile_mgr.local_config['thread_view_settings']['default_sort'])
         self.checkBox.setChecked(profile_mgr.local_config['thread_view_settings']['enable_lz_only'])
-        self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
+        self.frame.setVisible(
+            get_dict_value_treely(profile_mgr.local_config,
+                                  ['thread_view_settings', 'show_add_post_entry'],
+                                  True)
+        )
+
         self.init_narrow_switch_button()
         self.init_load_flash()
         self.init_top_toaster()
@@ -175,6 +180,7 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
         self.label_5.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.label_5.customContextMenuRequested.connect(lambda: self.show_content_menu(self.label_5))
         self.label_2.linkActivated.connect(self.end_label_link_event)
+        self.label_2.setContextMenuPolicy(Qt.NoContextMenu)
 
         self.head_data_signal.connect(self.update_ui_head_info)
         self.add_reply.connect(self.add_reply_ui)

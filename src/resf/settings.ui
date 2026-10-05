@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>995</width>
-    <height>643</height>
+    <height>638</height>
    </rect>
   </property>
   <property name="font">
@@ -184,9 +184,9 @@ QListWidget::item:selected:hover {
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>0</y>
+            <y>-562</y>
             <width>750</width>
-            <height>2011</height>
+            <height>1984</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -644,7 +644,7 @@ QListWidget::item:selected:hover {
 </string>
                      </property>
                      <property name="text">
-                      <string>勾选后，在你有新互动消息时，程序将会自动向你推送一个通知</string>
+                      <string>贴吧内有新评论或互动消息时，应用会自动推送通知</string>
                      </property>
                     </widget>
                    </item>
@@ -696,7 +696,7 @@ QListWidget::item:selected:hover {
 </string>
                      </property>
                      <property name="text">
-                      <string>勾选后，当你的电脑失去互联网连接后，程序将向你发送一个通知，并引导你修复网络问题</string>
+                      <string>电脑失去互联网连接时，应用将显示一个通知</string>
                      </property>
                     </widget>
                    </item>
@@ -808,7 +808,7 @@ QListWidget::item:selected:hover {
 </string>
                      </property>
                      <property name="text">
-                      <string>勾选后，程序会读取你的剪切板，并在检测到贴吧链接时通知你</string>
+                      <string>应用会检测你的剪切板，并在检测到贴吧链接时通知你</string>
                      </property>
                     </widget>
                    </item>
@@ -839,13 +839,26 @@ QListWidget::item:selected:hover {
                  <bool>true</bool>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_6">
-                 <item row="4" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_21" stretch="0,0,0">
+                 <item row="7" column="0">
+                  <widget class="QCheckBox" name="checkBox_24">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>默认显示贴子内容声明</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="6" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_22" stretch="0,0,0">
                    <property name="topMargin">
                     <number>0</number>
                    </property>
                    <item>
-                    <spacer name="horizontalSpacer_23">
+                    <spacer name="horizontalSpacer_25">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -861,7 +874,7 @@ QListWidget::item:selected:hover {
                     </spacer>
                    </item>
                    <item>
-                    <widget class="QLabel" name="label_36">
+                    <widget class="QLabel" name="label_37">
                      <property name="font">
                       <font>
                        <pointsize>9</pointsize>
@@ -872,12 +885,12 @@ QListWidget::item:selected:hover {
 </string>
                      </property>
                      <property name="text">
-                      <string>勾选后，在贴子详情界面和个人主页上将不会显示用户的 IP 属地信息</string>
+                      <string>贴子回复列表中的动图内容将会自动播放</string>
                      </property>
                     </widget>
                    </item>
                    <item>
-                    <spacer name="horizontalSpacer_24">
+                    <spacer name="horizontalSpacer_26">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -890,16 +903,6 @@ QListWidget::item:selected:hover {
                     </spacer>
                    </item>
                   </layout>
-                 </item>
-                 <item row="1" column="0" colspan="2">
-                  <widget class="QCheckBox" name="checkBox">
-                   <property name="toolTip">
-                    <string/>
-                   </property>
-                   <property name="text">
-                    <string>首页不推荐视频贴</string>
-                   </property>
-                  </widget>
                  </item>
                  <item row="5" column="0" colspan="2">
                   <widget class="QCheckBox" name="checkBox_12">
@@ -907,66 +910,14 @@ QListWidget::item:selected:hover {
                     <string/>
                    </property>
                    <property name="text">
-                    <string>在回复列表内播放 GIF 动图</string>
+                    <string>在回复列表内播放动图</string>
                    </property>
                    <property name="checked">
                     <bool>true</bool>
                    </property>
                   </widget>
                  </item>
-                 <item row="8" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_34" stretch="0,0,0">
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <spacer name="horizontalSpacer_44">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>17</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item>
-                    <widget class="QLabel" name="label_49">
-                     <property name="font">
-                      <font>
-                       <pointsize>9</pointsize>
-                      </font>
-                     </property>
-                     <property name="styleSheet">
-                      <string notr="true">QLabel{color: grey;}
-</string>
-                     </property>
-                     <property name="text">
-                      <string>勾选后，将会在贴子标题上方显示贴子内容声明</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_45">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </item>
-                 <item row="10" column="0" colspan="2">
+                 <item row="12" column="0" colspan="2">
                   <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0">
                    <item>
                     <widget class="QLabel" name="label_13">
@@ -1035,30 +986,115 @@ QListWidget::item:selected:hover {
                    </item>
                   </layout>
                  </item>
-                 <item row="3" column="0" colspan="2">
-                  <widget class="QCheckBox" name="checkBox_2">
-                   <property name="toolTip">
-                    <string/>
+                 <item row="10" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_50" stretch="0,0,0">
+                   <property name="topMargin">
+                    <number>0</number>
                    </property>
-                   <property name="text">
-                    <string>不显示用户的 IP 属地</string>
-                   </property>
-                  </widget>
+                   <item>
+                    <spacer name="horizontalSpacer_76">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>17</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_74">
+                     <property name="font">
+                      <font>
+                       <pointsize>9</pointsize>
+                      </font>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{color: grey;}
+</string>
+                     </property>
+                     <property name="text">
+                      <string>在相关界面显示发/回贴相关入口</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_77">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
                  </item>
-                 <item row="7" column="0">
-                  <widget class="QCheckBox" name="checkBox_24">
-                   <property name="toolTip">
-                    <string/>
-                   </property>
-                   <property name="text">
-                    <string>默认显示贴子内容声明</string>
-                   </property>
-                   <property name="checked">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
+                 <item row="13" column="0" colspan="2">
+                  <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0,0">
+                   <item>
+                    <widget class="QLabel" name="label_14">
+                     <property name="toolTip">
+                      <string/>
+                     </property>
+                     <property name="text">
+                      <string>进吧看贴默认板块：</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="comboBox_2">
+                     <item>
+                      <property name="text">
+                       <string>置顶</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>精华</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>最新回复</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>最新发布</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>热门</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_5">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
                  </item>
-                 <item row="9" column="0">
+                 <item row="11" column="0">
                   <layout class="QGridLayout" name="gridLayout_20" columnstretch="0,1">
                    <property name="topMargin">
                     <number>4</number>
@@ -1121,6 +1157,58 @@ QListWidget::item:selected:hover {
                    </item>
                   </layout>
                  </item>
+                 <item row="8" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_34" stretch="0,0,0">
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <spacer name="horizontalSpacer_44">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>17</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_49">
+                     <property name="font">
+                      <font>
+                       <pointsize>9</pointsize>
+                      </font>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QLabel{color: grey;}
+</string>
+                     </property>
+                     <property name="text">
+                      <string>在贴子内容下显示贴子内容声明</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_45">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </item>
                  <item row="2" column="0">
                   <layout class="QHBoxLayout" name="horizontalLayout_20" stretch="0,0,0">
                    <property name="topMargin">
@@ -1154,7 +1242,7 @@ QListWidget::item:selected:hover {
 </string>
                      </property>
                      <property name="text">
-                      <string>勾选后，主窗口的“推荐”板块中将不会出现视频贴子</string>
+                      <string>主窗口的“推荐”板块中将不会出现视频贴子</string>
                      </property>
                     </widget>
                    </item>
@@ -1173,69 +1261,13 @@ QListWidget::item:selected:hover {
                    </item>
                   </layout>
                  </item>
-                 <item row="11" column="0" colspan="2">
-                  <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0,0">
-                   <item>
-                    <widget class="QLabel" name="label_14">
-                     <property name="toolTip">
-                      <string/>
-                     </property>
-                     <property name="text">
-                      <string>进吧看贴默认板块：</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QComboBox" name="comboBox_2">
-                     <item>
-                      <property name="text">
-                       <string>置顶</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>精华</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>最新回复</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>最新发布</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>热门</string>
-                      </property>
-                     </item>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_5">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </item>
-                 <item row="6" column="0">
-                  <layout class="QHBoxLayout" name="horizontalLayout_22" stretch="0,0,0">
+                 <item row="4" column="0">
+                  <layout class="QHBoxLayout" name="horizontalLayout_21" stretch="0,0,0">
                    <property name="topMargin">
                     <number>0</number>
                    </property>
                    <item>
-                    <spacer name="horizontalSpacer_25">
+                    <spacer name="horizontalSpacer_23">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -1251,7 +1283,7 @@ QListWidget::item:selected:hover {
                     </spacer>
                    </item>
                    <item>
-                    <widget class="QLabel" name="label_37">
+                    <widget class="QLabel" name="label_36">
                      <property name="font">
                       <font>
                        <pointsize>9</pointsize>
@@ -1262,12 +1294,12 @@ QListWidget::item:selected:hover {
 </string>
                      </property>
                      <property name="text">
-                      <string>勾选后，贴子回复列表中的 GIF 图片内容将会在预览窗格内自动播放</string>
+                      <string>贴子详情界面和个人主页上将不会显示用户的 IP 属地信息</string>
                      </property>
                     </widget>
                    </item>
                    <item>
-                    <spacer name="horizontalSpacer_26">
+                    <spacer name="horizontalSpacer_24">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -1280,6 +1312,39 @@ QListWidget::item:selected:hover {
                     </spacer>
                    </item>
                   </layout>
+                 </item>
+                 <item row="1" column="0" colspan="2">
+                  <widget class="QCheckBox" name="checkBox">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>首页不推荐视频贴</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0" colspan="2">
+                  <widget class="QCheckBox" name="checkBox_2">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>不显示用户的 IP 属地</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="9" column="0">
+                  <widget class="QCheckBox" name="checkBox_31">
+                   <property name="toolTip">
+                    <string/>
+                   </property>
+                   <property name="text">
+                    <string>显示发贴相关功能入口</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>
@@ -1329,7 +1394,7 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>开启后，WebView 将会使用主题背景色显示，可能导致部分网页颜色样式不正确</string>
+                   <string>可能导致部分网页颜色样式不正确</string>
                   </property>
                  </widget>
                 </item>
@@ -1474,7 +1539,7 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;在高 DPI 屏幕下，如果 UI 显示比例不对，请尝试在此处重设 UI 缩放比，以强制覆盖系统的缩放设置。&lt;br&gt;&lt;span style=&quot; color:#ff0105;&quot;&gt;警告：该功能可能导致 UI 显示不正确，从而无法正常操作软件。&lt;/span&gt;仅当在高 DPI 屏幕下内容缩放比例不正确时，才应该使用此功能。&lt;br&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;注意：该设置需要重启软件才可生效。&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;在高 DPI 屏幕下，如果 UI 显示比例不对，请尝试在此处重设 UI 缩放比，以强制覆盖系统的缩放设置。&lt;br/&gt;&lt;span style=&quot; color:#ff0105;&quot;&gt;警告：该功能可能导致 UI 显示不正确，从而无法正常操作软件。&lt;/span&gt;仅当在高 DPI 屏幕下内容缩放比例不正确时，才应该使用此功能。&lt;br/&gt;&lt;span style=&quot; font-weight:696;&quot;&gt;该设置需要重启软件才可生效。&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -1654,7 +1719,7 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>开启后，在 WebView 窗口处于非活动状态时，页面内容将暂停渲染。可解决兼容性问题，但是会影响视觉体验</string>
+                   <string>WebView 处于非活动状态时，页面内容将暂停渲染</string>
                   </property>
                  </widget>
                 </item>
@@ -1706,7 +1771,7 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>勾选后，将不会尝试重写 WebView 中的网页字体，而是遵循原字体</string>
+                   <string>将不会尝试重写 WebView 中的网页字体，而是遵循原字体</string>
                   </property>
                  </widget>
                 </item>
@@ -1795,7 +1860,7 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>勾选后，在调用签到功能时，会调用官方的小组件签到模式，签到经验可翻倍</string>
+                   <string>在调用签到功能时，签到经验可翻倍</string>
                   </property>
                  </widget>
                 </item>
@@ -1942,8 +2007,7 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>勾选后，视图中的图片内容显示时会渲染淡入动画，显示效果更加优雅。
-如果电脑配置较低，可能导致渲染渐变效果时出现卡顿，此时建议关闭此功能</string>
+                   <string>异步加载的图片内容显示时会渲染淡入动画，显示效果更加优雅</string>
                   </property>
                  </widget>
                 </item>
@@ -2038,7 +2102,7 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>开启后，顶部消息气泡将不会使用动画效果弹出，而是直接显示在顶部</string>
+                   <string>顶部消息气泡将不会使用动画效果弹出，而是直接显示在顶部</string>
                   </property>
                  </widget>
                 </item>
@@ -2138,7 +2202,7 @@ QListWidget::item:selected:hover {
 }</string>
                   </property>
                   <property name="text">
-                   <string>开启后，主页面在切换板块时将不会显示动画效果</string>
+                   <string>主页面在切换板块时将不会显示动画效果</string>
                   </property>
                  </widget>
                 </item>
@@ -2399,7 +2463,7 @@ QListWidget::item:selected:hover {
 }</string>
                         </property>
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;使用操作系统提供的高级视觉效果，包括模糊等，目前仅支持 Windows 系统&lt;br&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;注意：这些效果只在部分系统上受支持，如果选择了不支持的效果，则会自动回退到当前系统的最佳设置&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;使用操作系统提供的高级视觉效果，包括模糊等，仅支持 Windows 系统&lt;br/&gt;&lt;span style=&quot; font-weight:696;&quot;&gt;注意：这些效果只在部分系统上受支持，如果选择了不支持的效果，则会自动回退到当前系统的最佳设置&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                         <property name="wordWrap">
                          <bool>true</bool>
@@ -2951,7 +3015,7 @@ QListWidget::item:selected:hover {
                <widget class="QFrame" name="frame_6">
                 <property name="styleSheet">
                  <string notr="true">QFrame#frame_6{
-	background-color: rgba(254, 240, 83, 100);
+	background-color: rgba(254, 240, 83, 185);
 	border-radius: 10px;
 }</string>
                 </property>
@@ -3133,8 +3197,8 @@ QListWidget::item:selected:hover {
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>853</width>
-            <height>575</height>
+            <width>556</width>
+            <height>335</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_31">

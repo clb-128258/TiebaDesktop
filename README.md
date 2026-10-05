@@ -52,8 +52,6 @@
 - **Windows**：Windows 7 及以上，需安装 Visual C++ Redistributable 2015-20xx、.NET Framework 4.8 与 Edge WebView2。
 - **Linux**：提供 deb/rpm 包，兼容 Debian/Ubuntu/Fedora 等发行版。
 
-> [!info]
-> 
 > Linux 版已在 `Ubuntu 24.04 x64` 系统下进行过测试，  
 > Windows 版在 `Windows 7/8.1 x64` `Windows 10 1709/22H2 x64` `Windows 11 24H2 x64` 环境下均已测试过。
 

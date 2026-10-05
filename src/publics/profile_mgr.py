@@ -14,7 +14,8 @@ local_config_model = {
         'default_sort': 0,
         'enable_lz_only': False,
         'play_gif': True,
-        'show_statement': True
+        'show_statement': True,
+        'show_add_post_entry': True
     },
     'forum_view_settings': {
         'default_sort': 2
