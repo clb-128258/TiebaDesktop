@@ -5,7 +5,16 @@
 # 编译产物会被拷贝到 src/binres 下，供 Python 通过 ctypes 加载。
 set -e
 
-cd "$(dirname "$0")"
+# 脚本自身的目录与产物目录都用绝对路径，避免受当前工作目录影响
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+BINRES_DIR="$SCRIPT_DIR/../../binres"
+
+if [ ! -d "$BINRES_DIR" ]; then
+    echo "binres directory was not found: $BINRES_DIR" >&2
+    exit 1
+fi
+
+cd "$SCRIPT_DIR"
 mkdir -p build
 
 AMR_INCLUDE="-Iamrnb/oscl -Iamrnb/dec/src -Iamrnb/dec/include -Iamrnb/common/include -Iamrnb/common/dec/include"
@@ -14,7 +23,7 @@ if command -v cmake >/dev/null 2>&1; then
     cd build
     cmake .. -DCMAKE_BUILD_TYPE=Release
     cmake --build . -j
-    cd ..
+    cd "$SCRIPT_DIR"
 else
     echo "cmake not found, fallback to gcc/g++"
     mkdir -p build/obj
@@ -27,5 +36,5 @@ else
     g++ -shared -fvisibility=hidden -o build/libtieba_audiodec.so build/obj/*.o -lm
 fi
 
-cp -f build/libtieba_audiodec.so ../../../binres/libtieba_audiodec.so
-echo "Audio decoder has been built: $(cd ../../.. && pwd)/binres/libtieba_audiodec.so"
+cp -f "$SCRIPT_DIR/build/libtieba_audiodec.so" "$BINRES_DIR/libtieba_audiodec.so"
+echo "Audio decoder has been built: $BINRES_DIR/libtieba_audiodec.so"

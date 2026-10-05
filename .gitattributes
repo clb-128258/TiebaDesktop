@@ -1,0 +1,2 @@
+# shell 脚本固定使用 LF，避免 Windows 检出后脚本在 Linux/Git Bash 中因 CRLF 报错
+*.sh text eol=lf
