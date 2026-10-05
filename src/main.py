@@ -3,6 +3,7 @@
 """
 from publics.app_logger import init_log
 from publics.app_logger import log_exception, log_INFO, log_WARN
+from publics.audio_decoder import decoder
 
 from publics.cli_feats import handle_command_events, reset_udf
 from publics.base_ui_elements import base_ui
@@ -116,6 +117,7 @@ if __name__ == "__main__":
 
     # init .net/cpp libraries
     winrt_share.init_library()
+    decoder.load_library()
     check_webview2()
 
     # init theme elements

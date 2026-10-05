@@ -15,7 +15,7 @@ TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客�
 - 贴吧 API：`aiotieba==4.6.1`，并配套 `aiotieba-fix-files/` 中的补丁文件
 - 网络与解析：`requests`、`beautifulsoup4`
 - 加密与音频：`pycryptodome`、`pyaudio`（Linux 需要系统提供 portaudio，如 Debian 系的 `portaudio19-dev`）
-- Windows 专用：`pywin32`、`pythonnet`、`windows_toasts`，以及 `src/binres/` 下的 `.exe`/`.dll`（WebView2、toast、ShareBridge、ffmpeg.exe 等）
+- Windows 专用：`pywin32`、`pythonnet`、`windows_toasts`，以及 `src/binres/` 下的 `.exe`/`.dll`（WebView2、toast、ShareBridge 等）
 - 打包：PyInstaller、7-Zip；Windows 可选 NSIS，Linux 可选 dpkg-deb 与 rpmbuild
 
 依赖清单按平台拆分：Windows 见 `src/requirements.txt`，Linux 见 `src/requirements-linux.txt`（不含 `pywin32`、`pythonnet`、`windows_toasts` 等 Windows 专用库）。跨平台代码依赖 `os.name`、`sys.platform`、`platform.system()` 做分支判断；Windows 专用库只能在对应分支内导入，否则会破坏 Linux 下的启动。
@@ -35,7 +35,7 @@ TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客�
 - `src/ui/`：由 Qt `.ui` 文件生成的 Python UI 文件、QSS、图标、表情、播放器静态资源等。
 - `src/resf/`：原始 Qt Designer `.ui` 文件、PSD、protobuf 源定义和生成脚本。
 - `src/proto/`：由 `.proto` 生成的 Python protobuf 文件。
-- `src/binres/`：运行所需二进制资源；Windows 为 `.exe`/`.dll`（WebView2、toast、ffmpeg.exe 等），Linux 为无后缀名二进制（如 ffmpeg）。
+- `src/binres/`：运行所需二进制资源；Windows 为 `.exe`/`.dll`（WebView2、toast、ShareBridge 等），Linux 为 `.so` 动态库（如内置解码库 `libtieba_audiodec.so`）。
 - `aiotieba-fix-files/`：需要覆盖到虚拟环境 `site-packages/aiotieba` 的补丁文件。
 - `build-tools/`：构建脚本、PyInstaller 版本信息、NSIS 脚本、Linux deb/rpm 打包逻辑和构建配置示例。
 - `docs/`：开发环境、构建、命令行参数说明和应用截图。
@@ -78,13 +78,14 @@ pip install -r src/requirements-linux.txt
 
 ### 4. 补齐平台二进制依赖
 
+- 音频解码库（语音播放使用，两个平台都需要）：
+  - 在 `src/publics/audio_decoder/` 中编译生成 `tieba_audiodec.dll`（Windows）或 `libtieba_audiodec.so`（Linux）到 `src/binres/`。
+  - 解码内核为内嵌的 minimp3（MP3，CC0）与 opencore-amr（AMR-NB，Apache-2.0），因此语音播放不再依赖 ffmpeg。
 - Windows：
-  - 用真实 `ffmpeg.exe` 替换 `src/binres/ffmpeg.exe` 占位文件。
   - 分享功能需要在 `src/publics/winrt_url_share/` 中编译生成 `ShareBridge.dll` 到 `src/binres/`。
   - 登录/内置浏览器相关功能需要系统安装 WebView2 Runtime。
 - Linux：
   - 无需 WebView2 与 `ShareBridge.dll`，可跳过上述步骤。
-  - 语音播放依赖 `src/binres/ffmpeg`（无后缀名），仓库默认不提供该文件；且 `src/publics/audio_stream_player.py` 仍使用 Windows 专用的 `subprocess.CREATE_NO_WINDOW`，尚未适配 Linux。需要时自行放入静态编译的 ffmpeg，并注意该限制。
 
 ### 5. 运行应用
 
@@ -98,7 +99,10 @@ python main.py
 - 内置浏览器、网页登录、贴内视频播放基于 WebView2，目前仅 Windows 可用；`webview2.isWebView2Installed()` 在非 Windows 下固定返回 `False`，Linux 上这些功能不可用。改动相关代码时要确认非 Windows 下的降级行为。
 - WinRT 分享、`toast.exe`/`windows_toasts` 通知、Aero/Mica/Acrylic 窗口效果均为 Windows 专用，非 Windows 下应静默跳过。
 - 默认用户数据目录：Windows 为 `%USERPROFILE%/AppData/Local/TiebaDesktop`，Linux 为 `~/.local/share/TiebaDesktop`。
-- Linux 打包会清理 `work_temp/binres` 中的 `.exe`/`.dll`，只保留无后缀名的 Linux 二进制文件。
+- Linux 打包会清理 `work_temp/binres` 中的 `.exe`/`.dll`，只保留 Linux 需要的二进制文件（无后缀名的可执行文件与 `.so` 动态库）。
+- 语音播放器 `src/publics/audio_stream_player.py` 支持自由调整进度：`seek_to()` 会重新请求音频数据，
+  并在解码器内跳过目标位置之前的 PCM（`tieba_dec_skip_pcm`），因此 mp3 与 amr-nb 都适用；
+  播放位置通过 `positionChanged` 上报，界面进度条位于 `src/resf/thread_voice_item.ui`。
 
 ## 常用命令
 
@@ -194,7 +198,7 @@ python make.py
 - 调整依赖时同步检查 `src/requirements.txt` 与 `src/requirements-linux.txt`，不要把 Windows 专用库写进 Linux 清单。
 - 修改 `build-tools/build.py` 的打包流程或 `binres` 清理规则时，确认 Windows 与 Linux 两条路径仍然可用。
 - 不要随意更改 `consts.encrypt_key`、默认数据目录、账号数据结构和 protobuf 生成文件，除非同步处理迁移与兼容。
-- 不要提交本地构建产物、虚拟环境、IDE 配置、`ShareBridge.dll`、真实 `ffmpeg.exe` 或用户数据。
+- 不要提交本地构建产物、虚拟环境、IDE 配置、`ShareBridge.dll`、`tieba_audiodec.dll`/`libtieba_audiodec.so` 或用户数据。
 - 当前仓库未见统一测试套件；修改后至少运行受影响路径的应用入口或脚本，能做静态导入检查时也一并执行。
 
 ## Agent 工作建议

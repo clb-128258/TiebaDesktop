@@ -201,7 +201,7 @@ TiebaDesktop/
 │  └─ how-to-set-up-env.md # 开发环境配置指南
 │
 └─ src/                    # 💻 核心源代码
-   ├─ binres/             # 二进制依赖（FFmpeg、WebView2 等）
+   ├─ binres/             # 二进制依赖（内置解码库、WebView2 等）
    ├─ proto/              # Protocol Buffer 相关文件（与贴吧 API 通信）
    ├─ publics/            # 公用组件和工具库
    ├─ resf/               # 原始 UI 设计文件和 .proto 定义

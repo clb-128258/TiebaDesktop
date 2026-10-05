@@ -115,10 +115,10 @@ python build.py --makefile .\build_config.json
 | `/usr/share/pixmaps/tiebadesktop.png` | 应用图标（兼容旧环境） |
 | `/usr/share/doc/tiebadesktop/copyright` | 版权信息 |
 
-打包前脚本会自动清理 `work_temp/binres` 目录：Windows 专属的依赖文件（`ffmpeg.exe`、`toast.exe`、
-WebView2 与 ShareBridge 的 `.dll` 文件等）在 Linux 下不会被使用，会被删除，只保留没有后缀名的 linux 二进制文件
-（例如音频播放器使用的 `binres/ffmpeg`），清理后产生的空目录也会一并删除。因此 deb、rpm 与发行压缩包都不会
-再携带这些文件，可以省下可观的体积。
+打包前脚本会自动清理 `work_temp/binres` 目录：Windows 专属的依赖文件（`toast.exe`、WebView2 与 ShareBridge 的
+`.dll` 文件等）在 Linux 下不会被使用，会被删除，只保留 Linux 需要的二进制文件（无后缀名的可执行文件与 `.so`
+动态库，例如内置解码库 `binres/libtieba_audiodec.so`），清理后产生的空目录也会一并删除。因此 deb、rpm 与发行
+压缩包都不会再携带这些文件，可以省下可观的体积。
 
 用户可以像安装其它软件一样安装与卸载本程序：
 

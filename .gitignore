@@ -1,11 +1,13 @@
-/src/binres/ffmpeg.exe
 /.idea/
 /.venv/
 /.vscode/
 
 /src/resf/change_index.json
 /src/publics/winrt_url_share/build
+/src/publics/audio_decoder/build
 /src/binres/ShareBridge.dll
+/src/binres/tieba_audiodec.dll
+/src/binres/libtieba_audiodec.so
 
 /src/__pycache__
 /src/*/__pycache__

@@ -72,14 +72,13 @@ jobs:
           "
 
       # ==========================================
-      # 4) 把 ffmpeg.exe 放置在特定目录下
+      # 4) 编译内置音频解码库（mp3 + amr-nb，语音播放不再依赖 ffmpeg）
       # ==========================================
-      - name: Place FFmpeg Executable
+      - name: Compile Audio Decoder
         run: |
-          $target_dir = "${{ github.workspace }}\src\binres"   
-          choco install ffmpeg -y
-          Copy-Item "C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe" -Destination "$target_dir\" -Force
-          echo "copy ffmpeg succeed!"
+          cd ${{ github.workspace }}\src\publics\audio_decoder
+          ${{ github.workspace }}\src\publics\audio_decoder\run_build.bat
+          cd ${{ github.workspace }}
 
       # ==========================================
       # 5) 编译 C++ DLL
@@ -205,11 +204,11 @@ jobs:
           fi
 
       # ==========================================
-      # 4) 关于 binres 目录
+      # 4) 编译内置音频解码库（mp3 + amr-nb，语音播放不再依赖 ffmpeg）
       # ==========================================
-      # Linux 下暂时不在 binres 中放置 ffmpeg：语音播放所在的 audio_stream_player 使用了仅 Windows
-      # 可用的 subprocess.CREATE_NO_WINDOW，尚未适配 Linux。后续适配时，把静态编译的 ffmpeg 放到
-      # src/binres/ffmpeg 即可，打包脚本会保留无后缀名的二进制文件并将其打进安装包。
+      - name: Compile Audio Decoder
+        run: |
+          bash ${{ github.workspace }}/src/publics/audio_decoder/build_linux.sh
 
       # ==========================================
       # 5) 安装 pyinstaller 库

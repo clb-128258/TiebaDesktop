@@ -3,7 +3,7 @@
 ## 前期准备
 
 本软件理论上兼容 Windows/MacOS/Linux 系统，但本软件主要是在 Windows 上开发的，因此在 Windows 下的工作效果最好。  
-本教程将以 Windows 环境为例展开讲述。
+文档主要以 Windows 环境为例展开讲述，与其他系统的语法可能有一些不相通之处。
 
 在部署本项目前，请先准备以下必要开发组件：
 
@@ -11,6 +11,10 @@
 * CMake (需要设置到系统环境变量中)
 * MSVC 编译器 (建议 2022 版本)
 * Windows SDK 10+ 版本
+
+除此之外，建议开发过程中使用：
+* 6 核以上的 CPU、16G 以上内存的电脑
+* Win10 或以上系统（或是相对主流、版本较新的 Linux 发行版）
 
 > [!note]
 >
@@ -40,16 +44,38 @@ pip install -r project/src/requirements.txt   // 安装依赖
 全都复制到`project/venv/Lib/site-packages/aiotieba` 中，  
 并用前者中的文件**替换**掉后者中出现冲突的文件。
 
-## 配置 ffmpeg
+## 编译音频解码库
 
-下载 ffmpeg 的二进制文件，  
-并使用下载到的 `ffmpeg.exe` 替换掉项目中的的占位文件 `project/src/binres/ffmpeg.exe`。
+语音播放使用项目自带的内置音频解码库（`project/src/publics/audio_decoder`，其中 mp3 使用 minimp3，贴吧语音使用的 amr-nb 使用内嵌的 opencore-amr）。为保证各个平台的通用性，仓库不提供该解码库的二进制版本，需要自行编译。
+
+Windows：
+
+1) 在 `project/src/publics/audio_decoder` 目录下打开终端（命令提示符）
+2) 初始化 MSVC 编译器环境：
+    ```commandline
+    VS_INSTDIR\VC\Auxiliary\Build\vcvarsARCH.bat
+    ```
+   其中 `VS_INSTDIR` 为你的 Visual Studio 安装目录，`ARCH` 为你的系统架构（如`64` `32`等），请根据实际情况进行修改。
+3) 运行编译脚本：
+    ```commandline
+    run_build.bat
+    ```
+4) 编译完成后，`project/src/binres` 目录下应当出现 `tieba_audiodec.dll` 文件，如果没有则是编译出了问题。
+
+Linux：
+
+```commandline
+cd project/src/publics/audio_decoder
+bash build_linux.sh
+```
+
+编译完成后，`project/src/binres` 目录下应当出现 `libtieba_audiodec.so` 文件，如果没有则是编译出了问题。
 
 ## 编译 WinrtShareBridge
 
 > [!note]
 >
-> 如果你使用的系统不是 Windows，则无需进行此步骤。
+> 如果目标系统不是 Windows，则无需进行此步骤。
 
 `WinrtShareBridge` 是本项目内用于调起 Windows 分享的 C++ 动态链接库。  
 为保证各个平台的通用性，本项目不提供 `ShareBridge.dll` 的二进制版本，你需要自行编译。  

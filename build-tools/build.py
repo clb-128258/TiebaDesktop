@@ -36,6 +36,9 @@ LINUX_DOC_DIR = '/usr/share/doc/tiebadesktop'
 # Linux 打包过程中使用的临时目录，打包结束后会被删除
 LINUX_TEMP_DIR = './work_linux_temp'
 
+# Linux 下需要保留的二进制文件后缀（无后缀名的可执行文件同样会保留）
+LINUX_BINARY_SUFFIXES = ('.so',)
+
 # 图标源文件，位于 work_temp 目录下
 LINUX_ICON_SRC = 'ui/tieba_logo_big_single.png'
 
@@ -522,13 +525,32 @@ def pack_compressed(cfg):
     print(f'[pack_compressed] 7-zip process finished with exit code {process.returncode}')
 
 
+def is_linux_binary(filename):
+    """判断文件是否为 Linux 下需要保留的二进制文件
+
+    无后缀名的可执行文件与动态库都属于这类文件，例如：
+    binres/ffmpeg、binres/libtieba_audiodec.so、libfoo.so.1。
+
+    Args:
+        filename (str): 文件名（不需要包含路径）
+
+    Returns:
+        bool: 需要保留时返回 True
+    """
+    lower_name = filename.lower()
+    if lower_name.endswith(LINUX_BINARY_SUFFIXES) or '.so.' in lower_name:
+        return True
+
+    return os.path.splitext(lower_name)[1] == ''
+
+
 def cleanup_binres_for_linux(binres_dir='./work_temp/binres'):
     """
     Linux 打包时清理 binres 目录。
 
-    binres 中的 .exe 与 .dll 都是 Windows 专属的依赖文件（WebView2、toast、ShareBridge、ffmpeg.exe 等），
-    在 Linux 下不会被使用，只会白白占用发行包的空间，因此这里只保留没有后缀名的 linux 二进制文件
-    （例如音频播放器使用的 binres/ffmpeg），其余文件一律删除。
+    binres 中的 .exe 与 .dll 都是 Windows 专属的依赖文件（WebView2、toast、ShareBridge 等），
+    在 Linux 下不会被使用，只会白白占用发行包的空间，因此这里只保留 Linux 需要的二进制文件
+    （无后缀名的可执行文件与 .so 动态库，例如 binres/libtieba_audiodec.so），其余文件一律删除。
     """
     if not os.path.isdir(binres_dir):
         return
@@ -539,8 +561,7 @@ def cleanup_binres_for_linux(binres_dir='./work_temp/binres'):
     # topdown=False 保证先处理子目录中的文件，再判断父目录是否已被清空
     for root, dirs, files in os.walk(binres_dir, topdown=False):
         for name in files:
-            if not os.path.splitext(name)[1]:
-                # 没有后缀名的文件是 linux 二进制文件，需要保留
+            if is_linux_binary(name):
                 continue
 
             file_path = os.path.join(root, name)
