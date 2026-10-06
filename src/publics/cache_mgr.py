@@ -57,6 +57,53 @@ def save_md5_ico(link_str: str) -> str:
         return save_md5_ico_from_bin(bytes_data)
 
 
+def get_voice_cache_path(link_str: str) -> str:
+    """
+    获取语音链接对应的本地缓存文件路径
+
+    Args:
+        link_str (str): 语音链接
+    Return:
+        缓存文件的路径
+    """
+    md5_value = hashlib.md5(link_str.encode('utf-8')).hexdigest()
+    return f'{consts.datapath}/voice_caches/{md5_value}.amr'
+
+
+def get_voice_cache(link_str: str) -> bytes:
+    """
+    读取本地缓存的语音数据
+
+    Args:
+        link_str (str): 语音链接
+    Return:
+        缓存的语音数据，本地没有缓存时返回空数据
+    """
+    local_path = get_voice_cache_path(link_str)
+    if not os.path.isfile(local_path):
+        return b''
+
+    with open(local_path, 'rb') as file:
+        return file.read()
+
+
+def save_voice_cache(link_str: str, bin_data: bytes):
+    """
+    把完整的语音数据写入本地缓存
+
+    Args:
+        link_str (str): 语音链接
+        bin_data (bytes): 完整的语音数据（未完整下载时不要调用）
+    """
+    if not bin_data:
+        return
+
+    local_path = get_voice_cache_path(link_str)
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    with open(local_path, 'wb') as file:
+        file.write(bin_data)
+
+
 def get_bd_hash_img(bd_hash: str, original=False) -> bytes:
     """
     通过百度hash从本地缓存获取图像

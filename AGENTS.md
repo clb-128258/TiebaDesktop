@@ -100,9 +100,12 @@ python main.py
 - WinRT 分享、`toast.exe`/`windows_toasts` 通知、Aero/Mica/Acrylic 窗口效果均为 Windows 专用，非 Windows 下应静默跳过。
 - 默认用户数据目录：Windows 为 `%USERPROFILE%/AppData/Local/TiebaDesktop`，Linux 为 `~/.local/share/TiebaDesktop`。
 - Linux 打包会清理 `work_temp/binres` 中的 `.exe`/`.dll`，只保留 Linux 需要的二进制文件（无后缀名的可执行文件与 `.so` 动态库）。
-- 语音播放器 `src/publics/audio_stream_player.py` 支持自由调整进度：`seek_to()` 会重新请求音频数据，
-  并在解码器内跳过目标位置之前的 PCM（`tieba_dec_skip_pcm`），因此 mp3 与 amr-nb 都适用；
-  播放位置通过 `positionChanged` 上报，界面进度条位于 `src/resf/thread_voice_item.ui`。
+- 语音播放器 `src/publics/audio_stream_player.py` 支持自由调整进度：`seek_to()` 会在解码器内跳过目标位置
+  之前的 PCM（`tieba_dec_skip_pcm`），因此 mp3 与 amr-nb 都适用；播放位置通过 `positionChanged` 上报，
+  界面进度条位于 `src/resf/thread_voice_item.ui`。
+- 语音数据有本地缓存：读写接口为 `cache_mgr.get_voice_cache` / `save_voice_cache`，缓存目录为
+  `<数据目录>/voice_caches`。播放时优先使用内存/本地缓存，完整下载后才落盘；由于贴吧服务器不支持
+  Range 请求，缓存是重复播放与定位不再请求服务器的关键，修改相关逻辑时请保留该行为。
 
 ## 常用命令
 

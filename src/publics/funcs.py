@@ -75,6 +75,7 @@ def create_data():
                      f'{consts.datapath}/webview_data',
                      f'{consts.datapath}/logs',
                      f'{consts.datapath}/image_caches',
+                     f'{consts.datapath}/voice_caches',
                      f'{consts.datapath}/cache_index',
                      f'{consts.datapath}/webview_data/default']  # 欲创建的文件夹
     expect_secret_json = {f'{consts.datapath}/user_bduss': {'current_bduss': '', 'login_list': []}}  # 欲创建的加密json文件

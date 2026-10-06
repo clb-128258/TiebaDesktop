@@ -263,7 +263,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                             self.checkBox_6,
                             self.checkBox_18,
                             self.checkBox_19,
-                            self.checkBox_22
+                            self.checkBox_22,
+                            self.checkBox_32
                             ]
         for i in self.clearTypeCb:
             i.stateChanged.connect(self.calc_willfree_size)
@@ -541,7 +542,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["webview_settings"]["transparent_bg_color"] = self.checkBox_25.isChecked()
             profile_mgr.local_config['sign_settings']['use_widget_sign_flag'] = self.checkBox_26.isChecked()
             profile_mgr.local_config["other_settings"]["disable_ssl_verify"] = self.checkBox_27.isChecked()
-            profile_mgr.local_config["thread_view_settings"]["show_add_post_entry"]=self.checkBox_31.isChecked()
+            profile_mgr.local_config["thread_view_settings"]["show_add_post_entry"] = self.checkBox_31.isChecked()
             profile_mgr.local_config['other_settings']['animation_switches'][
                 'enable_image_fade_in'] = self.checkBox_28.isChecked()
             profile_mgr.local_config['other_settings']['animation_switches'][
@@ -648,25 +649,13 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         self.label_20.setText(f'操作系统版本：{platform.system()} {platform.version()}, on {platform.machine()} CPU')
         self.label_16.setText('当前系统时间：' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
-    def add_account(self):
-        d = LoginWebView()
-        d.resize(1065, 680)
-        d.exec()
-
-    def add_account_qrcode(self):
-        d = QRLoginDialog()
-        d.exec()
-
-    def add_account_senior(self):
-        d = SeniorLoginDialog()
-        d.exec()
-
     def select_all_caches(self):
         safetyClearTypeCb = [self.checkBox_4,
                              self.checkBox_5,
                              self.checkBox_9,
                              self.checkBox_10,
                              self.checkBox_7,
+                             self.checkBox_32,
                              ]
         for i in safetyClearTypeCb:
             i.setChecked(True)
@@ -681,6 +670,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
         if self.checkBox_4.isChecked():
             free_size += self.scannedDetailData["image_cache_size"]
+        if self.checkBox_32.isChecked():
+            free_size += self.scannedDetailData["voice_cache_size"]
         if self.checkBox_5.isChecked():
             free_size += self.scannedDetailData["log_size"]
         if self.checkBox_9.isChecked():
@@ -764,6 +755,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
             if self.checkBox_4.isChecked():
                 clear_folder(f'{consts.datapath}/image_caches')
+            if self.checkBox_32.isChecked():
+                clear_folder(f'{consts.datapath}/voice_caches')
             if self.checkBox_5.isChecked():
                 clear_folder(f'{consts.datapath}/logs')
             if self.checkBox_9.isChecked():
@@ -802,6 +795,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
         self.checkBox_18.setText(f'回贴草稿 ({data["post_draft_num"]} 条)')
         self.checkBox_4.setText(f'图像缓存 ({filesize_tostr(data["image_cache_size"])})')
+        self.checkBox_32.setText(f'语音缓存 ({filesize_tostr(data["voice_cache_size"])})')
         self.checkBox_5.setText(f'日志文件 ({filesize_tostr(data["log_size"])})')
         self.checkBox_9.setText(f'游客网页数据 ({filesize_tostr(data["default_webview_size"])})')
         self.checkBox_10.setText(f'吧信息缓存 ({data["fidcache_num"]} 条)')
@@ -840,6 +834,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
         data = {'total_data_size': 0,
                 'image_cache_size': 0,
+                'voice_cache_size': 0,
                 'log_size': 0,
                 'default_webview_size': 0,
                 'fidcache_num': 0,
@@ -857,7 +852,9 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
         lsc_log = scan_tree_total_size(f'{consts.datapath}/logs')  # 日志文件总大小
         lsc_img = scan_tree_total_size(f'{consts.datapath}/image_caches')  # 图片缓存文件总大小
+        lsc_voice = scan_tree_total_size(f'{consts.datapath}/voice_caches')  # 语音缓存文件总大小
         data['image_cache_size'] = lsc_img
+        data['voice_cache_size'] = lsc_voice
         data['log_size'] = lsc_log
 
         main_pf_exclude = ['view_history', 'post_drafts', 'window_rects.json']  # 排除特定文件
@@ -881,6 +878,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         data['window_rect_size'] = os.stat(f'{consts.datapath}/window_rects.json').st_size
 
         data['total_data_size'] = (lsc_img +
+                                   lsc_voice +
                                    lsc_log +
                                    data['main_profile_size'] +
                                    data['total_webview_size'] +
@@ -889,6 +887,19 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                                    data['history_size'])
 
         self.scanFinish.emit(data)
+
+    def add_account(self):
+        d = LoginWebView()
+        d.resize(1065, 680)
+        d.exec()
+
+    def add_account_qrcode(self):
+        d = QRLoginDialog()
+        d.exec()
+
+    def add_account_senior(self):
+        d = SeniorLoginDialog()
+        d.exec()
 
     def clear_account_list(self):
         if MessageBox.warning(self, '确认清空本地的所有登录信息吗？',

@@ -3,8 +3,11 @@
 播放链路：网络上分块读取音频数据 -> 内置解码库（publics/audio_decoder，mp3 使用 minimp3、
 amr-nb 使用内嵌的 opencore-amr）解码为 44100Hz 双声道 PCM -> 交给 pyaudio 播放。
 
-除顺序播放外，还支持自由调整播放进度（seek）：定位时重新请求音频数据，并在解码器内部快速
-丢弃目标位置之前的 PCM，因此对 mp3 与 amr-nb 都适用，也不要求服务端支持 Range 请求。
+除顺序播放外，还支持自由调整播放进度（seek）：定位时在解码器内部快速丢弃目标位置之前的 PCM，
+因此对 mp3 与 amr-nb 都适用，也不要求服务端支持 Range 请求。
+
+已下载的音频数据会缓存在内存中（完整下载后还会写入本地缓存文件），
+因此重复定位与重复播放时不需要再向服务器请求数据，定位速度只取决于解码速度。
 """
 import enum
 import queue
@@ -15,7 +18,7 @@ import pyaudio
 import requests
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from publics import app_logger, request_mgr
+from publics import app_logger, cache_mgr, request_mgr
 from publics.audio_decoder import decoder as audio_decoder
 
 import consts
@@ -94,6 +97,13 @@ class HttpMp3Player(QObject):
         # 当前一轮使用的网络响应
         self.__response = None
         self.__data_over = False
+
+        # 本地缓存（压缩数据）：优先从这里取数据，避免重复下载
+        self.__cache_url = None  # 当前缓存对应的链接
+        self.__cache = bytearray()  # 已经获取到的压缩数据
+        self.__cache_pos = 0  # 本轮已经从缓存中取走的位置
+        self.__cache_complete = False  # 是否已经拿到完整音频
+        self.__network_skip = 0  # 网络流中需要跳过的、本地已缓存过的字节数
 
         self.audio_stream = None
         self.pa_obj = None
@@ -230,11 +240,19 @@ class HttpMp3Player(QObject):
         Returns:
             bool: 返回 True 表示收到了定位请求，需要重新开始一轮；返回 False 表示播放结束
         """
+        self.__load_cache()
+
         stream_decoder = audio_decoder.AudioDecoder()
         self.decoder = stream_decoder
         self.__data_over = False
+        self.__cache_pos = 0
+        self.__network_skip = 0
 
         try:
+            if self.__cache_complete:
+                # 本地缓存里已经是完整音频，直接用缓存定位与播放，不需要再请求服务器
+                return self.__play_with_decoder(stream_decoder)
+
             with requests.get(self.mp3_url,
                               headers=consts.http_header,
                               stream=True,
@@ -243,41 +261,47 @@ class HttpMp3Player(QObject):
                 response.raise_for_status()
                 self.__response = response
 
-                # 1) 先丢弃目标位置之前的数据
-                action = self.__skip_to_target(stream_decoder)
-                if action != _Action.CONTINUE:
-                    if action == _Action.STOP:
-                        self.__reset_position()
-                    return action == _Action.SEEK
-
-                # 2) 顺序播放
-                while True:
-                    action = self.__process_events()
-                    if action != _Action.CONTINUE:
-                        if action == _Action.STOP:
-                            self.__reset_position()
-                        return action == _Action.SEEK
-
-                    data = self.__read_stream()
-                    if data:
-                        stream_decoder.feed(data)
-                    else:
-                        stream_decoder.set_input_end()
-
-                    wrote = self.__write_pcm(stream_decoder)
-                    if wrote == 0 and self.__data_over:
-                        if self.__written_bytes == 0:
-                            # 一帧都没有解出来时给出明确提示，便于定位格式不支持或数据异常
-                            do_log('No audio data was decoded. detected format: '
-                                   f'{audio_decoder.format_name(stream_decoder.format())}')
-                        else:
-                            do_log("All data has been played.")
-                        self.__reset_position()
-                        return False
+                # 服务器不支持 Range，网络数据总是从 0 开始，因此先跳过本地已经缓存过的部分
+                self.__network_skip = len(self.__cache)
+                return self.__play_with_decoder(stream_decoder)
         finally:
             stream_decoder.close()
             self.decoder = None
             self.__response = None
+
+    def __play_with_decoder(self, stream_decoder) -> bool:
+        """一轮播放的实际流程（数据来源由 __read_stream 决定：本地缓存优先）"""
+        # 1) 先丢弃目标位置之前的数据
+        action = self.__skip_to_target(stream_decoder)
+        if action != _Action.CONTINUE:
+            if action == _Action.STOP:
+                self.__reset_position()
+            return action == _Action.SEEK
+
+        # 2) 顺序播放
+        while True:
+            action = self.__process_events()
+            if action != _Action.CONTINUE:
+                if action == _Action.STOP:
+                    self.__reset_position()
+                return action == _Action.SEEK
+
+            data = self.__read_stream()
+            if data:
+                stream_decoder.feed(data)
+            else:
+                stream_decoder.set_input_end()
+
+            wrote = self.__write_pcm(stream_decoder)
+            if wrote == 0 and self.__data_over:
+                if self.__written_bytes == 0:
+                    # 一帧都没有解出来时给出明确提示，便于定位格式不支持或数据异常
+                    do_log('No audio data was decoded. detected format: '
+                           f'{audio_decoder.format_name(stream_decoder.format())}')
+                else:
+                    do_log("All data has been played.")
+                self.__reset_position()
+                return False
 
     def __skip_to_target(self, stream_decoder) -> _Action:
         """丢弃本轮起点之前的 PCM，返回下一步动作"""
@@ -307,15 +331,79 @@ class HttpMp3Player(QObject):
         return _Action.CONTINUE
 
     def __read_stream(self) -> bytes:
-        """读取一块压缩数据，返回空字节串表示数据已经结束"""
+        """读取一块压缩数据
+
+        优先使用本地缓存；缓存用完后才继续从网络读取（并跳过本地已经缓存过的部分）。
+        返回空字节串表示数据已经结束。
+        """
+        # 1) 本地缓存
+        if self.__cache_pos < len(self.__cache):
+            data = bytes(self.__cache[self.__cache_pos:self.__cache_pos + STREAM_READ_SIZE])
+            self.__cache_pos += len(data)
+            return data
+
+        # 2) 整个音频都已经在缓存里，数据到此为止
+        if self.__cache_complete:
+            self.__data_over = True
+            return b''
+
+        # 3) 继续从网络读取
         if self.__data_over or self.__response is None:
             return b''
+
+        # 服务器不支持 Range，网络数据总是从 0 开始，先丢掉本地已经缓存过的那部分
+        while self.__network_skip > 0:
+            skipped = self.__response.raw.read(min(STREAM_READ_SIZE, self.__network_skip))
+            if not skipped:
+                self.__data_over = True
+                self.__save_cache()
+                return b''
+            self.__network_skip -= len(skipped)
 
         data = self.__response.raw.read(STREAM_READ_SIZE)
         if not data:
             self.__data_over = True
+            self.__save_cache()
+            return b''
 
+        # 新数据同时写入缓存并直接交给解码器，因此缓存读取位置要一起推进
+        self.__cache.extend(data)
+        self.__cache_pos += len(data)
         return data
+
+    def __load_cache(self):
+        """载入本地缓存（同一个链接只会尝试一次）"""
+        if self.__cache_url == self.mp3_url:
+            return
+
+        self.__cache_url = self.mp3_url
+        self.__cache = bytearray()
+        self.__cache_pos = 0
+        self.__cache_complete = False
+        self.__network_skip = 0
+
+        try:
+            cached = cache_mgr.get_voice_cache(self.mp3_url)
+        except Exception as e:
+            app_logger.log_exception(e)
+            cached = b''
+
+        if cached:
+            self.__cache = bytearray(cached)
+            self.__cache_complete = True
+            do_log(f"Voice cache loaded: {len(cached)} bytes")
+
+    def __save_cache(self):
+        """网络数据读取完毕：把完整的音频写入本地缓存文件"""
+        if self.__cache_complete or not self.__cache:
+            return
+
+        self.__cache_complete = True
+        try:
+            cache_mgr.save_voice_cache(self.mp3_url, bytes(self.__cache))
+            do_log(f"Voice cache saved: {len(self.__cache)} bytes")
+        except Exception as e:
+            app_logger.log_exception(e)
 
     def __write_pcm(self, stream_decoder) -> int:
         """把解码好的 PCM 写入声卡，返回本次写入的字节数
