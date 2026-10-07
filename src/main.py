@@ -8,7 +8,7 @@ from publics.audio_decoder import decoder
 from publics.cli_feats import handle_command_events, reset_udf
 from publics.base_ui_elements import base_ui
 from publics.base_ui_elements.message_box import MessageBox
-from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import common_webview
 from publics.winrt_url_share import winrt_share
 
 from publics.funcs import *
@@ -49,15 +49,21 @@ def set_qt_languages():
         return translators
 
 
-def check_webview2():
-    """检查用户的电脑是否安装了webview2"""
-    log_INFO(f'Checking webview2')
+def check_webview():
+    """检查当前平台的 webview 运行时是否可用"""
+    log_INFO(f'Checking webview runtime on {common_webview.PLATFORM}')
 
-    webview2.loadLibs()
-    if not webview2.isWebView2Installed() and os.name == 'nt':
-        MessageBox.warning(None, 'WebView2 尚未安装',
-                           '如果 WebView2 未安装，本程序的部分功能（如内置浏览器、视频播放器、网页登录等）将不可用。',
+    common_webview.loadLibs()
+    if common_webview.isWebViewInstalled():
+        return
+
+    if os.name == 'nt':
+        MessageBox.warning(None, 'WebView 运行时不可用',
+                           '本程序的内置浏览器、视频播放器、网页登录等功能依赖 WebView2 或 CEF。\n'
+                           '当前两者都不可用，相关功能将被禁用。',
                            MessageBox.Ok)
+    else:
+        log_INFO('webview runtime is not available, related features are disabled')
 
 
 def set_qt_scale_factor():
@@ -69,9 +75,15 @@ def set_qt_scale_factor():
 
 def set_qpa():
     """设置 QPA，Qt 平台抽象层"""
-    if os.name == 'posix':
-        # linux下使用wayland
-        os.environ['QT_QPA_PLATFORM'] = 'wayland'
+    if os.name != 'posix':
+        return
+
+    # 用户显式指定平台时不做干预
+    if 'QT_QPA_PLATFORM' in os.environ:
+        return
+
+    # linux下使用wayland
+    os.environ['QT_QPA_PLATFORM'] = 'wayland'
 
 
 def reset_cwd():
@@ -118,7 +130,7 @@ if __name__ == "__main__":
     # init .net/cpp libraries
     winrt_share.init_library()
     decoder.load_library()
-    check_webview2()
+    check_webview()
 
     # init theme elements
     base_ui.init_bg_pixmap()
@@ -138,5 +150,6 @@ if __name__ == "__main__":
     exit_code = app.exec()
 
     # exit program
+    common_webview.shutdown()
     logging.log_INFO(f'Qt event loop finished with exit code {exit_code}. Exiting...')
     sys.exit(exit_code)

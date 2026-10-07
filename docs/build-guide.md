@@ -59,7 +59,11 @@ sudo zypper install dpkg rpm-build
     // Linux 下是否构建 rpm 安装包，需要系统内已安装 rpmbuild，不填时默认为 true
     "build_rpm": true,
     // Linux 安装包的维护者信息，会写入 deb 的 Maintainer 字段与 rpm 的 changelog
-    "linux_maintainer": "CLB <clb-128258@users.noreply.github.com>"
+    "linux_maintainer": "CLB <12345>"
+  },
+  "cef_cfg": {
+    // 是否打包 CEF 内核
+    "bundle_cef": false
   },
   // 版本信息
   "version": {
@@ -103,37 +107,9 @@ python build.py --makefile .\build_config.json
 
 ## Linux 安装包
 
-在 Linux 下构建时，脚本会把 pyinstaller 生成的程序目录整理成标准的系统安装结构，再调用系统自带的打包工具生成 deb 与 rpm 安装包。
-安装包内的文件布局如下：
-
-| 安装路径 | 说明 |
-| --- | --- |
-| `/opt/TiebaDesktop/` | 程序本体（可执行文件与其依赖文件） |
-| `/usr/bin/tiebadesktop` | 启动脚本，用于从终端或应用菜单启动程序 |
-| `/usr/share/applications/tiebadesktop.desktop` | 桌面菜单入口 |
-| `/usr/share/icons/hicolor/512x512/apps/tiebadesktop.png` | 应用图标 |
-| `/usr/share/pixmaps/tiebadesktop.png` | 应用图标（兼容旧环境） |
-| `/usr/share/doc/tiebadesktop/copyright` | 版权信息 |
-
-打包前脚本会自动清理 `work_temp/binres` 目录：Windows 专属的依赖文件（`toast.exe`、WebView2 与 ShareBridge 的
-`.dll` 文件等）在 Linux 下不会被使用，会被删除，只保留 Linux 需要的二进制文件（无后缀名的可执行文件与 `.so`
-动态库，例如内置解码库 `binres/libtieba_audiodec.so`），清理后产生的空目录也会一并删除。因此 deb、rpm 与发行
-压缩包都不会再携带这些文件，可以省下可观的体积。
-
-用户可以像安装其它软件一样安装与卸载本程序：
-
-```commandline
-# Debian / Ubuntu
-sudo apt install ./TiebaDesktop-<版本>-linux64.deb
-sudo apt remove tiebadesktop
-
-# Fedora / RHEL / openSUSE
-sudo dnf install ./TiebaDesktop-<版本>-linux64.rpm
-sudo dnf remove tiebadesktop
-```
-
 安装包中的运行依赖来自 deb 的 Depends 字段与 rpm 的 Requires 字段，默认值写在 `build.py` 的 `DEFAULT_DEB_DEPENDS`
-与 `DEFAULT_RPM_REQUIRES` 中。如果目标系统的依赖包名与默认值不一致，可以在构建配置的 `installer_cfg` 中覆盖：
+与 `DEFAULT_RPM_REQUIRES` 中。  
+如果目标系统的依赖包名与默认值不一致，可以在构建配置的 `installer_cfg` 中覆盖：
 
 ```json lines
 {
@@ -144,8 +120,6 @@ sudo dnf remove tiebadesktop
 }
 ```
 
-用户数据（登录信息、偏好选项、历史记录等）保存在用户主目录下的 `~/.local/share/TiebaDesktop`，
-安装与卸载安装包都不会删除这些数据，需要清理时可以手动删除该目录。
 
 ## 常见问题
 

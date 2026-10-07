@@ -72,7 +72,7 @@ jobs:
           "
 
       # ==========================================
-      # 4) 编译内置音频解码库（mp3 + amr-nb，语音播放不再依赖 ffmpeg）
+      # 4) 编译内置音频解码库（mp3 + amr-nb）
       # ==========================================
       - name: Compile Audio Decoder
         run: |
@@ -81,9 +81,9 @@ jobs:
           cd ${{ github.workspace }}
 
       # ==========================================
-      # 5) 编译 C++ DLL
+      # 5) 编译 winrt_url_share
       # ==========================================
-      - name: Compile C++ DLL
+      - name: Compile winrt_url_share
         run: |
           cd ${{ github.workspace }}\src\publics\winrt_url_share
           ${{ github.workspace }}\src\publics\winrt_url_share\run_build.bat
@@ -99,16 +99,11 @@ jobs:
       # 7) 设置构建配置文件 (只在本地修改，不 push)
       # ==========================================
       - name: Generate Build Configuration JSON
-        env:
-          # 从 GitHub 上下文中获取提交 Hash（完整的 40 位哈希）
-          COMMIT_SHA: ${{ github.sha }}
         run: |
           python -c "
           import json, sys, os, pathlib
           
           config_path = r'${{ github.workspace }}\build-tools\build_config.json'
-          full_sha = os.getenv('COMMIT_SHA', 'unknown')
-          short_sha = full_sha[:7]
           
           with open(config_path, 'rt', encoding='utf-8') as f:
               cfg_json_item = json.loads(f.read())
@@ -119,6 +114,10 @@ jobs:
           
           cfg_json_item['installer_cfg']['build_nsis'] = True
           cfg_json_item['installer_cfg']['makensis_path'] = 'C:\\Program Files (x86)\\NSIS\\makensis.exe'
+          cfg_json_item['installer_cfg']['build_deb'] = False
+          cfg_json_item['installer_cfg']['build_rpm'] = False
+
+          cfg_json_item['cef_cfg']['bundle_cef'] = False
           
           cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions'
           
@@ -204,7 +203,7 @@ jobs:
           fi
 
       # ==========================================
-      # 4) 编译内置音频解码库（mp3 + amr-nb，语音播放不再依赖 ffmpeg）
+      # 4) 编译内置音频解码库（mp3 + amr-nb）
       # ==========================================
       - name: Compile Audio Decoder
         run: |
@@ -244,6 +243,8 @@ jobs:
           cfg_json_item['installer_cfg']['build_nsis'] = False
           cfg_json_item['installer_cfg']['build_deb'] = True
           cfg_json_item['installer_cfg']['build_rpm'] = True
+
+          cfg_json_item['cef_cfg']['bundle_cef'] = False
 
           cfg_json_item['version']['version_string'] = cfg_json_item['version']['version_string'] + '-github-actions'
 

@@ -24,7 +24,7 @@ from publics import (qt_window_mgr, profile_mgr, cache_mgr, qt_image,
 from publics.base_ui_elements.base_ui import BaseQMainWindow
 from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
-from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import common_webview
 from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.baidu_features.baidu_passport_login import QRLoginDialog, LoginWebView, SeniorLoginDialog
@@ -460,6 +460,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
             self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
+            self.checkBox_33.setChecked(profile_mgr.local_config["webview_settings"]["enable_osr"])
             self.checkBox_27.setChecked(profile_mgr.local_config["other_settings"]["disable_ssl_verify"])
             self.comboBox_3.setCurrentIndex(profile_mgr.local_config['web_browser_settings']['url_open_policy'])
             self.checkBox_30.setChecked(
@@ -536,6 +537,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["other_settings"]["mw_default_page"] = self.comboBox_4.currentIndex()
             profile_mgr.local_config["webview_settings"]["disable_font_cover"] = self.checkBox_20.isChecked()
             profile_mgr.local_config["webview_settings"]["view_frozen"] = self.checkBox_21.isChecked()
+            profile_mgr.local_config["webview_settings"]["enable_osr"] = self.checkBox_33.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"] = self.checkBox_23.isChecked()
             profile_mgr.local_config["theme_settings"]["bright_dark_policy"] = self.comboBox_6.currentIndex()
             profile_mgr.local_config["thread_view_settings"]["show_statement"] = self.checkBox_24.isChecked()
@@ -648,6 +650,8 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                               f'TiebaRequestMgr Client Version {request_mgr.TIEBA_CLIENT_VERSION}')
         self.label_20.setText(f'操作系统版本：{platform.system()} {platform.version()}, on {platform.machine()} CPU')
         self.label_16.setText('当前系统时间：' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+        self.label_77.setText(f'WebView 信息：on {common_webview.PLATFORM} '
+                              f'version {common_webview.getWebViewVersion()}')
 
     def select_all_caches(self):
         safetyClearTypeCb = [self.checkBox_4,
@@ -716,11 +720,11 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             self.load_animation.show()
 
             need_webview_options = [self.checkBox_7.isChecked(), self.checkBox_6.isChecked()]
-            need_load_webview = webview2.isWebView2Installed() and True in need_webview_options
-            webview = webview2.QWebView2View()
+            need_load_webview = common_webview.isWebViewInstalled() and True in need_webview_options
+            webview = common_webview.CommonWebView()
             if need_load_webview:
                 webview.setProfile(
-                    webview2.WebViewProfile(
+                    common_webview.WebViewProfile(
                         data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}'
                     )
                 )
@@ -728,7 +732,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
             start_background_thread(self.clear_caches, args=(webview, need_load_webview))
 
-    def clear_caches(self, webview_obj: webview2.QWebView2View, webview_loaded):
+    def clear_caches(self, webview_obj: common_webview.CommonWebView, webview_loaded):
         def clear_folder(path):
             if not os.path.isdir(path):
                 return
@@ -863,10 +867,18 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                 data['main_profile_size'] += os.stat(f'{consts.datapath}/{i}').st_size
 
         data['default_webview_size'] = scan_tree_total_size(f'{consts.datapath}/webview_data/default')
-        data['current_webview_cache_size'] = scan_tree_total_size(
-            f'{consts.datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Cache')
-        data['current_webview_cookie_size'] = scan_tree_total_size(
-            f'{consts.datapath}/webview_data/{profile_mgr.current_uid}/EBWebView/Default/Network')
+
+        webview_udf_path = f'{consts.datapath}/webview_data/{profile_mgr.current_uid}'
+        webview2_cache_size = scan_tree_total_size(f'{webview_udf_path}/EBWebView/Default/Cache')
+        cef_cache_size = scan_tree_total_size(f'{webview_udf_path}/Default/Cache')
+        cef_cache_size_2 = scan_tree_total_size(f'{webview_udf_path}/Cache')
+        webview2_cookie_size = scan_tree_total_size(f'{webview_udf_path}/EBWebView/Default/Network')
+        cef_cookie_size = scan_tree_total_size(f'{webview_udf_path}/Default/Network')
+        cef_cookie_size_2 = scan_tree_total_size(f'{webview_udf_path}/Network')
+
+        data['current_webview_cache_size'] = webview2_cache_size + cef_cache_size + cef_cache_size_2
+        data['current_webview_cookie_size'] = webview2_cookie_size + cef_cookie_size + cef_cookie_size_2
+
         data['total_webview_size'] = scan_tree_total_size(f'{consts.datapath}/webview_data')
         data['fidcache_num'] = len(aiotieba.helper.cache._fname2fid.keys())
         data['fidcache_size'] = os.stat(f'{consts.datapath}/cache_index/fidfname_index.json').st_size
@@ -1421,7 +1433,7 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
             self.account_manager.delete_account_async(self.account_manager.current_account.uid)
 
     def login_exec(self):
-        if webview2.isWebView2Installed():
+        if common_webview.isWebViewInstalled():
             d = LoginWebView()
             d.resize(1065, 680)
         else:

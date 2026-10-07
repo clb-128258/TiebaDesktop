@@ -58,3 +58,11 @@
 用法：`--sign-grows`  
 
 将为当前激活账号执行贴吧的成长等级签到，逻辑与软件内`一键签到`功能相同。
+
+## 强制指定 WebView 方案
+
+参数性质：任务（第一层）  
+用法：`--force-webview=WEBVIEW`
+
+可用的 `WEBVIEW` 字段有 `webview2` `cef`.  
+默认情况下，程序内部会自动选择 WebView 方案。如果需要强制指定使用哪种 WebView，请传入该参数。

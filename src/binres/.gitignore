@@ -1,2 +1,5 @@
-./ffmpeg.exe
-./ShareBridge.dll
+/ffmpeg.exe
+/ShareBridge.dll
+/cef/
+/tieba_audiodec.dll
+/libtieba_audiodec.so

@@ -5,3 +5,7 @@ pyperclip==1.9.0
 beautifulsoup4==4.13.4
 pycryptodome
 pyaudio
+# 内置浏览器 / 网页登录 / 贴内视频播放使用 CEF（不使用 Qt WebEngine），
+# CEF 不是 pip 依赖：需要下载 CEF 二进制发行版并编译桥接库，
+# 详见 src/publics/base_ui_elements/cef_features/README.md。
+# 若不集成 CEF，程序照常运行，相关功能自动降级。

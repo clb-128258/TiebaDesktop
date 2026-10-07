@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>995</width>
-    <height>638</height>
+    <width>1000</width>
+    <height>629</height>
    </rect>
   </property>
   <property name="font">
@@ -184,9 +184,9 @@ QListWidget::item:selected:hover {
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>0</y>
-            <width>750</width>
-            <height>2069</height>
+            <y>-1514</y>
+            <width>755</width>
+            <height>2125</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -1361,13 +1361,58 @@ QListWidget::item:selected:hover {
               <bool>true</bool>
              </property>
              <layout class="QGridLayout" name="gridLayout_22">
-              <item row="9" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_36" stretch="0,0,0">
+              <item row="13" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_29" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>5</number>
+                </property>
+                <item>
+                 <widget class="QPushButton" name="pushButton_8">
+                  <property name="text">
+                   <string>重置所有设置</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_44">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{
+	color: grey;
+}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>点击左侧按钮可使所有设置恢复到默认状态</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_38">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="12" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_52" stretch="0,0,0">
                 <property name="topMargin">
                  <number>0</number>
                 </property>
                 <item>
-                 <spacer name="horizontalSpacer_47">
+                 <spacer name="horizontalSpacer_79">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1383,7 +1428,7 @@ QListWidget::item:selected:hover {
                  </spacer>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_50">
+                 <widget class="QLabel" name="label_76">
                   <property name="font">
                    <font>
                     <pointsize>9</pointsize>
@@ -1394,42 +1439,12 @@ QListWidget::item:selected:hover {
 </string>
                   </property>
                   <property name="text">
-                   <string>可能导致部分网页颜色样式不正确</string>
+                   <string>[仅支持 CEF] [测试功能] 可解决兼容性问题，会导致页面性能下降</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_48">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="3" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_25" stretch="0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QCheckBox" name="checkBox_20">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
-                  <property name="text">
-                   <string>禁用 WebView 字体重设</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_31">
+                 <spacer name="horizontalSpacer_80">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1581,81 +1596,6 @@ QListWidget::item:selected:hover {
                 </item>
                </layout>
               </item>
-              <item row="5" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_28" stretch="0,0">
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QCheckBox" name="checkBox_21">
-                  <property name="toolTip">
-                   <string/>
-                  </property>
-                  <property name="text">
-                   <string>启用 WebView 界面冻结</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_36">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item row="10" column="0">
-               <layout class="QHBoxLayout" name="horizontalLayout_29" stretch="0,0,0">
-                <property name="topMargin">
-                 <number>5</number>
-                </property>
-                <item>
-                 <widget class="QPushButton" name="pushButton_8">
-                  <property name="text">
-                   <string>重置所有设置</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_44">
-                  <property name="font">
-                   <font>
-                    <pointsize>9</pointsize>
-                   </font>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel{
-	color: grey;
-}
-</string>
-                  </property>
-                  <property name="text">
-                   <string>点击左侧按钮可使所有设置恢复到默认状态</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_38">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
               <item row="8" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_35" stretch="0,0">
                 <property name="topMargin">
@@ -1738,6 +1678,118 @@ QListWidget::item:selected:hover {
                 </item>
                </layout>
               </item>
+              <item row="5" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_28" stretch="0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="checkBox_21">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>启用 WebView 界面冻结</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_36">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="11" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_51" stretch="0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="checkBox_33">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>启用 OSR（离屏渲染）</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_78">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="9" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_36" stretch="0,0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <spacer name="horizontalSpacer_47">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>17</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_50">
+                  <property name="font">
+                   <font>
+                    <pointsize>9</pointsize>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel{color: grey;}
+</string>
+                  </property>
+                  <property name="text">
+                   <string>可能导致部分网页颜色样式不正确</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_48">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
               <item row="4" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout_26" stretch="0,0,0">
                 <property name="topMargin">
@@ -1777,6 +1829,36 @@ QListWidget::item:selected:hover {
                 </item>
                 <item>
                  <spacer name="horizontalSpacer_33">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item row="3" column="0">
+               <layout class="QHBoxLayout" name="horizontalLayout_25" stretch="0,0">
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QCheckBox" name="checkBox_20">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="text">
+                   <string>禁用 WebView 字体重设</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_31">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -3197,8 +3279,8 @@ QListWidget::item:selected:hover {
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>853</width>
-            <height>570</height>
+            <width>858</width>
+            <height>561</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_31">
@@ -3625,6 +3707,19 @@ QListWidget::item:selected:hover {
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_11">
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_20">
+            <property name="text">
+             <string>操作系统版本：</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
            <widget class="QLabel" name="label_25">
             <property name="text">
@@ -3648,6 +3743,19 @@ QListWidget::item:selected:hover {
             </property>
            </widget>
           </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_22">
+            <property name="text">
+             <string>用户数据目录：</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextBrowserInteraction</set>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_16">
             <property name="text">
@@ -3658,20 +3766,7 @@ QListWidget::item:selected:hover {
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_20">
-            <property name="text">
-             <string>操作系统版本：</string>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-            <property name="textInteractionFlags">
-             <set>Qt::TextBrowserInteraction</set>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="0">
+          <item row="7" column="0">
            <widget class="QLabel" name="label_23">
             <property name="text">
              <string>Qt 版本：</string>
@@ -3681,10 +3776,10 @@ QListWidget::item:selected:hover {
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_22">
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_77">
             <property name="text">
-             <string>用户数据目录：</string>
+             <string>浏览内核版本：</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>

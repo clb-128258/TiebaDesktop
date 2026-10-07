@@ -2,6 +2,9 @@
     "src_code_path": "H:\\Code\\TiebaDesktop\\src",
     "py_environ_path": "H:\\Code\\TiebaDesktop\\.venv",
     "sevenzip_path": "C:\\Program Files\\7-Zip\\7z.exe",
+    "cef_cfg": {
+        "bundle_cef": false
+    },
     "installer_cfg": {
         "build_nsis": true,
         "makensis_path": "D:\\Program Files (x86)\\NSIS\\makensis.exe",

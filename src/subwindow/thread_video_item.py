@@ -5,16 +5,15 @@ from PyQt5.QtWidgets import QFileDialog
 import consts
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, http_downloader, format_second, large_num_to_string, \
-    open_url_in_browser
+    open_url_in_browser, get_dict_value_treely
 from publics import qt_image, profile_mgr, funcs
-from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import common_webview
 from publics.base_ui_elements import base_ui
 from ui import thread_video_item
 import base64
-import os
 
 
-class VideoWebView(webview2.QWebView2View):
+class VideoWebView(common_webview.CommonWebView):
     def __init__(self, parent):
         super().__init__()
         self.setParent(parent)
@@ -23,7 +22,7 @@ class VideoWebView(webview2.QWebView2View):
         self.loading_widget = LoadingFlashWidget(caption='视频正在赶来的路上...')
         self.loading_widget.cover_widget(self)
 
-        self.webview_profile = webview2.WebViewProfile(
+        self.webview_profile = common_webview.WebViewProfile(
             data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}',
             enable_transparent_bg=True,
             enable_zoom_factor=False,
@@ -31,7 +30,10 @@ class VideoWebView(webview2.QWebView2View):
             enable_context_menu=False,
             enable_keyboard_keys=False,
             enable_link_hover_text=False,
-            user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}', )
+            user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
+            enable_osr=get_dict_value_treely(
+                profile_mgr.local_config,
+                ['webview_settings', 'enable_osr'], False))
 
         self.titleChanged.connect(self.setWindowTitle)
         self.iconChanged.connect(self.setWindowIcon)
@@ -64,6 +66,7 @@ class VideoWebView(webview2.QWebView2View):
     def show_in_parent(self):
         self.setParent(self.parent_window)  # 重新回到父组件
         self.setGeometry(0, 0, self.parent_window.width(), self.parent_window.height())
+        self.resize(self.parent_window.width(), self.parent_window.height())
         self.show()
 
 
@@ -191,9 +194,6 @@ class ThreadVideoItem(base_ui.InsideWidgetBaseQWidget, thread_video_item.Ui_Form
             self.on_webview_crashed()
 
     def start_video_webview(self):
-        if os.name != 'nt':
-            return
-
         if self.webview:
             self.webview.show()
             self.webview.reload()

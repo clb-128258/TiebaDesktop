@@ -16,6 +16,7 @@ TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客�
 - 网络与解析：`requests`、`beautifulsoup4`
 - 加密与音频：`pycryptodome`、`pyaudio`（Linux 需要系统提供 portaudio，如 Debian 系的 `portaudio19-dev`）
 - Windows 专用：`pywin32`、`pythonnet`、`windows_toasts`，以及 `src/binres/` 下的 `.exe`/`.dll`（WebView2、toast、ShareBridge 等）
+- CEF webview（可选）：内置浏览器、网页登录、贴内视频播放使用 CEF 作为跨平台内核（`src/publics/base_ui_elements/cef_features/`），Windows 下优先用系统自带的 WebView2，系统没有 WebView2 时自动回落到 CEF，Linux 下直接用 CEF。CEF 通过自带桥接库（`cef_bridge.cpp` + ctypes）接入，不使用 cefpython3（版本旧且音视频受限），因此可以跟随官方最新 CEF；CEF 运行时（`src/binres/cef/`）是可选的，缺失时相关功能自动降级，打包时用 `cef_cfg.bundle_cef` 控制是否集成以调整体积。Linux 下 CEF 以子窗口嵌入 Qt 需要 X11（Wayland 会话走 XWayland）。CEF 版本与 DevTools：本仓库用 CEF 109.1.18（兼容 Windows 7、自带音视频编解码）编译验证；DevTools 由 Qt 顶层窗口承载，关闭窗口即销毁并让 CEF 完成清理，详见 `src/publics/base_ui_elements/cef_features/README.md`。内置浏览器能力：favicon、HTTP 请求 / 响应观察（HttpDataRewriter 的 onRequestCaught / onResponseCaught，登录取 token 与发贴验证码依赖它）、下载面板、任务管理器、另存为网页均由 CEF 桥接层实现，响应体最多保留 4MB，详见同目录 README 的「内置浏览器能力」一节。
 - 打包：PyInstaller、7-Zip；Windows 可选 NSIS，Linux 可选 dpkg-deb 与 rpmbuild
 
 依赖清单按平台拆分：Windows 见 `src/requirements.txt`，Linux 见 `src/requirements-linux.txt`（不含 `pywin32`、`pythonnet`、`windows_toasts` 等 Windows 专用库）。跨平台代码依赖 `os.name`、`sys.platform`、`platform.system()` 做分支判断；Windows 专用库只能在对应分支内导入，否则会破坏 Linux 下的启动。
@@ -86,6 +87,8 @@ pip install -r src/requirements-linux.txt
   - 登录/内置浏览器相关功能需要系统安装 WebView2 Runtime。
 - Linux：
   - 无需 WebView2 与 `ShareBridge.dll`，可跳过上述步骤。
+  - 内置浏览器/网页登录/贴内视频播放需要 CEF（可选）：见 `src/publics/base_ui_elements/cef_features/README.md`，
+    下载 CEF 二进制发行版后编译桥接库并部署运行时到 `src/binres/cef/`；不集成时相关功能自动降级。
 
 ### 5. 运行应用
 
@@ -96,7 +99,7 @@ python main.py
 
 ### 平台差异（重要）
 
-- 内置浏览器、网页登录、贴内视频播放基于 WebView2，目前仅 Windows 可用；`webview2.isWebView2Installed()` 在非 Windows 下固定返回 `False`，Linux 上这些功能不可用。改动相关代码时要确认非 Windows 下的降级行为。
+- 内置浏览器、网页登录、贴内视频播放统一通过 `src/publics/base_ui_elements/common_webview.py` 调用：后端按可用性选择（Windows 优先 WebView2、否则 CEF；Linux 用 CEF），也可以用环境变量 `TIEBADESKTOP_WEBVIEW=webview2|cef|auto` 强制指定。CEF 运行时缺失时 `common_webview.isWebViewInstalled()` 返回 `False`，相关功能自动降级；改动相关代码时应统一调用 common_webview，不要直接 import 具体后端实现。
 - WinRT 分享、`toast.exe`/`windows_toasts` 通知、Aero/Mica/Acrylic 窗口效果均为 Windows 专用，非 Windows 下应静默跳过。
 - 默认用户数据目录：Windows 为 `%USERPROFILE%/AppData/Local/TiebaDesktop`，Linux 为 `~/.local/share/TiebaDesktop`。
 - Linux 打包会清理 `work_temp/binres` 中的 `.exe`/`.dll`，只保留 Linux 需要的二进制文件（无后缀名的可执行文件与 `.so` 动态库）。

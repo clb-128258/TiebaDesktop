@@ -16,7 +16,7 @@ import consts
 from publics import qt_image, profile_mgr, request_mgr, account_mgr, app_logger
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.message_box import MessageBox
-from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import common_webview
 from publics.app_logger import log_exception, log_INFO
 from publics.funcs import start_background_thread, get_exception_string, get_dict_value_treely, \
     save_json
@@ -378,18 +378,23 @@ class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
 class LoginWebView(base_ui.WindowBaseQDialog):
     """登录百度账号的webview"""
 
-    class LoginRewriter(QObject, webview2.HttpDataRewriter):
+    class LoginRewriter(QObject, common_webview.HttpDataRewriter):
         is_token_got = False
         tokenGot = pyqtSignal(dict)
 
         def onRequestCaught(self, url: str, method: str, header: typing.Dict[str, str],
                             content: typing.Optional[bytes]):
             if not self.is_token_got:
+                # 未登录时的请求可能不带 Cookie 请求头，先判断再解析
+                cookie_text = header.get('Cookie', '')
+                if not cookie_text:
+                    return url, method, header, content
+
                 tlist = [
                     'BDUSS',
                     'STOKEN']
 
-                cookies_dic = self.parseCookieToDict(header['Cookie'])
+                cookies_dic = self.parseCookieToDict(cookie_text)
                 login_cookies = {}
                 for k, v in cookies_dic.items():
                     if k in tlist:
@@ -416,23 +421,26 @@ class LoginWebView(base_ui.WindowBaseQDialog):
         # 初始化主题
         self.reset_theme()
 
-        self.webview = webview2.QWebView2View()
+        self.webview = common_webview.CommonWebView()
         self.http_catcher = self.LoginRewriter()
         self.http_catcher.tokenGot.connect(self.start_login)
         self.webview.setParent(self)
         self.webview.newtabSignal.connect(self.open_in_current_page)
-        self.profile = webview2.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/default',
-                                               user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
-                                               enable_link_hover_text=False,
-                                               enable_zoom_factor=False,
-                                               enable_error_page=False,
-                                               enable_context_menu=False,
-                                               enable_keyboard_keys=False,
-                                               handle_newtab_byuser=False,
-                                               http_rewriter={'*://tieba.baidu.com/*': self.http_catcher},
-                                               enable_transparent_bg=get_dict_value_treely(
-                                                   profile_mgr.local_config,
-                                                   ['webview_settings', 'transparent_bg_color'], False))
+        self.profile = common_webview.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/default',
+                                                     user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
+                                                     enable_link_hover_text=False,
+                                                     enable_zoom_factor=False,
+                                                     enable_error_page=False,
+                                                     enable_context_menu=False,
+                                                     enable_keyboard_keys=False,
+                                                     handle_newtab_byuser=False,
+                                                     http_rewriter={'*://tieba.baidu.com/*': self.http_catcher},
+                                                     enable_transparent_bg=get_dict_value_treely(
+                                                         profile_mgr.local_config,
+                                                         ['webview_settings', 'transparent_bg_color'], False),
+                                                     enable_osr=get_dict_value_treely(
+                                                         profile_mgr.local_config,
+                                                         ['webview_settings', 'enable_osr'], False))
         self.webview.setProfile(self.profile)
         self.webview.loadAfterRender('https://passport.baidu.com/v2/?login&u=https%3A%2F%2Ftieba.baidu.com')
         self.webview.initRender()
@@ -443,13 +451,15 @@ class LoginWebView(base_ui.WindowBaseQDialog):
             self.close()
 
     def closeEvent(self, a0):
-        if not self.islogin:
+        if not self.islogin and not self.http_catcher.is_token_got:
             if MessageBox.information(self, '确认要关闭登录窗口吗？', '这将中止目前的登录流程。',
                                       MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
                 self.webview.destroyWebviewUntilComplete()
                 a0.accept()
             else:
                 a0.ignore()
+        elif not self.islogin and self.http_catcher.is_token_got:
+            a0.ignore()
         else:
             if self.need_restart:
                 MessageBox.information(self, '账号已登录成功，但还需你完成最后一步',

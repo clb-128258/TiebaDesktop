@@ -44,9 +44,10 @@ local_config_model = {
         "reset_dpi": -1
     },
     "webview_settings": {
-        "disable_font_cover": False,
+        "disable_font_cover": True,
         'view_frozen': False,
-        "transparent_bg_color": False
+        "transparent_bg_color": False,
+        "enable_osr": False
     },
     "theme_settings": {
         "bright_dark_policy": 0,

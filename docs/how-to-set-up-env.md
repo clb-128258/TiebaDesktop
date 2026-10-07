@@ -25,8 +25,11 @@
 
 ## 克隆项目
 
-在 `project` 目录下执行命令 `git clone https://github.com/clb-128258/TiebaDesktop.git`.  
-如果没有 git，也可以直接从 github 下载源代码的 zip 压缩包，并解压到 `project` 文件夹下。
+```commandline
+cd project
+git clone https://github.com/clb-128258/TiebaDesktop.git
+```
+
 
 ## 创建并配置虚拟环境
 
@@ -44,13 +47,19 @@ pip install -r project/src/requirements.txt   // 安装依赖
 全都复制到`project/venv/Lib/site-packages/aiotieba` 中，  
 并用前者中的文件**替换**掉后者中出现冲突的文件。
 
-## 编译音频解码库
+## 编译 C++ 组件
 
-语音播放使用项目自带的内置音频解码库（`project/src/publics/audio_decoder`，其中 mp3 使用 minimp3，贴吧语音使用的 amr-nb 使用内嵌的 opencore-amr）。为保证各个平台的通用性，仓库不提供该解码库的二进制版本，需要自行编译。
+本项目使用了多个 C++ 桥接库（WinrtShareBridge、音频解码库、CEF 等）。  
+为方便部署，执行 `build-all` 脚本即可直接编译所有 C++ 依赖。
+
+> [!important]
+>
+> 有关 CEF：构建可选，需要提供已编译好的 CEF 文件，详情参见 [CEF 集成说明](https://github.com/clb-128258/TiebaDesktop/blob/main/src/publics/base_ui_elements/cef_features/README.md)  
+> 如果不需要编译 CEF，下文中的 `CEF_PATH` 参数在实际执行时不传入即可。
 
 Windows：
 
-1) 在 `project/src/publics/audio_decoder` 目录下打开终端（命令提示符）
+1) 在 `project/src` 目录下打开命令提示符
 2) 初始化 MSVC 编译器环境：
     ```commandline
     VS_INSTDIR\VC\Auxiliary\Build\vcvarsARCH.bat
@@ -58,45 +67,24 @@ Windows：
    其中 `VS_INSTDIR` 为你的 Visual Studio 安装目录，`ARCH` 为你的系统架构（如`64` `32`等），请根据实际情况进行修改。
 3) 运行编译脚本：
     ```commandline
-    run_build.bat
+    build-all.bat CEF_PATH
     ```
-4) 编译完成后，`project/src/binres` 目录下应当出现 `tieba_audiodec.dll` 文件，如果没有则是编译出了问题。
+    其中 `CEF_PATH` 为你的 CEF 二进制发行版路径，可不传。
+4) 编译完成后，`project/src/binres` 目录下应当出现   
+`tieba_audiodec.dll` `ShareBridge.dll` `cef/*.dll` 等文件，  
+如果没有则是编译出了问题。
 
 Linux：
 
-```commandline
-cd project/src/publics/audio_decoder
-bash build_linux.sh
-```
-
-编译完成后，`project/src/binres` 目录下应当出现 `libtieba_audiodec.so` 文件，如果没有则是编译出了问题。
-
-## 编译 WinrtShareBridge
-
-> [!note]
->
-> 如果目标系统不是 Windows，则无需进行此步骤。
-
-`WinrtShareBridge` 是本项目内用于调起 Windows 分享的 C++ 动态链接库。  
-为保证各个平台的通用性，本项目不提供 `ShareBridge.dll` 的二进制版本，你需要自行编译。  
-以下是编译方法：
-
-1) 在 `project/src/publics/winrt_url_share` 目录下打开终端（命令提示符）
-2) 初始化 MSVC 编译器环境：
+1) 在终端运行编译脚本：
     ```commandline
-    VS_INSTDIR\VC\Auxiliary\Build\vcvarsARCH.bat
+    cd project/src
+    bash build-all.sh CEF_PATH
     ```
-   其中 `VS_INSTDIR` 为你的 Visual Studio 安装目录，`ARCH` 为你的系统架构（如`64` `32`等），请根据实际情况进行修改。
-3) 运行编译批处理：
-    ```commandline
-    run_build.bat
-    ```
-   编译过程会自动开始。
-4) 编译完成后，`project/src/binres` 目录下应当出现 `ShareBridge.dll` 文件，如果没有则是编译出了问题。
-
-> [!warning]
->
-> 如果 `project/src/publics/winrt_url_share/build` 目录存在，请先删掉这个目录，否则编译会出错。
+    其中 `CEF_PATH` 为你的 CEF 二进制发行版路径，可不传。
+2) 编译完成后，`project/src/binres` 目录下应当出现   
+`libtieba_audiodec.so` `cef/*.so` 等文件，  
+如果没有则是编译出了问题。
 
 至此，本项目的环境全部配置完成。
 

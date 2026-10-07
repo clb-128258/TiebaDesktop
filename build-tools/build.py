@@ -17,7 +17,6 @@ import os
 import shutil
 import platform
 
-
 # ---------------------------------------------------------- Linux 打包相关常量
 
 # 包名与可执行文件名，同时也是桌面菜单中使用的图标名
@@ -558,8 +557,15 @@ def cleanup_binres_for_linux(binres_dir='./work_temp/binres'):
     deleted_count = 0
     deleted_size = 0
 
+    # CEF 运行时（binres/cef 下）在 Linux 上同样需要，整体跳过
+    cef_dir = os.path.join(binres_dir, 'cef')
+
     # topdown=False 保证先处理子目录中的文件，再判断父目录是否已被清空
     for root, dirs, files in os.walk(binres_dir, topdown=False):
+        if os.path.abspath(root) == os.path.abspath(cef_dir) or \
+                os.path.abspath(root).startswith(os.path.abspath(cef_dir) + os.sep):
+            continue
+
         for name in files:
             if is_linux_binary(name):
                 continue
@@ -570,7 +576,7 @@ def cleanup_binres_for_linux(binres_dir='./work_temp/binres'):
             deleted_count += 1
             print(f'[cleanup_binres_for_linux] {file_path} has been deleted')
 
-        if root != binres_dir and not os.listdir(root):
+        if root != binres_dir and os.path.abspath(root) != os.path.abspath(cef_dir) and not os.listdir(root):
             os.rmdir(root)
             print(f'[cleanup_binres_for_linux] empty dir {root} has been deleted')
 
@@ -662,6 +668,25 @@ def copy_source(cfg):
         shutil.copytree(cfg['src_code_path'], './work_temp')
 
 
+def handle_cef_bundle(cfg):
+    """
+    根据配置决定是否把 CEF 运行时打进发行包。
+    """
+    cef_cfg = cfg.get('cef_cfg') or {}
+    bundle = bool(cef_cfg.get('bundle_cef', False))
+
+    binres_dir = './work_temp/binres'
+    cef_dir = os.path.join(binres_dir, 'cef')
+
+    if not bundle:
+        if os.path.isdir(cef_dir):
+            shutil.rmtree(cef_dir)
+            print('[handle_cef_bundle] CEF runtime has been removed from package')
+        return
+
+    print('[handle_cef_bundle] CEF has been bundled into the package')
+
+
 def main():
     mkfile = get_cfg_path()
     mkfile_config = load_json(mkfile)
@@ -670,6 +695,7 @@ def main():
     copy_source(mkfile_config)
     run_pyinstaller(mkfile_config)
     cleanup_pyinstaller_file()
+    handle_cef_bundle(mkfile_config)
     pack_compressed(mkfile_config)
     compile_nsis_pkg(mkfile_config)
     compile_linux_pkg(mkfile_config)

@@ -13,7 +13,7 @@ import consts
 from publics import profile_mgr, app_logger, qt_image
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.message_box import MessageBox
-from publics.base_ui_elements.windows_features import webview2
+from publics.base_ui_elements import common_webview
 from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.funcs import start_background_thread, get_exception_string, get_dict_value_treely, \
     open_url_in_browser, show_label_pixmap_with_animation
@@ -26,7 +26,7 @@ from ui import thread_publisher, post_verify_code
 class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
     """发贴遇到验证码时，显示验证码网页的webview"""
 
-    class CaptchaDataGetter(QObject, webview2.HttpDataRewriter):
+    class CaptchaDataGetter(QObject, common_webview.HttpDataRewriter):
         is_captcha_token_got = False
         captchaTokenGot = pyqtSignal(dict)
 
@@ -60,23 +60,27 @@ class AddPostCaptchaWebView(base_ui.WindowBaseQDialog):
         # 初始化主题
         self.reset_theme()
 
-        self.webview = webview2.QWebView2View()
+        self.webview = common_webview.CommonWebView()
         self.http_catcher = self.CaptchaDataGetter()
         self.http_catcher.captchaTokenGot.connect(self.on_captcha_succeed)
         self.webview.setParent(self)
-        self.profile = webview2.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}',
-                                               user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
-                                               enable_link_hover_text=False,
-                                               enable_zoom_factor=False,
-                                               enable_error_page=True,
-                                               enable_context_menu=True,
-                                               enable_keyboard_keys=True,
-                                               handle_newtab_byuser=False,
-                                               http_rewriter={
-                                                   '*://seccaptcha.baidu.com/v1/webapi/verint/verify/*': self.http_catcher},
-                                               enable_transparent_bg=get_dict_value_treely(
-                                                   profile_mgr.local_config,
-                                                   ['webview_settings', 'transparent_bg_color'], False))
+        self.profile = common_webview.WebViewProfile(
+            data_folder=f'{consts.datapath}/webview_data/{profile_mgr.current_uid}',
+            user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
+            enable_link_hover_text=False,
+            enable_zoom_factor=False,
+            enable_error_page=True,
+            enable_context_menu=True,
+            enable_keyboard_keys=True,
+            handle_newtab_byuser=False,
+            http_rewriter={
+                '*://seccaptcha.baidu.com/v1/webapi/verint/verify/*': self.http_catcher},
+            enable_transparent_bg=get_dict_value_treely(
+                profile_mgr.local_config,
+                ['webview_settings', 'transparent_bg_color'], False),
+            enable_osr=get_dict_value_treely(
+                profile_mgr.local_config,
+                ['webview_settings', 'enable_osr'], False))
         self.webview.setProfile(self.profile)
         self.webview.loadAfterRender(h5_link)
         self.webview.initRender()
