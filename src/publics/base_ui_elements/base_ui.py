@@ -5,7 +5,7 @@ import yarl
 import pyperclip
 import re
 
-from PyQt5.QtCore import Qt, QTimer, QObject
+from PyQt5.QtCore import QPoint, Qt, QTimer, QObject
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
     QTextEdit, QPlainTextEdit, QMainWindow
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QPainter, QPixmap, QPixmapCache
@@ -81,7 +81,8 @@ def create_thread_content_menu(parent_label: QLabel):
         jump_webpage.triggered.connect(lambda: funcs.open_url_in_browser(selected_text))
         menu.addAction(jump_webpage)
 
-    search_tb = QAction(f'在贴吧内搜索“{funcs.cut_string(selected_text, 20)}”', parent_label)
+    selected_text_show = funcs.cut_string(selected_text.replace('\n', ' '), 20)
+    search_tb = QAction(f'在贴吧内搜索“{selected_text_show}”', parent_label)
     search_tb.triggered.connect(lambda: open_search_window(selected_text))
     if not selected_text:
         search_tb.setVisible(False)
@@ -89,7 +90,7 @@ def create_thread_content_menu(parent_label: QLabel):
 
     engine_name, engine_link = get_search_engine_link()
     engine_link = engine_link.replace('[query]', selected_text)
-    search_network = QAction(f'在 {engine_name} 中搜索“{funcs.cut_string(selected_text, 20)}”', parent_label)
+    search_network = QAction(f'在 {engine_name} 中搜索“{selected_text_show}”', parent_label)
     search_network.triggered.connect(lambda: funcs.open_url_in_browser(engine_link))
     if not selected_text:
         search_network.setVisible(False)
@@ -239,15 +240,70 @@ def init_bg_pixmap():
 class BaseQMenu(QMenu):
     """所有上下文菜单引用的 QMenu 父类"""
 
+    SHADOW_MARGIN = 12
+    SHADOW_BLUR = 12
+    SHADOW_OFFSET_Y = 1
+    CORNER_RADIUS = 9
+
     def __init__(self, parent=None):
-        super().__init__()
+        super(QMenu, self).__init__(parent)
         self.setWindowFlags(self.windowFlags() | Qt.NoDropShadowWindowHint | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.set_theme_qss()
 
+    def paintEvent(self, event):
+        panel_rect = self.rect().adjusted(
+            self.SHADOW_MARGIN,
+            self.SHADOW_MARGIN,
+            -self.SHADOW_MARGIN,
+            -self.SHADOW_MARGIN,
+        )
+        if not panel_rect.isEmpty():
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.Antialiasing, True)
+
+            # 使用多层低透明度圆角矩形模拟阴影，避免 graphics effect 影响菜单命中区域
+            painter.setPen(Qt.NoPen)
+            for radius in range(self.SHADOW_BLUR, 0, -1):
+                progress = (self.SHADOW_BLUR - radius + 1) / self.SHADOW_BLUR
+                painter.setBrush(QColor(0, 0, 0, int(55 * progress * progress)))
+                shadow_rect = panel_rect.adjusted(
+                    -radius,
+                    -radius + self.SHADOW_OFFSET_Y,
+                    radius,
+                    radius + self.SHADOW_OFFSET_Y,
+                )
+                painter.drawRoundedRect(
+                    shadow_rect,
+                    self.CORNER_RADIUS + radius,
+                    self.CORNER_RADIUS + radius,
+                )
+
+            background_color = QColor(*profile_mgr.get_theme_bg_color_rgb())
+            border_color = QColor(255, 255, 255, 36) if profile_mgr.get_theme_policy() == 2 \
+                else QColor(0, 0, 0, 31)
+            painter.setBrush(background_color)
+            painter.setPen(border_color)
+            painter.drawRoundedRect(panel_rect, self.CORNER_RADIUS, self.CORNER_RADIUS)
+            painter.end()
+
+        super().paintEvent(event)
+
     def set_theme_qss(self):
         """载入标准样式主题"""
         set_theme_qss_as_cfg(self)
+        self.add_extend_qss(f"""
+        QMenu {{
+            background-color: transparent;
+            border: none;
+            padding: {self.SHADOW_MARGIN}px;
+        }}
+        """)
+
+    def showEvent(self, a0):
+        # 透明阴影边距不应改变菜单视觉面板的弹出位置
+        self.move(self.pos() - QPoint(self.SHADOW_MARGIN, self.SHADOW_MARGIN))
+        super().showEvent(a0)
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
