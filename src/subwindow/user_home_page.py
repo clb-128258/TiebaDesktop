@@ -178,7 +178,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
         menu.addSeparator()
 
-        show_follow_forum_strongly_menu = QMenu(self)
+        show_follow_forum_strongly_menu = BaseQMenu(self)
         show_follow_forum_strongly_menu.setTitle('第三方工具箱')
         show_follow_forum_strongly_menu.setToolTip('快捷打开第三方的贴吧工具箱')
 
@@ -207,7 +207,7 @@ class UserHomeWindow(base_ui.WindowBaseQWidget, user_home_page.Ui_Form):
 
         menu.addMenu(show_follow_forum_strongly_menu)
 
-        copy_datas = QMenu(self)
+        copy_datas = BaseQMenu(self)
         copy_datas.setToolTipsVisible(True)
         copy_datas.setTitle('复制...')
 

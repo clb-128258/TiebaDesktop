@@ -90,7 +90,7 @@ def load_library():
     library.tieba_dec_source_channels.argtypes = [ctypes.c_void_p]
 
     _library = library
-    app_logger.log_INFO(f'[Audio decoder] library loaded from {library_path}')
+    app_logger.log_INFO(f'[Audio decoder] cpp library loaded')
     return library
 
 

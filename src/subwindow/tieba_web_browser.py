@@ -289,7 +289,7 @@ class ExtTabBar(QTabBar):
 
 
 class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
-    """贴吧页面内置浏览器"""
+    """内置网页浏览器"""
 
     def __init__(self):
         super().__init__()
@@ -310,11 +310,6 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         # 初始化主题
         self.reset_theme()
 
-        font_family = ["Microsoft YaHei",
-                       "MS Shell Dlg 2",
-                       "PingFang SC",
-                       "Hiragino Sans GB",
-                       "sans-serif"] if not profile_mgr.local_config['webview_settings']['disable_font_cover'] else []
         self.default_profile = common_webview.WebViewProfile(
             data_folder=f'{datapath}/webview_data/{profile_mgr.current_uid}',
             enable_link_hover_text=False,
@@ -324,7 +319,6 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             enable_keyboard_keys=True,
             handle_newtab_byuser=True,
             disable_web_safe=False,
-            font_family=font_family,
             user_agent=f'[default_ua] CLBTiebaDesktop/{APP_VERSION_STR}',
             enable_transparent_bg=get_dict_value_treely(
                 profile_mgr.local_config,
@@ -332,7 +326,7 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             enable_osr=get_dict_value_treely(
                 profile_mgr.local_config,
                 ['webview_settings', 'enable_osr'], False)
-            )
+        )
 
         self.tabWidget.tabCloseRequested.connect(self.remove_widget)
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
@@ -348,12 +342,6 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         self.has_context_menu = False
         self.lineEdit.installEventFilter(self)
 
-        self.window_active_looper = QTimer(self)
-        self.window_active_looper.setInterval(100)
-        self.window_active_looper.timeout.connect(self.handle_window_frozen)
-        if profile_mgr.local_config["webview_settings"]["view_frozen"]:
-            self.window_active_looper.start()
-
     def eventFilter(self, source, event):
         if source == self.lineEdit and event.type() == QEvent.Type.ContextMenu:
             self.has_context_menu = True
@@ -362,10 +350,10 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         return super(type(self), self).eventFilter(source, event)
 
     def closeEvent(self, a0):
-        a0.accept()
-        self.window_active_looper.stop()
         while self.tabWidget.count() != 0:
             self.remove_widget(0)
+
+        a0.accept()
         qt_window_mgr.del_window(self)
 
     def keyPressEvent(self, a0):
@@ -467,12 +455,6 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         if isinstance(widget, ExtWebView) and widget.isRenderInitOk():
             tabMenu.addSeparator()
 
-            froze_tab = QAction('冻结标签页', tabMenu)
-            froze_tab.setCheckable(True)
-            froze_tab.setChecked(widget.isFrozenModeEnabled())
-            froze_tab.triggered.connect(lambda: widget.setFrozenModeEnabled(not widget.isFrozenModeEnabled()))
-            tabMenu.addAction(froze_tab)
-
             mute_tab = QAction('静音标签页', tabMenu)
             mute_tab.setCheckable(True)
             mute_tab.setChecked(widget.isAudioMuted())
@@ -504,18 +486,6 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
                     tb_url = f'user://{portrait}'
 
         return tb_url
-
-    def handle_window_frozen(self):
-        for i in range(self.tabWidget.count()):
-            widget = self.tabWidget.widget(i)
-            if isinstance(widget, ExtWebView):
-                is_active = (i == self.tabWidget.currentIndex()
-                             and not self.isMinimized()
-                             and not self.has_context_menu)
-                if is_active:
-                    widget.setFrozenModeEnabled(False)
-                else:
-                    widget.setFrozenModeEnabled(True)
 
     def clean_browser_cache(self):
         widget = self.tabWidget.currentWidget()
@@ -568,11 +538,11 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
 
             menu.addSeparator()
 
-            copy_link = QAction('复制网页链接', self)
+            copy_link = QAction('复制链接', self)
             copy_link.triggered.connect(lambda: pyperclip.copy(widget.url()))
             menu.addAction(copy_link)
 
-            os_share = QAction('系统分享网页...', self)
+            os_share = QAction('分享网页...', self)
             os_share.triggered.connect(lambda: self.show_os_share_window(widget.url()))
             menu.addAction(os_share)
 
@@ -726,6 +696,10 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
         self.insert_new_widget(widget, self.tabWidget.count())
 
     def remove_widget(self, index: int, clean_memory=True):
+        # 索引可能已经失效（同一个标签页被重复请求关闭），直接忽略
+        if index < 0 or index >= self.tabWidget.count():
+            return
+
         widget = self.tabWidget.widget(index)
         self.tabWidget.removeTab(index)
         try:
@@ -748,12 +722,11 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
 
     def remove_other_pages(self, index):
         widget = self.tabWidget.widget(index)
-        self.tabWidget.setCurrentIndex(0)
-        while self.tabWidget.count() != 1:
-            if self.tabWidget.currentWidget() != widget:
-                self.remove_widget(self.tabWidget.currentIndex())
-            elif self.tabWidget.currentIndex() != self.tabWidget.count() - 1:
-                self.tabWidget.setCurrentIndex(self.tabWidget.currentIndex() + 1)
+        all_widgets = [self.tabWidget.widget(i) for i in range(self.tabWidget.count())]
+        all_widgets.remove(widget)
+
+        for w in all_widgets:
+            self.remove_widget(self.tabWidget.indexOf(w))
 
 
 class ExtWebView(common_webview.CommonWebView):
@@ -781,7 +754,7 @@ class ExtWebView(common_webview.CommonWebView):
         self.renderProcessTerminated.connect(lambda errcode:
                                              self.show_toast_to_parent(
                                                  top_toast_widget.ToastMessage(
-                                                     f'底层 WebView2 进程 {self.renderProcessID()} 异常退出，'
+                                                     f'WebView 进程 {self.renderProcessID()} 异常退出，'
                                                      f'进程退出码为 {errcode}。'
                                                      f'网页内容将会无法显示，请尝试刷新页面',
                                                      icon_type=top_toast_widget.ToastIconType.ERROR)

@@ -33,7 +33,10 @@ enum {
 
     CEF_BRIDGE_EVENT_FAVICON_URL = 16,      // favicon 地址变化，data 为图标 URL（空串表示没有图标）
     CEF_BRIDGE_EVENT_FAVICON_DATA = 17,     // cef_bridge_fetch_icon 的结果，data 为 base64 图标数据
-    CEF_BRIDGE_EVENT_DOWNLOAD = 18,         // 下载事件，data 为 JSON（字段含义见 cef_webview.py）
+    CEF_BRIDGE_EVENT_DOWNLOAD = 18,             // 下载事件，data 为 JSON（字段含义见 cef_webview.py）
+    CEF_BRIDGE_EVENT_RENDER_TERMINATED = 21,    // 渲染进程异常退出，data 为终止状态文本
+    CEF_BRIDGE_EVENT_CURSOR = 22,               // OSR 光标变化，data 为 cef_cursor_type_t 的数值
+    CEF_BRIDGE_EVENT_CONTEXT_MENU = 23,         // 右键菜单，data 为 JSON（菜单模型 + view 坐标）
 };
 
 // 事件回调：browser_id 为创建时传入的 id，event 为上面的枚举，data 为 UTF-8 字符串
@@ -47,13 +50,15 @@ typedef void (*cef_bridge_event_cb)(int browser_id, int event, const char* data)
 //   subprocess_path 子进程 helper 可执行文件路径，可为 NULL
 //   user_agent      自定义 UA，可为 NULL
 //   extra_args      追加到 CEF 命令行的参数（空格分隔），可为 NULL
+//   locale          CEF 界面语言（如 zh-CN / en-US），可为 NULL 表示用默认值
 CEF_BRIDGE_API int cef_bridge_init(const char* cache_path,
                                    const char* log_file,
                                    const char* resources_dir,
                                    const char* locales_dir,
                                    const char* subprocess_path,
                                    const char* user_agent,
-                                   const char* extra_args);
+                                   const char* extra_args,
+                                   const char* locale);
 
 CEF_BRIDGE_API int cef_bridge_is_initialized();
 
@@ -152,6 +157,9 @@ CEF_BRIDGE_API void cef_bridge_set_paint_callback(cef_bridge_paint_cb cb);
 CEF_BRIDGE_API void cef_bridge_set_view_size(int browser_id, int width, int height);
 CEF_BRIDGE_API void cef_bridge_set_focus(int browser_id, int focused);
 CEF_BRIDGE_API void cef_bridge_mouse_move(int browser_id, int x, int y, int modifiers, int leave);
+// 右键菜单（OSR 下由 Qt 弹出）：选择命令 / 取消
+CEF_BRIDGE_API void cef_bridge_context_menu_command(int menu_id, int command_id);
+CEF_BRIDGE_API void cef_bridge_context_menu_cancel(int menu_id);
 CEF_BRIDGE_API void cef_bridge_mouse_click(int browser_id, int x, int y, int modifiers,
                                            int button, int mouse_up, int click_count);
 CEF_BRIDGE_API void cef_bridge_mouse_wheel(int browser_id, int x, int y, int modifiers,

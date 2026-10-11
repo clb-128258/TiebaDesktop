@@ -10,6 +10,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QPixmapCache
 from PyQt5.QtCore import pyqtSignal, Qt
 
 from publics import app_logger, qt_image
+from publics.base_ui_elements.common_webview import WebViewProfile
 
 # 判断一下是不是windows
 if os.name == 'nt':
@@ -189,155 +190,6 @@ class WebView2VersionScaner:
             return ''
 
 
-class HttpDataRewriter:
-    """可用于捕获或重写webview中发起的http请求"""
-
-    @classmethod
-    def parseCookieToDict(cls, cookieString: str):
-        """将header中的cookie字段解析为字典"""
-        cookies_dic = {}
-        try:
-            for i in cookieString.split('; '):
-                cookies_dic[i.split('=')[0]] = i.split('=')[1]
-        except Exception as e:
-            app_logger.log_exception(e)
-
-        return cookies_dic
-
-    @classmethod
-    def packCookieToString(cls, cookieDict: typing.Dict[str, str]):
-        """将cookies字典构造为字符串"""
-        cookies = []
-        for k, v in cookieDict.items():
-            cookies.append(f'{k}={v}')
-
-        return '; '.join(cookies)
-
-    def onRequestCaught(self, url: str, method: str, header: typing.Dict[str, str], content: typing.Optional[bytes]):
-        """
-        捕捉到http请求时，会调用此方法
-
-        Notes:
-            在重写该方法时，请注意返回 [url, method, header, content] 四个字段，webview内部会使用这些返回值重写请求
-        """
-        return url, method, header, content
-
-    def onResponseCaught(self, url: str, statusCode: int, header: typing.Dict[str, str],
-                         content: typing.Optional[bytes]):
-        """
-        捕捉到http响应时，会调用此方法
-
-        Notes:
-            目前还尚未支持http响应数据的重写，返回 [statusCode, header, content] 不会起作用
-        """
-        return statusCode, header, content
-
-
-class WebViewProfile:
-    """
-    QWebView2View 使用的配置类。
-
-    该类封装了在创建和初始化 WebView2（嵌入到 Qt 窗口中的 WinForms WebView2 控件）时
-    会用到的各类运行时设置与 feature 开关。
-
-    Args:
-        data_folder (str): WebView2 用户数据目录（用于存放缓存、Cookie 等）。默认为环境变量 TEMP 下的 TiebaDesktopWebviewCache。
-        private_mode (bool): 是否启用浏览器的无痕模式（InPrivate）。默认 False。
-        user_agent (str|None): 自定义 user-agent 字符串。如果包含占位符 '[default_ua]'，在初始化时会替换为默认 UA 的实际值。
-        enable_error_page (bool): 是否启用 WebView2 的内置错误页面。默认 True。
-        enable_zoom_factor (bool): 是否允许缩放控件（是否启用缩放功能）。默认 True。
-        handle_newtab_byuser (bool): 如果为 True，则当页面尝试打开新窗口时，库会通过信号将新窗口 URL 交给调用方处理（通过 newtabSignal）。
-        enable_context_menu (bool): 是否启用默认的上下文菜单（右键菜单）。默认 True。
-        enable_keyboard_keys (bool): 是否启用浏览器加速键（例如 F5/刷新、F12/开发者工具等）。默认 True。
-        proxy_addr (str): 代理服务器地址，格式为 `addr:port`。默认为空字符串（不使用代理）。
-        enable_gpu_boost (bool): 是否启用 GPU 硬件加速。
-        enable_link_hover_text (bool): 是否显示状态栏的链接悬停文本（IsStatusBarEnabled）。默认 True。
-        ignore_all_render_argvs (bool): 如果为 True，会忽略对 proxy/gpu/disable-web-security 等自动拼接的渲染参数。
-        disable_web_safe (bool): 是否禁用 Web 安全策略。谨慎使用，仅用于受信任环境或调试。
-        font_family (list[str]|None): 注入页面的字体优先级列表，会把这些字体通过 CSS 注入到每个页面以覆盖默认字体。
-        http_rewriter (dict[str, HttpDataRewriter]|None): HTTP 请求/响应重写器映射。键为匹配模式，值为继承或实现了 HttpDataRewriter 接口的对象，用于对请求或响应进行处理。
-        enable_transparent_bg (bool): 是否启用透明背景。开启后，WebView 的背景将与父 QWidget 的相同。否则将使用纯白色背景。
-        enable_osr (bool): 是否启用离屏渲染
-    Behavior:
-        - 这些字段仅作配置使用；具体在 WebView2 初始化过程中由 `QWebView2View` 读取并应用。
-        - `http_rewriter` 的匹配逻辑：代码会遍历映射中的键，当 `k.replace('*','')` 在请求 URL 中被包含时，会选择该重写器。
-        - `user_agent` 中的 '[default_ua]' 占位符会被替换为 CoreWebView2.Settings.UserAgent 的默认值（当 WebView 初始化时）。
-    """
-
-    def __init__(self,
-                 data_folder: str = os.getenv("TEMP", '../..') + "/TiebaDesktopWebViewCache",
-                 private_mode=False,
-                 user_agent: str = None,
-                 enable_error_page: bool = True,
-                 enable_zoom_factor: bool = True,
-                 handle_newtab_byuser: bool = False,
-                 enable_context_menu: bool = True,
-                 enable_keyboard_keys: bool = True,
-                 proxy_addr: str = "",
-                 enable_gpu_boost: bool = True,
-                 enable_link_hover_text: bool = True,
-                 ignore_all_render_argvs: bool = False,
-                 disable_web_safe: bool = False,
-                 font_family: list[str] = None,
-                 http_rewriter: dict[str, HttpDataRewriter] = None,
-                 enable_transparent_bg: bool = False,
-                 enable_osr: bool = False,
-                 ):
-        self.data_folder = data_folder
-        self.private_mode = private_mode
-        self.user_agent = user_agent
-        self.enable_error_page = enable_error_page
-        self.enable_zoom_factor = enable_zoom_factor
-        self.handle_newtab_byuser = handle_newtab_byuser
-        self.enable_context_menu = enable_context_menu
-        self.enable_keyboard_keys = enable_keyboard_keys
-        self.proxy_addr = proxy_addr
-        self.enable_gpu_boost = enable_gpu_boost
-        self.enable_link_hover_text = enable_link_hover_text
-        self.ignore_all_render_argvs = ignore_all_render_argvs
-        self.disable_web_safe = disable_web_safe
-        self.font_family = font_family
-        self.http_rewriter = http_rewriter
-        self.enable_transparent_bg = enable_transparent_bg
-        self.enable_osr = enable_osr
-
-    def clone(self):
-        """
-        克隆当前 profile 为一个新的 `WebViewProfile` 实例。
-
-        Returns:
-            WebViewProfile: 一个新的 `WebViewProfile` 实例，字段值与当前实例相同。
-        """
-        return WebViewProfile(data_folder=self.data_folder,
-                              private_mode=self.private_mode,
-                              user_agent=self.user_agent,
-                              enable_error_page=self.enable_error_page,
-                              enable_zoom_factor=self.enable_zoom_factor,
-                              handle_newtab_byuser=self.handle_newtab_byuser,
-                              enable_context_menu=self.enable_context_menu,
-                              enable_keyboard_keys=self.enable_keyboard_keys,
-                              proxy_addr=self.proxy_addr,
-                              enable_gpu_boost=self.enable_gpu_boost,
-                              enable_link_hover_text=self.enable_link_hover_text,
-                              ignore_all_render_argvs=self.ignore_all_render_argvs,
-                              disable_web_safe=self.disable_web_safe,
-                              font_family=self.font_family,
-                              http_rewriter=self.http_rewriter,
-                              enable_transparent_bg=self.enable_transparent_bg,
-                              enable_osr=self.enable_osr)
-
-
-class WebViewCoverLabel(QLabel):
-    def __init__(self, parent):
-        super().__init__()
-        self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        self.setScaledContents(True)
-
-        self.parent_webview = parent
-        self.setParent(parent)
-
 
 class QWebView2View(QWidget):
     """
@@ -382,8 +234,6 @@ class QWebView2View(QWidget):
     jsBridgeReceived = pyqtSignal(str)
     newtabSignal = pyqtSignal(str)
 
-    __update_frozen_view = pyqtSignal(QPixmap)
-
     def __init__(self):
         """初始化 QWebView2View 实例（不创建底层 WebView2 控件）。"""
         super().__init__()
@@ -394,13 +244,8 @@ class QWebView2View(QWidget):
         self.__load_after_init = ''
         self.__profile = None
         self.__render_completed = False
-        self.__frozen_enabled = False
         self.__is_frozen_enabling = False
         self.__has_first_load = False
-
-        self.__frozen_view_label = WebViewCoverLabel(self)
-        self.__frozen_view_label.hide()
-        self.__update_frozen_view.connect(self.__set_frozen_pixmap)
 
         self.newtabSignal.connect(self.createWindow)
 
@@ -412,9 +257,6 @@ class QWebView2View(QWidget):
             real_width = int(self.width() * self.devicePixelRatioF())
             real_height = int(self.height() * self.devicePixelRatioF())
             MoveWindow(hwnd, 0, 0, real_width, real_height, True)
-
-            if self.__frozen_enabled:
-                self.__frozen_view_label.setGeometry(0, 0, self.width(), self.height())
 
     def closeEvent(self, a0):
         """
@@ -513,32 +355,6 @@ class QWebView2View(QWidget):
             self.__get_value_ui_thread(_load)
         else:
             app_logger.log_WARN('WebView has not inited')
-
-    def isFrozenModeEnabled(self) -> bool:
-        """
-        获取是否已经启用冻结模式。
-        在冻结模式下，WebView 内容不会被渲染到屏幕，而是显示一个预览图。
-        """
-        return self.__frozen_enabled
-
-    def setFrozenModeEnabled(self, enable: bool):
-        """
-        设置是否启用冻结模式。
-
-        在冻结模式下，WebView 内容不会被渲染到屏幕，而是显示一个预览图。
-
-        Args:
-            enable (bool): 是否启用冻结模式
-        """
-        if self.__has_first_load and self.__frozen_enabled != enable and not self.__is_frozen_enabling:  # 只在第一次导航开始之后执行
-            if enable:
-                self.__is_frozen_enabling = True
-                self.__run_on_ui_thread(self.__capture_webview)
-            else:
-                self.__webview.Visible = True
-                self.__frozen_view_label.hide()
-                self.setAudioMuted(False)
-                self.__frozen_enabled = False
 
     def setProfile(self, profile: WebViewProfile):
         """
@@ -868,6 +684,11 @@ class QWebView2View(QWidget):
 
         必须在设置 Profile 后调用。初始化完成后会发出 ``renderInitializationCompleted`` 信号。
         """
+        if self.__profile is not None and self.__profile.enable_osr:
+            # WebView2 没有离屏渲染能力（官方仍未提供 OSR API），这里只做提示，
+            # 实际渲染仍然是原生子窗口；需要 OSR 请使用 CEF 内核。
+            app_logger.log_WARN('WebView2 does not support off-screen rendering (OSR); '
+                                'the enable_osr setting is ignored by this backend')
         if os.name == 'nt':
             if self.__profile is not None and not self.__render_completed:
                 self.__run()
@@ -923,39 +744,6 @@ class QWebView2View(QWidget):
     def __wait_task_give_callback(self, task, callback):
         CSharpConverter.waitCSharpAsyncFunction(task, callback)
 
-    def __capture_webview(self):
-        # 冻结模式下异步抓取图片
-        try:
-            if self.__render_completed and self.__webview:
-                stream = MemoryStream()
-                task = self.__webview_core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream)
-                CSharpConverter.waitCSharpAsyncFunction(task, lambda _: self.__on_webview_captured(stream))
-        except Exception as e:
-            app_logger.log_WARN('call core_webview.CapturePreviewAsync failed')
-            app_logger.log_exception(e)
-
-    def __on_webview_captured(self, stream):
-        iconBytes = bytes(stream.ToArray())
-        pixmap = QPixmap()
-        pixmap.loadFromData(iconBytes)
-        if not pixmap.isNull():
-            self.__update_frozen_view.emit(pixmap)
-
-        # 释放资源
-        stream.Dispose()
-        stream.Close()
-        QPixmapCache.clear()
-
-    def __set_frozen_pixmap(self, pixmap):
-        self.__frozen_view_label.setPixmap(pixmap)
-        self.__frozen_view_label.setGeometry(0, 0, self.width(), self.height())
-        self.__frozen_view_label.show()
-        self.__frozen_view_label.raise_()
-
-        self.__webview.Visible = False
-        self.setAudioMuted(True)
-        self.__frozen_enabled = True
-        self.__is_frozen_enabling = False
 
     def __set_parent(self):
         if self.__webview is not None:
@@ -1131,33 +919,6 @@ class QWebView2View(QWidget):
         message = args.TryGetWebMessageAsString()
         self.jsBridgeReceived.emit(message)
 
-    def __set_font_family(self):
-        # 注入 CSS
-        font_list_string = ', '.join(list(f'\"{font}\"' for font in self.profile().font_family))
-        font_css = f'''
-                html, body, *, p, div, span, li, a, input, button {{
-                    font-family: {font_list_string} !important;
-                }}
-                '''
-        inject_script = f"""
-                (function() {{
-                    // 方法1: adoptedStyleSheets (高优先级)
-                    try {{
-                        const sheet = new CSSStyleSheet();
-                        sheet.replaceSync(`{font_css}`);
-                        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-                        return;
-                    }} catch (e) {{}}
-
-                    // 方法2: <style> 标签
-                    const style = document.createElement('style');
-                    style.textContent = `{font_css}`;
-                    document.documentElement.appendChild(style);
-                }})();
-                """
-
-        # 执行注入
-        self.__webview_core.AddScriptToExecuteOnDocumentCreatedAsync(inject_script)
 
     def __on_webview_ready(self, webview_instance, args):
         if not args.IsSuccess:
@@ -1201,9 +962,6 @@ class QWebView2View(QWidget):
         settings.IsSwipeNavigationEnabled = False
         settings.IsZoomControlEnabled = configuration.enable_zoom_factor
 
-        if self.profile().font_family:
-            self.__set_font_family()
-
         ua = configuration.user_agent
         if ua:
             settings.UserAgent = ua.replace('[default_ua]', settings.UserAgent)
@@ -1218,3 +976,7 @@ class QWebView2View(QWidget):
         self.renderInitializationCompleted.emit()
         if self.__load_after_init:
             self.load(self.__load_after_init)
+
+
+# 供外部包装层调用
+CommonWebView = QWebView2View

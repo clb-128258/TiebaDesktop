@@ -8,7 +8,7 @@ import time
 import typing
 import requests
 
-from PyQt5.QtCore import pyqtSignal, Qt, QObject
+from PyQt5.QtCore import pyqtSignal, Qt, QObject, QEvent, QTimer
 from PyQt5.QtGui import QIcon
 
 import consts
@@ -17,7 +17,7 @@ from publics import qt_image, profile_mgr, request_mgr, account_mgr, app_logger
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements import common_webview
-from publics.app_logger import log_exception, log_INFO
+from publics.app_logger import log_exception, log_INFO, log_WARN
 from publics.funcs import start_background_thread, get_exception_string, get_dict_value_treely, \
     save_json
 
@@ -449,6 +449,9 @@ class LoginWebView(base_ui.WindowBaseQDialog):
         if a0.key() == Qt.Key.Key_Escape:
             a0.ignore()
             self.close()
+
+    def event(self, a0):
+        return super().event(a0)
 
     def closeEvent(self, a0):
         if not self.islogin and not self.http_catcher.is_token_got:

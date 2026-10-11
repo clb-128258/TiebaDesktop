@@ -53,8 +53,8 @@ class VideoWebView(common_webview.CommonWebView):
         self.setProfile(self.webview_profile)
 
         self.initRender()
-        self.loading_widget.show()
         self.show()
+        self.loading_widget.show()
 
     def on_webview_into_fullscreen(self):
         if self.isHtmlInFullScreenState():

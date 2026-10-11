@@ -457,8 +457,6 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
 
             self.checkBox_29.setChecked(
                 profile_mgr.local_config['other_settings']['animation_switches']['disable_top_toast_animation'])
-            self.checkBox_20.setChecked(profile_mgr.local_config["webview_settings"]["disable_font_cover"])
-            self.checkBox_21.setChecked(profile_mgr.local_config["webview_settings"]["view_frozen"])
             self.checkBox_25.setChecked(profile_mgr.local_config["webview_settings"]["transparent_bg_color"])
             self.checkBox_33.setChecked(profile_mgr.local_config["webview_settings"]["enable_osr"])
             self.checkBox_27.setChecked(profile_mgr.local_config["other_settings"]["disable_ssl_verify"])
@@ -535,8 +533,6 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
             profile_mgr.local_config["notify_settings"]["enable_interact_notify"] = self.checkBox_13.isChecked()
             profile_mgr.local_config["notify_settings"]["offline_notify"] = self.checkBox_17.isChecked()
             profile_mgr.local_config["other_settings"]["mw_default_page"] = self.comboBox_4.currentIndex()
-            profile_mgr.local_config["webview_settings"]["disable_font_cover"] = self.checkBox_20.isChecked()
-            profile_mgr.local_config["webview_settings"]["view_frozen"] = self.checkBox_21.isChecked()
             profile_mgr.local_config["webview_settings"]["enable_osr"] = self.checkBox_33.isChecked()
             profile_mgr.local_config["notify_settings"]["enable_clipboard_notify"] = self.checkBox_23.isChecked()
             profile_mgr.local_config["theme_settings"]["bright_dark_policy"] = self.comboBox_6.currentIndex()
@@ -650,7 +646,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
                               f'TiebaRequestMgr Client Version {request_mgr.TIEBA_CLIENT_VERSION}')
         self.label_20.setText(f'操作系统版本：{platform.system()} {platform.version()}, on {platform.machine()} CPU')
         self.label_16.setText('当前系统时间：' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
-        self.label_77.setText(f'WebView 信息：on {common_webview.PLATFORM} '
+        self.label_77.setText(f'WebView 信息：{common_webview.PLATFORM} '
                               f'version {common_webview.getWebViewVersion()}')
 
     def select_all_caches(self):

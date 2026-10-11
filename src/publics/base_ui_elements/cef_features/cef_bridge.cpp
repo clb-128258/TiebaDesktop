@@ -79,7 +79,7 @@ CefString FromUtf8(const char* text) {
 #endif
 }
 
-// 用于把 HTML 转成 data: URL（CEF 154 已移除 CefFrame::LoadString）
+// 用于把 HTML 转成 data: URL
 std::string Base64Encode(const std::string& input) {
   static const char kTable[] =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -161,6 +161,28 @@ std::map<int, CefRefPtr<CefBrowser>> g_browsers;
 std::map<int, CefRefPtr<CefBrowser>> g_devtools;
 std::map<int, std::string> g_bridge_scripts;
 std::map<int, std::string> g_titles;
+
+// 右键菜单：CEF 自带的 OSR 菜单需要窗口句柄，而且它算出来的屏幕坐标只有 view 坐标
+// （菜单会跑到屏幕左上角），所以菜单统一交给 Qt 弹出。这里保存待处理的回调，
+// 等 Qt 侧选完后再 Continue / Cancel。
+struct PendingContextMenu {
+  int browser_id = 0;
+  CefRefPtr<CefRunContextMenuCallback> callback;
+};
+std::map<int, PendingContextMenu> g_context_menus;
+int g_next_context_menu_id = 1;
+
+void CancelPendingContextMenus(int browser_id) {
+  for (auto it = g_context_menus.begin(); it != g_context_menus.end();) {
+    if (it->second.browser_id == browser_id) {
+      if (it->second.callback)
+        it->second.callback->Cancel();
+      it = g_context_menus.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
 
 void EmitEvent(int browser_id, int event, const std::string& data) {
   if (g_event_cb)
@@ -303,6 +325,49 @@ std::string JsonEscape(const std::string& text) {
           out += ch;
     }
   }
+  return out;
+}
+
+// 把 CEF 的右键菜单模型序列化成 JSON 交给 Qt 侧弹出（支持分隔符 / 多级子菜单 /
+// 复选与单选项）。字段含义见 cef_webview.py 的 __on_context_menu。
+std::string SerializeMenuItems(CefRefPtr<CefMenuModel> model);
+
+std::string SerializeMenuItem(CefRefPtr<CefMenuModel> model, size_t index) {
+  const cef_menu_item_type_t type = model->GetTypeAt(index);
+  std::string item = "{\"type\":" + std::to_string(static_cast<int>(type));
+  if (type != MENUITEMTYPE_SEPARATOR) {
+    item += ",\"id\":" + std::to_string(model->GetCommandIdAt(index));
+    item += ",\"label\":\"" + JsonEscape(ToUtf8(model->GetLabelAt(index))) + "\"";
+    item += ",\"enabled\":";
+    item += model->IsEnabledAt(index) ? "true" : "false";
+    item += ",\"visible\":";
+    item += model->IsVisibleAt(index) ? "true" : "false";
+    if (type == MENUITEMTYPE_CHECK || type == MENUITEMTYPE_RADIO) {
+      item += ",\"checked\":";
+      item += model->IsCheckedAt(index) ? "true" : "false";
+      item += ",\"group\":" + std::to_string(model->GetGroupIdAt(index));
+    }
+    if (type == MENUITEMTYPE_SUBMENU) {
+      CefRefPtr<CefMenuModel> sub = model->GetSubMenuAt(index);
+      item += ",\"items\":";
+      item += sub ? SerializeMenuItems(sub) : "[]";
+    }
+  }
+  item += "}";
+  return item;
+}
+
+std::string SerializeMenuItems(CefRefPtr<CefMenuModel> model) {
+  std::string out = "[";
+  if (model) {
+    const size_t count = model->GetCount();
+    for (size_t i = 0; i < count; ++i) {
+      if (i > 0)
+        out += ",";
+      out += SerializeMenuItem(model, i);
+    }
+  }
+  out += "]";
   return out;
 }
 
@@ -541,6 +606,19 @@ class BridgeClient : public CefClient,
     rect = (it != g_view_rects.end()) ? it->second : CefRect(0, 0, 800, 600);
   }
 
+  // 光标同步：两种模式都把光标类型上报给上层（Qt 侧会同步一份），
+  // 但只有 OSR 返回 true —— 离屏渲染没有原生窗口，必须由 Qt 控件自己设置光标；
+  // 窗口化嵌入时返回 false，让 CEF 把光标设到浏览器子窗口上（否则 CEF 会以为
+  // 客户端已经处理过，窗口里就一直保持默认箭头）。
+  bool OnCursorChange(CefRefPtr<CefBrowser> browser,
+                      CefCursorHandle cursor,
+                      cef_cursor_type_t type,
+                      const CefCursorInfo& custom_cursor_info) override {
+    EmitEvent(browser_id_, CEF_BRIDGE_EVENT_CURSOR,
+              std::to_string(static_cast<int>(type)));
+    return g_windowless;
+  }
+
   void OnPaint(CefRefPtr<CefBrowser> browser,
                PaintElementType type,
                const RectList& dirty_rects,
@@ -580,7 +658,7 @@ class BridgeClient : public CefClient,
   }
 
   void OnBeforeClose(CefRefPtr<CefBrowser> browser) override {
-
+    CancelPendingContextMenus(browser_id_);
     EmitEvent(browser_id_, CEF_BRIDGE_EVENT_CLOSE, "");
     g_browsers.erase(browser_id_);
   }
@@ -624,6 +702,30 @@ class BridgeClient : public CefClient,
       EmitEvent(browser_id_, CEF_BRIDGE_EVENT_URL, ToUtf8(url));
   }
 
+  // 渲染进程异常退出（崩溃 / 被杀 / OOM）：上层据此提示用户，与 WebView2 行为一致
+  void OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
+                                 TerminationStatus status) override {
+    const char* text = "unknown";
+    switch (status) {
+      case TS_ABNORMAL_TERMINATION:
+        text = "abnormal_termination";
+        break;
+      case TS_PROCESS_WAS_KILLED:
+        text = "process_was_killed";
+        break;
+      case TS_PROCESS_CRASHED:
+        text = "process_crashed";
+        break;
+      case TS_PROCESS_OOM:
+        text = "process_oom";
+        break;
+      default:
+        break;
+    }
+    EmitEvent(browser_id_, CEF_BRIDGE_EVENT_RENDER_TERMINATED,
+              std::string(text) + "|" + std::to_string(static_cast<int>(status)));
+  }
+
   void OnFullscreenModeChange(CefRefPtr<CefBrowser> browser, bool fullscreen) override {
     // 网页进入/退出 HTML 全屏时通知上层（视频播放器需要它来切换窗口全屏）
     EmitEvent(browser_id_, CEF_BRIDGE_EVENT_FULLSCREEN, fullscreen ? "1" : "0");
@@ -654,19 +756,31 @@ class BridgeClient : public CefClient,
               icon_urls.empty() ? "" : ToUtf8(icon_urls[icon_urls.size() - 1]));
   }
   // ---- CefContextMenuHandler（使用 CEF 内置命令 id，由 CEF 自己执行）
-  void OnBeforeContextMenu(CefRefPtr<CefBrowser> browser,
-                           CefRefPtr<CefFrame> frame,
-                           CefRefPtr<CefContextMenuParams> params,
-                           CefRefPtr<CefMenuModel> model) override {
-    if (model->GetCount() > 0)
-      model->AddSeparator();
-    model->AddItem(MENU_ID_BACK, "后退");
-    model->AddItem(MENU_ID_FORWARD, "前进");
-    model->AddItem(MENU_ID_RELOAD, "刷新");
-    model->AddSeparator();
-    model->AddItem(MENU_ID_COPY, "复制");
-    model->AddItem(MENU_ID_PASTE, "粘贴");
-    model->AddItem(MENU_ID_SELECT_ALL, "全选");
+  // 右键菜单直接用 CEF 的默认模型（返回 / 前进 / 打印 / 查看网页源代码；
+  // 编辑框里还会有撤销 / 剪切 / 复制 / 粘贴 / 全选等），不再追加自定义条目。
+
+  // OSR 下 CEF 自带的菜单实现拿不到正确的屏幕坐标（只会返回 view 坐标，菜单会跑到
+  // 屏幕左上角），这里改成把菜单模型丢给上层用 Qt 弹出。返回 true 表示菜单由我们
+  // 接管，等上层弹出结束后回调 Continue / Cancel。
+  bool RunContextMenu(CefRefPtr<CefBrowser> browser,
+                      CefRefPtr<CefFrame> frame,
+                      CefRefPtr<CefContextMenuParams> params,
+                      CefRefPtr<CefMenuModel> model,
+                      CefRefPtr<CefRunContextMenuCallback> callback) override {
+    if (!g_event_cb || !params || !model || !callback)
+      return false;
+    CancelPendingContextMenus(browser_id_);
+    const int menu_id = g_next_context_menu_id++;
+    PendingContextMenu pending;
+    pending.browser_id = browser_id_;
+    pending.callback = callback;
+    g_context_menus[menu_id] = pending;
+    std::string json = "{\"id\":" + std::to_string(menu_id) +
+                       ",\"x\":" + std::to_string(params->GetXCoord()) +
+                       ",\"y\":" + std::to_string(params->GetYCoord()) +
+                       ",\"items\":" + SerializeMenuItems(model) + "}";
+    EmitEvent(browser_id_, CEF_BRIDGE_EVENT_CONTEXT_MENU, json);
+    return true;
   }
 
   // ---- CefRequestHandler（IO 线程：只做筛选，真正的回调排队到 UI 线程）
@@ -966,7 +1080,8 @@ CEF_BRIDGE_API int cef_bridge_init(const char* cache_path,
                                    const char* locales_dir,
                                    const char* subprocess_path,
                                    const char* user_agent,
-                                   const char* extra_args) {
+                                   const char* extra_args,
+                                   const char* locale) {
   if (g_initialized)
     return 1;
 
@@ -992,6 +1107,8 @@ CEF_BRIDGE_API int cef_bridge_init(const char* cache_path,
     CefString(&settings.browser_subprocess_path) = FromUtf8(subprocess_path);
   if (user_agent)
     CefString(&settings.user_agent) = FromUtf8(user_agent);
+  if (locale && *locale)
+    CefString(&settings.locale) = FromUtf8(locale);
 
 #if defined(_WIN32)
   CefMainArgs main_args(::GetModuleHandle(nullptr));
@@ -1030,6 +1147,13 @@ CEF_BRIDGE_API void cef_bridge_do_work() {
 CEF_BRIDGE_API void cef_bridge_shutdown() {
   if (!g_initialized)
     return;
+
+  // 还没弹完的右键菜单回调必须先取消，否则 CEF 会一直等它
+  for (auto& kv : g_context_menus) {
+    if (kv.second.callback)
+      kv.second.callback->Cancel();
+  }
+  g_context_menus.clear();
 
   // 必须先把所有浏览器关掉：带着存活的浏览器直接 CefShutdown 会触发
   // "Check failed: observers_.empty()" 之类的断言从而导致进程异常退出。
@@ -1479,6 +1603,7 @@ CEF_BRIDGE_API void cef_bridge_destroy_browser(int browser_id, int force_close) 
   g_bridge_scripts.erase(browser_id);
   g_titles.erase(browser_id);
   g_http_patterns.erase(browser_id);
+  CancelPendingContextMenus(browser_id);
 
   if (!browser)
     return;
@@ -1576,4 +1701,86 @@ CEF_BRIDGE_API void cef_bridge_key(int browser_id, int type, int key_code, int n
 
 CEF_BRIDGE_API const char* cef_bridge_version() {
   return CEF_VERSION;
+}
+
+// 右键菜单的标准命令由宿主自己执行：CEF 的默认执行（Continue -> ExecuteCommand）
+// 在 OSR 下首次调用会静默失效，自己执行才能保证每次都生效。
+bool ExecuteContextMenuCommand(int browser_id, int command_id) {
+  CefRefPtr<CefBrowser> browser = BrowserById(browser_id);
+  if (!browser)
+    return false;
+  CefRefPtr<CefFrame> frame = browser->GetFocusedFrame();
+  switch (command_id) {
+    case MENU_ID_BACK:
+      browser->GoBack();
+      return true;
+    case MENU_ID_FORWARD:
+      browser->GoForward();
+      return true;
+    case MENU_ID_RELOAD:
+      browser->Reload();
+      return true;
+    case MENU_ID_RELOAD_NOCACHE:
+      browser->ReloadIgnoreCache();
+      return true;
+    case MENU_ID_STOPLOAD:
+      browser->StopLoad();
+      return true;
+    case MENU_ID_UNDO:
+      if (frame) frame->Undo();
+      return true;
+    case MENU_ID_REDO:
+      if (frame) frame->Redo();
+      return true;
+    case MENU_ID_CUT:
+      if (frame) frame->Cut();
+      return true;
+    case MENU_ID_COPY:
+      if (frame) frame->Copy();
+      return true;
+    case MENU_ID_PASTE:
+      if (frame) frame->Paste();
+      return true;
+    case MENU_ID_DELETE:
+      if (frame) frame->Delete();
+      return true;
+    case MENU_ID_SELECT_ALL:
+      if (frame) frame->SelectAll();
+      return true;
+    case MENU_ID_VIEW_SOURCE:
+      if (frame) frame->ViewSource();
+      return true;
+    case MENU_ID_PRINT:
+      browser->GetHost()->Print();
+      return true;
+    default:
+      return false;
+  }
+}
+
+// Qt 侧的右键菜单结束后回调：选中的命令自己执行，再让 CEF 收尾（关闭菜单状态）。
+CEF_BRIDGE_API void cef_bridge_context_menu_command(int menu_id, int command_id) {
+  const auto it = g_context_menus.find(menu_id);
+  if (it == g_context_menus.end())
+    return;
+  const int browser_id = it->second.browser_id;
+  CefRefPtr<CefRunContextMenuCallback> callback = it->second.callback;
+  g_context_menus.erase(it);
+  const bool handled = ExecuteContextMenuCommand(browser_id, command_id);
+  if (!callback)
+    return;
+  if (handled)
+    callback->Cancel();
+  else
+    callback->Continue(command_id, EVENTFLAG_NONE);
+}
+
+CEF_BRIDGE_API void cef_bridge_context_menu_cancel(int menu_id) {
+  const auto it = g_context_menus.find(menu_id);
+  if (it == g_context_menus.end())
+    return;
+  CefRefPtr<CefRunContextMenuCallback> callback = it->second.callback;
+  g_context_menus.erase(it);
+  if (callback)
+    callback->Cancel();
 }
