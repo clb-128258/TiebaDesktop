@@ -143,13 +143,13 @@ class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
                 user_list = search_user(search_keyword)
                 for f in user_list:
                     # emit each follow object to UI thread
-                    user = {'uid': f["user_id"], 'portrait': f['portrait'], 'name': funcs.cut_string(f['name'], 10)}
+                    user = {'uid': f["user_id"], 'portrait': f['portrait'], 'name': f['name']}
                     self.add_user.emit(user)
             else:
                 user_list = get_user_list()
                 for f in user_list:
                     # emit each follow object to UI thread
-                    user = {'uid': f.user_id, 'portrait': f.portrait, 'name': funcs.cut_string(f.nick_name_new, 10)}
+                    user = {'uid': f.user_id, 'portrait': f.portrait, 'name': f.nick_name_new}
                     self.add_user.emit(user)
         except Exception as e:
             app_logger.log_exception(e)
@@ -166,12 +166,14 @@ class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
         try:
             item = ExtListWidgetItem(profile_mgr.current_bduss, profile_mgr.current_stoken)
             widget = UserItem(profile_mgr.current_bduss, profile_mgr.current_stoken)
+
             widget.load_by_callback = True
             portrait = user['portrait']
             name = user['name']
+            name_short = funcs.cut_string(user['name'], 10)
             uid = user['uid']
 
-            widget.setdatas(portrait, name, uid, is_tieba_uid=False)
+            widget.setdatas(portrait, name_short, uid, is_tieba_uid=False)
             widget.adjustSize()
 
             # when user double-clicks the user item, choose it
