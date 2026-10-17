@@ -3766,7 +3766,7 @@ QLabel{
           </property>
           <item row="0" column="0">
            <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,0,1">
-            <property name="verticalSpacing">
+            <property name="spacing">
              <number>8</number>
             </property>
             <item row="0" column="0" rowspan="2">

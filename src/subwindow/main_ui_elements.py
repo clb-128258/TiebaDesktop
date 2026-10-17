@@ -347,7 +347,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         menu.addAction(bduss_directly_login)
 
         bt_pos = self.login_button.mapToGlobal(QPoint(0, 0))
-        show_pos = QPoint(bt_pos.x() - (132 - self.login_button.width()), bt_pos.y() - 100)
+        show_pos = QPoint(bt_pos.x() - (132 - self.login_button.width()), bt_pos.y() - 110)
         menu.exec_(show_pos)
 
     def init_manage_acount_button_menu(self):
@@ -374,7 +374,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         menu.addAction(clear_all_accounts)
 
         bt_pos = self.manage_account_button.mapToGlobal(QPoint(0, 0))
-        show_pos = QPoint(bt_pos.x() - 139, bt_pos.y() - (95 - self.manage_account_button.height()))
+        show_pos = QPoint(bt_pos.x() - 143, bt_pos.y() - (102 - self.manage_account_button.height()))
         menu.exec_(show_pos)
 
     def open_web_link(self, url):

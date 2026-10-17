@@ -1424,7 +1424,7 @@ class Ui_Dialog(object):
         self.gridLayout_5.setVerticalSpacing(9)
         self.gridLayout_5.setObjectName("gridLayout_5")
         self.gridLayout_4 = QtWidgets.QGridLayout()
-        self.gridLayout_4.setVerticalSpacing(8)
+        self.gridLayout_4.setSpacing(8)
         self.gridLayout_4.setObjectName("gridLayout_4")
         self.label_6 = QtWidgets.QLabel(self.frame)
         self.label_6.setAlignment(QtCore.Qt.AlignCenter)

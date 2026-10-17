@@ -103,11 +103,11 @@ class ExtTabBar(QTabBar):
         
         QTabBar::tab:hover {{
             font: 9pt "微软雅黑";
-            background: {'rgba(40, 40, 40, 0.35)' if policy == 2 else 'rgba(232, 232, 232, 0.35)'};
+            background: {'rgba(40, 40, 40, 0.47)' if policy == 2 else 'rgba(232, 232, 232, 0.47)'};
         }}
         QTabBar::tab:selected {{
             font: 9pt "微软雅黑";
-            background: {'rgba(60, 60, 60, 0.5)' if policy == 2 else 'rgba(202, 202, 202, 0.5)'};
+            background: {'rgba(60, 60, 60, 0.7)' if policy == 2 else 'rgba(202, 202, 202, 0.7)'};
             border-bottom: none;
         }}
         QTabBar::close-button {{
