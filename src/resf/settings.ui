@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1007</width>
-    <height>625</height>
+    <width>1009</width>
+    <height>624</height>
    </rect>
   </property>
   <property name="font">
@@ -185,8 +185,8 @@ QListWidget::item:selected:hover {
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>762</width>
-            <height>2013</height>
+            <width>387</width>
+            <height>2098</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -3741,7 +3741,7 @@ QListWidget::item:selected:hover {
         <widget class="QFrame" name="frame">
          <property name="styleSheet">
           <string notr="true">QFrame#frame{
-	background-color: rgba(99, 85, 255, 180);
+	background-color: rgba(99, 85, 255, 220);
 	border-radius: 20px;
 }
 QLabel{
@@ -3761,10 +3761,13 @@ QLabel{
           <property name="bottomMargin">
            <number>16</number>
           </property>
+          <property name="verticalSpacing">
+           <number>9</number>
+          </property>
           <item row="0" column="0">
            <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,0,1">
             <property name="verticalSpacing">
-             <number>6</number>
+             <number>8</number>
             </property>
             <item row="0" column="0" rowspan="2">
              <widget class="QLabel" name="label_6">
@@ -3799,7 +3802,7 @@ QLabel{
               </property>
               <property name="styleSheet">
                <string notr="true">QLabel{
-	color: rgb(180, 180, 180);
+	color: rgb(190, 190, 190);
 }
 </string>
               </property>
@@ -3818,7 +3821,7 @@ QLabel{
              </font>
             </property>
             <property name="text">
-             <string>贴吧桌面是一个第三方的、开源的百度贴吧桌面客户端。</string>
+             <string>贴吧桌面是一款第三方的、开源的百度贴吧桌面客户端。</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

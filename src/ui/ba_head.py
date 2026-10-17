@@ -101,7 +101,7 @@ class Ui_Form(object):
         self.frame = QtWidgets.QFrame(self.frame_2)
         self.frame.setStyleSheet("QFrame#frame{\n"
 "    border-radius: 16px;\n"
-"    background-color: rgba(91, 68, 200, 50);\n"
+"    background-color: rgba(91, 68, 200, 100);\n"
 "}")
         self.frame.setObjectName("frame")
         self.gridLayout_12 = QtWidgets.QGridLayout(self.frame)
@@ -167,7 +167,7 @@ class Ui_Form(object):
         self.frame_3 = QtWidgets.QFrame(self.frame_2)
         self.frame_3.setStyleSheet("QFrame#frame_3{\n"
 "    border-radius: 9px;\n"
-"    background-color: rgba(91, 68, 200, 50);\n"
+"    background-color: rgba(91, 68, 200, 100);\n"
 "}")
         self.frame_3.setObjectName("frame_3")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.frame_3)

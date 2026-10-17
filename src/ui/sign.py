@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(446, 411)
+        Dialog.resize(464, 292)
         font = QtGui.QFont()
         font.setPointSize(9)
         Dialog.setFont(font)
@@ -37,20 +37,12 @@ class Ui_Dialog(object):
         self.groupBox_4.setObjectName("groupBox_4")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.groupBox_4)
         self.gridLayout_3.setObjectName("gridLayout_3")
-        self.lineEdit = QtWidgets.QLineEdit(self.groupBox_4)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.gridLayout_3.addWidget(self.lineEdit, 1, 0, 1, 1)
         self.label_5 = QtWidgets.QLabel(self.groupBox_4)
         self.label_5.setWordWrap(True)
         self.label_5.setOpenExternalLinks(True)
-        self.label_5.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse|QtCore.Qt.TextSelectableByKeyboard|QtCore.Qt.TextSelectableByMouse)
+        self.label_5.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByKeyboard|QtCore.Qt.LinksAccessibleByMouse|QtCore.Qt.TextBrowserInteraction|QtCore.Qt.TextSelectableByKeyboard|QtCore.Qt.TextSelectableByMouse)
         self.label_5.setObjectName("label_5")
-        self.gridLayout_3.addWidget(self.label_5, 2, 0, 1, 2)
-        self.label_4 = QtWidgets.QLabel(self.groupBox_4)
-        self.label_4.setWordWrap(True)
-        self.label_4.setObjectName("label_4")
-        self.gridLayout_3.addWidget(self.label_4, 0, 0, 1, 2)
+        self.gridLayout_3.addWidget(self.label_5, 0, 0, 1, 2)
         self.gridLayout.addWidget(self.groupBox_4, 3, 0, 1, 1)
         self.groupBox = QtWidgets.QGroupBox(Dialog)
         self.groupBox.setObjectName("groupBox")
@@ -88,25 +80,14 @@ class Ui_Dialog(object):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "一键签到"))
         self.groupBox_2.setTitle(_translate("Dialog", "成长等级签到"))
-        self.label_2.setText(_translate("Dialog", "将进行 成长等级签到 和 完成分享任务。"))
+        self.label_2.setText(_translate("Dialog", "将进行贴吧的成长等级签到。"))
         self.pushButton_2.setText(_translate("Dialog", "签到"))
         self.groupBox_4.setTitle(_translate("Dialog", "命令行参数调用"))
-        self.lineEdit.setText(_translate("Dialog", "[exepath] --sign-all-forums --sign-grows"))
-        self.lineEdit.setPlaceholderText(_translate("Dialog", "参数"))
-        self.label_5.setText(_translate("Dialog", "<html>\n"
-"<body>\n"
-"<p>\n"
-"其中，--sign-all-forums 是指签到所有吧， --sign-grows 是指成长等级签到。<br>\n"
-"默认情况下，签到操作完成后，会弹出消息框显示签到结果。<br>\n"
-"如需静默签到，即完成后不弹窗提示，请添加 --quiet 参数。<br>\n"
-"有关命令行用法的详细信息，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md\"><span style=\" text-decoration: underline; color:#0000ff;\">命令行用法</span></a>\n"
-"</p>\n"
-"</body>\n"
-"</html>"))
-        self.label_4.setText(_translate("Dialog", "可在命令行中执行以下命令，实现签到操作。与系统自带的 任务计划程序 配合使用，可实现 定时自动签到/开机自动签到 等功能。"))
-        self.groupBox.setTitle(_translate("Dialog", "全部一键签到"))
+        self.label_5.setText(_translate("Dialog", "<html><head/><body><p>可以通过启动参数实现按需执行签到。<br/>有关命令行用法的详细信息，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md\"><span style=\" text-decoration: underline; color:#0000ff;\">命令行用法</span></a></p></body></html>"))
+        self.groupBox.setTitle(_translate("Dialog", "全部签到"))
         self.label.setText(_translate("Dialog", "将进行 成长等级签到 和 全吧签到。"))
         self.pushButton.setText(_translate("Dialog", "一键签到"))
         self.groupBox_3.setTitle(_translate("Dialog", "全吧签到"))
         self.pushButton_3.setText(_translate("Dialog", "全吧签到"))
-        self.label_3.setText(_translate("Dialog", "点击右侧的全吧签到按钮进行一键签到。（可签 7 级以下的吧，无视签到高峰期，无视非会员限制）"))
+        self.label_3.setText(_translate("Dialog", "点击右侧的全吧签到按钮进行一键签到。\n"
+"（可签 7 级以下的吧，无视签到高峰期，无视非会员限制）"))

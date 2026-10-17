@@ -308,6 +308,9 @@
             <pointsize>10</pointsize>
            </font>
           </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
           <property name="text">
            <string>进贴</string>
           </property>
@@ -323,6 +326,9 @@
             <family>微软雅黑</family>
             <pointsize>10</pointsize>
            </font>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
           </property>
           <property name="text">
            <string>进吧</string>

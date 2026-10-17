@@ -232,7 +232,7 @@
         <property name="styleSheet">
          <string notr="true">QFrame#frame{
 	border-radius: 16px;
-	background-color: rgba(91, 68, 200, 50);
+	background-color: rgba(91, 68, 200, 100);
 }</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_12">
@@ -392,7 +392,7 @@
         <property name="styleSheet">
          <string notr="true">QFrame#frame_3{
 	border-radius: 9px;
-	background-color: rgba(91, 68, 200, 50);
+	background-color: rgba(91, 68, 200, 100);
 }</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,0,0,0,0,0,0,0,0">

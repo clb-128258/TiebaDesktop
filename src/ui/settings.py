@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(1007, 625)
+        Dialog.resize(1009, 624)
         font = QtGui.QFont()
         font.setPointSize(9)
         Dialog.setFont(font)
@@ -107,7 +107,7 @@ class Ui_Dialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 762, 2013))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 387, 2098))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.gridLayout = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -1412,7 +1412,7 @@ class Ui_Dialog(object):
         self.gridLayout_23.setObjectName("gridLayout_23")
         self.frame = QtWidgets.QFrame(self.page_3)
         self.frame.setStyleSheet("QFrame#frame{\n"
-"    background-color: rgba(99, 85, 255, 180);\n"
+"    background-color: rgba(99, 85, 255, 220);\n"
 "    border-radius: 20px;\n"
 "}\n"
 "QLabel{\n"
@@ -1421,9 +1421,10 @@ class Ui_Dialog(object):
         self.frame.setObjectName("frame")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.frame)
         self.gridLayout_5.setContentsMargins(16, 16, 16, 16)
+        self.gridLayout_5.setVerticalSpacing(9)
         self.gridLayout_5.setObjectName("gridLayout_5")
         self.gridLayout_4 = QtWidgets.QGridLayout()
-        self.gridLayout_4.setVerticalSpacing(6)
+        self.gridLayout_4.setVerticalSpacing(8)
         self.gridLayout_4.setObjectName("gridLayout_4")
         self.label_6 = QtWidgets.QLabel(self.frame)
         self.label_6.setAlignment(QtCore.Qt.AlignCenter)
@@ -1442,7 +1443,7 @@ class Ui_Dialog(object):
         font.setPointSize(10)
         self.label_8.setFont(font)
         self.label_8.setStyleSheet("QLabel{\n"
-"    color: rgb(180, 180, 180);\n"
+"    color: rgb(190, 190, 190);\n"
 "}\n"
 "")
         self.label_8.setObjectName("label_8")
@@ -1693,7 +1694,7 @@ class Ui_Dialog(object):
         self.label_6.setText(_translate("Dialog", "icon"))
         self.label_7.setText(_translate("Dialog", "贴吧桌面"))
         self.label_8.setText(_translate("Dialog", "版本 version"))
-        self.label_15.setText(_translate("Dialog", "贴吧桌面是一个第三方的、开源的百度贴吧桌面客户端。"))
+        self.label_15.setText(_translate("Dialog", "贴吧桌面是一款第三方的、开源的百度贴吧桌面客户端。"))
         self.commandLinkButton_2.setText(_translate("Dialog", "法律信息"))
         self.commandLinkButton_2.setDescription(_translate("Dialog", "查看 MIT License 的内容"))
         self.commandLinkButton_3.setText(_translate("Dialog", "查看 Qt 版本"))
