@@ -186,11 +186,7 @@ QPushButton[flat="false"]:disabled {
 
 
 QMenu {
-    background-color: BG_COLOR;
     border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 9px;
-    padding: 3px 0px;
-    color: FONT_COLOR;
 }
 
 QMenu::item:selected {

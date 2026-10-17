@@ -130,12 +130,18 @@ QComboBox::drop-down {
     border-left: none;
 }
 
+QMenu {
+    background-color: BG_COLOR;
+    border-radius: 9px;
+    color: FONT_COLOR;
+    padding: 3px;
+}
 
 QMenu::item {
     background-color: transparent;
     padding: 4px 5px;
-    margin: 2px 5px;
-    border-radius: 3px;
+    margin: 3px;
+    border-radius: 6px;
     min-width: 110px;
 }
 

@@ -52,7 +52,7 @@ def create_thread_content_menu(parent_label: QLabel):
 
     menu = BaseQMenu(parent_label)
 
-    copy_selected = QAction('复制所选', parent_label)
+    copy_selected = QAction('复制', parent_label)
     copy_selected.triggered.connect(lambda: pyperclip.copy(selected_text))
     if not selected_text or selected_text == all_text:
         copy_selected.setVisible(False)
@@ -62,7 +62,7 @@ def create_thread_content_menu(parent_label: QLabel):
     copy_all.triggered.connect(lambda: pyperclip.copy(all_text))
     menu.addAction(copy_all)
 
-    select_all = QAction('全选文本', parent_label)
+    select_all = QAction('全选', parent_label)
     select_all.triggered.connect(lambda: parent_label.setSelection(0, len(all_text)))
     menu.addAction(select_all)
 
@@ -81,7 +81,7 @@ def create_thread_content_menu(parent_label: QLabel):
         jump_webpage.triggered.connect(lambda: funcs.open_url_in_browser(selected_text))
         menu.addAction(jump_webpage)
 
-    selected_text_show = funcs.cut_string(selected_text.replace('\n', ' '), 20)
+    selected_text_show = funcs.cut_string(selected_text.replace('\u2028', ' '), 20)
     search_tb = QAction(f'在贴吧内搜索“{selected_text_show}”', parent_label)
     search_tb.triggered.connect(lambda: open_search_window(selected_text))
     if not selected_text:
@@ -240,10 +240,11 @@ def init_bg_pixmap():
 class BaseQMenu(QMenu):
     """所有上下文菜单引用的 QMenu 父类"""
 
-    SHADOW_MARGIN = 12
-    SHADOW_BLUR = 12
-    SHADOW_OFFSET_Y = 1
+    SHADOW_MARGIN = 18
+    SHADOW_BLUR = 10
+    SHADOW_OFFSET_Y = 0
     CORNER_RADIUS = 9
+    CONTENT_PADDING = 3
 
     def __init__(self, parent=None):
         super(QMenu, self).__init__(parent)
@@ -266,7 +267,7 @@ class BaseQMenu(QMenu):
             painter.setPen(Qt.NoPen)
             for radius in range(self.SHADOW_BLUR, 0, -1):
                 progress = (self.SHADOW_BLUR - radius + 1) / self.SHADOW_BLUR
-                painter.setBrush(QColor(0, 0, 0, int(55 * progress * progress)))
+                painter.setBrush(QColor(0, 0, 0, int(24 * progress * progress)))
                 shadow_rect = panel_rect.adjusted(
                     -radius,
                     -radius + self.SHADOW_OFFSET_Y,
@@ -296,7 +297,7 @@ class BaseQMenu(QMenu):
         QMenu {{
             background-color: transparent;
             border: none;
-            padding: {self.SHADOW_MARGIN}px;
+            padding: {self.SHADOW_MARGIN + self.CONTENT_PADDING}px;
         }}
         """)
 
