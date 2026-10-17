@@ -146,9 +146,9 @@ class TiebaEmojiSelector(InsideWidgetBaseQWidget, tb_emoji_selector.Ui_Form):
         if not cls.emoji_selector_instance:
             # 没有实例时创建实例
             cls.emoji_selector_instance = TiebaEmojiSelector()
-            cls.emoji_selector_menu_instance = BaseQMenu(cls.emoji_selector_instance)
+            cls.emoji_selector_menu_instance = BaseQMenu()
 
-            action = QWidgetAction(cls.emoji_selector_instance)
+            action = QWidgetAction(cls.emoji_selector_menu_instance)
             action.setDefaultWidget(cls.emoji_selector_instance)
             cls.emoji_selector_menu_instance.addAction(action)
 

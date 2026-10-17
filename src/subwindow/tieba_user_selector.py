@@ -209,9 +209,9 @@ class TiebaUserSelector(InsideWidgetBaseQWidget, tb_user_selector.Ui_Form):
     def get_instance(cls):
         if not cls.user_selector_instance:
             cls.user_selector_instance = TiebaUserSelector()
-            cls.user_selector_menu_instance = BaseQMenu(cls.user_selector_instance)
+            cls.user_selector_menu_instance = BaseQMenu()
 
-            action = QWidgetAction(cls.user_selector_instance)
+            action = QWidgetAction(cls.user_selector_menu_instance)
             action.setDefaultWidget(cls.user_selector_instance)
             cls.user_selector_menu_instance.addAction(action)
 
