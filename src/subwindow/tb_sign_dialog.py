@@ -1,6 +1,5 @@
 import asyncio
 import os
-import sys
 
 import aiotieba
 from PyQt5.QtCore import pyqtSignal, Qt
@@ -30,7 +29,6 @@ class SignAllDialog(base_ui.WindowBaseQDialog, sign.Ui_Dialog):
         self.setupUi(self)
         self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon('ui/tieba_logo_small.png'))
-        self.lineEdit.setText(f'\"{sys.executable}\" --sign-all-forums --sign-grows')
         self.init_top_toaster()
         self.init_window_position()
 
