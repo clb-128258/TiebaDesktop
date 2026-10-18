@@ -24,7 +24,7 @@ class Ui_Form(object):
         self.frame.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.frame.setStyleSheet("QFrame#frame{\n"
 "    border-radius: 16px;\n"
-"    background-color: rgba(91, 68, 200, 50);\n"
+"    background-color: rgba(91, 68, 200, 100);\n"
 "}")
         self.frame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)

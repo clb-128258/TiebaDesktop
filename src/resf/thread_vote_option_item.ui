@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>197</width>
-    <height>38</height>
+    <width>226</width>
+    <height>40</height>
    </rect>
   </property>
   <property name="font">
@@ -25,59 +25,80 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <property name="leftMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="topMargin">
-    <number>6</number>
+    <number>8</number>
    </property>
    <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
     <number>6</number>
    </property>
+   <property name="bottomMargin">
+    <number>8</number>
+   </property>
    <item row="0" column="0">
-    <layout class="QGridLayout" name="gridLayout" columnstretch="1,0,0">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="font">
-        <font>
-         <family>微软雅黑</family>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>投票文本</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QPushButton" name="pushButton">
-       <property name="font">
-        <font>
-         <family>微软雅黑</family>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>投票</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="label">
-       <property name="font">
-        <font>
-         <family>微软雅黑</family>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>票数与占比</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QFrame" name="frame">
+     <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,0,0,0">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_3">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>投票文本</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QPushButton" name="pushButton">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>投票</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="checkBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" colspan="2">
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <family>微软雅黑</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>票数与占比</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

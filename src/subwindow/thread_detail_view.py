@@ -1233,7 +1233,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                                      datas['video_info']['have_video'],
                                      datas['voice_info']['have_voice'],
                                      datas['repost_info']['have_repost'],
-                                     datas['manager_election_info']['have_manager_election']]
+                                     datas['manager_election_info']['have_manager_election'],
+                                     datas['vote_info']['have_vote']]
             if True not in no_rich_content_flags:
                 self.listWidget.hide()
             else:
@@ -1300,8 +1301,11 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
 
                     option_list = []
                     for o in datas['vote_info']['options']:
-                        item = VoteItem(o['id'])
-                        item.set_info(o['text'], o['total_num'], o['current_num'], o['is_chosen'],
+                        item = VoteItem(o['id'], datas['vote_info']['is_multi'])
+                        item.set_info(o['text'],
+                                      o['total_num'],
+                                      o['current_num'],
+                                      o['is_chosen'],
                                       o['is_current_chose'])
                         option_list.append(item)
 
@@ -1309,7 +1313,8 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     vote_widget.set_info(datas['vote_info']['title'],
                                          datas['vote_info']['vote_num'],
                                          datas['vote_info']['vt_user_num'],
-                                         option_list)
+                                         option_list,
+                                         o['is_chosen'])
                     vote_widget.msgPopped.connect(self.top_toaster.showToast)
                     vote_widget.adjustSize()
 
@@ -1385,7 +1390,11 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                     content_statement = proto_response.data.thread.content_statement
                     current_user_is_bawu = bool(proto_response.data.user.is_bawu)
 
-                    video_info = {'have_video': False, 'src': '', 'cover_src': '', 'length': 0, 'view': 0,
+                    video_info = {'have_video': False,
+                                  'src': '',
+                                  'cover_src': '',
+                                  'length': 0,
+                                  'view': 0,
                                   'is_vertical': False}
                     if thread_info.thread.contents.video:
                         video_info['have_video'] = True
@@ -1423,28 +1432,29 @@ class ThreadDetailView(base_ui.WindowBaseQWidget, tie_detail_view.Ui_Form):
                         repost_info['forum_id'] = thread_info.thread.share_origin.fid
                         repost_info['forum_name'] = thread_info.thread.share_origin.fname
 
-                    vote_info = {'have_vote': bool(thread_info.thread.vote_info.title),
+                    vote_info = {'have_vote': bool(len(proto_response.data.thread.poll_info.options)),
                                  'title': '',
                                  'vote_num': 0,
                                  'vt_user_num': 0,
                                  'is_multi': False,
-                                 'chose_option_index': 0,
+                                 'chose_option_index': [],
                                  'options': []}
+
                     if vote_info['have_vote']:
-                        vote_info_proto = proto_response.data.thread.origin_thread_info.poll_info
+                        vote_info_proto = proto_response.data.thread.poll_info
                         vote_info['title'] = thread_info.thread.vote_info.title
                         vote_info['vote_num'] = thread_info.thread.vote_info.total_vote
                         vote_info['vt_user_num'] = thread_info.thread.vote_info.total_user
                         vote_info['is_multi'] = thread_info.thread.vote_info.is_multi
-                        vote_info['chose_option_index'] = int(
-                            vote_info_proto.polled_value if vote_info_proto.polled_value else -1)
+                        vote_info['chose_option_index'] = [int(i) for i in vote_info_proto.polled_value.split(
+                            ',')] if vote_info_proto.polled_value else []
 
                         vote_options_proto = vote_info_proto.options
                         for o in vote_options_proto:
                             vote_option = {'id': o.id,
                                            'text': o.text,
                                            'is_chosen': bool(vote_info_proto.is_polled),
-                                           'is_current_chose': o.id == vote_info['chose_option_index'],
+                                           'is_current_chose': o.id in vote_info['chose_option_index'],
                                            'total_num': thread_info.thread.vote_info.total_vote,
                                            'current_num': o.num}
                             vote_info['options'].append(vote_option)
