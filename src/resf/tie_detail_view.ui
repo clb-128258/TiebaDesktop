@@ -711,6 +711,9 @@
              <pointsize>10</pointsize>
             </font>
            </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="text">
             <string> 分享...</string>
            </property>
@@ -740,6 +743,9 @@
              <pointsize>10</pointsize>
             </font>
            </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="text">
             <string>赞</string>
            </property>
@@ -768,6 +774,9 @@
              <family>微软雅黑</family>
              <pointsize>10</pointsize>
             </font>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="text">
             <string>收藏</string>
@@ -801,6 +810,9 @@
             <font>
              <pointsize>10</pointsize>
             </font>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="text">
             <string> 管理...</string>

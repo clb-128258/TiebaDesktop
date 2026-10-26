@@ -443,6 +443,9 @@
              <pointsize>9</pointsize>
             </font>
            </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="text">
             <string> 吧内搜索</string>
            </property>
@@ -493,6 +496,9 @@
              <pointsize>9</pointsize>
             </font>
            </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="text">
             <string> 浏览器进吧</string>
            </property>
@@ -507,6 +513,9 @@
             <font>
              <pointsize>9</pointsize>
             </font>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="text">
             <string> 吧详情</string>
@@ -532,6 +541,9 @@
             <font>
              <pointsize>9</pointsize>
             </font>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="text">
             <string> 吧务后台</string>
