@@ -6,7 +6,7 @@ import pyperclip
 import requests
 
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QCursor
 from PyQt5.QtWidgets import QListWidget, QTreeWidgetItem, QFileDialog, QListWidgetItem, \
     QTableWidgetItem
 
@@ -15,7 +15,7 @@ from publics.base_ui_elements import top_toast_widget, base_ui
 from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.funcs import start_background_thread, http_downloader, \
-    large_num_to_string, get_exception_string, show_label_pixmap_with_animation
+    large_num_to_string, get_exception_string, show_label_pixmap_with_animation,open_url_in_browser
 import publics.app_logger as logging
 from publics.baidu_features.tieba_apis import get_forum_level_info, sign_forum
 from subwindow.user_item import ExtTreeWidgetItem
@@ -60,6 +60,15 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         self.pushButton.clicked.connect(lambda: self.do_action_async('unfollow' if self.is_followed else 'follow'))
         self.pushButton_2.clicked.connect(lambda: self.do_action_async('sign'))
         self.pushButton_8.clicked.connect(self.refresh_main_data)
+
+        text_labels = [self.label_2, self.label_11, self.label_5, self.textBrowser]
+        for l in range(len(text_labels)):
+            text_labels[l].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_2.customContextMenuRequested.connect(lambda: self.show_text_content_menu(self.label_2))
+        self.label_11.customContextMenuRequested.connect(lambda: self.show_text_content_menu(self.label_11))
+        self.label_5.customContextMenuRequested.connect(lambda: self.show_text_content_menu(self.label_5))
+        self.textBrowser.customContextMenuRequested.connect(lambda: self.show_text_content_menu(self.textBrowser))
+        self.textBrowser.anchorClicked.connect(lambda url: open_url_in_browser(url.url()))
 
         self.forum_atavar = qt_image.MultipleImage()
         self.forum_atavar.currentPixmapChanged.connect(
@@ -111,6 +120,10 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         opic_view.closed.connect(lambda: qt_window_mgr.del_window(opic_view))
         qt_window_mgr.add_window(opic_view)
 
+    def show_text_content_menu(self, label):
+        menu = base_ui.create_thread_content_menu(label)
+        menu.exec(QCursor.pos())
+
     def action_ok_slot(self, data):
         toast = top_toast_widget.ToastMessage(data['text'])
         if data['success']:
@@ -125,7 +138,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         run_flag = True
         if action_type == 'unfollow':
             if MessageBox.warning(self, f'取消关注 {self.forum_name}吧', f'你确定要这么做吗？这会导致你的关注天数归零。',
-                                   MessageBox.Yes | MessageBox.No) == MessageBox.No:
+                                  MessageBox.Yes | MessageBox.No) == MessageBox.No:
                 run_flag = False
 
         if run_flag:
@@ -224,7 +237,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                 if datas['follow_info']['isfollow']:
                     ts = time.time() - datas["follow_info"]["follow_day"] * 86400
                     dtobj = datetime.datetime.fromtimestamp(ts)
-                    follow_date_str = f'根据关注天数推算，你大约在 {dtobj.year}年{dtobj.month}月{dtobj.day}日 关注了本吧。'
+                    follow_date_str = f'{dtobj.year} 年 {dtobj.month} 月 {dtobj.day} 日是你与本吧邂逅的日子'
                 else:
                     follow_date_str = ''
 
@@ -241,15 +254,16 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                     qss = qss.replace('[color]', 'rgb(247, 126, 48)')
                 self.label_16.setStyleSheet(qss)
                 self.label_16.setText(f'Lv.{forum_level} {datas["follow_info"]["level_flag"]}')
-                self.label_9.setText(f'{datas["follow_info"]["exp"]} / {datas["follow_info"]["next_exp"]}，'
-                                     f'距离下一等级还差 {datas["follow_info"]["next_exp"] - datas["follow_info"]["exp"]} 经验值')
+                self.label_9.setText(f'当前经验值 {datas["follow_info"]["exp"]} / {datas["follow_info"]["next_exp"]}，'
+                                     f'距离下一等级还差 {datas["follow_info"]["next_exp"] - datas["follow_info"]["exp"]} 点经验')
                 self.progressBar.setRange(0, datas["follow_info"]["next_exp"])
                 self.progressBar.setValue(datas["follow_info"]["exp"])
                 if datas['follow_info']['isSign']:
                     self.pushButton_2.setEnabled(False)
                     self.pushButton_2.setText('已签到')
 
-                self.label_25.setToolTip(follow_date_str)
+                self.label_43.setVisible(bool(follow_date_str))
+                self.label_43.setText(follow_date_str)
                 self.label_25.setText(f'{datas["follow_info"]["follow_day"]}')
                 self.label_26.setText(f'{datas["follow_info"]["total_thread_num"]}')
                 self.label_27.setText(f'{datas["follow_info"]["today_post_num"]}')
@@ -316,7 +330,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         start_background_thread(self.get_main_info)
 
     def get_main_info(self):
-        async def dosign():
+        async def runner():
             try:
                 async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
                     # 初始化数据
@@ -576,7 +590,7 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
                         data['thread_c'] = forum_info.post_num
                         data['follow_c'] = forum_info.member_num
                         data['main_thread_c'] = forum_info.thread_num
-                        data['forum_volume'] = f'{forum_info.category}'
+                        data['forum_volume'] = f'{forum_info.category} - {forum_info.subcategory}'
                         data['avatar'] = forum_info.small_avatar
 
                         result = await asyncio.gather(get_forum_rule(),
@@ -599,6 +613,6 @@ class ForumDetailWindow(base_ui.WindowBaseQDialog, forum_detail.Ui_Dialog):
         def start_async():
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)
-            asyncio.run(dosign())
+            asyncio.run(runner())
 
         start_async()

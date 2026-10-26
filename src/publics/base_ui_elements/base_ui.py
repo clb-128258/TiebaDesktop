@@ -4,10 +4,11 @@ from ctypes import wintypes
 import yarl
 import pyperclip
 import re
+import typing
 
 from PyQt5.QtCore import QPoint, Qt, QTimer, QObject
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
-    QTextEdit, QPlainTextEdit, QMainWindow
+    QTextEdit, QPlainTextEdit, QMainWindow, QTextBrowser
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QPainter, QPixmap, QPixmapCache
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr, qt_image
@@ -24,7 +25,7 @@ background_pixmap = None
 background_pixmap_hex = ''
 
 
-def create_thread_content_menu(parent_label: QLabel):
+def create_thread_content_menu(parent_label: typing.Union[QLabel, QTextBrowser]):
     """创建一个文本右键菜单"""
 
     def open_search_window(text):
@@ -46,9 +47,13 @@ def create_thread_content_menu(parent_label: QLabel):
             app_logger.log_exception(e)
             return 'Bing', profile_mgr.search_engine_presets['bing']
 
-    selected_text = parent_label.selectedText()
-    all_text = QTextDocumentFragment.fromHtml(parent_label.text()).toPlainText() if parent_label.text().startswith(
-        '<') else parent_label.text()
+    if isinstance(parent_label, QLabel):
+        selected_text = parent_label.selectedText()
+        all_text = QTextDocumentFragment.fromHtml(parent_label.text()).toPlainText() if parent_label.text().startswith(
+            '<') else parent_label.text()
+    elif isinstance(parent_label, QTextBrowser):
+        selected_text = parent_label.textCursor().selectedText()
+        all_text = parent_label.toPlainText()
 
     menu = BaseQMenu(parent_label)
 
@@ -63,7 +68,10 @@ def create_thread_content_menu(parent_label: QLabel):
     menu.addAction(copy_all)
 
     select_all = QAction('全选', parent_label)
-    select_all.triggered.connect(lambda: parent_label.setSelection(0, len(all_text)))
+    if isinstance(parent_label, QLabel):
+        select_all.triggered.connect(lambda: parent_label.setSelection(0, len(all_text)))
+    elif isinstance(parent_label, QTextBrowser):
+        select_all.triggered.connect(parent_label.selectAll)
     menu.addAction(select_all)
 
     menu.addSeparator()
