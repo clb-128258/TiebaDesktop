@@ -9,7 +9,7 @@ import typing
 from PyQt5.QtCore import QPoint, Qt, QTimer, QObject
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
     QTextEdit, QPlainTextEdit, QMainWindow, QTextBrowser
-from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QPainter, QPixmap, QPixmapCache
+from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QPainter, QPixmap, QPixmapCache, QCursor
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr, qt_image
 from publics.base_ui_elements.windows_features.dwm_visual import WM_SETTINGCHANGE, set_widget_background_mode, \
@@ -258,6 +258,7 @@ class BaseQMenu(QMenu):
 
     def __init__(self, parent=None):
         super(QMenu, self).__init__(parent)
+        self._menu_anchor = None
         self.setWindowFlags(self.windowFlags() | Qt.NoDropShadowWindowHint | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.set_theme_qss()
@@ -312,9 +313,28 @@ class BaseQMenu(QMenu):
         """)
 
     def showEvent(self, a0):
-        # 透明阴影边距不应改变菜单视觉面板的弹出位置
-        self.move(self.pos() - QPoint(self.SHADOW_MARGIN, self.SHADOW_MARGIN))
+        # 根据 Qt 最终选择的展开方向补偿透明阴影边距
+        anchor = self._menu_anchor if self._menu_anchor is not None else QCursor.pos()
+        self._menu_anchor = None
+
+        right = self.x() + self.width() - 1
+        bottom = self.y() + self.height() - 1
+        offset_x = self.SHADOW_MARGIN if anchor.x() >= right else -self.SHADOW_MARGIN
+        offset_y = self.SHADOW_MARGIN if anchor.y() >= bottom else -self.SHADOW_MARGIN
+        self.move(self.pos() + QPoint(offset_x, offset_y))
         super().showEvent(a0)
+
+    def popup(self, pos, action=None):
+        self._menu_anchor = QPoint(pos)
+        super().popup(pos, action)
+
+    def exec(self, pos, action=None):
+        self._menu_anchor = QPoint(pos)
+        return super().exec(pos, action)
+
+    def exec_(self, pos, action=None):
+        self._menu_anchor = QPoint(pos)
+        return super().exec_(pos, action)
 
     def add_extend_qss(self, qss):
         """在标准主题上添加自定义样式表"""
