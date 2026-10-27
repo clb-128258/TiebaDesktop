@@ -1265,6 +1265,9 @@ QLabel#label_36,#label_38,#label_39,#label_40,#label_41,#label_42,#label_44{colo
          <property name="openExternalLinks">
           <bool>false</bool>
          </property>
+         <property name="openLinks">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
       </layout>

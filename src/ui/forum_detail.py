@@ -547,6 +547,7 @@ class Ui_Dialog(object):
         self.textBrowser.setFont(font)
         self.textBrowser.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.textBrowser.setOpenExternalLinks(False)
+        self.textBrowser.setOpenLinks(False)
         self.textBrowser.setObjectName("textBrowser")
         self.gridLayout_8.addWidget(self.textBrowser, 0, 0, 1, 1)
         self.stackedWidget.addWidget(self.stackedWidgetPage4)

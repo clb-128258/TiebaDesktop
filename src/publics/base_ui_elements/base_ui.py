@@ -54,6 +54,8 @@ def create_thread_content_menu(parent_label: typing.Union[QLabel, QTextBrowser])
     elif isinstance(parent_label, QTextBrowser):
         selected_text = parent_label.textCursor().selectedText()
         all_text = parent_label.toPlainText()
+    else:
+        selected_text = all_text = ''
 
     menu = BaseQMenu(parent_label)
 
