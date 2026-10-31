@@ -17,15 +17,39 @@
 - 官方发行版自带 `libffmpeg`（含 H.264 / AAC），**音视频播放可用**；
 - 桥接层只暴露一组扁平的 C 函数，Python 侧用 `ctypes` 调用，不需要额外的 Python 依赖。
 
-## 当前使用的 CEF 版本
+## CEF 版本兼容性
 
-本仓库编译并验证过的版本是 **CEF 109.1.18（Chromium 109.0.5414.120）**：
+桥接层从 **CEF 109** 起保持源码兼容，**CEF 109 及以后版本都可以直接编译**。当前已验证：
 
-- 该发行版仍然兼容 **Windows 7**；
-- 自带 `libffmpeg`（H.264 / AAC 等 proprietary codecs），贴内视频可以直接播放。
+| CEF 版本 | 状态 | 说明 |
+| --- | --- | --- |
+| 109.1.18（Chromium 109） | 已验证 | 兼容 Windows 7；自带 `libffmpeg`（H.264 / AAC），贴内视频可直接播放 |
+| 156.0.0（Chromium 156） | 已验证 | 需要较新的 Windows（官方已不再支持 Windows 7/8） |
 
-Windows 下 `run_build.bat` 默认就用这个目录编译桥接层；需要换版本时，在运行前设置环境变量
-`CEF_ROOT` 覆盖即可（更新的 CEF 版本同样能编译，只是不再支持 Windows 7）。
+桥接层通过 `cef_version.h` 中的 `CEF_VERSION_MAJOR` 做条件编译，适配不同版本之间的
+API 变化。目前已经覆盖的主要分界：
+
+| 分界 | 变化 |
+| --- | --- |
+| CEF 120 | `CefWindowInfo::runtime_style`、`OnBeforePopup` 新增 `popup_id` |
+| CEF 124 | `OnRenderProcessTerminated` 迁到 `CefRequestHandler`，并新增 `error_code` / `error_string` |
+| CEF 125 | `CefDownloadHandler::OnBeforeDownload` 返回值由 `void` 改为 `bool` |
+| 新版 | 移除了 Chromium 的旧整型别名（`uint32` / `int64` 等），统一改用 `<stdint.h>` 的 `uint32_t` / `int64_t` |
+
+升级 CEF 时通常只需要下载新的 **Standard Distribution**（minimal 发行版同样可用），
+把 `CEF_ROOT` 指向它并重新编译；如果上游又修改了 API，按编译器报错补充一条对应的
+`#if CEF_VERSION_MAJOR >= N` 分支即可。
+
+Windows 下 `run_build.bat` 会读取环境变量 `CEF_ROOT`（或第一个参数）选择要链接的
+CEF 发行版，因此 109 与 156 可以使用同一套源码和脚本。
+
+> **切换 CEF 版本时请整体替换运行时**：`cef_bridge.dll`（或 `libcef_bridge.so`）、
+> `cef_bridge_helper`、`libcef.dll`/`libcef.so` 以及 paks/locales 必须来自同一个
+> CEF 发行版。不要只替换 `libcef.dll`，否则初始化时会报
+> `Request for unsupported CEF API version 0` 并访问冲突崩溃。
+> `run_build.bat` / `build_linux.sh` 会先清空 `src/binres/cef` 再整体拷贝，切换版本
+> 时直接重新运行构建脚本即可；Python 侧在初始化前也会校验桥接库与运行时的大版本，
+> 发现不匹配会给出明确错误并降级，而不是直接崩溃。
 
 ## 文件说明
 
@@ -42,7 +66,8 @@ Windows 下 `run_build.bat` 默认就用这个目录编译桥接层；需要换�
 1. **CEF 二进制发行版**：从 <https://cef-builds.spotifycdn.com/index.html> 下载与你平台匹配的
    “Standard Distribution”（Windows 选 windows64，Linux 选 linux64），解压到任意目录。
    建议选择当前最新的 stable 分支。
-2. **构建工具**：CMake 3.15+ 与 C++17 编译器（Windows 用 MSVC，Linux 用 gcc/g++）。
+2. **构建工具**：CMake 3.15+ 与支持 C++20 的编译器（Windows 用 MSVC，Linux 用 gcc/g++）。
+   新版 CEF 头文件使用了 concepts，C++17 会编译失败；CEF 109 也可以用 C++20 正常编译。
 3. （Linux）系统需要 `libx11-dev`（桥接层用它管理 CEF 子窗口）。
 
 ## 构建桥接层

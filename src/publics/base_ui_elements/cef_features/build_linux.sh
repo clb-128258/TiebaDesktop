@@ -23,7 +23,7 @@ DEST_DIR="$BINRES_DIR/cef"
 EXCLUDE_FILE="$SCRIPT_DIR/cef_exclude_list.txt"
 
 echo "TiebaDesktop CEF bridge builder (linux)"
-echo "About CEF: need to use version 109.1.18+gf1c41e4+chromium-109.0.5414.120."
+echo "About CEF: CEF 109 and newer are supported (verified with 109.1.18 and 156.0.0)."
 
 # 与 run_build.bat 一致：优先使用环境变量 CEF_ROOT，没有再用第一个参数
 if [ -z "$CEF_ROOT" ]; then
@@ -59,6 +59,9 @@ cd "$SCRIPT_DIR"
 
 # ---------------------------------------------------------------- 拷贝桥接库
 echo "copying cef binary..."
+# 切换 CEF 版本时必须整体替换运行时：桥接库由某个版本的 libcef_dll_wrapper
+# 编译，必须和 libcef.so、helper、paks/locales 来自同一个 CEF 发行版。
+rm -rf "$DEST_DIR"
 mkdir -p "$DEST_DIR"
 # 桥接库必须和 helper、libcef.so 放在同一目录，否则 CEF 子进程会因找不到依赖而启动失败
 cp -f "$SCRIPT_DIR/build/libcef_bridge.so" "$DEST_DIR/libcef_bridge.so"

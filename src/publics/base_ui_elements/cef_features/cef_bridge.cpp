@@ -40,6 +40,12 @@
 #include "include/cef_request_context.h"
 #include "include/cef_version.h"
 
+// 兼容性下限：CEF 109（Windows 7 兼容的最后一个常用版本）。
+// 上限不设死：新版本通过 CEF_VERSION_MAJOR 条件编译适配。
+#if CEF_VERSION_MAJOR < 109
+#error "TiebaDesktop CEF bridge requires CEF 109 or newer."
+#endif
+
 #if defined(_WIN32)
 #include <windows.h>
 // windows.h 会把这些名字定义成宏，导致 CEF 的同名方法（如 CefFrame::LoadString）无法编译
@@ -300,7 +306,7 @@ cef_bridge_http_cb g_http_cb = nullptr;
 std::map<int, std::vector<std::string>> g_http_patterns;
 
 // 下载：OnBeforeDownload 需要同步拿到 Python 决定的保存路径
-std::map<uint32, CefRefPtr<CefDownloadItemCallback>> g_download_callbacks;
+std::map<uint32_t, CefRefPtr<CefDownloadItemCallback>> g_download_callbacks;
 int g_download_pending_id = -1;
 std::string g_download_pending_path;
 bool g_download_pending_cancel = false;
@@ -518,12 +524,12 @@ class BridgeIconRequestClient : public CefURLRequestClient {
   }
 
   void OnUploadProgress(CefRefPtr<CefURLRequest> request,
-                        int64 current,
-                        int64 total) override {}
+                        int64_t current,
+                        int64_t total) override {}
 
   void OnDownloadProgress(CefRefPtr<CefURLRequest> request,
-                          int64 current,
-                          int64 total) override {}
+                          int64_t current,
+                          int64_t total) override {}
 
   void OnDownloadData(CefRefPtr<CefURLRequest> request,
                       const void* data,
@@ -702,9 +708,12 @@ class BridgeClient : public CefClient,
       EmitEvent(browser_id_, CEF_BRIDGE_EVENT_URL, ToUtf8(url));
   }
 
-  // 渲染进程异常退出（崩溃 / 被杀 / OOM）：上层据此提示用户，与 WebView2 行为一致
-  void OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
-                                 TerminationStatus status) override {
+  // 渲染进程异常退出（崩溃 / 被杀 / OOM）：上层据此提示用户，与 WebView2 行为一致。
+  // CEF 124 起该回调增加了 error_code / error_string（并正式迁到 CefRequestHandler），
+  // 109~123 仍是两参数版本。
+  void EmitRenderTerminated(TerminationStatus status,
+                            int error_code,
+                            const CefString& error_string) {
     const char* text = "unknown";
     switch (status) {
       case TS_ABNORMAL_TERMINATION:
@@ -722,9 +731,26 @@ class BridgeClient : public CefClient,
       default:
         break;
     }
-    EmitEvent(browser_id_, CEF_BRIDGE_EVENT_RENDER_TERMINATED,
-              std::string(text) + "|" + std::to_string(static_cast<int>(status)));
+    std::string payload = std::string(text) + "|" +
+                          std::to_string(static_cast<int>(status));
+    if (error_code || !error_string.empty())
+      payload += "|" + std::to_string(error_code) + "|" + ToUtf8(error_string);
+    EmitEvent(browser_id_, CEF_BRIDGE_EVENT_RENDER_TERMINATED, payload);
   }
+
+#if CEF_VERSION_MAJOR >= 124
+  void OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
+                                 TerminationStatus status,
+                                 int error_code,
+                                 const CefString& error_string) override {
+    EmitRenderTerminated(status, error_code, error_string);
+  }
+#else
+  void OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
+                                 TerminationStatus status) override {
+    EmitRenderTerminated(status, 0, CefString());
+  }
+#endif
 
   void OnFullscreenModeChange(CefRefPtr<CefBrowser> browser, bool fullscreen) override {
     // 网页进入/退出 HTML 全屏时通知上层（视频播放器需要它来切换窗口全屏）
@@ -848,13 +874,12 @@ class BridgeClient : public CefClient,
     return true;
   }
 
-  void OnBeforeDownload(CefRefPtr<CefBrowser> browser,
-                        CefRefPtr<CefDownloadItem> download_item,
-                        const CefString& suggested_name,
-                        CefRefPtr<CefBeforeDownloadCallback> callback) override {
+  void HandleBeforeDownload(CefRefPtr<CefDownloadItem> download_item,
+                            const CefString& suggested_name,
+                            CefRefPtr<CefBeforeDownloadCallback> callback) {
     if (!download_item || !callback)
       return;
-    const uint32 download_id = download_item->GetId();
+    const uint32_t download_id = download_item->GetId();
     {
       std::lock_guard<std::mutex> lock(g_http_mutex);
       g_download_pending_id = static_cast<int>(download_id);
@@ -864,7 +889,7 @@ class BridgeClient : public CefClient,
 
     const std::string url = ToUtf8(download_item->GetURL());
     const std::string name = ToUtf8(suggested_name);
-    const int64 total = download_item->GetTotalBytes();
+    const int64_t total = download_item->GetTotalBytes();
     std::string json = "{\"state\":1,\"id\":" + std::to_string(download_id) +
                        ",\"url\":\"" + JsonEscape(url) +
                        "\",\"name\":\"" + JsonEscape(name) +
@@ -889,12 +914,32 @@ class BridgeClient : public CefClient,
     callback->Continue(FromUtf8(path.c_str()), false);
   }
 
+#if CEF_VERSION_MAJOR >= 125
+  // CEF 125 起 OnBeforeDownload 需要返回 bool。true 表示由客户端处理：
+  // 随后调用 callback->Continue() 继续下载；不调用则保持取消（与旧版忽略
+  // callback 的效果一致）。
+  bool OnBeforeDownload(CefRefPtr<CefBrowser> browser,
+                        CefRefPtr<CefDownloadItem> download_item,
+                        const CefString& suggested_name,
+                        CefRefPtr<CefBeforeDownloadCallback> callback) override {
+    HandleBeforeDownload(download_item, suggested_name, callback);
+    return true;
+  }
+#else
+  void OnBeforeDownload(CefRefPtr<CefBrowser> browser,
+                        CefRefPtr<CefDownloadItem> download_item,
+                        const CefString& suggested_name,
+                        CefRefPtr<CefBeforeDownloadCallback> callback) override {
+    HandleBeforeDownload(download_item, suggested_name, callback);
+  }
+#endif
+
   void OnDownloadUpdated(CefRefPtr<CefBrowser> browser,
                          CefRefPtr<CefDownloadItem> download_item,
                          CefRefPtr<CefDownloadItemCallback> callback) override {
     if (!download_item || !download_item->IsValid())
       return;
-    const uint32 download_id = download_item->GetId();
+    const uint32_t download_id = download_item->GetId();
     const bool done = download_item->IsComplete() || download_item->IsCanceled();
     {
       std::lock_guard<std::mutex> lock(g_http_mutex);
@@ -1510,7 +1555,7 @@ CEF_BRIDGE_API void cef_bridge_download_set_paused(int download_id, int paused) 
   CefRefPtr<CefDownloadItemCallback> callback;
   {
     std::lock_guard<std::mutex> lock(g_http_mutex);
-    const auto it = g_download_callbacks.find(static_cast<uint32>(download_id));
+    const auto it = g_download_callbacks.find(static_cast<uint32_t>(download_id));
     if (it != g_download_callbacks.end())
       callback = it->second;
   }
@@ -1526,7 +1571,7 @@ CEF_BRIDGE_API void cef_bridge_download_cancel_by_id(int download_id) {
   CefRefPtr<CefDownloadItemCallback> callback;
   {
     std::lock_guard<std::mutex> lock(g_http_mutex);
-    const auto it = g_download_callbacks.find(static_cast<uint32>(download_id));
+    const auto it = g_download_callbacks.find(static_cast<uint32_t>(download_id));
     if (it != g_download_callbacks.end())
       callback = it->second;
   }

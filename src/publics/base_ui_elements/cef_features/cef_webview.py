@@ -659,6 +659,8 @@ class _CefBridge:
             return False
         if not self._load_library():
             return False
+        if not self._check_runtime_version():
+            return False
 
         cache_path = profile.data_folder if profile is not None else ''
         try:
@@ -759,6 +761,41 @@ class _CefBridge:
             return version.decode('utf-8', 'replace') if version else ''
         except Exception:
             return ''
+
+    def _runtime_version_major(self) -> int:
+        """读取 libcef 运行时的大版本（CEF 导出的 C API cef_version_info）。"""
+        libcef = ctypes.CDLL(os.path.join(cef_runtime_dir(), CEF_LIB_NAME))
+        fn = libcef.cef_version_info
+        fn.restype = ctypes.c_int
+        fn.argtypes = [ctypes.c_int]
+        return int(fn(0))
+
+    def _check_runtime_version(self) -> bool:
+        """
+        检查桥接库与 libcef 运行时是否使用同一 CEF 版本。
+
+        桥接库是用某个 CEF 版本的 libcef_dll_wrapper 编译的，必须与运行时
+        libcef.dll / libcef.so 完全匹配。只替换其中一边时，CEF 初始化会报
+        "Request for unsupported CEF API version 0" 并直接访问冲突崩溃；这里在
+        调用 cef_bridge_init 之前先拦住，给出明确错误。
+        """
+        try:
+            bridge_version = (self.cef_version() or '').strip()
+            bridge_major = int(bridge_version.split('.', 1)[0])
+            runtime_major = self._runtime_version_major()
+        except Exception as e:
+            # 检查本身失败时不阻止启动，保留原有行为
+            app_logger.log_WARN('CEF version check skipped')
+            app_logger.log_exception(e)
+            return True
+        if bridge_major == runtime_major:
+            return True
+        self.last_error = (
+            f'CEF version mismatch: cef_bridge.dll was built with CEF {bridge_version}, '
+            f'but {CEF_LIB_NAME} runtime is {runtime_major}.x. '
+            'Rebuild/copy cef_bridge.dll and cef_bridge_helper from the same CEF distribution.')
+        app_logger.log_WARN(self.last_error)
+        return False
 
     def lib(self):
         return self._lib
@@ -1463,12 +1500,26 @@ class CefWebView(QWidget):
 
     # -------------------------------------------------- 渲染进程崩溃
     def __on_render_terminated(self, data: str):
-        """渲染进程异常退出：与 WebView2 一样把退出码回传给上层。"""
-        status_text, _, code_text = (data or "").partition("|")
+        """渲染进程异常退出：与 WebView2 一样把退出码回传给上层。
+
+        旧版 CEF 的事件是 ``状态|终止码``；CEF 124+ 可能额外带
+        ``|error_code|error_string``，这里同时兼容两种格式。
+        """
+        parts = (data or "").split("|", 3)
+        status_text = parts[0] if parts else ""
         try:
-            code = int(code_text)
-        except Exception:
+            code = int(parts[1]) if len(parts) > 1 and parts[1] else -1
+        except (TypeError, ValueError):
             code = -1
+        if len(parts) > 2:
+            try:
+                error_code = int(parts[2]) if parts[2] else 0
+            except (TypeError, ValueError):
+                error_code = 0
+            error_string = parts[3] if len(parts) > 3 else ''
+            if error_code or error_string:
+                app_logger.log_WARN(f'cef render process terminated: {status_text} '
+                                    f'error_code={error_code} error={error_string}')
         app_logger.log_WARN(f'cef render process terminated: {status_text}')
         self.renderProcessTerminated.emit(code)
 

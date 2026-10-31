@@ -80,6 +80,14 @@ sudo zypper install dpkg rpm-build
 }
 ```
 
+> **CEF 版本**：`src/binres/cef/` 中的桥接库兼容 CEF 109 及以后版本
+> （已用 109.1.18 与 156.0.0 编译验证）。构建前请用 `CEF_ROOT` 指向对应的
+> CEF Standard Distribution 重新编译 `cef_features`，详见
+> `src/publics/base_ui_elements/cef_features/README.md`。
+> `bundle_cef` 只控制是否把 `src/binres/cef/` 打进安装包。
+> 切换 CEF 版本时请重新运行 `cef_features` 的构建脚本整体替换运行时，
+> 不要只替换 `libcef.dll`（桥接库与 libcef 必须版本一致）。
+
 建议：指定路径时，**建议使用绝对路径**，以避免相对路径带来的各种问题。
 
 ## 启动构建

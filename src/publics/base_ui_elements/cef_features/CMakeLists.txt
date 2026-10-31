@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 project(TiebaCefBridge CXX)
 
-# CEF 从 154 起（实际上更早）就要求 C++20：其头文件使用了 std::convertible_to 等 concepts。
-# 用 C++17 编译会报 "<concepts> 仅 C++20 可用" 之类的错误。
+# CEF 109+ 统一按 C++20 编译：新版 CEF 头文件使用了 std::convertible_to 等 concepts，
+# 用 C++17 会报 "<concepts> 仅 C++20 可用"；CEF 109 用 C++20 也可以正常编译。
+# 桥接源码通过 CEF_VERSION_MAJOR 适配 109~最新版之间的 API 变化（详见 README 的版本兼容性一节）。
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
