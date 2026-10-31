@@ -8,14 +8,6 @@
 它与 `windows_features/webview2.py` 提供完全一致的调用接口，业务代码统一通过
 `publics/base_ui_elements/common_webview.py` 调用，不需要关心底层用的是哪套内核。
 
-## 为什么不用 cefpython3
-
-`cefpython3` 停留在很老的 CEF 版本（CEF 66），音视频支持受限，也无法跟上官方的
-安全更新。这里改为**自己写一层很薄的 native 桥接库**（`cef_bridge.cpp`），编译时链接你下载的 CEF 二进制发行版，因此：
-
-- CEF 版本可以自由选择，**尽量用官方最新稳定版**；
-- 官方发行版自带 `libffmpeg`（含 H.264 / AAC），**音视频播放可用**；
-- 桥接层只暴露一组扁平的 C 函数，Python 侧用 `ctypes` 调用，不需要额外的 Python 依赖。
 
 ## CEF 版本兼容性
 
@@ -63,9 +55,8 @@ CEF 发行版，因此 109 与 156 可以使用同一套源码和脚本。
 
 ## 依赖
 
-1. **CEF 二进制发行版**：从 <https://cef-builds.spotifycdn.com/index.html> 下载与你平台匹配的
-   “Standard Distribution”（Windows 选 windows64，Linux 选 linux64），解压到任意目录。
-   建议选择当前最新的 stable 分支。
+1. **CEF 二进制发行版**：本项目需要一个支持 H.264 解码的 CEF 发行版，**请勿直接使用** `cef-builds.spotifycdn.com` 提供的预编译版本（不支持 H.264）。  
+    可以考虑自行从源码编译 CEF，但该过程十分漫长，并且需要性能强大的电脑，具体请自行决定。
 2. **构建工具**：CMake 3.15+ 与支持 C++20 的编译器（Windows 用 MSVC，Linux 用 gcc/g++）。
    新版 CEF 头文件使用了 concepts，C++17 会编译失败；CEF 109 也可以用 C++20 正常编译。
 3. （Linux）系统需要 `libx11-dev`（桥接层用它管理 CEF 子窗口）。
