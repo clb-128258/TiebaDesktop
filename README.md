@@ -11,7 +11,7 @@
 ![Test Build](https://github.com/clb-128258/TiebaDesktop/actions/workflows/auto_build.yml/badge.svg?branch=main)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 
-**适用于桌面端的第三方贴吧客户端**
+**适用于电脑端的非官方贴吧客户端**
 
 </div>
 
@@ -19,16 +19,15 @@
 
 ## ✨ 核心特性
 
-| 特性 | 说明 |
-|------|------|
-| 🎨 现代化界面 | 适配电脑操作，支持 Mica/Acrylic/Aero 材质、自定义图片背景、窗口透明度 |
-| 🧐 个人主页 | 查看回贴、贴吧工具箱快捷入口、显示隐藏主题贴等 |
-| 🔐 灵活登录 | 支持内置浏览器、扫码、Token 登录 |
-| 👥 多账号管理 | 多账号自由切换，数据各自独立保存 |
-| ⚡ 双倍签到经验 | 基于官方小组件原理实现经验翻倍 |
-| 🛠️ 命令行支持 | 通过启动参数执行任务，便于自动化 |
-| 🎯 丰富设置 | 屏蔽首页视频、隐藏 IP 属地、自定义排序等 |
-| 🔒 本地隐私保护 | 数据仅在本地处理，账号信息加密存储 |
+| 特性 | 说明                                     |
+|------|----------------------------------------|
+| 🎨 现代化界面 | 支持 Mica/Acrylic 材质、自定义图片背景、窗口透明度 |
+| 🧐 个人主页 | 贴吧工具箱快捷入口、显示隐藏主题贴                    |
+| 🔐 灵活登录 | 支持浏览器、扫码、Token 登录                      |
+| ⚡ 双倍签到经验 | 每次签到经验可翻倍                              |
+| 🛠️ 命令行支持 | 通过启动参数执行任务，便于自动化                       |
+| 🎯 丰富设置 | 屏蔽首页视频、隐藏 IP 属地、自定义排序                  |
+等等...
 
 ## 🖼️ 界面概览
 
@@ -37,11 +36,8 @@
 <img src="./docs/app-ui-grabs/1.png" alt="首页推荐" width="48%">
 <img src="./docs/app-ui-grabs/2.png" alt="关注的吧" width="48%">
 
-<img src="./docs/app-ui-grabs/3.png" alt="互动消息" width="48%">
 <img src="./docs/app-ui-grabs/4.png" alt="吧内贴子" width="48%">
-
 <img src="./docs/app-ui-grabs/5.png" alt="贴子详情" width="48%">
-<img src="./docs/app-ui-grabs/6.png" alt="个人主页" width="48%">
 
 </div>
 
@@ -49,7 +45,7 @@
 
 支持 Windows 与主流 Linux 发行版，仅提供 x86_64 版本（暂不支持 macOS 及其它架构）。
 
-- **Windows**：Windows 7 及以上，需安装 Visual C++ Redistributable 2015-20xx、.NET Framework 4.8 与 Edge WebView2。
+- **Windows**：Windows 7 及以上。非 Win10 以上系统需安装 Visual C++ Redistributable 2015-20xx、.NET Framework 4.8。
 - **Linux**：提供 deb/rpm 包，兼容 Debian/Ubuntu/Fedora 等发行版。
 
 > Linux 版已在 `Ubuntu 24.04 x64` 系统下进行过测试，  
@@ -217,17 +213,18 @@ TiebaDesktop/
 
 感谢以下开源项目：
 
-| 项目 | 说明 |
-|------|------|
-| [🎯 aiotieba](https://github.com/lumina37/aiotieba) | 贴吧 API 的 Python 实现，本项目的核心基础 |
-| [📋 tbclient.protobuf](https://github.com/n0099/tbclient.protobuf) | 贴吧 .proto 定义合集 |
-| [🎬 xgplayer](https://h5player.bytedance.com/) | 西瓜播放器，本项目视频播放器的基础 |
-| [📢 toaster (Win8)](https://github.com/nels-o/toaster) | Win8/8.1 通知功能的实现基础 |
+| 项目                                                                 | 说明                          |
+|--------------------------------------------------------------------|-----------------------------|
+| [🎯 aiotieba](https://github.com/lumina37/aiotieba)                | 贴吧 API 的 Python 实现，本项目的核心基础 |
+| [📋 tbclient.protobuf](https://github.com/n0099/tbclient.protobuf) | 贴吧 .proto 定义合集              |
+| [🎬 xgplayer](https://h5player.bytedance.com/)                     | 西瓜播放器，本项目视频播放器的基础           |
+| [📢 toaster (Win8)](https://github.com/nels-o/toaster)             | Win8/8.1 通知功能的实现基础          |
+| [🌐 CEF](https://github.com/chromiumembedded/cef)                  | 项目内使用的浏览器内核                 |
 
 ## 🔗 友情链接
 
 - 📱 [TiebaLite](https://github.com/HuanCheng65/TiebaLite) — 第三方安卓贴吧客户端（已停更）
-- 📱 [TiebaLite（维护版）](https://github.com/zzc10086/TiebaLite) — 由 [zzc10086](https://github.com/zzc10086) 维护
+- 📱 [Oolong](https://github.com/HuanCheng65/Oolong) — 贴吧 Lite 的续作
 - 🌐 [NeoTieBa](https://github.com/Vkango/NeoTieBa) — 基于 Tauri 2.0 + Vue3 + TypeScript 的第三方贴吧客户端
 - 🛠️ [eazy-tieba](https://github.com/Dilettante258/eazy-tieba) — 开源的百度贴吧工具箱
 
@@ -235,4 +232,4 @@ TiebaDesktop/
 
 1. **隐私**：个人信息与账号数据仅在本地处理，不会上传或分享。
 2. **协议**：本项目基于 MIT License 发布，请在遵守该协议的前提下使用。
-3. **免责**：仅供学习交流，请勿用于商业或非法用途，使用本软件产生的后果与作者无关。
+3. **免责**：本项目源码仅供学习交流，与百度公司官方无关。请勿用于商业或非法用途，使用本软件产生的后果作者概不负责。
