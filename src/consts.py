@@ -82,8 +82,8 @@ encrypt_key = 'G6WxHyBcliRT5KqcaLkskO5SKB3JJ9dX'
 datapath = get_default_datapath()
 
 # 主题色调信息
-qss_dark_bg_color = 'rgb(20, 20, 20)'
-rgb_dark_bg_color = (20, 20, 20)
+qss_dark_bg_color = 'rgb(10, 10, 10)'
+rgb_dark_bg_color = (10, 10, 10)
 qss_dark_font_color = 'rgb(245, 245, 245)'
 
 qss_bright_bg_color = 'white'
