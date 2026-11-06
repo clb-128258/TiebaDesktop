@@ -8,7 +8,7 @@ import time
 import typing
 import requests
 
-from PyQt5.QtCore import pyqtSignal, Qt, QObject, QEvent, QTimer
+from PyQt5.QtCore import pyqtSignal, Qt, QObject
 from PyQt5.QtGui import QIcon
 
 import consts
@@ -17,7 +17,7 @@ from publics import qt_image, profile_mgr, request_mgr, account_mgr, app_logger
 from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements.message_box import MessageBox
 from publics.base_ui_elements import common_webview
-from publics.app_logger import log_exception, log_INFO, log_WARN
+from publics.app_logger import log_exception, log_INFO
 from publics.funcs import start_background_thread, get_exception_string, get_dict_value_treely, \
     save_json
 
@@ -349,8 +349,8 @@ class QRLoginDialog(base_ui.WindowBaseQDialog, qr_login.Ui_Dialog):
             self.qr_code_loaded.emit(emit_data)
 
 
-class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
-    """高级登录对话框"""
+class CookiesLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
+    """Cookies 登录对话框"""
 
     def __init__(self):
         super().__init__()
@@ -362,16 +362,26 @@ class SeniorLoginDialog(base_ui.WindowBaseQDialog, login_by_bduss.Ui_Dialog):
         self.pushButton_2.clicked.connect(self.close)
         self.pushButton.clicked.connect(self.save_account_info)
 
+    def analyze_baidu_token(self):
+        if self.tabWidget.currentIndex() == 0:
+            cookie_dict = common_webview.HttpDataRewriter.parseCookieToDict(self.textEdit.toPlainText())
+            bduss = cookie_dict.get('BDUSS', '')
+            stoken = cookie_dict.get('STOKEN', '')
+        else:
+            bduss = self.lineEdit.text()
+            stoken = self.lineEdit_2.text()
+
+        return bduss, stoken
+
     def save_account_info(self):
-        bduss = self.lineEdit.text()
-        stoken = self.lineEdit_2.text()
+        bduss, stoken = self.analyze_baidu_token()
         if len(bduss) == 192 and len(stoken) == 64:
             account_manager = account_mgr.GlobalAccountContainer.get_current_manager()
             account_manager.add_account_async(bduss, stoken)
             self.close()
         else:
-            MessageBox.critical(self, '请正确填写百度 Token 信息',
-                                '你输入的 Token 长度不正确或是已失效，请正确填写 BDUSS 和 STOKEN 后再试一次。',
+            MessageBox.critical(self, '无法获取有效的百度 Token 信息',
+                                '你输入的 Token 内容无效，可能是长度不正确，也可能是 Cookies 字段数据不完整。请再试一次。',
                                 MessageBox.Ok)
 
 
@@ -450,8 +460,12 @@ class LoginWebView(base_ui.WindowBaseQDialog):
             a0.ignore()
             self.close()
 
-    def event(self, a0):
-        return super().event(a0)
+    def hideEvent(self, a0):
+        super().hideEvent(a0)
+        if not self.islogin and self.http_catcher.is_token_got:
+            a0.ignore()
+        else:
+            a0.accept()
 
     def closeEvent(self, a0):
         if not self.islogin and not self.http_catcher.is_token_got:

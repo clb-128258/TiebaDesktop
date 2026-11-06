@@ -27,7 +27,7 @@ from publics.base_ui_elements.loading_widget import LoadingFlashWidget
 from publics.base_ui_elements import common_webview
 from publics.base_ui_elements import top_toast_widget, base_ui, float_button
 from publics.app_logger import log_exception, log_INFO, log_WARN
-from publics.baidu_features.baidu_passport_login import QRLoginDialog, LoginWebView, SeniorLoginDialog
+from publics.baidu_features.baidu_passport_login import QRLoginDialog, LoginWebView, CookiesLoginDialog
 from publics.base_ui_elements.windows_features import dwm_visual
 from publics.funcs import (save_json, load_json, start_background_thread,
                            get_dict_value_treely,
@@ -342,7 +342,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         qr_login.triggered.connect(self.add_account_qrcode)
         menu.addAction(qr_login)
 
-        bduss_directly_login = QAction('高级登录', self)
+        bduss_directly_login = QAction('Cookie 登录', self)
         bduss_directly_login.triggered.connect(self.add_account_senior)
         menu.addAction(bduss_directly_login)
 
@@ -906,7 +906,7 @@ class SettingsWindow(base_ui.WindowBaseQDialog, settings.Ui_Dialog):
         d.exec()
 
     def add_account_senior(self):
-        d = SeniorLoginDialog()
+        d = CookiesLoginDialog()
         d.exec()
 
     def clear_account_list(self):
