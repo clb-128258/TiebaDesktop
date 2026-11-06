@@ -2,9 +2,7 @@
 //
 // 这一层只做一件事：把 CEF 的 C++ API 包成一组扁平的 C 函数，
 // 让 Python 侧（ctypes）可以驱动窗口化的 CEF 浏览器。
-//
-// 之所以不直接用 cefpython3：cefpython3 停留在很老的 CEF 版本且音视频支持受限，
-// 而这里编译时链接的是你下载的 CEF 二进制发行版（版本可自由选择、尽量新）。
+
 #ifndef TIEBADESKTOP_CEF_BRIDGE_H_
 #define TIEBADESKTOP_CEF_BRIDGE_H_
 

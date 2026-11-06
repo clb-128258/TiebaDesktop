@@ -9,11 +9,21 @@
 #if defined(_WIN32)
 #include <windows.h>
 
-int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line, int show) {
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line, int show)
+{
+  if (cmd_line[0] == L'\0')
+  {
+    // 直接点开程序时显示消息框提示
+    MessageBox(NULL,
+               "这是贴吧桌面的 CEF 子进程外壳程序，用于运行 Chromium 子进程，直接双击打开是没有任何作用的。",
+               "提示",
+               MB_OK | MB_ICONINFORMATION);
+  }
   return cef_bridge_execute_process(0, nullptr);
 }
 #else
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   return cef_bridge_execute_process(argc, argv);
 }
 #endif

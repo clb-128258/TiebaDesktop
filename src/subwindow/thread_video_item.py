@@ -30,7 +30,7 @@ class VideoWebView(common_webview.CommonWebView):
             enable_context_menu=False,
             enable_keyboard_keys=False,
             enable_link_hover_text=False,
-            user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
+            user_agent=f'[default_ua] {consts.WINDOWS_AUMID}/{consts.APP_VERSION_STR}',
             enable_osr=get_dict_value_treely(
                 profile_mgr.local_config,
                 ['webview_settings', 'enable_osr'], False))

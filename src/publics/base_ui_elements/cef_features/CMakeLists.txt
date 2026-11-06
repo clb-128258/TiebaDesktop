@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.15)
 
 project(TiebaCefBridge CXX)
 
-# CEF 109+ 统一按 C++20 编译：新版 CEF 头文件使用了 std::convertible_to 等 concepts，
-# 用 C++17 会报 "<concepts> 仅 C++20 可用"；CEF 109 用 C++20 也可以正常编译。
-# 桥接源码通过 CEF_VERSION_MAJOR 适配 109~最新版之间的 API 变化（详见 README 的版本兼容性一节）。
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -89,7 +86,7 @@ if(MSVC)
     set_target_properties(cef_bridge_helper PROPERTIES WIN32_EXECUTABLE TRUE)
     target_compile_definitions(cef_bridge_helper PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
     # 源文件是 UTF-8（含中文注释），不加 /utf-8 会被按本地代码页解析而出错
-    target_compile_options(cef_bridge_helper PRIVATE /utf-8 /W1)
+    target_compile_options(cef_bridge_helper PRIVATE /source-charset:utf-8 /execution-charset:gb2312 /W1)
 else()
     # Linux 下让 helper 与桥接库、libcef.so 的依赖都用同目录（$ORIGIN）解析
     set_target_properties(cef_bridge cef_bridge_helper PROPERTIES

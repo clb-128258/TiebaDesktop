@@ -108,7 +108,6 @@ class DayHistoryItem(base_ui.InsideWidgetBaseQWidget, view_history_item.Ui_Form)
         super().__init__()
         self.setupUi(self)
         self.reset_theme()
-        self.init_shadow_effect()
 
         self.label.setText(date_str)
 
@@ -130,15 +129,6 @@ class DayHistoryItem(base_ui.InsideWidgetBaseQWidget, view_history_item.Ui_Form)
         for i in range(self.listWidget.count()):
             widget = self.listWidget.itemWidget(self.listWidget.item(i))
             widget.reset_theme()
-
-    def init_shadow_effect(self):
-        shadow_effect = QGraphicsDropShadowEffect()
-        shadow_effect.setBlurRadius(10)  # 阴影模糊半径
-        shadow_effect.setColor(QColor(0, 0, 0, 50))  # 阴影颜色和透明度
-        shadow_effect.setOffset(2, 2)  # 阴影偏移量
-
-        # 将阴影效果应用到 QFrame
-        self.frame.setGraphicsEffect(shadow_effect)
 
     def load_items_icon(self):
         if not self.is_icon_loaded:
@@ -237,7 +227,7 @@ class HistoryViewWindow(base_ui.WindowBaseQWidget, view_history.Ui_Form):
 
     def clear_history(self):
         if MessageBox.warning(self, '确认要清空浏览记录吗？', '此操作不可撤销，你的浏览记录将被永久删除。',
-                               MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
+                              MessageBox.Yes | MessageBox.No) == MessageBox.Yes:
             profile_mgr.view_history.clear()
             profile_mgr.save_view_history()
             self.reload_history()

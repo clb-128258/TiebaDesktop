@@ -17,3 +17,6 @@
 \ceftests
 \Debug
 .a\
+
+\bootstrap.exe
+\bootstrapc.exe

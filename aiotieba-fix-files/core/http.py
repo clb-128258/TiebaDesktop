@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .account import Account
     from .net import NetCore
 
-USER_AGENT = f'aiotieba/{__version__} CLBTiebaDesktop/{consts.APP_VERSION_STR}'
+USER_AGENT = f'aiotieba/{__version__} {consts.WINDOWS_AUMID}/{consts.APP_VERSION_STR}'
 
 
 @dcs.dataclass

@@ -4,11 +4,11 @@ import platform
 import pyperclip
 import yarl
 import json
-from PyQt5.QtCore import Qt, QByteArray, QMimeData, QPoint, QTimer, QEvent
+from PyQt5.QtCore import Qt, QByteArray, QMimeData, QPoint, QEvent
 from PyQt5.QtGui import QIcon, QMovie, QMouseEvent, QDrag, QCursor
 from PyQt5.QtWidgets import QWidget, QTabBar, QApplication, QLabel, QTabWidget, QAction
 
-from consts import datapath, APP_VERSION_STR
+from consts import datapath, APP_VERSION_STR,WINDOWS_AUMID
 from publics import profile_mgr, qt_window_mgr, cache_mgr, app_logger
 from publics.base_ui_elements import common_webview
 from publics.base_ui_elements.message_box import MessageBox
@@ -319,7 +319,7 @@ class TiebaWebBrowser(base_ui.WindowBaseQWidget, tb_browser.Ui_Form):
             enable_keyboard_keys=True,
             handle_newtab_byuser=True,
             disable_web_safe=False,
-            user_agent=f'[default_ua] CLBTiebaDesktop/{APP_VERSION_STR}',
+            user_agent=f'[default_ua] {WINDOWS_AUMID}/{APP_VERSION_STR}',
             enable_transparent_bg=get_dict_value_treely(
                 profile_mgr.local_config,
                 ['webview_settings', 'transparent_bg_color'], False),

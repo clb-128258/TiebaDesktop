@@ -427,7 +427,7 @@ class LoginWebView(base_ui.WindowBaseQDialog):
         self.webview.setParent(self)
         self.webview.newtabSignal.connect(self.open_in_current_page)
         self.profile = common_webview.WebViewProfile(data_folder=f'{consts.datapath}/webview_data/default',
-                                                     user_agent=f'[default_ua] CLBTiebaDesktop/{consts.APP_VERSION_STR}',
+                                                     user_agent=f'[default_ua] {consts.WINDOWS_AUMID}/{consts.APP_VERSION_STR}',
                                                      enable_link_hover_text=False,
                                                      enable_zoom_factor=False,
                                                      enable_error_page=False,

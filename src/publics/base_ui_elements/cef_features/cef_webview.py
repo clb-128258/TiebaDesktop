@@ -8,19 +8,16 @@
     binres/cef/ 下的 *.pak、icudtl.dat、locales/、resources/、swiftshader/ 等资源
 """
 import base64
-import ctypes
 import functools
 import http.server
 import json
 import math
-import os
 import sys
 import threading
-import time
-import typing
 
-from PyQt5.QtCore import (pyqtSignal, pyqtSlot, Qt, QUrl, QTimer, QEvent, QMetaObject,
-                          QThread, QAbstractNativeEventFilter, QLocale, QPoint)
+from PyQt5.QtCore import (pyqtSignal, pyqtSlot,
+                          QUrl, QTimer, QEvent, QMetaObject,
+                          QThread, QLocale, QPoint)
 from PyQt5.QtGui import QColor, QCursor, QIcon, QImage, QPainter, QPixmap
 from PyQt5.QtWidgets import QWidget, QLabel, QFileDialog, QApplication, QMenu, QActionGroup
 
@@ -28,223 +25,10 @@ from publics import app_logger
 from publics.base_ui_elements.common_webview import WebViewProfile
 from publics.base_ui_elements import base_ui
 
-IS_WINDOWS = os.name == 'nt'
-
-BRIDGE_LIB_NAME = 'cef_bridge.dll' if IS_WINDOWS else 'libcef_bridge.so'
-CEF_LIB_NAME = 'libcef.dll' if IS_WINDOWS else 'libcef.so'
-HELPER_NAME = 'cef_bridge_helper.exe' if IS_WINDOWS else 'cef_bridge_helper'
-
-# 视频播放页使用的本地虚拟主机名（与 Windows 端 WebView2 保持一致）
-VIRTUAL_HOST = 'clb.tiebadesktop.localpage.jsplayer'
-JS_PLAYER_DIR = os.path.join(os.getcwd(), 'ui', 'js_player')
-
-# 「另存为网页」分块传输的块大小（字符数）
-_SAVE_HTML_CHUNK = 40000
-
-# 销毁 CEF 浏览器时，Chromium 会往顶层窗口 Post 一个 WM_CLOSE，需要临时屏蔽
-_WM_CLOSE = 0x0010
-_PM_REMOVE = 0x0001
-# 用户主动关闭窗口（标题栏 X / Alt+F4 / 任务栏 / 系统菜单）会先发 WM_SYSCOMMAND(SC_CLOSE)，
-# 之后才产生 WM_CLOSE；Chromium 补发的那条是裸的 PostMessage(WM_CLOSE)。
-# 用这一点区分「用户要关窗」和「CEF 的残留消息」，避免把用户自己的关闭请求也吞掉。
-_WM_SYSCOMMAND = 0x0112
-_SC_CLOSE = 0xF060
-_USER_CLOSE_GRACE_SECONDS = 1.0
-# 关闭守卫：销毁 CEF 窗口后，Chromium 会往宿主顶层窗口补发一个 WM_CLOSE，
-# 派发时机不定（实测 1~2 秒，页面复杂时更久），所以要一直挂到真的拦到它为止；
-# 超时上限只是兜底。用户主动关窗会先来 WM_SYSCOMMAND(SC_CLOSE)，检测到就立刻撤守卫，
-# 因此长时间挂着也不会再挡用户自己的关闭操作。
-_CLOSE_GUARD_MAX_MS = 30000
-
-
-class _WinMsg(ctypes.Structure):
-    _fields_ = [('hwnd', ctypes.c_void_p), ('message', ctypes.c_uint),
-                ('wParam', ctypes.c_size_t), ('lParam', ctypes.c_ssize_t),
-                ('time', ctypes.c_uint), ('pt_x', ctypes.c_long),
-                ('pt_y', ctypes.c_long)]
-
-
-_EVENT_CALLBACK_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
-# OSR 画面回调：buffer 为 BGRA（物理像素），只在回调期间有效
-_PAINT_CALLBACK_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_int, ctypes.c_void_p,
-                                        ctypes.c_int, ctypes.c_int)
-
-# browser_id -> CefWebView
-_WIDGETS: typing.Dict[int, 'CefWebView'] = {}
-
-# HTTP 请求 / 响应回调：kind 1 = 请求、2 = 响应；body 仅在回调期间有效
-_HTTP_CALLBACK_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_int, ctypes.c_int, ctypes.c_char_p,
-                                       ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p,
-                                       ctypes.c_void_p, ctypes.c_int)
-
-
-class CefEventType:
-    # 与 cef_bridge.h 中的 CEF_BRIDGE_EVENT_* 保持一致
-    CREATED = 1
-    CLOSE = 2
-    LOAD_START = 3
-    LOAD_END = 4
-    LOAD_ERROR = 5
-    TITLE = 6
-    URL = 7
-    STATUS = 8
-    BRIDGE_MESSAGE = 9
-    NEW_TAB = 10
-    FULLSCREEN = 11
-    CONSOLE = 12
-    COOKIES = 13
-    DEVTOOLS_CREATED = 14
-    DEVTOOLS_CLOSED = 15
-    FAVICON_URL = 16
-    FAVICON_DATA = 17
-    DOWNLOAD = 18
-    RENDER_TERMINATED = 21
-    CURSOR = 22
-    CONTEXT_MENU = 23
-
-
-# OSR 光标：cef_cursor_type_t（见 CEF 头文件 cef_types.h）到 Qt 光标的映射。
-# 只列出常用的类型，未列出的（缩放、自定义光标等）统一回落到普通箭头。
-_CEF_CURSOR_TO_QT = {
-    0: Qt.ArrowCursor,  # CT_POINTER
-    1: Qt.CrossCursor,  # CT_CROSS
-    2: Qt.PointingHandCursor,  # CT_HAND
-    3: Qt.IBeamCursor,  # CT_IBEAM
-    4: Qt.WaitCursor,  # CT_WAIT
-    5: Qt.WhatsThisCursor,  # CT_HELP
-    6: Qt.SizeHorCursor,  # CT_EASTRESIZE
-    7: Qt.SizeVerCursor,  # CT_NORTHRESIZE
-    8: Qt.SizeBDiagCursor,  # CT_NORTHEASTRESIZE
-    9: Qt.SizeFDiagCursor,  # CT_NORTHWESTRESIZE
-    10: Qt.SizeVerCursor,  # CT_SOUTHRESIZE
-    11: Qt.SizeFDiagCursor,  # CT_SOUTHEASTRESIZE
-    12: Qt.SizeBDiagCursor,  # CT_SOUTHWESTRESIZE
-    13: Qt.SizeHorCursor,  # CT_WESTRESIZE
-    14: Qt.SizeVerCursor,  # CT_NORTHSOUTHRESIZE
-    15: Qt.SizeHorCursor,  # CT_EASTWESTRESIZE
-    16: Qt.SizeBDiagCursor,  # CT_NORTHEASTSOUTHWESTRESIZE
-    17: Qt.SizeFDiagCursor,  # CT_NORTHWESTSOUTHEASTRESIZE
-    18: Qt.SizeHorCursor,  # CT_COLUMNRESIZE
-    19: Qt.SizeVerCursor,  # CT_ROWRESIZE
-    20: Qt.SizeAllCursor,  # CT_MIDDLEPANNING
-    21: Qt.SizeAllCursor,  # CT_EASTPANNING
-    22: Qt.SizeAllCursor,  # CT_NORTHPANNING
-    23: Qt.SizeAllCursor,  # CT_NORTHEASTPANNING
-    24: Qt.SizeAllCursor,  # CT_NORTHWESTPANNING
-    25: Qt.SizeAllCursor,  # CT_SOUTHPANNING
-    26: Qt.SizeAllCursor,  # CT_SOUTHEASTPANNING
-    27: Qt.SizeAllCursor,  # CT_SOUTHWESTPANNING
-    28: Qt.SizeAllCursor,  # CT_WESTPANNING
-    29: Qt.SizeAllCursor,  # CT_MOVE
-    30: Qt.IBeamCursor,  # CT_VERTICALTEXT
-    31: Qt.CrossCursor,  # CT_CELL
-    34: Qt.BusyCursor,  # CT_PROGRESS
-    35: Qt.ForbiddenCursor,  # CT_NODROP
-    36: Qt.DragCopyCursor,  # CT_COPY
-    37: Qt.BlankCursor,  # CT_NONE
-    38: Qt.ForbiddenCursor,  # CT_NOTALLOWED
-    41: Qt.OpenHandCursor,  # CT_GRAB
-    42: Qt.ClosedHandCursor,  # CT_GRABBING
-    43: Qt.SizeAllCursor,  # CT_MIDDLE_PANNING_VERTICAL
-    44: Qt.SizeAllCursor,  # CT_MIDDLE_PANNING_HORIZONTAL
-    47: Qt.DragMoveCursor,  # CT_DND_MOVE
-    48: Qt.DragCopyCursor,  # CT_DND_COPY
-    49: Qt.DragLinkCursor,  # CT_DND_LINK
-}
-
-
-class _StrayCloseNativeFilter(QAbstractNativeEventFilter):
-    """原生消息过滤器：丢弃「销毁 CEF 子窗口」时 Chromium 给宿主顶层窗口补发的 WM_CLOSE。
-
-    Chromium 关闭自己的子窗口时会给宿主顶层窗口 Post 一个 WM_CLOSE，Qt 收到后会把窗口
-    隐藏掉 —— 模态窗口（登录窗口用 exec() 打开）因此会直接退出，看起来像「被关闭」。
-    在原生消息层把它丢掉，Qt 就不会产生 Close / Hide，也不必事后补救。
-
-    注意不能「见到 WM_CLOSE 就吞」：用户在守卫有效期内关窗（标题栏 X / Alt+F4 /
-    任务栏关闭）同样会走 WM_CLOSE，全吞掉会让窗口关不掉。用户关闭一定先发
-    WM_SYSCOMMAND(SC_CLOSE)，所以这里用有没有 SC_CLOSE 来区分两者的来源。
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.target_hwnd = 0
-        # 用户关闭意图出现时回调（用来立刻撤掉守卫），由 CefWebView 设置
-        self.on_user_close = None
-        self._user_close_time = 0.0
-
-    def user_close_requested(self) -> bool:
-        """最近是否出现过用户的关闭意图（WM_SYSCOMMAND / SC_CLOSE）。"""
-        if not self._user_close_time:
-            return False
-        return (time.monotonic() - self._user_close_time) <= _USER_CLOSE_GRACE_SECONDS
-
-    def nativeEventFilter(self, eventType, message):
-        if not IS_WINDOWS or not self.target_hwnd:
-            return False, 0
-        try:
-            if bytes(eventType) != b'windows_generic_MSG':
-                return False, 0
-            msg = ctypes.cast(int(message), ctypes.POINTER(_WinMsg)).contents
-            if int(msg.hwnd or 0) != self.target_hwnd:
-                return False, 0
-            if msg.message == _WM_SYSCOMMAND and (int(msg.wParam) & 0xFFF0) == _SC_CLOSE:
-                # 用户要关窗：马上撤掉守卫，后面那条 WM_CLOSE 必须放行
-                self._user_close_time = time.monotonic()
-                callback = self.on_user_close
-                if callback is not None:
-                    try:
-                        callback()
-                    except Exception as e:
-                        app_logger.log_exception(e)
-                return False, 0
-            if msg.message == _WM_CLOSE:
-                if self.user_close_requested():
-                    self._user_close_time = 0.0
-                    return False, 0
-                app_logger.log_INFO('cef webview: WM_CLOSE trashed')
-                return True, 0
-        except Exception as e:
-            app_logger.log_exception(e)
-        return False, 0
-
-
-_stray_close_filter = _StrayCloseNativeFilter()
-
-
-def _binres_candidates() -> typing.List[str]:
-    # 按优先级列出可能存放 binres 的目录
-    candidates = [os.path.join(os.getcwd(), 'binres')]
-
-    if getattr(sys, 'frozen', False):
-        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
-        candidates.append(os.path.join(exe_dir, 'binres'))
-        candidates.append(os.path.join(exe_dir, '_internal', 'binres'))
-
-    meipass = getattr(sys, '_MEIPASS', None)
-    if meipass:
-        candidates.append(os.path.join(meipass, 'binres'))
-
-    # 源码运行时：src/publics/base_ui_elements/cef_features -> src/binres
-    module_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates.append(os.path.abspath(os.path.join(module_dir, '..', '..', '..', 'binres')))
-    return candidates
-
-
-def binres_dir() -> str:
-    # 返回实际包含 CEF 桥接库的 binres 目录；找不到时退化为存在的目录
-    candidates = _binres_candidates()
-    for candidate in candidates:
-        if os.path.isfile(os.path.join(candidate, BRIDGE_LIB_NAME)):
-            return candidate
-    for candidate in candidates:
-        if os.path.isdir(candidate):
-            return candidate
-    return candidates[0]
-
-
-def cef_runtime_dir() -> str:
-    # CEF 运行时目录（libcef、资源、locales、helper 都放在这里）
-    return os.path.join(binres_dir(), 'cef')
+from publics.base_ui_elements.cef_features.cef_consts import *
+from publics.base_ui_elements.cef_features.cef_consts import (_HTTP_CALLBACK_TYPE, _SAVE_HTML_CHUNK,
+                                                              _EVENT_CALLBACK_TYPE, _WIDGETS,
+                                                              _CEF_CURSOR_TO_QT, _PAINT_CALLBACK_TYPE)
 
 
 def bridge_path() -> str:
@@ -256,13 +40,11 @@ def bridge_path() -> str:
     STATUS_DLL_NOT_FOUND(0xC0000135) 启动失败，进而让主进程 CHECK 崩溃。
     """
     runtime_candidate = os.path.join(cef_runtime_dir(), BRIDGE_LIB_NAME)
-    if os.path.isfile(runtime_candidate):
-        return runtime_candidate
-    return os.path.join(binres_dir(), BRIDGE_LIB_NAME)
+    return runtime_candidate
 
 
 def is_available() -> bool:
-    # 检查 CEF 运行时与桥接库是否齐全
+    """检查 CEF 运行时与桥接库是否齐全"""
     runtime = cef_runtime_dir()
     return (os.path.isfile(bridge_path())
             and os.path.isfile(os.path.join(runtime, CEF_LIB_NAME))
@@ -303,7 +85,7 @@ def isWebViewInstalled() -> bool:
 
 def getWebViewVersion() -> str:
     # 获取 CEF 版本号（需要桥接库已加载）
-    return _CefBridge.instance().cef_version() or 'CEF'
+    return _CefBridge.instance().cef_version() or 'unknown'
 
 
 def _parse_headers_text(text: str) -> typing.Dict[str, str]:
@@ -366,11 +148,17 @@ def _is_gui_thread() -> bool:
 
 
 def _utf8(text: typing.Optional[str]):
+    """编码 Python 字符串到 UTF-8 字节数组"""
     return text.encode('utf-8') if text else None
 
 
 def system_locale() -> str:
-    """系统语言（CEF 需要 zh-CN 这种写法，而 Qt 给的是 zh_CN）。"""
+    """
+    获取系统语言标识字符串
+
+    Notes:
+        CEF 需要 zh-CN 这种写法，而 Qt 给的是 zh_CN
+    """
     name = QLocale.system().name() or ''
 
     if not name:
@@ -406,14 +194,6 @@ def _build_extra_args() -> str:
         if accept:
             args = (args + f' --accept-lang={accept}').strip()
     return args
-
-
-def _default_user_agent() -> str:
-    if IS_WINDOWS:
-        return ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/109.0.5414.120 Safari/537.36')
-    return ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
-            '(KHTML, like Gecko) Chrome/109.0.5414.120 Safari/537.36')
 
 
 def execute_process(argv=None) -> int:
@@ -508,7 +288,7 @@ class _LocalPageServer:
 
 
 class _CefBridge:
-    """CEF 桥接库的单例封装（CEF 每个进程只能初始化一次）。"""
+    """CEF 桥接库的单例封装"""
 
     _instance = None
     _instance_lock = threading.Lock()
@@ -557,6 +337,7 @@ class _CefBridge:
 
     def _declare_signatures(self):
         lib = self._lib
+
         lib.cef_bridge_init.restype = ctypes.c_int
         lib.cef_bridge_init.argtypes = [ctypes.c_char_p] * 8
         lib.cef_bridge_is_initialized.restype = ctypes.c_int
@@ -675,16 +456,30 @@ class _CefBridge:
         if 'enable-logging=stderr' in _build_extra_args():
             log_file = ''
         user_agent = None
-        if profile is not None and profile.user_agent:
-            user_agent = profile.user_agent.replace('[default_ua]', _default_user_agent())
         extra_args = _build_extra_args()
+        if profile is not None and profile.user_agent:
+            marker = '[default_ua]'
+            if marker in profile.user_agent:
+                # 让 CEF 生成运行时真实的默认 UA，只把占位符后的自定义标记
+                # 作为 product 部分传给 CEF。
+                suffix = profile.user_agent.split(marker, 1)[1].strip()
+                if suffix and '--user-agent-product' not in extra_args:
+                    extra_args = (extra_args + f' --user-agent-product={suffix}').strip()
+            else:
+                # 没有占位符时，整个字符串就是完整的自定义 UA
+                user_agent = profile.user_agent
+        if IS_WINDOWS and profile is not None and not profile.enable_osr:
+            # CEF 156 在窗口化嵌入（SetAsChild）下启用 DirectComposition 时，GPU 进程
+            # 会以 0x80000003 连续崩溃，并报 "Failed to create shared context for
+            # virtualization"。关闭 DComp 合成器后 GPU 进程稳定，WebGL 仍然走
+            # ANGLE/D3D11 硬件加速。OSR 模式不需要这个开关。
+            if '--disable-direct-composition' not in extra_args:
+                extra_args = (extra_args + ' --disable-direct-composition').strip()
 
         windowless = 1 if profile.enable_osr else 0
         self._lib.cef_bridge_set_windowless(windowless)
-        # 必须使用独立的 cef_bridge_helper.exe 作为 CEF 子进程：
-        # 若让 CEF 复用主程序（python.exe），子进程会在解析命令行时
-        # 因 --type=xxx 直接报 "unknown option" 退出，进而
-        # FATAL: GPU process isn't usable. Goodbye. 让整个浏览器进程崩溃。
+
+        # 启动cef进程
         ok = self._lib.cef_bridge_init(_utf8(cache_path), _utf8(log_file),
                                        _utf8(runtime_dir),
                                        _utf8(os.path.join(runtime_dir, 'locales')),
@@ -803,18 +598,8 @@ class _CefBridge:
 
 # ---------------------------------------------------------------------- Qt 控件
 
-class _CefDevToolsWindow(QWidget):
-    """开发者工具窗口。
-
-    这里刻意不使用 CEF 自己的 devtools 弹窗（ShowDevTools + SetAsPopup）：那套窗口在
-    部分 Windows 环境下只会显示一片空白（窗口能右键、能点到关闭按钮，但没有任何内容）。
-    改由 Qt 提供一个顶层窗口，再把 devtools 浏览器以原生子窗口的方式嵌进去——和主浏览器
-    完全相同的渲染路径。
-
-    注意：CEF 只有在承载 devtools 的原生窗口被真正销毁后，才会完成 devtools 浏览器的
-    关闭（只调用 CloseDevTools/CloseBrowser 时它会一直存活，最终让 CefShutdown 崩溃）。
-    因此这个窗口带 WA_DeleteOnClose，关闭即销毁。
-    """
+class CefDevToolsWindow(QWidget):
+    """CEF 开发者工具窗口"""
 
     def __init__(self, view):
         # 以主窗口为父窗口：主窗口销毁时 devtools 窗口会一起销毁，
@@ -899,7 +684,7 @@ class _CefDevToolsWindow(QWidget):
 
 
 class CefWebView(QWidget):
-    """跨平台的 CEF webview 控件，对外接口与 Windows 端 ``webview2.QWebView2View`` 一致。"""
+    """跨平台的 CEF webview 控件"""
 
     audioMutedChanged = pyqtSignal(bool)
     windowCloseRequested = pyqtSignal()
@@ -935,10 +720,6 @@ class CefWebView(QWidget):
         self.__save_html_path = ''
         self.__save_html_chunks = {}
         self.__tearing_down = False
-        self.__close_guard_window = None
-        self.__close_guard_timer = QTimer(self)
-        self.__close_guard_timer.setSingleShot(True)
-        self.__close_guard_timer.timeout.connect(self.__release_close_guard_later)
 
         self.__devtools_window = None
 
@@ -967,15 +748,16 @@ class CefWebView(QWidget):
     def hideEvent(self, a0):
         self.__set_native_visible(False)
 
-    def closeEvent(self, a0):
-        a0.ignore()
-        self.hide()
-
     def paintEvent(self, a0):
         if self.__frame is None:
             super().paintEvent(a0)
             return
+
         painter = QPainter(self)
+        painter.setCompositionMode(QPainter.CompositionMode_Clear)
+        painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+
         painter.drawImage(0, 0, self.__frame)
         painter.end()
 
@@ -1172,7 +954,6 @@ class CefWebView(QWidget):
     def isHtmlInFullScreenState(self) -> bool:
         return self.__html_fullscreen
 
-    # -------------------------------------------------- 导航
     def canBack(self) -> bool:
         lib = _CefBridge.instance().lib()
         if lib is None or not self.__browser_id:
@@ -1211,12 +992,10 @@ class CefWebView(QWidget):
         self.__do_load(url)
 
     def openChromiumTaskmgrWindow(self):
-        # 任务管理器是全局窗口（cef_tools 统一持有），不随标签页销毁
         from publics.base_ui_elements.cef_features import cef_tools
         cef_tools.show_task_manager()
 
     def openDefaultDownloadDialog(self):
-        # 下载气泡同样是全局窗口，anchor 只用来自上角定位
         from publics.base_ui_elements.cef_features import cef_tools
         cef_tools.show_download_panel(self)
 
@@ -1286,7 +1065,7 @@ class CefWebView(QWidget):
             return
         window = self.__devtools_window
         if window is None:
-            window = _CefDevToolsWindow(self)
+            window = CefDevToolsWindow(self)
             self.__devtools_window = window
         window.show()
         window.raise_()
@@ -1435,18 +1214,22 @@ class CefWebView(QWidget):
         lib = _CefBridge.instance().lib()
         if lib is None:
             return
+
         try:
             payload = json.loads(data or '{}')
         except Exception as e:
             app_logger.log_exception(e)
             return
+
         menu_id = int(payload.get('id') or 0)
         if not menu_id:
             return
+
         try:
             dpr = float(self.devicePixelRatioF()) or 1.0
         except Exception:
             dpr = 1.0
+
         # 菜单坐标是 CEF 的 view 坐标（设备无关像素），先换算回 Qt 的逻辑坐标再取屏幕坐标
         position = self.mapToGlobal(QPoint(int(int(payload.get('x') or 0) / dpr),
                                            int(int(payload.get('y') or 0) / dpr)))
@@ -1459,7 +1242,7 @@ class CefWebView(QWidget):
             action = None
         finally:
             menu.deleteLater()
-        command_id = action.data() if action is not None else None
+        command_id = action.data() if action else None
         if command_id is None:
             lib.cef_bridge_context_menu_cancel(menu_id)
             return
@@ -1634,15 +1417,10 @@ class CefWebView(QWidget):
     def __teardown_partial(self):
         browser_id = self.__browser_id
         self.__browser_id = 0
-        # 销毁 CEF 浏览器时，Chromium 会往宿主顶层窗口 Post 一个真正的 WM_CLOSE
-        # （Qt 会把它转成 spontaneous 的 closeEvent），同时 OnBeforeClose 也会触发一次。
-        # 这两件事都属于「我们自己拆浏览器」，所以销毁期间要全部屏蔽掉，
-        # 否则登录窗口会被误关、或者被当成「网页请求关闭」而把其它标签页一起关掉。
         self.__tearing_down = True
-        self.__install_close_guard()
-        # 必须先销毁承载 devtools 的窗口：CEF 只有在原生窗口销毁后才会真正关掉
-        # devtools 浏览器，这一步要早于宿主浏览器，否则退出时 CefShutdown 会崩溃。
+
         self.__close_devtools_window()
+
         if browser_id:
             _WIDGETS.pop(browser_id, None)
             lib = _CefBridge.instance().lib()
@@ -1652,89 +1430,10 @@ class CefWebView(QWidget):
                     lib.cef_bridge_destroy_browser(browser_id, 1)
                 except Exception:
                     pass
-            self.__drain_stray_close()
         self.__tearing_down = False
-        if self.__close_guard_window is not None:
-            self.__arm_close_guard(_CLOSE_GUARD_MAX_MS)
-
-    def __install_close_guard(self):
-        """销毁前先把顶层窗口的关闭事件接管起来（只有 Windows 上 CEF 会这么做）。"""
-        if not IS_WINDOWS or self.__close_guard_window is not None:
-            return
-        window = self.window()
-        if window is None:
-            return
-        self.__close_guard_window = window
-        window.installEventFilter(self)
-        # 原生消息层也接管：这样连 Qt 的 Close/Hide 都不会产生
-        _stray_close_filter.on_user_close = self.__on_user_close_intent
-        _stray_close_filter.target_hwnd = int(window.winId())
-        app = QApplication.instance()
-        if app is not None:
-            app.installNativeEventFilter(_stray_close_filter)
-
-    def __drain_stray_close(self):
-        """把还堆在消息队列里的那个 WM_CLOSE 摘掉，尽量不影响用户自己关窗。"""
-        window = self.__close_guard_window
-        if not IS_WINDOWS or window is None:
-            return
-        if _stray_close_filter.user_close_requested():
-            # 用户正在关窗，队列里的 WM_CLOSE 可能是他自己的，不能摘
-            return
-        try:
-            user32 = ctypes.windll.user32
-            message = _WinMsg()
-            hwnd = ctypes.c_void_p(int(window.winId()))
-            while user32.PeekMessageW(ctypes.byref(message), hwnd,
-                                      _WM_CLOSE, _WM_CLOSE, _PM_REMOVE):
-                app_logger.log_INFO('cef webview: beyond WM_CLOSE dropped')
-        except Exception as e:
-            app_logger.log_exception(e)
-
-    def __arm_close_guard(self, msec: int):
-        """延长 / 重新开始关闭守卫的存活时间。"""
-        try:
-            self.__close_guard_timer.start(msec)
-        except Exception as e:
-            app_logger.log_exception(e)
-
-    def __release_close_guard_later(self):
-        try:
-            self.__release_close_guard()
-        except RuntimeError:
-            # 控件（或宿主窗口）已经被析构
-            pass
-
-    def __on_user_close_intent(self):
-        """用户在守卫有效期内主动关窗：立刻撤销守卫，不要再拦他的关闭消息。"""
-        app_logger.log_INFO('cef webview: user close detected, release close guard')
-        self.__release_close_guard()
-
-    def __release_close_guard(self):
-        window = self.__close_guard_window
-        self.__close_guard_window = None
-        _stray_close_filter.target_hwnd = 0
-        _stray_close_filter.on_user_close = None
-        if window is None:
-            return
-        try:
-            window.removeEventFilter(self)
-        except Exception:
-            pass
-
-    def eventFilter(self, a0, a1):
-        # 销毁 CEF 浏览器期间，顶层窗口会收到一个多余的原生关闭事件。
-        # 只有「用户没有要关窗」的那种才拦下来；用户自己的关闭必须放行。
-        if (self.__close_guard_window is not None and a0 is self.__close_guard_window
-                and a1.type() == QEvent.Close and a1.spontaneous()
-                and not _stray_close_filter.user_close_requested()):
-            app_logger.log_INFO('cef webview: 已忽略销毁 CEF 窗口时产生的多余关闭事件')
-            a1.ignore()
-            return True
-        return super().eventFilter(a0, a1)
 
     def __build_fallback(self):
-        label = QLabel('Chromium Embedded Framework 不可用', self)
+        label = QLabel('CEF 不可用或者初始化失败', self)
         label.setAlignment(Qt.AlignCenter)
         label.setWordWrap(True)
         label.setGeometry(0, 0, max(self.width(), 360), max(self.height(), 140))
@@ -1744,7 +1443,10 @@ class CefWebView(QWidget):
     def __user_agent(self) -> typing.Optional[str]:
         if self.__profile is None or not self.__profile.user_agent:
             return None
-        return self.__profile.user_agent.replace('[default_ua]', _default_user_agent())
+        if '[default_ua]' in self.__profile.user_agent:
+            # 已在 cef_bridge_init 时通过 --user-agent-product 交给 CEF
+            return None
+        return self.__profile.user_agent
 
     def __bridge_script(self) -> str:
         # 桥接层会在页面加载完成时注入这段脚本（目前无实际用途）
