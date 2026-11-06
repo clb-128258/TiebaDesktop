@@ -96,7 +96,7 @@ class Ui_Dialog(object):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Cookie 登录"))
         self.label.setText(_translate("Dialog", "<html><head/><body><p>Cookie 登录功能允许你通过现有的百度贴吧 Cookie 信息直接登录。</p></body></html>"))
-        self.label_3.setText(_translate("Dialog", "<html><head/><body><p>请从浏览器中复制出 Cookie 字段，并粘贴到下方的文本框内。程序会自动识别并使你登录。<br>若要了解如何获取 Cookie，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/docs/get-tieba-cookies.md\"><span style=\" text-decoration: underline; color:#0000ff;\">如何获取百度贴吧的 Cookie 数据</span></a></p></body></html>"))
+        self.label_3.setText(_translate("Dialog", "<html><head/><body><p>请从浏览器中复制出 Cookie 字段，并粘贴到下方的文本框内。程序会自动识别并使你登录。<br>若要了解如何获取 Cookie，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/docs/get-tieba-cookies.md\"><span style=\" text-decoration: underline;\">如何获取百度贴吧的 Cookie 数据</span></a></p></body></html>"))
         self.textEdit.setPlaceholderText(_translate("Dialog", "粘贴 Cookie 到此处，形如 BDUSS=XXX; STOKEN=XXX; ..."))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("Dialog", "从 Cookie 字段导入"))
         self.lineEdit_2.setPlaceholderText(_translate("Dialog", "请输入 STOKEN"))

@@ -235,10 +235,11 @@ def init_global_palette():
     font_color = QColor(profile_mgr.get_theme_font_color_string())
 
     # 各种超链接
-    palette.setColor(QPalette.Active, QPalette.Link, QColor("#5b44c8"))
-    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor("#5b44c8"))
-    palette.setColor(QPalette.Inactive, QPalette.Link, QColor("#5b44c8"))
-    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor("#5b44c8"))
+    link_color = "#4139b1"
+    palette.setColor(QPalette.Active, QPalette.Link, QColor(link_color))
+    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(link_color))
+    palette.setColor(QPalette.Inactive, QPalette.Link, QColor(link_color))
+    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(link_color))
 
     # 文本框
     palette.setColor(QPalette.ColorRole.PlaceholderText, QColor('#666666' if policy == 2 else '#abb2bf'))

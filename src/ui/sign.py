@@ -83,7 +83,7 @@ class Ui_Dialog(object):
         self.label_2.setText(_translate("Dialog", "将进行贴吧的成长等级签到。"))
         self.pushButton_2.setText(_translate("Dialog", "签到"))
         self.groupBox_4.setTitle(_translate("Dialog", "命令行参数调用"))
-        self.label_5.setText(_translate("Dialog", "<html><head/><body><p>可以通过启动参数实现按需执行签到。<br/>有关命令行用法的详细信息，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md\"><span style=\" text-decoration: underline; color:#0000ff;\">命令行用法</span></a></p></body></html>"))
+        self.label_5.setText(_translate("Dialog", "<html><head/><body><p>可以通过启动参数实现按需执行签到。<br/>有关命令行用法的详细信息，请参阅 <a href=\"https://github.com/clb-128258/TiebaDesktop/blob/main/docs/command-usages.md\"><span style=\" text-decoration: underline\">命令行用法</span></a></p></body></html>"))
         self.groupBox.setTitle(_translate("Dialog", "全部签到"))
         self.label.setText(_translate("Dialog", "将进行 成长等级签到 和 全吧签到。"))
         self.pushButton.setText(_translate("Dialog", "一键签到"))

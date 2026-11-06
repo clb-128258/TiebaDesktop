@@ -55,7 +55,7 @@
           </font>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;请从浏览器中复制出 Cookie 字段，并粘贴到下方的文本框内。程序会自动识别并使你登录。&lt;br&gt;若要了解如何获取 Cookie，请参阅 &lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop/blob/main/docs/get-tieba-cookies.md&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;如何获取百度贴吧的 Cookie 数据&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;请从浏览器中复制出 Cookie 字段，并粘贴到下方的文本框内。程序会自动识别并使你登录。&lt;br&gt;若要了解如何获取 Cookie，请参阅 &lt;a href=&quot;https://github.com/clb-128258/TiebaDesktop/blob/main/docs/get-tieba-cookies.md&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;如何获取百度贴吧的 Cookie 数据&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
