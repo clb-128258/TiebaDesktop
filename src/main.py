@@ -133,6 +133,7 @@ if __name__ == "__main__":
     check_webview()
 
     # init theme elements
+    base_ui.init_global_palette()
     base_ui.init_bg_pixmap()
 
     # init main window, tray icon

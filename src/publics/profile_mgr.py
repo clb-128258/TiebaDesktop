@@ -3,6 +3,7 @@ import json
 import time
 import copy
 from publics import proxytool
+from publics import app_logger
 
 import consts
 
@@ -337,3 +338,5 @@ def init_all_datas():
 
     for i in thread_list:
         i.join()
+
+    app_logger.log_INFO('all profile datas loaded')

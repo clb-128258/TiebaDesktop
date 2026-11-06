@@ -8,7 +8,7 @@ import typing
 
 from PyQt5.QtCore import QPoint, Qt, QTimer, QObject
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QWidget, QDialog, QLineEdit, \
-    QTextEdit, QPlainTextEdit, QMainWindow, QTextBrowser
+    QTextEdit, QPlainTextEdit, QMainWindow, QTextBrowser, qApp
 from PyQt5.QtGui import QTextDocumentFragment, QColor, QPalette, QPainter, QPixmap, QPixmapCache, QCursor
 
 from publics import funcs, profile_mgr, qt_window_mgr, app_logger, request_mgr, qt_image
@@ -109,24 +109,6 @@ def create_thread_content_menu(parent_label: typing.Union[QLabel, QTextBrowser])
     return menu
 
 
-def update_placeholder_color(parent_widget, color_hex="#808080"):
-    """
-    递归遍历界面，设置所有输入框的占位符颜色
-    :param parent_widget: 顶层窗口或容器 (如 self)
-    :param color_hex: 目标占位符颜色的十六进制字符串
-    """
-    target_color = QColor(color_hex)
-
-    # 查找所有类型的输入框
-    input_widgets = parent_widget.findChildren((QLineEdit, QTextEdit, QPlainTextEdit))
-
-    for widget in input_widgets:
-        palette = widget.palette()
-        # 设置 PlaceholderText 角色
-        palette.setColor(QPalette.PlaceholderText, target_color)
-        widget.setPalette(palette)
-
-
 def set_theme_qss_as_cfg(widget, extended_qss=''):
     def replace_color_flags(qss: str):
         bg_color = profile_mgr.get_theme_color_string()
@@ -160,7 +142,6 @@ def set_theme_qss_as_cfg(widget, extended_qss=''):
     qss_list.append(get_bg_color_qss())
 
     widget.setStyleSheet('\n'.join(qss_list) + extended_qss)
-    update_placeholder_color(widget, '#666666' if policy == 2 else '#abb2bf')  # 为输入框专门设置占位符颜色
 
 
 def handle_native_event(widget, refreshThemeFunc, eventType, message):
@@ -245,6 +226,28 @@ def init_bg_pixmap():
         background_pixmap = None
         background_pixmap_hex = ''
         QPixmapCache.clear()
+
+
+def init_global_palette():
+    """初始化全局 QPalette"""
+    policy = profile_mgr.get_theme_policy()
+    palette = qApp.palette()
+    font_color = QColor(profile_mgr.get_theme_font_color_string())
+
+    # 各种超链接
+    palette.setColor(QPalette.Active, QPalette.Link, QColor("#5b44c8"))
+    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor("#5b44c8"))
+    palette.setColor(QPalette.Inactive, QPalette.Link, QColor("#5b44c8"))
+    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor("#5b44c8"))
+
+    # 文本框
+    palette.setColor(QPalette.ColorRole.PlaceholderText, QColor('#666666' if policy == 2 else '#abb2bf'))
+    palette.setColor(QPalette.Active, QPalette.Text, font_color)
+    palette.setColor(QPalette.Inactive, QPalette.Text, font_color)
+    palette.setColor(QPalette.Active, QPalette.WindowText, font_color)
+    palette.setColor(QPalette.Inactive, QPalette.WindowText, font_color)
+
+    qApp.setPalette(palette)
 
 
 class BaseQMenu(QMenu):
