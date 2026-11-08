@@ -121,7 +121,7 @@ class TrayIcon(QSystemTrayIcon):
         switch_forum_page.triggered.connect(self.show_into_forum_page)
         self.menu.addAction(switch_forum_page)
 
-        switch_interact_page = QAction('查看互动消息', self)
+        switch_interact_page = QAction('查看消息', self)
         switch_interact_page.triggered.connect(self.show_interact_page)
         self.menu.addAction(switch_interact_page)
 
@@ -1048,6 +1048,21 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
 
         self.init_profile_menu()
         self.init_pages()
+        self.account_manager.privateMessagesReceived.connect(
+            self.interactionlist.on_private_messages
+        )
+        self.account_manager.privateMessagesReceived.connect(
+            self.notice_syncer.on_private_messages
+        )
+        self.account_manager.privateMessagesReceived.connect(
+            lambda _: self.set_unread_count()
+        )
+        self.notice_syncer.noticeCountChanged.connect(
+            self.interactionlist.refresh_sessions
+        )
+        self.notice_syncer.privateSessionActivated.connect(
+            self.open_private_session
+        )
 
         default_index = get_dict_value_treely(profile_mgr.local_config,
                                               ['other_settings', 'mw_default_page'],
@@ -1123,19 +1138,28 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
             self.toast_widget.showToast(toast)
 
     def exit_app(self, close_event: QCloseEvent = None):
+        # 保存窗口位置
         profile_mgr.add_window_rects(type(self),
                                      self.x() + 1, self.y() + 31,
                                      self.width(), self.height(),
                                      self.isMaximized())
 
+        # 关闭主窗口
         if close_event:
             close_event.accept()
         else:
             self.hide()
 
+        # 隐藏托盘图标，关闭子窗口
         tray_icon_instance.hide()
         qt_window_mgr.clear_windows()
         QApp_instance.closeAllWindows()
+
+        # 关闭websocket连接
+        self.interactionlist.suspend_current_session()
+        self.account_manager.shutdown_private_message_connection()
+
+        # 退出主循环
         QApp_instance.quit()
 
     def init_ui_elements(self):
@@ -1254,10 +1278,14 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
             btn.setFont(other_font)
 
     def set_unread_count(self):
-        if self.notice_syncer.have_basic_unread_notice():
+        private_count = self.interactionlist.total_unread_count()
+        if self.notice_syncer.have_basic_unread_notice() or private_count:
             self.pushButton_4.setStyleSheet('QPushButton{color: red;}')
-            self.pushButton_4.setText(
-                f'消息 ({self.notice_syncer.get_unread_notice_count(UnreadMessageType.TOTAL_COUNT)})')
+            total_count = (
+                self.notice_syncer.get_unread_notice_count(UnreadMessageType.TOTAL_COUNT)
+                + private_count
+            )
+            self.pushButton_4.setText(f'消息 ({total_count})')
         else:
             self.pushButton_4.setStyleSheet('')
             self.pushButton_4.setText('消息')
@@ -1291,6 +1319,15 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
 
         self.paint_page_switch_elements()
 
+    def open_private_session(self, peer_user_id):
+        self.show_active_window()
+        self.stackedWidget.setCurrentIndex(2)
+        if self.interactionlist.is_first_show:
+            self.interactionlist.refresh_list()
+            self.interactionlist.is_first_show = False
+        self.paint_page_switch_elements()
+        self.interactionlist.open_private_session(peer_user_id)
+
     def switch_recommand_page(self):
         self.stackedWidget.setCurrentIndex(0)
         if self.recommend.is_first_load:
@@ -1308,6 +1345,7 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
         self.frame.setEnabled(False)
 
     def refresh_all_datas(self):
+        self.interactionlist.suspend_current_session()
         self.free_current_session()
 
         if self.is_account_first_load:
@@ -1333,9 +1371,7 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
         self.flist.bduss = self.user_data['bduss']
         self.flist.stoken = self.user_data['stoken']
         self.flist.is_first_show = True
-        self.interactionlist.bduss = self.user_data['bduss']
-        self.interactionlist.stoken = self.user_data['stoken']
-        self.interactionlist.is_first_show = True
+        self.interactionlist.set_account(self.user_data['bduss'], self.user_data['stoken'])
         self.notice_syncer.set_account(self.user_data['bduss'], self.user_data['stoken'])
 
         self.user_info_widget.get_self_info_async()

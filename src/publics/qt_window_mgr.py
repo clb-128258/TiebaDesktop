@@ -55,4 +55,11 @@ def del_window(widget: QWidget):
 def clear_windows():
     global distributed_window
     while distributed_window:
-        del_window(distributed_window[0])
+        widget = distributed_window[0]
+        close_session = getattr(widget, 'close_session', None)
+        if callable(close_session):
+            try:
+                close_session()
+            except Exception:
+                pass
+        del_window(widget)

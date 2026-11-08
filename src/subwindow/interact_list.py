@@ -1,31 +1,39 @@
+"""消息页：只负责会话列表排序、选择和详情装配。"""
 import asyncio
-import gc
 
-import aiotieba
-from PyQt5.QtCore import pyqtSignal, QTimer
+from PyQt5.QtCore import QPoint, Qt, pyqtSignal
 from PyQt5.QtGui import QPixmapCache
-from PyQt5.QtWidgets import QListWidgetItem
+from PyQt5.QtWidgets import (
+    QAction,
+    QInputDialog,
+    QLabel,
+    QListWidgetItem,
+    QSizePolicy,
+    QVBoxLayout,
+)
 
-from publics import request_mgr, profile_mgr
-from publics.base_ui_elements import top_toast_widget, base_ui
-from publics.funcs import start_background_thread, timestamp_to_string, listWidget_get_visible_widgets, \
-    get_exception_string, cleanup_listWidget, delete_listWidget_item
-import publics.app_logger as logging
+from publics import account_mgr, app_logger
+from publics.base_ui_elements import base_ui, top_toast_widget
+from publics.baidu_features.tieba_message_apis import get_roomlist_by_fid
+from publics.funcs import get_exception_string, start_background_thread
+from publics.tb_syncer import UnreadMessageType
 
 from ui import reply_at_me_page
 
+from subwindow.chats.chat_session_detail import ChatSessionDetail
+from subwindow.chats.chatroom_picker import ChatRoomPickerDialog
+from subwindow.chats.models import ChatSession
+from subwindow.chats.session_item import UserChatSessionItem
+from subwindow.chats.storage import ChatRoomSubscriptionStore, ChatStore
+
 
 class UserInteractionsList(base_ui.InsideWidgetBaseQWidget, reply_at_me_page.Ui_Form):
-    """点赞、回复和@当前用户的列表"""
-    add_post_data = pyqtSignal(dict)
+    """统一聊天会话列表。"""
+
     error_happened = pyqtSignal(top_toast_widget.ToastMessage)
-    reply_page = 1
-    at_page = 1
-    agree_page = 1
-    is_reply_loading = False
-    is_at_loading = False
-    is_agree_loading = False
-    latest_agree_id = 0
+    _roomsLoaded = pyqtSignal(object, int)
+    _roomsLoadFailed = pyqtSignal(str)
+
     is_first_show = True
 
     def __init__(self, bduss, stoken, parent):
@@ -35,337 +43,395 @@ class UserInteractionsList(base_ui.InsideWidgetBaseQWidget, reply_at_me_page.Ui_
         self.bduss = bduss
         self.stoken = stoken
         self.parent_window = parent
+        self.account_manager = account_mgr.GlobalAccountContainer.get_current_manager()
+        self._store = None
+        self._chatroom_store = None
+        self._sessions = []
+        self._selected_key = None
+        self.detail = None
 
-        self.listwidgets = [self.listWidget_3, self.listWidget_2, self.listWidget]
-        for lw in self.listwidgets:
-            lw.verticalScrollBar().setSingleStep(25)
-            lw.setStyleSheet(f'QListWidget{{outline:0px; background-color:transparent;}}'
-                             f'QListWidget::item:hover {{color:transparent; background-color:transparent;}}'
-                             f'QListWidget::item:selected {{color:transparent; background-color:transparent;}}')
-        self.label.hide()
+        self.listWidget.setStyleSheet(
+            'QListWidget{outline:0px;background-color:transparent;}'
+            'QListWidget::item{background-color:transparent;border-radius:6px;}'
+            'QListWidget::item:hover{background-color:rgba(127,127,127,30);}'
+            'QListWidget::item:selected{background-color:rgba(79,131,204,45);}'
+        )
+        self.listWidget.verticalScrollBar().setSingleStep(25)
+        self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.listWidget.itemClicked.connect(self._on_session_clicked)
+        self.listWidget.itemActivated.connect(self._on_session_clicked)
+        self.listWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.listWidget.customContextMenuRequested.connect(self._show_list_menu)
+
+        self.detail_layout = QVBoxLayout(self.sessionDetailWidget)
+        self.detail_layout.setContentsMargins(12, 0, 0, 0)
+        self.empty_placeholder = QLabel('选择一个会话以开始聊天')
+        self.empty_placeholder.setAlignment(Qt.AlignCenter)
+        self.empty_placeholder.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding,
+        )
+        self.detail_layout.addWidget(self.empty_placeholder)
+
+        self._roomsLoaded.connect(self._show_room_selector)
+        self._roomsLoadFailed.connect(
+            lambda error: self.error_happened.emit(top_toast_widget.ToastMessage(
+                f'[获取吧群] {error}',
+                icon_type=top_toast_widget.ToastIconType.ERROR,
+            ))
+        )
+        self.error_happened.connect(self.parent_window.toast_widget.showToast)
+        self.destroyed.connect(self._cleanup)
+
+        self.set_account(bduss, stoken)
         self.reset_theme()
 
-        self.listWidget.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('reply'))
-        self.listWidget_2.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('at'))
-        self.listWidget_3.verticalScrollBar().valueChanged.connect(lambda: self.scroll_load_list_info('agree'))
-        self.pushButton.clicked.connect(self.refresh_list)
-        self.tabWidget.currentChanged.connect(self.load_item_images)
+    def _cleanup(self):
+        if self._store is not None:
+            self._store.close()
+            self._store = None
 
-        self.add_post_data.connect(self.set_inter_data_ui)
-        self.error_happened.connect(self.parent_window.toast_widget.showToast)
+    def set_account(self, bduss, stoken):
+        if self.detail is not None:
+            self.detail.close_session()
+            self.detail.clear_session()
+        if self._store is not None:
+            self._store.close()
+        uid = account_mgr.GlobalAccountContainer.get_current_account().uid
+        self.bduss = bduss
+        self.stoken = stoken
+        self._store = ChatStore(uid)
+        self._chatroom_store = ChatRoomSubscriptionStore(uid)
+        if self.detail is not None:
+            self.detail.set_account(bduss, stoken, uid)
+            self.detail.hide()
+        self.empty_placeholder.show()
+        self._selected_key = None
+        self._sessions = []
+        self.listWidget.blockSignals(True)
+        self.listWidget.clear()
+        self.listWidget.blockSignals(False)
+        self.is_first_show = True
 
     def reset_theme(self):
         super().reset_theme()
-
-        # 设置列表内容的样式
-        for lw in self.listwidgets:
-            for i in range(lw.count()):
-                widget = lw.itemWidget(lw.item(i))
+        self.empty_placeholder.setStyleSheet(
+            'QLabel{color:grey;font-size:17px;}'
+        )
+        if self.detail is not None:
+            self.detail.reset_theme()
+        for row in range(self.listWidget.count()):
+            widget = self.listWidget.itemWidget(self.listWidget.item(row))
+            if widget is not None:
                 widget.reset_theme()
 
     def refresh_list(self):
-        if not self.is_at_loading and not self.is_reply_loading and not self.is_agree_loading:
-            cleanup_listWidget(self.listWidget)
-            cleanup_listWidget(self.listWidget_2)
-            cleanup_listWidget(self.listWidget_3)
-            QPixmapCache.clear()
-            gc.collect()
-            self.reply_page = 1
-            self.at_page = 1
-            self.agree_page = 1
-            self.latest_agree_id = 0
+        self.refresh_sessions(reload_detail=True)
 
-            self.load_inter_data_async('all')
-            QTimer.singleShot(2000, self.parent_window.notice_syncer.run_msg_sync_immedently)
+    def total_unread_count(self):
+        interaction_count = sum(
+            session.unread_count
+            for session in self._build_interaction_sessions()
+        )
+        private_count = sum(
+            session.unread_count
+            for session in self._store.get_sessions()
+        ) if self._store is not None else 0
+        return interaction_count + private_count
 
-    def load_item_images(self):
-        current_widget = self.tabWidget.currentWidget()
-        for lw in self.listwidgets:
-            if lw.parent() == current_widget:
-                visible_lw = listWidget_get_visible_widgets(lw)
-                for i in visible_lw:
-                    i.load_images()
+    def refresh_sessions(self, reload_detail=False):
+        if self._store is None:
+            return
 
-    def scroll_load_list_info(self, type_):
-        self.load_item_images()
+        sessions = self._build_interaction_sessions()
+        sessions.extend(self._store.get_sessions())
+        sessions.extend(
+            ChatSession.chatroom_session(room)
+            for room in self._chatroom_store.list_rooms()
+        )
+        sessions[3:] = sorted(
+            sessions[3:],
+            key=lambda session: session.timestamp,
+            reverse=True,
+        )
+        self._sessions = sessions
+        if not any(session.key == self._selected_key for session in sessions):
+            self._selected_key = None
+            if self.detail is not None:
+                self.detail.clear_session()
+                self.detail.hide()
+            self.empty_placeholder.show()
+        self._rebuild_list(reload_detail=reload_detail)
+        if hasattr(self.parent_window, 'set_unread_count'):
+            self.parent_window.set_unread_count()
 
-        flag_reply = (
-                type_ == "reply" and not self.is_reply_loading and self.listWidget.verticalScrollBar().maximum() == self.listWidget.verticalScrollBar().value() and not self.reply_page == -1)
-        flag_at = (
-                type_ == "at" and not self.is_at_loading and self.listWidget_2.verticalScrollBar().maximum() == self.listWidget_2.verticalScrollBar().value() and not self.at_page == -1)
-        flag_agree = (
-                type_ == "agree" and not self.is_agree_loading and self.listWidget_3.verticalScrollBar().maximum() == self.listWidget_3.verticalScrollBar().value() and not self.agree_page == -1)
-        if flag_reply or flag_at or flag_agree:
-            start_background_thread(self.load_inter_data, (type_,))
-
-    def set_inter_data_ui(self, data):
-        item = QListWidgetItem()
-        if data['type'] != 'agree':
-            from subwindow.thread_reply_item import ReplyItem
-            widget = ReplyItem(self.bduss, self.stoken)
-
-            widget.messageAdded.connect(self.parent_window.toast_widget.showToast)
-
-            widget.show_msg_outside = True
-            widget.load_by_callback = True
-            widget.is_comment = data['is_subfloor']
-            widget.portrait = data['portrait']
-            widget.thread_id = data['thread_id']
-            widget.post_id = data['post_id']
-            widget.forum_id = data['forum_id']
-            widget.subcomment_show_thread_button = True
-            widget.set_reply_text(
-                '{sub_floor}在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> '
-                '的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> '
-                '下{ptype}了你：'.format(
-                    fname=data['forum_name'],
-                    tname=data['thread_title'],
-                    tid=data['thread_id'],
-                    fid=data['forum_id'],
-                    sub_floor='[楼中楼] ' if data['is_subfloor'] else '[回复贴] ',
-                    ptype='回复' if data['type'] == 'reply' else '@')
+    def _build_interaction_sessions(self):
+        syncer = self.parent_window.notice_syncer
+        categories = (
+            ('agree', UnreadMessageType.AGREE, '赞过我的'),
+            ('reply', UnreadMessageType.REPLY, '回复我的'),
+            ('at', UnreadMessageType.AT, '@我的'),
+        )
+        return [
+            ChatSession.interaction_session(
+                category,
+                unread_count=syncer.get_unread_notice_count(kind),
+                title=title,
             )
-            widget.setdatas(data['portrait'],
-                            data['user_name'],
-                            False, data['content'],
-                            [],
-                            -1,
-                            data['post_time_str'],
-                            '', -2, -1, -1, False)
-        else:
-            from subwindow.thread_agreed_item import AgreedThreadItem
-            widget = AgreedThreadItem(self.bduss, self.stoken)
+            for category, kind, title in categories
+        ]
 
-            widget.item_type = data['item_type']
-            widget.portrait = data['portrait']
-            widget.thread_id = data['thread_id']
-            widget.post_id = data['post_id']
-            widget.setdatas(data['portrait'], data['user_name'], data['content'],
-                            data['pic_link'], data['post_time_str'],
-                            '在 <a href=\"tieba_forum://{fid}\">{fname}吧</a> '
-                            '的主题贴 <a href=\"tieba_thread://{tid}\">{tname}</a> '
-                            '内为你发布的以下内容点了赞：'.format(
-                                fname=data['forum_name'],
-                                tname=data['thread_title'],
-                                tid=data['thread_id'],
-                                fid=data['forum_id'])
-                            )
-        item.setSizeHint(widget.size())
+    def _rebuild_list(self, reload_detail=False):
+        while self.listWidget.count():
+            item = self.listWidget.item(0)
+            widget = self.listWidget.itemWidget(item)
+            self.listWidget.takeItem(0)
+            if widget is not None:
+                widget.deleteLater()
+            del item
 
-        if data['type'] == 'reply':
-            widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget, item))
+        target_row = 0
+        for row, session in enumerate(self._sessions):
+            widget = UserChatSessionItem(session)
+            item = QListWidgetItem()
+            item.setSizeHint(widget.sizeHint())
+            item.setData(Qt.UserRole, session.key)
             self.listWidget.addItem(item)
             self.listWidget.setItemWidget(item, widget)
-        elif data['type'] == 'at':
-            widget.postItemDeleted.connect(lambda: delete_listWidget_item(self.listWidget_2, item))
-            self.listWidget_2.addItem(item)
-            self.listWidget_2.setItemWidget(item, widget)
-        elif data['type'] == 'agree':
-            self.listWidget_3.addItem(item)
-            self.listWidget_3.setItemWidget(item, widget)
+            if session.key == self._selected_key:
+                target_row = row
 
-        self.load_item_images()
+        if self._selected_key is None:
+            self.listWidget.setCurrentItem(None)
+            selection_model = self.listWidget.selectionModel()
+            selection_model.clearCurrentIndex()
+            selection_model.clearSelection()
+        elif self._sessions:
+            self.listWidget.setCurrentRow(target_row)
+        if self._sessions and self._selected_key is not None and reload_detail:
+            self._select_session(self._selected_key, force=True)
+        QPixmapCache.clear()
 
-    def load_inter_data_async(self, type_):
-        if self.bduss:
-            self.label.hide()
-            self.tabWidget.show()
-            if ((type_ == "reply" and not self.is_reply_loading)
-                    or (type_ == "at" and not self.is_at_loading)
-                    or (type_ == "agree" and not self.is_agree_loading)):
-                start_background_thread(self.load_inter_data, (type_,))
-            elif type_ == "all" and not self.is_reply_loading and not self.is_at_loading and not self.is_agree_loading:
-                start_background_thread(self.load_inter_data, ('reply',))
-                start_background_thread(self.load_inter_data, ('at',))
-                start_background_thread(self.load_inter_data, ('agree',))
-        else:
-            self.label.show()
-            self.tabWidget.hide()
+    def _on_session_clicked(self, item):
+        if item is None:
+            self._show_empty_state()
+            return
+        key = item.data(Qt.UserRole)
+        session = next((session for session in self._sessions if session.key == key), None)
+        self._select_session(
+            key,
+            force=bool(session and session.is_chatroom),
+        )
 
-    def load_inter_data(self, type_):
-        async def run_func():
-            try:
-                logging.log_INFO(
-                    f'loading userInteractionsList {type_}, page (reply {self.reply_page} at {self.at_page} agree {self.agree_page})')
-                async with aiotieba.Client(self.bduss, self.stoken, proxy=True) as client:
-                    if type_ == "reply":
-                        self.is_reply_loading = True
-                        payload = {
-                            'BDUSS': self.bduss,
-                            '_client_type': '2',
-                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                            'pn': str(self.reply_page),
-                            'stoken': self.stoken,
-                        }
-                        datas = request_mgr.run_post_api('/c/u/feed/replyme', payloads=request_mgr.calc_sign(payload),
-                                                         use_mobile_header=True, host_type=2)
+    def _select_session(self, key, force=False):
+        session = next((item for item in self._sessions if item.key == key), None)
+        if session is None:
+            return
+        self._selected_key = key
+        self._ensure_detail()
+        self.empty_placeholder.hide()
+        self.detail.show()
+        self.detail.set_session(session, force=force)
 
-                        for thread in datas['reply_list']:
-                            # 用户头像
-                            portrait = thread["replyer"]["portrait"].split("?")[0]
+    def _show_empty_state(self):
+        self._selected_key = None
+        if self.detail is not None:
+            self.detail.clear_session()
+            self.detail.hide()
+        self.empty_placeholder.show()
 
-                            # 用户昵称
-                            nick_name = thread["replyer"]["name_show"]
+    def _ensure_detail(self):
+        if self.detail is not None:
+            return
+        self.detail = ChatSessionDetail(
+            self.bduss,
+            self.stoken,
+            parent=self.sessionDetailWidget,
+            account=self.account_manager.current_account,
+        )
+        self.detail.hide()
+        self.detail_layout.addWidget(self.detail)
+        self.detail.toastRequested.connect(self.parent_window.toast_widget.showToast)
+        self.detail.detachRequested.connect(self._on_detail_detached)
+        self.detail.unsubscribeRequested.connect(self._unsubscribe_chatroom)
+        self.detail.sessionChanged.connect(
+            self._on_detail_session_changed,
+            Qt.QueuedConnection,
+        )
 
-                            # 获取吧id
-                            forum_id = await client.get_fid(thread["fname"])
+    def open_private_session(self, peer_user_id):
+        key = f'private:{int(peer_user_id)}'
+        session = next((item for item in self._sessions if item.key == key), None)
+        if session is None:
+            self.refresh_sessions()
+            session = next((item for item in self._sessions if item.key == key), None)
+        if session is None:
+            return
+        for row in range(self.listWidget.count()):
+            item = self.listWidget.item(row)
+            if item.data(Qt.UserRole) == key:
+                self.listWidget.setCurrentItem(item)
+                break
+        self._select_session(key, force=True)
 
-                            # 获取贴子标题
-                            thread_title = thread['title']
+    def suspend_current_session(self):
+        if self.detail is not None:
+            self.detail.suspend_chatroom()
 
-                            # 发布时间字符串
-                            timestr = timestamp_to_string(int(thread['time']))
+    def resume_current_session(self):
+        if self.detail is not None:
+            self.detail.resume_chatroom()
 
-                            data = {'type': type_,
-                                    'thread_id': int(thread["thread_id"]),
-                                    'post_id': int(thread["post_id"]),
-                                    'is_subfloor': bool(int(thread['is_floor'])),
-                                    'forum_id': forum_id,
-                                    'forum_name': thread["fname"],
-                                    'thread_title': thread_title,
-                                    'content': thread["content"],
-                                    'portrait': portrait,
-                                    'user_name': nick_name,
-                                    'post_time_str': timestr}
-                            self.add_post_data.emit(data)
-                    elif type_ == "at":
-                        self.is_at_loading = True
-                        datas = await client.get_ats(self.at_page)
-                        if datas.err:
-                            raise datas.err
+    def on_private_messages(self, messages):
+        if self.detail is not None:
+            self.detail.on_private_messages(messages)
+        self.refresh_sessions()
 
-                        for thread in datas.objs:
-                            # 用户昵称
-                            nick_name = thread.user.nick_name_new
+    def _on_detail_session_changed(self, session):
+        if session is None:
+            return
+        if session.is_chatroom:
+            self._chatroom_store.update_room(
+                session.target_id,
+                name=session.title,
+                avatar=session.avatar,
+                forum_name=session.extra.get('forum_name', ''),
+                fid=session.extra.get('fid', 0),
+                member_num=session.extra.get('member_num', 0),
+                last_message=session.subtitle,
+                last_time=session.timestamp,
+            )
+            self.refresh_sessions()
+        elif session.is_private:
+            self.refresh_sessions()
+        elif session.is_interaction:
+            self.parent_window.notice_syncer.run_msg_sync_immedently()
+            self.refresh_sessions()
 
-                            # 获取吧id
-                            forum_id = thread.fid
+    def _on_detail_detached(self, session):
+        self._show_empty_state()
+        self.listWidget.setCurrentItem(None)
 
-                            # 获取贴子标题
-                            thread_title = thread.thread_title if thread.thread_title else "无法获取贴子标题，可能已被删除"
+    def _unsubscribe_chatroom(self, room_id):
+        self._chatroom_store.remove_room(room_id)
+        self._show_empty_state()
+        self.refresh_sessions(reload_detail=True)
 
-                            # 发布时间字符串
-                            timestr = timestamp_to_string(thread.create_time)
+    def _show_list_menu(self, position: QPoint):
+        menu = base_ui.BaseQMenu(self)
+        refresh_action = QAction('刷新会话', menu)
+        refresh_action.triggered.connect(self.refresh_list)
+        menu.addAction(refresh_action)
 
-                            data = {'type': type_,
-                                    'thread_id': thread.tid,
-                                    'post_id': thread.pid,
-                                    'is_subfloor': thread.is_comment,
-                                    'forum_id': forum_id,
-                                    'forum_name': thread.fname,
-                                    'thread_title': thread_title,
-                                    'content': thread.text,
-                                    'portrait': thread.user.portrait,
-                                    'user_name': nick_name,
-                                    'post_time_str': timestr}
-                            self.add_post_data.emit(data)
-                    elif type_ == "agree":
-                        self.is_agree_loading = True
-                        payload = {
-                            'BDUSS': self.bduss,
-                            '_client_type': '2',
-                            '_client_version': request_mgr.TIEBA_CLIENT_VERSION,
-                            'id': str(self.latest_agree_id),
-                            'rn': '20',
-                            'stoken': self.stoken,
-                        }
-                        if not self.latest_agree_id:
-                            del payload['id']
-                        datas = request_mgr.run_post_api('/c/u/feed/agreeme', payloads=request_mgr.calc_sign(payload),
-                                                         use_mobile_header=True, host_type=2)
+        add_room_action = QAction('添加吧群订阅', menu)
+        add_room_action.triggered.connect(self.add_chatroom)
+        menu.addAction(add_room_action)
 
-                        for thread in datas['agree_list']:
-                            # 更新点赞id
-                            self.latest_agree_id = int(thread['id'])
-
-                            # 用户头像
-                            portrait = thread["agreeer"]["portrait"].split("?")[0]
-
-                            # 用户昵称
-                            nick_name = thread["agreeer"]["name_show"]
-
-                            # 获取吧id
-                            forum_id = thread["thread_info"]['fid']
-
-                            # 获取贴子标题
-                            thread_title = thread['thread_info']['title']
-
-                            # 发布时间字符串
-                            timestr = timestamp_to_string(int(thread['op_time']))
-
-                            # 被点赞的内容
-                            content = f'主题贴：{thread_title}'
-                            if int(thread['type']) != 3:
-                                content += '\n  - '
-                                content += f"{thread['post_info']['author']['name_show']} 发表的回复：{thread['post_info']['content'][0]['text']}"
-
-                            # 贴子图片链接
-                            pic_link = ''
-                            if pic_list := thread['thread_info'].get('media'):
-                                for p in pic_list:
-                                    if int(p['type']) == 3:
-                                        pic_link = p['small_pic']
-                                        break
-
-                            # 是楼中楼获取对应的pid
-                            if int(thread['type']) == 2:
-                                pid = int(thread['post_info']['id'])
-                            else:
-                                pid = int(thread["post_id"])
-
-                            data = {'type': type_,
-                                    'thread_id': int(thread["thread_id"]),
-                                    'post_id': pid,
-                                    'item_type': int(thread['type']),  # 1回复 2楼中楼 3主题
-                                    'forum_id': forum_id,
-                                    'forum_name': thread['thread_info']["fname"],
-                                    'thread_title': thread_title,
-                                    'content': content,
-                                    'portrait': portrait,
-                                    'user_name': nick_name,
-                                    'post_time_str': timestr,
-                                    'pic_link': pic_link}
-                            self.add_post_data.emit(data)
-            except Exception as e:
-                logging.log_exception(e)
-                self.error_happened.emit(
-                    top_toast_widget.ToastMessage(f'[GetInteractMsg {type_} Error] ' + get_exception_string(e),
-                                                  icon_type=top_toast_widget.ToastIconType.ERROR
-                                                  )
+        item = self.listWidget.itemAt(position)
+        if item is not None:
+            key = item.data(Qt.UserRole)
+            session = next((s for s in self._sessions if s.key == key), None)
+            if session is not None and session.is_chatroom:
+                remove_action = QAction('取消订阅', menu)
+                remove_action.triggered.connect(
+                    lambda: self._unsubscribe_chatroom(session.target_id)
                 )
+                menu.addAction(remove_action)
+
+        menu.exec(self.listWidget.viewport().mapToGlobal(position))
+
+    def add_chatroom(self):
+        fid, ok = QInputDialog.getInt(
+            self.parent_window,
+            '添加吧群订阅',
+            '请输入吧 ID：',
+            0,
+            1,
+            2147483647,
+        )
+        if not ok or not fid:
+            return
+
+        account = self.account_manager.current_account.aiotieba_account
+
+        def load():
+            try:
+                rooms = asyncio.run(get_roomlist_by_fid(account, fid))
+            except Exception as error:
+                app_logger.log_exception(error)
+                self._roomsLoadFailed.emit(get_exception_string(error))
             else:
-                if type_ == "reply":
-                    if bool(int(datas["page"]["has_more"])):
-                        self.reply_page += 1
-                    else:
-                        self.reply_page = -1
-                elif type_ == "at":
-                    if datas.has_more:
-                        self.at_page += 1
-                    else:
-                        self.at_page = -1
-                elif type_ == "agree":
-                    if bool(int(datas["has_more"])):
-                        self.agree_page += 1
-                    else:
-                        self.agree_page = -1
-            finally:
-                if type_ == "reply":
-                    self.is_reply_loading = False
-                elif type_ == "at":
-                    self.is_at_loading = False
-                elif type_ == "agree":
-                    self.is_agree_loading = False
+                self._roomsLoaded.emit(rooms.room_list, fid)
 
-                logging.log_INFO(
-                    f'load userInteractionsList {type_}, '
-                    f'page (reply {self.reply_page} '
-                    f'at {self.at_page} '
-                    f'agree {self.agree_page}) finished')
+        start_background_thread(load)
 
-        def start_async():
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            asyncio.run(run_func())
+    def _show_room_selector(self, rooms, fid):
+        if not rooms:
+            self._roomsLoadFailed.emit('该吧没有可订阅的吧群')
+            return
+        normalized_rooms = [
+            self._normalize_room(room, fid)
+            for room in rooms
+        ]
+        normalized_rooms = [room for room in normalized_rooms if room['room_id']]
+        if not normalized_rooms:
+            self._roomsLoadFailed.emit('该吧没有可订阅的吧群')
+            return
+        picker = ChatRoomPickerDialog(normalized_rooms)
+        if picker.exec() != picker.Accepted:
+            return
+        room = picker.selected_room()
+        if room is None:
+            return
+        room_id = room['room_id']
+        self._chatroom_store.add_room(room)
+        self._selected_key = f'chatroom:{room_id}'
+        self.refresh_sessions(reload_detail=True)
 
-        start_async()
+    @staticmethod
+    def _normalize_room(raw, default_fid=0):
+        room_info = raw.get('room_info')
+        if not isinstance(room_info, dict):
+            room_info = raw
+        msg_info = raw.get('msg_info')
+        if not isinstance(msg_info, dict):
+            msg_info = {}
+
+        room_id = int(
+            raw.get('room_id')
+            or room_info.get('room_id')
+            or room_info.get('id')
+            or 0
+        )
+        forum_id = int(
+            room_info.get('forum_id')
+            or raw.get('forum_id')
+            or default_fid
+            or 0
+        )
+        forum_name = str(
+            room_info.get('forum_name')
+            or raw.get('forum_name')
+            or ''
+        )
+        room_name = str(
+            room_info.get('name')
+            or raw.get('name')
+            or room_info.get('room_name')
+            or f'吧群 {room_id}'
+        )
+        if forum_name and forum_name not in room_name:
+            display_name = f'{room_name}（{forum_name}吧）'
+        else:
+            display_name = room_name
+
+        return {
+            'room_id': room_id,
+            'fid': forum_id,
+            'forum_name': forum_name,
+            'name': display_name,
+            'avatar': str(room_info.get('avatar') or raw.get('avatar') or ''),
+            'last_message': str(msg_info.get('content') or ''),
+            'last_time': int(msg_info.get('msg_time') or 0),
+            'unread_count': int(room_info.get('unread_num') or 0),
+        }

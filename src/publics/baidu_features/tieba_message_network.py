@@ -39,6 +39,7 @@ class PrivateMessageConnection:
         self._pending = {}
         self._req_id = int(time.time())
         self.message_queue = asyncio.Queue()
+        self.notify_queue = asyncio.Queue()
 
     @property
     def is_open(self):
@@ -135,6 +136,13 @@ class PrivateMessageConnection:
                     except Exception:
                         continue
                     await self.message_queue.put(groups)
+                elif cmd == protocol.CMD_PUSH_NOTIFY:
+                    try:
+                        notices = protocol.parse_push_notify_res(body)
+                    except Exception:
+                        continue
+                    if notices:
+                        await self.notify_queue.put(notices)
         except asyncio.CancelledError:
             raise
         except Exception:

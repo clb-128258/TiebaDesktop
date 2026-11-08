@@ -186,13 +186,18 @@ class ChatroomMsg:
     def from_json(cls, data):
         content = _json_value(data.get('content'), {})
         text = ''
-        text_data = _json_value(content.get('text'), {})
+        raw_text = content.get('text') if isinstance(content, dict) else None
+        text_data = _json_value(raw_text, {})
         if isinstance(text_data, dict):
             body = _json_value(text_data.get('content_body'), text_data)
             if isinstance(body, dict):
                 text = str(body.get('text', '') or '')
+            elif isinstance(body, str):
+                text = body
             elif text_data.get('text'):
                 text = str(text_data['text'])
+        if not text and isinstance(raw_text, str):
+            text = raw_text
 
         return cls(
             int(data.get('msgid', 0)),
@@ -257,6 +262,9 @@ class _MsgIDManager:
 
     def get_msg_id(self, group_id):
         return self._gid2mid.get(group_id, _MsgIDPair()).last_id
+
+    def set_msg_id(self, group_id, msg_id):
+        self._gid2mid[group_id] = _MsgIDPair(msg_id)
 
     def get_local_msg_id(self, user_id):
         cursors = self._get_cursors(user_id)
@@ -369,6 +377,7 @@ class TiebaMessageClient:
         self._chat_message_queue = asyncio.Queue(maxsize=100)
         self._private_forwarder = None
         self._message_ids = _MsgIDManager()
+        self._private_group_ids = set()
         self._is_closed = False
         self.private_message_queue = asyncio.Queue()
 
@@ -533,8 +542,9 @@ class TiebaMessageClient:
 
             for group in result['groups']:
                 group_id = int(group['group_id'])
-                if int(group['group_type']) == protocol.GROUP_TYPE_PRIVATE_MSG:
-                    self._message_ids.priv_gid = group_id
+            if int(group['group_type']) == protocol.GROUP_TYPE_PRIVATE_MSG:
+                self._message_ids.priv_gid = group_id
+                self._private_group_ids.add(group_id)
                 self._message_ids.update_msg_id(group_id, int(group['last_msg_id']))
         except BaseException:
             await private.close()
@@ -794,6 +804,7 @@ class TiebaMessageClient:
         self._message_ids.update_local_msg_id(target_user_id, data['local_msg_id'])
         if data['group_id'] and not data['to_user_type']:
             self._message_ids.priv_gid = data['group_id']
+            self._private_group_ids.add(data['group_id'])
         return SendMsgResult(
             data['group_id'],
             data['local_msg_id'],
@@ -802,7 +813,7 @@ class TiebaMessageClient:
             data['msg_id'],
         )
 
-    async def get_group_msg(self, group_ids, get_type=1):
+    async def get_group_msg(self, group_ids, get_type=1, from_start=False):
         """获取私信分组消息。"""
         await self._ensure_private()
         if group_ids is None:
@@ -810,7 +821,10 @@ class TiebaMessageClient:
         group_ids = [int(group_id) for group_id in group_ids]
         if not group_ids or not all(group_ids):
             raise aiotieba.exception.TiebaValueError('private message group id is unavailable')
-        msg_ids = [self._message_ids.get_msg_id(group_id) for group_id in group_ids]
+        msg_ids = [
+            0 if from_start else self._message_ids.get_msg_id(group_id)
+            for group_id in group_ids
+        ]
         request_body = protocol.pack_get_group_msg_req(
             group_ids,
             msg_ids,
@@ -822,17 +836,26 @@ class TiebaMessageClient:
             protocol.CMD_GET_GROUP_MSG,
         )
         groups = protocol.parse_get_group_msg_res(response_body)
+        for group in groups:
+            if int(group['group_type']) == protocol.GROUP_TYPE_PRIVATE_MSG:
+                group_id = int(group['group_id'])
+                self._private_group_ids.add(group_id)
+                if group['messages']:
+                    self._message_ids.set_msg_id(
+                        group_id,
+                        max(int(message['msg_id']) for message in group['messages']),
+                    )
         self._track_private_groups(groups)
 
         return WsMsgGroups([WsMsgGroup.from_dict(group) for group in groups])
 
-    async def set_msg_readed(self, message):
+    async def set_msg_readed(self, message, group_id=None):
         """上报一条收到的私信为已读。"""
         await self._ensure_private()
         user_id = int(message.user.user_id)
         request_body = protocol.pack_set_msg_readed_req(
             user_id,
-            self._message_ids.priv_gid,
+            int(group_id or self._message_ids.priv_gid),
             int(message.msg_id),
         )
         response_body = await self._private.send(
@@ -1174,10 +1197,32 @@ class TiebaMessageClient:
         """返回私信推送队列，元素类型为 :class:`WsMsgGroups`。"""
         return self.private_message_queue
 
+    def get_private_notification_queue(self):
+        """返回私信 WebSocket 推送提示队列。"""
+        if self._private is None:
+            return asyncio.Queue()
+        return self._private.notify_queue
+
     @property
     def private_group_id(self):
         """当前账号的私信消息组 ID，未完成私信初始化时为 0。"""
         return self._message_ids.priv_gid
+
+    @property
+    def private_group_ids(self):
+        return sorted(self._private_group_ids)
+
+    @property
+    def user_id(self):
+        return self._account.user_id
+
+    @property
+    def user_name(self):
+        return self._account.nick_name or self._account.user_name
+
+    @property
+    def portrait(self):
+        return self._account.portrait
 
     def get_chat_message_queue(self):
         """返回吧群推送队列，元素类型为 :class:`BlcpNotification`。"""

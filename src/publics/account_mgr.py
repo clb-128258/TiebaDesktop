@@ -1,5 +1,6 @@
 """贴吧账号管理器"""
 import asyncio
+import concurrent.futures
 import os
 import shutil
 from typing import Optional
@@ -135,6 +136,8 @@ class AccountManager(QObject):
     accountStateChanged = pyqtSignal()  # 添加、删除、切换、刷新账号时会发出此信号
     addAccountFailed = pyqtSignal(str)  # 添加新账号失败时发出此信号
 
+    privateMessagesReceived = pyqtSignal(object)  # 有新私信
+
     def __init__(self):
         super().__init__()
 
@@ -142,6 +145,55 @@ class AccountManager(QObject):
         self.current_account = TiebaAccount()
 
         self.__is_switching_account = False
+        self._private_message_service = None
+        self._private_message_store = None
+
+    def _stop_private_message_connection(self):
+        if self._private_message_service is not None:
+            self._private_message_service.stop()
+            self._private_message_service = None
+        if self._private_message_store is not None:
+            self._private_message_store.close()
+            self._private_message_store = None
+
+        app_logger.log_INFO('Websocket connection closed')
+
+    def _start_private_message_connection(self):
+        from subwindow.chats.private_message_service import PrivateMessageService
+        from subwindow.chats.storage import ChatStore
+
+        self._stop_private_message_connection()
+        account = self.current_account
+        if not account or not account.uid or not account.bduss:
+            return
+
+        try:
+            self._private_message_store = ChatStore(account.uid)
+            self._private_message_service = PrivateMessageService(
+                account,
+                self._private_message_store,
+                self.privateMessagesReceived.emit,
+            )
+            self._private_message_service.start()
+
+            app_logger.log_INFO('websocket connection started')
+        except Exception as error:
+            app_logger.log_exception(error)
+            self._stop_private_message_connection()
+
+    def shutdown_private_message_connection(self):
+        self._stop_private_message_connection()
+
+    def send_private_message(self, peer_user_id, content):
+        if self._private_message_service is None:
+            future = concurrent.futures.Future()
+            future.set_exception(RuntimeError('当前账号的私信连接尚未建立'))
+            return future
+        return self._private_message_service.send_message(peer_user_id, content)
+
+    def mark_private_session_read(self, peer_user_id):
+        if self._private_message_service is not None:
+            self._private_message_service.mark_read(peer_user_id)
 
     def load_accounts_list_async(self):
         funcs.start_background_thread(self.load_accounts_list)
@@ -151,6 +203,7 @@ class AccountManager(QObject):
             return
 
         self.__is_switching_account = True
+        self._stop_private_message_connection()
         last_current_uid = self.current_account.uid
 
         self.account_list.clear()
@@ -179,6 +232,7 @@ class AccountManager(QObject):
                 a.init_access_infos()
 
         self.__is_switching_account = False
+        self._start_private_message_connection()
         if last_current_uid != self.current_account.uid or last_current_uid == self.current_account.uid == 0:
             self.accountSwitched.emit(self.current_account)
 
@@ -198,6 +252,7 @@ class AccountManager(QObject):
 
     def add_account(self, bduss: str, stoken: str, need_process_webview_udf=True):
         last_current_uid = self.current_account.uid
+        current_replaced = False
 
         try:
             user_info = get_user_self_info(bduss, stoken)
@@ -228,6 +283,7 @@ class AccountManager(QObject):
                         account_object.is_current = True
                         account_object.init_access_infos()
                         self.current_account = account_object
+                        current_replaced = True
                     self.account_list.remove(i)
                     break
 
@@ -243,6 +299,11 @@ class AccountManager(QObject):
         # 保存登录信息
         self.save_accounts_list()
 
+        if (
+                not self.__is_switching_account
+                and (last_current_uid != self.current_account.uid or current_replaced)
+        ):
+            self._start_private_message_connection()
         if last_current_uid != self.current_account.uid:
             self.accountSwitched.emit(self.current_account)
 
@@ -255,6 +316,8 @@ class AccountManager(QObject):
 
     def delete_account(self, uid: int):
         last_current_uid = self.current_account.uid
+        if self.current_account.uid == uid:
+            self._stop_private_message_connection()
 
         for i in self.account_list.copy():
             if i.uid == uid:
@@ -273,6 +336,8 @@ class AccountManager(QObject):
         self.save_accounts_list()
 
         if last_current_uid != self.current_account.uid:
+            self._start_private_message_connection()
+        if last_current_uid != self.current_account.uid:
             self.accountSwitched.emit(self.current_account)
 
         self.accountStateChanged.emit()
@@ -289,6 +354,7 @@ class AccountManager(QObject):
 
         # 先取消目前用户的激活状态
         self.current_account.is_current = False
+        self._stop_private_message_connection()
 
         account = None
         for i in self.account_list:
@@ -303,6 +369,7 @@ class AccountManager(QObject):
         # 保存登录信息
         self.save_accounts_list()
 
+        self._start_private_message_connection()
         self.__is_switching_account = False
         self.accountSwitched.emit(self.current_account)
         self.accountStateChanged.emit()
@@ -311,6 +378,7 @@ class AccountManager(QObject):
         funcs.start_background_thread(self.clear_all_accounts)
 
     def clear_all_accounts(self):
+        self._stop_private_message_connection()
         self.account_list.clear()
         self.current_account = TiebaAccount()
 
@@ -329,6 +397,7 @@ class AccountManager(QObject):
             return
 
         self.__is_switching_account = True
+        self._stop_private_message_connection()
 
         # 留存当前账号信息
         current_uid = self.current_account.uid
@@ -362,6 +431,7 @@ class AccountManager(QObject):
         self.blockSignals(False)
         self.__is_switching_account = False
 
+        self._start_private_message_connection()
         self.accountStateChanged.emit()
 
     def get_account_by_uid_portrait(self,

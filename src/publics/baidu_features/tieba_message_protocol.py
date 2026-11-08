@@ -30,6 +30,7 @@ BLCP_FRAME_PREFIX = b'lcp\x01'
 
 CMD_INIT_WS = 1001
 CMD_GET_GROUP_MSG = 202003
+CMD_PUSH_NOTIFY = 202006
 CMD_SEND_PRIVATE_MSG = 205001
 CMD_SET_MSG_READED = 205006
 
@@ -434,6 +435,26 @@ def parse_get_group_msg_res(data):
             'messages': messages,
         })
     return groups
+
+
+def parse_push_notify_res(data):
+    """解析私信与互动消息的 WebSocket 推送提示。"""
+    root = _parse_message(data)
+    notices = []
+    for pusher_data in _all_fields(root, 2):
+        pusher = _parse_message(pusher_data)
+        info = _parse_message(_first_field(pusher, 2, b''))
+        group_id = int(_first_field(info, 1, 0))
+        if not group_id:
+            continue
+        notices.append({
+            'group_id': group_id,
+            'msg_id': int(_first_field(info, 2, 0)),
+            'note_type': int(_first_field(info, 4, 0)),
+            'create_time': int(_to_text(_first_field(info, 6, '')) or 0),
+            'group_type': int(_first_field(info, 7, 0)),
+        })
+    return notices
 
 
 def pack_rpc_request(service_id, method_id, body=b'', correlation_id=None, event='CLCPReqBegin'):

@@ -194,6 +194,7 @@ class TiebaMsgSyncer(QObject):
     unread_msg_counts: dict = {}
     noticeCountChanged = pyqtSignal()
     activeWindow = pyqtSignal()
+    privateSessionActivated = pyqtSignal(int)
     is_running = False
     latest_count = -1
     latest_notify_text = ''
@@ -212,6 +213,7 @@ class TiebaMsgSyncer(QObject):
         self.latest_notify_text = ''
         if toasting.IS_AT_LEAST_WIN10:
             toasting.windows_global_toaster.remove_toast_group('tiebaInteractMsg')
+            toasting.windows_global_toaster.remove_toast_group('tiebaPrivateMsg')
 
     def start_sync(self):
         """开始状态同步"""
@@ -298,6 +300,57 @@ class TiebaMsgSyncer(QObject):
                                                       lambda: self.save_toast_settings('enable_interact_notify'))],
                              callback=self.activeWindow.emit,
                              group='tiebaInteractMsg')
+
+    def on_private_messages(self, messages):
+        """接收账号私信连接的新消息并发送桌面通知。"""
+        if not profile_mgr.local_config["notify_settings"]["enable_interact_notify"]:
+            return
+        incoming = [
+            message for message in messages
+            if message.direction == 'in' and message.msg_type != 22 and message.notify
+        ]
+        if incoming:
+            start_background_thread(self._show_private_message_toasts, (incoming,))
+
+    def _show_private_message_toasts(self, messages):
+        grouped = {}
+        for message in messages:
+            peer_id = int(message.session_key.split(':', 1)[-1])
+            grouped.setdefault(peer_id, []).append(message)
+
+        for peer_id, peer_messages in grouped.items():
+            latest = max(peer_messages, key=lambda item: item.timestamp)
+            title = latest.sender_name or f'用户 {peer_id}'
+            text = cut_string(latest.text or '[新消息]', 80)
+            icon_path = ''
+            if latest.sender_portrait:
+                link = (
+                    'https://tb.himg.baidu.com/sys/portraith/item/'
+                    + latest.sender_portrait.split('?', 1)[0]
+                )
+                try:
+                    icon_path = download_toast_icon(link)
+                except Exception as error:
+                    logging.log_exception(error)
+
+            toasting.showMessage(
+                title,
+                text,
+                icon=icon_path,
+                buttons=[
+                    toasting.Button(
+                        '查看会话',
+                        lambda uid=peer_id: self.privateSessionActivated.emit(uid),
+                    ),
+                    toasting.Button(
+                        '关闭此类通知',
+                        lambda: self.save_toast_settings('enable_interact_notify'),
+                    ),
+                ],
+                callback=lambda uid=peer_id: self.privateSessionActivated.emit(uid),
+                group='tiebaPrivateMsg',
+                lowerText='贴吧私信',
+            )
 
     def get_interactMsgAlter(self):
         """通过接口 https://tiebac.baidu.com/c/s/interactMsgAlter 获取详细的互动消息信息，并发出通知"""
