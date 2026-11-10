@@ -274,9 +274,9 @@ class UserInteractionsList(base_ui.InsideWidgetBaseQWidget, reply_at_me_page.Ui_
                 break
         self._select_session(key, force=True)
 
-    def suspend_current_session(self):
+    def suspend_current_session(self, wait=True):
         if self.detail is not None:
-            self.detail.suspend_chatroom()
+            self.detail.suspend_chatroom(wait=wait)
 
     def resume_current_session(self):
         if self.detail is not None:

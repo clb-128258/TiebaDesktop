@@ -11,7 +11,7 @@ from .models import ChatMessage
 
 
 class PrivateMessageService:
-    """在独立事件循环线程中维护当前账号的私信 WebSocket。"""
+    """在独立事件循环线程中维护单个账号的私信 WebSocket。"""
 
     def __init__(self, account, store, on_messages):
         self.account = account
@@ -38,19 +38,27 @@ class PrivateMessageService:
         )
         self._thread.start()
 
-    def stop(self):
+    def request_stop(self):
+        """请求后台连接尽快关闭，但不等待线程退出。"""
         self._stop_event.set()
         loop = self._loop
         if loop is not None and loop.is_running():
             try:
-                future = asyncio.run_coroutine_threadsafe(self._shutdown(), loop)
-                future.result(timeout=3)
+                asyncio.run_coroutine_threadsafe(self._shutdown(), loop)
             except Exception:
                 pass
+
+    def stop(self, wait=True, timeout=3):
+        self.request_stop()
+        if not wait:
+            return False
         if self._thread is not None:
-            self._thread.join(timeout=6)
+            self._thread.join(timeout=timeout)
+            if self._thread.is_alive():
+                return False
         self._thread = None
         self._loop = None
+        return True
 
     def is_running(self):
         return self._thread is not None and self._thread.is_alive()

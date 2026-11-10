@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(829, 582)
+        Form.resize(820, 576)
         font = QtGui.QFont()
         font.setPointSize(9)
         Form.setFont(font)
@@ -25,6 +25,7 @@ class Ui_Form(object):
         self.frame_3.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_3.setObjectName("frame_3")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.frame_3)
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.label = QtWidgets.QLabel(self.frame_3)
         font = QtGui.QFont()
@@ -40,7 +41,7 @@ class Ui_Form(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.label_2 = QtWidgets.QLabel(self.frame_3)
         font = QtGui.QFont()
-        font.setPointSize(15)
+        font.setPointSize(14)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
         self.verticalLayout.addWidget(self.label_2)
@@ -74,6 +75,7 @@ class Ui_Form(object):
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
         self.gridLayout = QtWidgets.QGridLayout(self.frame)
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
         self.textEdit = QtWidgets.QTextEdit(self.frame)
         font = QtGui.QFont()

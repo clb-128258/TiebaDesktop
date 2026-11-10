@@ -47,6 +47,7 @@ class TiebaAccount(QObject):
         uid (int): 百度用户 ID
 
         aiotieba_account (aiotieba.Account): aiotieba 的账户信息容器，内含各种贴吧 API 请求参数
+        private_message_service (PrivateMessageService): 私信长连接容器
 
         is_current (bool): 是否为当前激活账号
     """
@@ -64,6 +65,9 @@ class TiebaAccount(QObject):
         self.aiotieba_account = aiotieba.Account()
 
         self.is_current = False
+        self.private_message_service = None
+        self._private_message_store = None
+        self._private_message_callback = None
 
     def init_access_infos(self):
         async def get_access_info():
@@ -113,6 +117,53 @@ class TiebaAccount(QObject):
 
         self.is_current = current_bduss == self.bduss
 
+    def ensure_private_message_connection(self, on_messages):
+        """首次激活时建立私信连接，后续账号切换复用已有连接。"""
+        from subwindow.chats.private_message_service import PrivateMessageService
+        from subwindow.chats.storage import ChatStore
+
+        if not self.uid or not self.bduss:
+            return False
+
+        self._private_message_callback = on_messages
+        if self._private_message_store is None:
+            self._private_message_store = ChatStore(self.uid)
+        if self.private_message_service is None:
+            self.private_message_service = PrivateMessageService(
+                self,
+                self._private_message_store,
+                self._forward_private_messages,
+            )
+        if not self.private_message_service.is_running():
+            self.private_message_service.start()
+        return True
+
+    def _forward_private_messages(self, messages):
+        if self.is_current and self._private_message_callback is not None:
+            self._private_message_callback(messages)
+
+    def close_private_message_connection(self, wait=True):
+        """账号生命周期结束时关闭私信连接。"""
+        service = self.private_message_service
+        if service is not None:
+            if wait:
+                stopped = service.stop(wait=True)
+                if not stopped:
+                    app_logger.log_WARN(
+                        f'[account manager] private message service {self.uid} '
+                        'did not stop in time'
+                    )
+                    return
+            else:
+                service.request_stop()
+                return
+
+        if self._private_message_store is not None:
+            self._private_message_store.close()
+        self.private_message_service = None
+        self._private_message_store = None
+        self._private_message_callback = None
+
     def to_json(self):
         json_data = {'bduss': self.bduss, 'stoken': self.stoken,
                      'portrait': self.portrait,
@@ -145,55 +196,62 @@ class AccountManager(QObject):
         self.current_account = TiebaAccount()
 
         self.__is_switching_account = False
-        self._private_message_service = None
-        self._private_message_store = None
-
-    def _stop_private_message_connection(self):
-        if self._private_message_service is not None:
-            self._private_message_service.stop()
-            self._private_message_service = None
-        if self._private_message_store is not None:
-            self._private_message_store.close()
-            self._private_message_store = None
-
-        app_logger.log_INFO('Websocket connection closed')
 
     def _start_private_message_connection(self):
-        from subwindow.chats.private_message_service import PrivateMessageService
-        from subwindow.chats.storage import ChatStore
-
-        self._stop_private_message_connection()
         account = self.current_account
-        if not account or not account.uid or not account.bduss:
+        if not account or not account.uid:
             return
-
         try:
-            self._private_message_store = ChatStore(account.uid)
-            self._private_message_service = PrivateMessageService(
-                account,
-                self._private_message_store,
-                self.privateMessagesReceived.emit,
-            )
-            self._private_message_service.start()
-
-            app_logger.log_INFO('websocket connection started')
+            if account.ensure_private_message_connection(
+                self.privateMessagesReceived.emit
+            ):
+                app_logger.log_INFO(
+                    f'websocket connection ready for account {account.uid}'
+                )
         except Exception as error:
             app_logger.log_exception(error)
-            self._stop_private_message_connection()
+
+    @staticmethod
+    def _close_account_private_message_connection(account, wait=True):
+        if account is None:
+            return
+        try:
+            account.close_private_message_connection(wait=wait)
+        except Exception as error:
+            app_logger.log_exception(error)
+
+    def _close_all_private_message_connections(self, wait=True):
+        for account in list(self.account_list):
+            self._close_account_private_message_connection(account, wait=wait)
 
     def shutdown_private_message_connection(self):
-        self._stop_private_message_connection()
+        self._close_all_private_message_connections(wait=False)
 
     def send_private_message(self, peer_user_id, content):
-        if self._private_message_service is None:
+        account = self.current_account
+        try:
+            ready = account.ensure_private_message_connection(
+                self.privateMessagesReceived.emit
+            )
+        except Exception as error:
+            ready = False
+            app_logger.log_exception(error)
+        if not ready or account.private_message_service is None:
             future = concurrent.futures.Future()
             future.set_exception(RuntimeError('当前账号的私信连接尚未建立'))
             return future
-        return self._private_message_service.send_message(peer_user_id, content)
+        return account.private_message_service.send_message(peer_user_id, content)
 
     def mark_private_session_read(self, peer_user_id):
-        if self._private_message_service is not None:
-            self._private_message_service.mark_read(peer_user_id)
+        account = self.current_account
+        try:
+            account.ensure_private_message_connection(
+                self.privateMessagesReceived.emit
+            )
+        except Exception as error:
+            app_logger.log_exception(error)
+        if account.private_message_service is not None:
+            account.private_message_service.mark_read(peer_user_id)
 
     def load_accounts_list_async(self):
         funcs.start_background_thread(self.load_accounts_list)
@@ -203,7 +261,7 @@ class AccountManager(QObject):
             return
 
         self.__is_switching_account = True
-        self._stop_private_message_connection()
+        self._close_all_private_message_connections(wait=True)
         last_current_uid = self.current_account.uid
 
         self.account_list.clear()
@@ -284,6 +342,7 @@ class AccountManager(QObject):
                         account_object.init_access_infos()
                         self.current_account = account_object
                         current_replaced = True
+                    self._close_account_private_message_connection(i)
                     self.account_list.remove(i)
                     break
 
@@ -316,12 +375,13 @@ class AccountManager(QObject):
 
     def delete_account(self, uid: int):
         last_current_uid = self.current_account.uid
-        if self.current_account.uid == uid:
-            self._stop_private_message_connection()
 
         for i in self.account_list.copy():
             if i.uid == uid:
-                shutil.rmtree(f'{consts.datapath}/webview_data/{i.uid}')
+                self._close_account_private_message_connection(i)
+                webview_dir = f'{consts.datapath}/webview_data/{i.uid}'
+                if os.path.isdir(webview_dir):
+                    shutil.rmtree(webview_dir)
                 self.account_list.remove(i)  # 删掉登录信息
                 break
         if self.current_account.uid == uid:
@@ -354,7 +414,6 @@ class AccountManager(QObject):
 
         # 先取消目前用户的激活状态
         self.current_account.is_current = False
-        self._stop_private_message_connection()
 
         account = None
         for i in self.account_list:
@@ -378,7 +437,7 @@ class AccountManager(QObject):
         funcs.start_background_thread(self.clear_all_accounts)
 
     def clear_all_accounts(self):
-        self._stop_private_message_connection()
+        self._close_all_private_message_connections(wait=True)
         self.account_list.clear()
         self.current_account = TiebaAccount()
 
@@ -397,7 +456,7 @@ class AccountManager(QObject):
             return
 
         self.__is_switching_account = True
-        self._stop_private_message_connection()
+        self._close_all_private_message_connections(wait=True)
 
         # 留存当前账号信息
         current_uid = self.current_account.uid

@@ -16,7 +16,9 @@ class ChatSessionType(str, enum.Enum):
 
 @dataclass
 class ChatMessage:
-    """私信与吧群共用的消息容器"""
+    """
+    私信与吧群共用的消息容器
+    """
 
     session_key: str = ''
     message_id: int = 0
@@ -26,6 +28,10 @@ class ChatMessage:
     direction: str = 'in'
     msg_type: int = 1
     text: str = ''
+    image_urls: List[str] = field(default_factory=list)
+    image_thumbnail_urls: List[str] = field(default_factory=list)
+    image_width: int = 0
+    image_height: int = 0
     timestamp: int = 0
     payload: Dict[str, Any] = field(default_factory=dict)
     is_read: bool = False
@@ -34,7 +40,7 @@ class ChatMessage:
 
 @dataclass
 class InteractionEntry:
-    """一条回复、@ 或点赞互动。"""
+    """一条回复、@ 或点赞互动"""
 
     category: str
     timestamp: int

@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 )
 
 from publics import account_mgr, profile_mgr, qt_image, qt_window_mgr
-from publics.base_ui_elements import base_ui, top_toast_widget,loading_widget
+from publics.base_ui_elements import base_ui, top_toast_widget, loading_widget
 from publics.base_ui_elements.message_box import MessageBox
 from publics.funcs import (
     cleanup_listWidget,
@@ -32,7 +32,10 @@ from .storage import ChatStore
 
 
 class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
-    """单实例承载全部会话类型。"""
+    """
+    聊天会话详情页
+    可承载全部会话类型
+    """
 
     toastRequested = pyqtSignal(object)
     detachRequested = pyqtSignal(object)
@@ -87,6 +90,10 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
         self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.listWidget.verticalScrollBar().valueChanged.connect(self._load_visible_images)
         self.listWidget.verticalScrollBar().valueChanged.connect(self._on_message_scroll)
+        self._resize_layout_timer = QTimer(self)
+        self._resize_layout_timer.setSingleShot(True)
+        self._resize_layout_timer.setInterval(100)
+        self._resize_layout_timer.timeout.connect(self._load_visible_images)
 
         self.portrait_image = qt_image.MultipleImage()
         self.portrait_image.currentPixmapChanged.connect(
@@ -121,8 +128,8 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        for row in range(self.listWidget.count()):
-            self._adjust_message_item_height(self.listWidget.item(row))
+        if hasattr(self, '_resize_layout_timer'):
+            self._resize_layout_timer.start()
 
     def set_account(self, bduss, stoken, uid):
         self.close_session()
@@ -142,9 +149,9 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
             self.clear_view()
             return
         if (
-                not force
-                and self.current_session is not None
-                and self.current_session.key == session.key
+            not force
+            and self.current_session is not None
+            and self.current_session.key == session.key
         ):
             return
 
@@ -183,24 +190,30 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
         self.label_3.clear()
         self.textEdit.clear()
 
-    def clear_session(self):
+    def clear_session(self, wait=True):
         self._load_version += 1
-        self.close_session()
+        self.close_session(wait=wait)
         self.current_session = None
         self.clear_view()
 
-    def close_session(self):
+    def shutdown_nonblocking(self):
+        self.close_session(wait=False)
+
+    def close_session(self, wait=True):
         if self._chatroom_worker is not None:
-            self._chatroom_worker.stop()
-            self._chatroom_worker = None
+            if wait:
+                self._chatroom_worker.stop(wait=True)
+                self._chatroom_worker = None
+            else:
+                self._chatroom_worker.request_stop()
         self._chatroom_messages = []
         self._interaction_entries = []
         self._interaction_loading = False
         self._interaction_scroll_ready = False
 
-    def suspend_chatroom(self):
+    def suspend_chatroom(self, wait=True):
         if self.current_session is not None and self.current_session.is_chatroom:
-            self.close_session()
+            self.close_session(wait=wait)
 
     def resume_chatroom(self):
         if (
@@ -214,7 +227,7 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
         if self._cleaned:
             return
         self._cleaned = True
-        self.close_session()
+        self.close_session(wait=False)
         self.portrait_image.destroyImage()
         if self._store is not None:
             self._store.close()
@@ -351,8 +364,13 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
             self._interaction_has_more = False
             self._interaction_scroll_ready = True
             return
-        for entry in new_entries:
-            self._append_interaction_entry(entry)
+        self.listWidget.setUpdatesEnabled(False)
+        try:
+            for entry in new_entries:
+                self._append_interaction_entry(entry)
+        finally:
+            self.listWidget.setUpdatesEnabled(True)
+            self.listWidget.viewport().update()
         if page == 1:
             self.listWidget.scrollToTop()
 
@@ -459,6 +477,29 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, container)
         self._adjust_message_item_height(item)
+        QTimer.singleShot(
+            0,
+            lambda current_item=item: self._force_adjust_interaction_item(current_item),
+        )
+        for image_name in ('left_image', 'portrait_image'):
+            image_loader = getattr(item_widget, image_name, None)
+            if image_loader is not None:
+                image_loader.currentPixmapChanged.connect(
+                    lambda _pixmap, current_item=item: QTimer.singleShot(
+                        0,
+                        lambda: self._force_adjust_interaction_item(current_item),
+                    )
+                )
+
+    def _force_adjust_interaction_item(self, item):
+        inner_widget = item.data(Qt.UserRole + 1)
+        if isinstance(inner_widget, QWidget):
+            inner_widget._layout_width = None
+            layout = inner_widget.layout()
+            if layout is not None:
+                layout.invalidate()
+            inner_widget.adjustSize()
+        self._adjust_message_item_height(item)
 
     def _enable_wrapped_layout(self, widget):
         for name in ('label_6', 'label_10'):
@@ -467,10 +508,24 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
                 continue
             label.setWordWrap(True)
             label.setMaximumHeight(16777215)
+            label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
             policy = label.sizePolicy()
             policy.setHeightForWidth(True)
-            policy.setVerticalPolicy(QSizePolicy.MinimumExpanding)
+            policy.setVerticalPolicy(QSizePolicy.Fixed)
             label.setSizePolicy(policy)
+            for layout_name in ('horizontalLayout', 'gridLayout'):
+                layout = getattr(widget, layout_name, None)
+                if layout is not None:
+                    # 只约束纵向顶部对齐，横向仍由布局拉伸到完整可用宽度。
+                    layout.setAlignment(label, Qt.AlignTop)
+
+        image_label = getattr(widget, 'label_2', None)
+        horizontal_layout = getattr(widget, 'horizontalLayout', None)
+        if image_label is not None and horizontal_layout is not None:
+            horizontal_layout.setAlignment(
+                image_label,
+                Qt.AlignLeft | Qt.AlignTop,
+            )
 
     def _start_chatroom_worker(self, session, load_version):
         self.loading_widget.show()
@@ -549,14 +604,25 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
 
     def _render_chat_messages(self, messages, show_sender):
         cleanup_listWidget(self.listWidget)
-        for message in messages:
-            widget = ChatMessageWidget(message, show_sender=show_sender)
-            item = QListWidgetItem()
-            item.setData(Qt.UserRole + 1, widget)
-            self.listWidget.addItem(item)
-            self.listWidget.setItemWidget(item, widget)
-            self._adjust_message_item_height(item)
+        self.listWidget.setUpdatesEnabled(False)
+        try:
+            for message in messages:
+                widget = ChatMessageWidget(message, show_sender=show_sender)
+                item = QListWidgetItem()
+                item.setData(Qt.UserRole + 1, widget)
+                self.listWidget.addItem(item)
+                self.listWidget.setItemWidget(item, widget)
+                widget.contentSizeChanged.connect(
+                    lambda current_item=item: self._adjust_message_item_height(
+                        current_item
+                    )
+                )
+                self._adjust_message_item_height(item)
+        finally:
+            self.listWidget.setUpdatesEnabled(True)
+            self.listWidget.viewport().update()
         self.listWidget.scrollToBottom()
+        QTimer.singleShot(0, self._load_visible_images)
 
     def _adjust_message_item_height(self, item):
         if item is None:
@@ -573,16 +639,27 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
             height = inner_widget.preferred_height(width)
         elif isinstance(inner_widget, QWidget):
             inner_width = max(140, min(760, width - 24))
+            if (
+                getattr(inner_widget, '_layout_width', None) == inner_width
+                and hasattr(inner_widget, '_layout_height')
+            ):
+                item.setSizeHint(QSize(
+                    width,
+                    inner_widget._layout_height + 4,
+                ))
+                return
             inner_widget.setFixedWidth(inner_width)
             self._resize_interaction_labels(inner_widget, inner_width)
             layout = inner_widget.layout()
             if layout is not None:
                 layout.activate()
             height = inner_widget.sizeHint().height()
-            if layout is not None and layout.hasHeightForWidth():
+            if layout is not None:
                 height_for_width = layout.heightForWidth(inner_width)
                 if height_for_width > 0:
-                    height = height_for_width
+                    height = max(height, height_for_width)
+            inner_widget._layout_width = inner_width
+            inner_widget._layout_height = height
         else:
             height = max(50, item.sizeHint().height())
         item.setSizeHint(QSize(width, max(50, height + 4)))
@@ -628,7 +705,7 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
                 qt_image.ImageLoadSource.TiebaPortrait,
                 session.avatar.split('?', 1)[0],
                 qt_image.ImageCoverType.RoundCover,
-                (42, 42),
+                (45, 45),
             )
             self.portrait_image.loadImage()
         elif session.session_type == ChatSessionType.CHATROOM and session.avatar:
@@ -637,7 +714,7 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
                 qt_image.ImageLoadSource.HttpLink,
                 session.avatar,
                 qt_image.ImageCoverType.RoundCover,
-                (42, 42),
+                (45, 45),
             )
             self.portrait_image.loadImage()
         else:
@@ -661,7 +738,9 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
         if not end.isValid():
             end = self.listWidget.model().index(self.listWidget.count() - 1)
         for row in range(start.row(), end.row() + 1):
-            widget = self.listWidget.itemWidget(self.listWidget.item(row))
+            item = self.listWidget.item(row)
+            self._adjust_message_item_height(item)
+            widget = self.listWidget.itemWidget(item)
             if hasattr(widget, 'load_images'):
                 widget.load_images()
             elif widget is not None:
@@ -795,7 +874,8 @@ class ChatSessionDetail(base_ui.WindowBaseQWidget, chat_session_detail.Ui_Form):
             widget = self.listWidget.itemWidget(self.listWidget.item(row))
             if widget is not None and hasattr(widget, 'reset_theme'):
                 widget.reset_theme()
+
     def init_ui_elements(self):
-        self.loading_widget=loading_widget.LoadingFlashWidget(caption='消息正在赶来的路上...')
+        self.loading_widget = loading_widget.LoadingFlashWidget(caption='消息正在赶来的路上...')
         self.loading_widget.cover_widget(self)
         self.loading_widget.hide()

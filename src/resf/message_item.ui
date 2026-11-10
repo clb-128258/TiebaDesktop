@@ -6,51 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>362</width>
-    <height>166</height>
+    <width>266</width>
+    <height>106</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>消息条目</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0" columnstretch="0,1,0">
-   <property name="spacing">
-    <number>8</number>
-   </property>
-   <item row="2" column="1">
-    <widget class="QLabel" name="label_3">
-     <property name="font">
-      <font>
-       <pointsize>9</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">QLabel{color:grey;}</string>
-     </property>
-     <property name="text">
-      <string>消息发送时间，是否已读</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QWidget" name="messageContentWidget" native="true"/>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLabel" name="label_4">
-     <property name="font">
-      <font>
-       <pointsize>9</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">QLabel{color:grey;}</string>
-     </property>
-     <property name="text">
-      <string>用户昵称</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" rowspan="3">
+  <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,0">
+   <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QLabel" name="label">
@@ -77,7 +41,44 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="2" rowspan="3">
+   <item row="0" column="1">
+    <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,1,0">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{color:grey;}</string>
+       </property>
+       <property name="text">
+        <string>用户昵称</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QWidget" name="messageContentWidget" native="true"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{color:grey;}</string>
+       </property>
+       <property name="text">
+        <string>消息发送时间，是否已读</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="2">
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
       <widget class="QLabel" name="label_2">

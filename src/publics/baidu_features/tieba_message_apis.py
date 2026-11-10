@@ -36,7 +36,6 @@ from .tieba_message_network import (
     _resolve_proxy,
 )
 
-
 _WS_PUBLIC_KEY = binascii.a2b_base64(
     b'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB'
 )
@@ -60,6 +59,39 @@ def _json_value(value, default):
         return json.loads(value)
     except (TypeError, ValueError):
         return default
+
+
+def _parse_image_size(value):
+    """
+    解析接口中的 `bsize` 尺寸字段
+
+    Return:
+        (width, height)
+    """
+    if isinstance(value, dict):
+        width = value.get('width') or value.get('w')
+        height = value.get('height') or value.get('h')
+        try:
+            return int(width), int(height)
+        except (TypeError, ValueError):
+            return 0, 0
+    if isinstance(value, (list, tuple)) and len(value) >= 2:
+        try:
+            return int(value[0]), int(value[1])
+        except (TypeError, ValueError):
+            return 0, 0
+    if value is None:
+        return 0, 0
+
+    text = str(value).strip().lower()
+    for separator in (',', 'x', '×', '*'):
+        if separator in text:
+            parts = text.split(separator, 1)
+            try:
+                return int(parts[0].strip()), int(parts[1].strip())
+            except (TypeError, ValueError):
+                return 0, 0
+    return 0, 0
 
 
 @dataclass
@@ -174,29 +206,110 @@ class ChatroomDetail:
 
 @dataclass
 class ChatroomMsg:
+    """
+    聊天群消息
+
+    Attributes:
+        msg_id (int): 消息id
+        msg_key (str): 消息key
+        msg_type (int): 消息类型
+        user_id (int): 发送者用户id
+
+        content (dict): 内容json信息
+        text (str): 文本内容
+        image_url (str): 图片内容链接
+        image_thumbnail_url (str): 预览小图链接
+        image_width (int): 图片宽度
+        image_height (int): 图片高度
+        create_time (int): 消息发送时间戳
+    """
     msg_id: int = 0
     msg_key: str = ''
     msg_type: int = 0
     user_id: int = 0
     content: dict = field(default_factory=dict)
     text: str = ''
+    image_url: str = ''
+    image_thumbnail_url: str = ''
+    image_width: int = 0
+    image_height: int = 0
     create_time: int = 0
 
     @classmethod
     def from_json(cls, data):
-        content = _json_value(data.get('content'), {})
         text = ''
-        raw_text = content.get('text') if isinstance(content, dict) else None
+        image_url = ''
+        image_thumbnail_url = ''
+        image_width = 0
+        image_height = 0
+
+        content = _json_value(data.get('content'), {})
+        content_map = content if isinstance(content, dict) else {}
+        raw_text = content_map.get('text')
         text_data = _json_value(raw_text, {})
+        parsed_raw_text = _json_value(raw_text, None)
+
         if isinstance(text_data, dict):
             body = _json_value(text_data.get('content_body'), text_data)
+            ext_data=_json_value(text_data.get('ext'), text_data)
             if isinstance(body, dict):
                 text = str(body.get('text', '') or '')
+                image_url = str(
+                    body.get('url')
+                    or body.get('src')
+                    or body.get('thumbnail')
+                    or ''
+                )
+                image_thumbnail_url = str(
+                    body.get('thumbnail')
+                    or body.get('thumb')
+                    or image_url
+                )
+
+                image_content = ext_data.get('content', {})
+                image_width, image_height = _parse_image_size(
+                    image_content.get('bsize')
+                    or image_content.get('big_size')
+                )
             elif isinstance(body, str):
                 text = body
             elif text_data.get('text'):
                 text = str(text_data['text'])
-        if not text and isinstance(raw_text, str):
+
+            if not text:
+                content_type = str(text_data.get('content_type', '') or '')
+                if content_type == '1':
+                    text = '[图片]'
+                else:
+                    text = '[暂不支持的消息类型，请用手机贴吧查看]'
+                    print(data)
+
+        if not image_url:
+            image_url = str(
+                content_map.get('url')
+                or content_map.get('src')
+                or ''
+            )
+            if image_url:
+                image_thumbnail_url = str(
+                    content_map.get('thumbnail')
+                    or content_map.get('thumb')
+                    or image_url
+                )
+            if not text:
+                text = '[图片]'
+        if not image_width:
+            image_width, image_height = _parse_image_size(
+                content_map.get('bsize')
+                or content_map.get('big_size')
+                or text_data.get('bsize')
+                or text_data.get('big_size')
+            )
+        if (
+                not text
+                and isinstance(raw_text, str)
+                and not isinstance(parsed_raw_text, (dict, list))
+        ):
             text = raw_text
 
         return cls(
@@ -206,6 +319,10 @@ class ChatroomMsg:
             int(data.get('from_user', 0) or 0),
             content,
             text,
+            image_url,
+            image_thumbnail_url,
+            image_width,
+            image_height,
             int(data.get('create_time', 0)),
         )
 
@@ -328,9 +445,9 @@ class _MessageAccount:
     @property
     def zid(self):
         return (
-            getattr(self.source, 'z_id', None)
-            or getattr(self.source, 'zid', None)
-            or ''
+                getattr(self.source, 'z_id', None)
+                or getattr(self.source, 'zid', None)
+                or ''
         )
 
     @property
@@ -456,8 +573,8 @@ class TiebaMessageClient:
             return
 
         async with aiotieba.Client(
-            account=self._account.source,
-            proxy=self._legacy_proxy(),
+                account=self._account.source,
+                proxy=self._legacy_proxy(),
         ) as client:
             user = await client.get_self_info()
             _check_response_error(user)
@@ -534,9 +651,9 @@ class TiebaMessageClient:
             self._account.user_name = self._account.user_name or user.get('user_name', '')
             self._account.portrait = self._account.portrait or user.get('portrait', '')
             self._account.nick_name = (
-                self._account.nick_name
-                or self._account.user_name
-                or str(user_id)
+                    self._account.nick_name
+                    or self._account.user_name
+                    or str(user_id)
             )
             self._account.bduk = protocol.user_id2bduk(self._account.user_id)
 
@@ -742,8 +859,8 @@ class TiebaMessageClient:
 
     async def _get_forum_level(self, fid):
         async with aiotieba.Client(
-            account=self._account.source,
-            proxy=self._legacy_proxy(),
+                account=self._account.source,
+                proxy=self._legacy_proxy(),
         ) as client:
             level_info = await client.get_forum_level(fid)
             _check_response_error(level_info)
@@ -755,8 +872,8 @@ class TiebaMessageClient:
 
         at_data = []
         async with aiotieba.Client(
-            account=self._account.source,
-            proxy=self._legacy_proxy(),
+                account=self._account.source,
+                proxy=self._legacy_proxy(),
         ) as client:
             for count, user_id in enumerate(at_user_ids):
                 user = await client.get_user_info(
@@ -777,8 +894,8 @@ class TiebaMessageClient:
         if isinstance(id_, int):
             return id_
         async with aiotieba.Client(
-            account=self._account.source,
-            proxy=self._legacy_proxy(),
+                account=self._account.source,
+                proxy=self._legacy_proxy(),
         ) as client:
             user = await client.get_user_info(id_, aiotieba.ReqUInfo.USER_ID)
             _check_response_error(user)
@@ -1038,12 +1155,12 @@ class TiebaMessageClient:
         return True
 
     async def send_chatroom_msg(
-        self,
-        chatroom_id,
-        fid,
-        text,
-        at_user_ids=None,
-        robot=-1,
+            self,
+            chatroom_id,
+            fid,
+            text,
+            at_user_ids=None,
+            robot=-1,
     ):
         """向吧群发送纯文本消息。"""
         await self._ensure_chatroom()
@@ -1301,13 +1418,13 @@ async def join_chatroom(account, chatroom_id, proxy=True):
 
 
 async def send_chatroom_msg(
-    account,
-    chatroom_id,
-    fid,
-    text,
-    at_user_ids=None,
-    robot=-1,
-    proxy=True,
+        account,
+        chatroom_id,
+        fid,
+        text,
+        at_user_ids=None,
+        robot=-1,
+        proxy=True,
 ):
     client = get_message_client(account, proxy=proxy)
     try:

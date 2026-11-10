@@ -17,7 +17,9 @@ def _chat_data_dir():
 
 
 class ChatStore:
-    """当前账号的私信记录存储。"""
+    """
+    账号的私信记录存储
+    """
 
     def __init__(self, uid):
         safe_uid = int(uid or 0)

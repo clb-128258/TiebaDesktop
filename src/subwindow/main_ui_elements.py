@@ -1156,7 +1156,7 @@ class MainWindow(BaseQMainWindow, mainwindow.Ui_MainWindow):
         QApp_instance.closeAllWindows()
 
         # 关闭websocket连接
-        self.interactionlist.suspend_current_session()
+        self.interactionlist.suspend_current_session(wait=False)
         self.account_manager.shutdown_private_message_connection()
 
         # 退出主循环

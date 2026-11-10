@@ -33,19 +33,19 @@ class UserChatSessionItem(base_ui.InsideWidgetBaseQWidget, user_chat_session_ite
 
     def set_session(self, session):
         self.session = session
-        self.label_2.setText(cut_string(session.title or '未命名会话', 13))
+        self.label_2.setText(cut_string(session.title or '未命名会话', 10))
         self.label_2.setToolTip(session.title or '')
 
         if session.session_type == ChatSessionType.INTERACTION:
             self.label_3.clear()
             self.label_3.hide()
         else:
-            self.label_3.setText(cut_string(session.subtitle or '暂无消息', 20))
+            self.label_3.setText(cut_string(session.subtitle or '暂无消息', 15))
             self.label_3.setToolTip(session.subtitle or '')
             self.label_3.show()
 
         if session.unread_count > 0:
-            self.label_4.setText('99+' if session.unread_count > 99 else str(session.unread_count))
+            self.label_4.setText('999+' if session.unread_count > 999 else str(session.unread_count))
             self.label_4.show()
         else:
             self.label_4.hide()

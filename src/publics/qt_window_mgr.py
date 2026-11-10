@@ -56,10 +56,17 @@ def clear_windows():
     global distributed_window
     while distributed_window:
         widget = distributed_window[0]
-        close_session = getattr(widget, 'close_session', None)
-        if callable(close_session):
+        shutdown_nonblocking = getattr(widget, 'shutdown_nonblocking', None)
+        if callable(shutdown_nonblocking):
             try:
-                close_session()
+                shutdown_nonblocking()
             except Exception:
                 pass
+        else:
+            close_session = getattr(widget, 'close_session', None)
+            if callable(close_session):
+                try:
+                    close_session()
+                except Exception:
+                    pass
         del_window(widget)

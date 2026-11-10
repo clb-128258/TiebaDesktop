@@ -66,19 +66,26 @@ class ChatRoomSessionWorker:
         )
         self._thread.start()
 
-    def stop(self):
+    def request_stop(self):
         self._stop_event.set()
         loop = self._loop
         if loop is not None and loop.is_running():
             try:
-                future = asyncio.run_coroutine_threadsafe(self._shutdown(), loop)
-                future.result(timeout=3)
+                asyncio.run_coroutine_threadsafe(self._shutdown(), loop)
             except Exception:
                 pass
+
+    def stop(self, wait=True, timeout=3):
+        self.request_stop()
+        if not wait:
+            return False
         if self._thread is not None:
-            self._thread.join(timeout=6)
+            self._thread.join(timeout=timeout)
+            if self._thread.is_alive():
+                return False
         self._thread = None
         self._loop = None
+        return True
 
     def send_message(self, text):
         future = concurrent.futures.Future()
@@ -174,6 +181,14 @@ class ChatRoomSessionWorker:
                 direction=direction,
                 msg_type=int(item.msg_type),
                 text=item.text,
+                image_urls=[item.image_url] if item.image_url else [],
+                image_thumbnail_urls=(
+                    [item.image_thumbnail_url]
+                    if item.image_thumbnail_url
+                    else []
+                ),
+                image_width=int(item.image_width or 0),
+                image_height=int(item.image_height or 0),
                 timestamp=int(item.create_time or time.time()),
                 payload=item.content,
                 is_read=True,
