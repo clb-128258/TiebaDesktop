@@ -62,6 +62,7 @@ class TiebaAccount(QObject):
         self.nickname = ''
         self.uid = 0
 
+        self.baidu_id = ''
         self.aiotieba_account = aiotieba.Account()
 
         self.is_current = False
@@ -82,17 +83,22 @@ class TiebaAccount(QObject):
                 aiotieba_http_core = client._http_core
 
                 try:
+                    from publics.baidu_features import tieba_apis
+
                     # 并发执行，提高性能
                     result = await asyncio.gather(aiotieba.init_z_id.request(aiotieba_http_core),
                                                   aiotieba.sync.request(aiotieba_http_core),
                                                   aiotieba.login.request(aiotieba_http_core)
                                                   )
+                    baidu_id = tieba_apis.get_baidu_id(self.bduss, self.stoken)
                     zid, client_id, sample_id, tbs = result[0], result[1][0], result[1][1], result[2][1]
 
                     self.aiotieba_account.tbs = tbs
                     self.aiotieba_account.z_id = zid
                     self.aiotieba_account.client_id = client_id
                     self.aiotieba_account.sample_id = sample_id
+                    self.baidu_id = baidu_id
+
                 except Exception as e:
                     app_logger.log_exception(e)
                     app_logger.log_WARN(f'[account manager] user {self} access info load failed')
@@ -103,7 +109,7 @@ class TiebaAccount(QObject):
             asyncio.run(get_access_info())
             new_loop.close()
 
-        if not self.aiotieba_account.tbs:
+        if not self.aiotieba_account.tbs or not self.baidu_id:
             thread = funcs.start_background_thread(run_async)
             thread.join()
 
@@ -114,13 +120,18 @@ class TiebaAccount(QObject):
         self.portrait = str(json_data['portrait'])
         self.nickname = str(json_data['name'])
         self.uid = int(json_data['uid'])
+        self.baidu_id = str(json_data.get('baidu_id', '') or '')
 
         self.is_current = current_bduss == self.bduss
 
     def ensure_private_message_connection(self, on_messages):
-        """首次激活时建立私信连接，后续账号切换复用已有连接。"""
-        from subwindow.chats.private_message_service import PrivateMessageService
-        from subwindow.chats.storage import ChatStore
+        """
+        建立私信 WebSocket 连接
+        """
+        from publics.baidu_features.chats.private_message_service import (
+            PrivateMessageService,
+        )
+        from publics.baidu_features.chats.storage import ChatStore
 
         if not self.uid or not self.bduss:
             return False
@@ -143,7 +154,7 @@ class TiebaAccount(QObject):
             self._private_message_callback(messages)
 
     def close_private_message_connection(self, wait=True):
-        """账号生命周期结束时关闭私信连接。"""
+        """账号生命周期结束时关闭私信连接"""
         service = self.private_message_service
         if service is not None:
             if wait:
@@ -168,7 +179,8 @@ class TiebaAccount(QObject):
         json_data = {'bduss': self.bduss, 'stoken': self.stoken,
                      'portrait': self.portrait,
                      'name': self.nickname,
-                     'uid': self.uid}
+                     'uid': self.uid,
+                     'baidu_id': self.baidu_id}
 
         return json_data
 
@@ -203,7 +215,7 @@ class AccountManager(QObject):
             return
         try:
             if account.ensure_private_message_connection(
-                self.privateMessagesReceived.emit
+                    self.privateMessagesReceived.emit
             ):
                 app_logger.log_INFO(
                     f'websocket connection ready for account {account.uid}'

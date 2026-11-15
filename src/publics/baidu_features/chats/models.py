@@ -5,6 +5,8 @@ import enum
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
+from publics import account_mgr
+
 
 class ChatSessionType(str, enum.Enum):
     """会话类型"""
@@ -25,7 +27,6 @@ class ChatMessage:
     sender_id: int = 0
     sender_name: str = ''
     sender_portrait: str = ''
-    direction: str = 'in'
     msg_type: int = 1
     text: str = ''
     image_urls: List[str] = field(default_factory=list)
@@ -36,6 +37,18 @@ class ChatMessage:
     payload: Dict[str, Any] = field(default_factory=dict)
     is_read: bool = False
     notify: bool = True
+    is_system: bool = False
+    reply_content: Dict[str, Any] = field(default_factory=dict)
+    at_users: List[Dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def direction(self):
+        """
+        当前消息的发送方向
+        """
+        current_uid = account_mgr.GlobalAccountContainer.get_current_account().uid
+        current_portrait = account_mgr.GlobalAccountContainer.get_current_account().portrait
+        return 'out' if self.sender_id == current_uid or self.sender_portrait == current_portrait else 'in'
 
 
 @dataclass
@@ -76,11 +89,11 @@ class ChatSession:
 
     @classmethod
     def interaction_session(
-        cls,
-        category,
-        unread_count=0,
-        title='互动消息',
-        timestamp=0,
+            cls,
+            category,
+            unread_count=0,
+            title='互动消息',
+            timestamp=0,
     ):
         return cls(
             key=f'interaction:{category}',
@@ -95,13 +108,13 @@ class ChatSession:
 
     @classmethod
     def private_session(
-        cls,
-        peer_user_id,
-        title,
-        subtitle,
-        portrait,
-        timestamp,
-        unread_count,
+            cls,
+            peer_user_id,
+            title,
+            subtitle,
+            portrait,
+            timestamp,
+            unread_count,
     ):
         return cls(
             key=f'private:{int(peer_user_id)}',
@@ -132,3 +145,74 @@ class ChatSession:
                 'member_num': int(room.get('member_num', 0) or 0),
             },
         )
+
+
+def _safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_chatroom_room(raw, default_fid=0):
+    """将群列表接口的多种返回结构归一化为会话列表使用的字段。"""
+    if not isinstance(raw, dict):
+        return {
+            'room_id': 0,
+            'fid': _safe_int(default_fid),
+            'forum_name': '',
+            'name': '',
+            'avatar': '',
+            'last_message': '',
+            'last_time': 0,
+            'unread_count': 0,
+            'member_num': 0,
+        }
+
+    room_info = raw.get('room_info')
+    if not isinstance(room_info, dict):
+        room_info = raw
+    msg_info = raw.get('msg_info')
+    if not isinstance(msg_info, dict):
+        msg_info = {}
+
+    room_id = _safe_int(
+        raw.get('room_id')
+        or room_info.get('room_id')
+        or room_info.get('id')
+    )
+    forum_id = _safe_int(
+        room_info.get('forum_id')
+        or raw.get('forum_id')
+        or default_fid
+    )
+    forum_name = str(
+        room_info.get('forum_name')
+        or raw.get('forum_name')
+        or ''
+    )
+    room_name = str(
+        room_info.get('name')
+        or raw.get('name')
+        or room_info.get('room_name')
+        or (f'吧群 {room_id}' if room_id else '')
+    )
+    if forum_name and forum_name not in room_name:
+        display_name = f'{room_name}（{forum_name}吧）'
+    else:
+        display_name = room_name
+
+    return {
+        'room_id': room_id,
+        'fid': forum_id,
+        'forum_name': forum_name,
+        'name': display_name,
+        'avatar': str(room_info.get('avatar') or raw.get('avatar') or ''),
+        'last_message': str(msg_info.get('content') or ''),
+        'last_time': _safe_int(msg_info.get('msg_time')),
+        'unread_count': _safe_int(room_info.get('unread_num')),
+        'member_num': _safe_int(
+            room_info.get('member_num')
+            or room_info.get('discuss_num')
+        ),
+    }

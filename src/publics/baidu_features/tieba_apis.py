@@ -1,6 +1,7 @@
 """部分贴吧常用 API 的封装"""
 import asyncio
 import datetime
+import hashlib
 import json
 import time
 import aiotieba
@@ -16,6 +17,7 @@ from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoR
 from proto.AddThread import AddThreadReqIdl_pb2, AddThreadResIdl_pb2
 
 from publics import request_mgr, app_logger, profile_mgr, account_mgr
+from publics.baidu_features.chats import tieba_message_protocol as message_protocol
 from publics.funcs import get_dict_value_treely
 
 
@@ -31,6 +33,45 @@ class OpAgreeObjectType(enum.IntEnum):
     FloorPost = 1
     SubComment = 2
     Thread = 3
+
+
+def get_baidu_id(bduss='', stoken=''):
+    """
+    通过当前账号会话获取客户端使用的 BAIDUID
+
+    Return:
+        baiduid 字段
+    """
+    payload = request_mgr.calc_sign({'type': '1'})
+    cookies = None
+    if bduss:
+        cookies = {
+            'BDUSS': bduss,
+            'STOKEN': stoken,
+        }
+
+    result, cookies = request_mgr.run_post_api_capture_cookies(
+        '/c/c/forum/statClientStartTimes',
+        payloads=payload,
+        cookies=cookies,
+        use_mobile_header=True,
+        host_type=2,
+    )
+    error_code = int(
+        result.get(
+            'error_code',
+            result.get('err_code', result.get('error', 0)),
+        )
+        or 0
+    )
+    if error_code:
+        raise aiotieba.exception.TiebaServerError(
+            error_code,
+            str(result.get('error_msg') or result.get('err_msg') or ''),
+        )
+
+    baidu_id = str(cookies.get('BAIDUID', '') or '')
+    return baidu_id
 
 
 def login(bduss):
@@ -398,7 +439,7 @@ def thread_store(bduss, stoken, offset=0, rn=20):
     payload = {
         'BDUSS': bduss,
         '_client_type': "2",
-        '_client_version': consts.TIEBA_CLIENT_VERSION,
+        '_client_version': message_protocol.MESSAGE_CLIENT_VERSION,
         'offset': str(offset),
         'rn': str(rn),
         'stoken': stoken,
@@ -831,3 +872,201 @@ def user_personal_page(bduss, stoken, uid, pn=1):
                                          host_type=2, use_mobile_header=True)
 
     return resp_json
+
+
+def get_chat_subscription_list(bduss, stoken):
+    """
+    获取云端同步的已订阅吧群列表
+    """
+    payload = {
+        'BDUSS': bduss,
+        '_client_type': '2',
+        '_client_version': consts.TIEBA_CLIENT_VERSION,
+        'chatroom_new_msg': '',
+        'cmode': '1',
+        'stoken': stoken,
+    }
+
+    return request_mgr.run_post_api(
+        '/c/u/chat/getChatSubscriptionList',
+        payloads=request_mgr.calc_sign(payload),
+        bduss=bduss,
+        stoken=stoken,
+        use_mobile_header=True,
+        host_type=2,
+    )
+
+
+def op_subscribe_chatroom(
+        bduss,
+        stoken,
+        chatroom_id,
+        subscribe=True,
+        uid=0,
+        baidu_id='',
+        tbs='',
+        common_params=None):
+    """
+    订阅或取消订阅云端吧群
+
+    Args:
+        uid (int): 当前账号uid
+        chatroom_id (int): 群id
+        subscribe (bool): 是否订阅，False为取消订阅
+    """
+
+    payload = {
+        'BDUSS': bduss,
+        '_client_type': '2',
+        '_client_version': consts.TIEBA_CLIENT_VERSION,
+        'chatroom_id': str(int(chatroom_id)),
+        'op_type': '1' if subscribe else '2',
+        'stoken': stoken,
+        'uid': str(int(uid)),
+        'baiduid': baidu_id,
+        'tbs': tbs,
+    }
+    if common_params:
+        payload.update({
+            key: value
+            for key, value in common_params.items()
+            if value is not None
+        })
+
+    cookies = {
+        'BDUSS': bduss,
+        'STOKEN': stoken,
+    }
+    if baidu_id:
+        cookies['BAIDUID'] = baidu_id
+
+    return request_mgr.run_post_api(
+        '/c/c/chatroom/opSubscribeChatroom',
+        payloads=request_mgr.calc_sign(payload),
+        cookies=cookies,
+        use_mobile_header=True,
+        host_type=2,
+    )
+
+
+def get_roomlist_by_fid(bduss, stoken, fid):
+    """
+    获取某个吧下可由当前账号加入的全部吧群
+
+    Args:
+        fid (int): 吧id
+    """
+    payload = {
+        'BDUSS': bduss,
+        '_client_version': message_protocol.MESSAGE_CLIENT_VERSION,
+        'fid': int(fid),
+    }
+
+    return request_mgr.run_post_api(
+        '/c/f/chat/getRoomListByFid',
+        payloads=request_mgr.calc_sign(payload),
+        bduss=bduss,
+        stoken=stoken,
+        use_mobile_header=True,
+        host_type=2,
+    )
+
+
+def get_chatroom_detail(
+        bduss,
+        stoken,
+        chatroom_id,
+        last_msg_id=0,
+        last_time=0,
+):
+    """
+    获取吧群详情信息
+
+    Args:
+        chatroom_id (int): 聊天群id
+        last_msg_id (int): 最近一条消息的id
+        last_time (int): 最近消息时间戳
+    """
+    payload = {
+        '_client_version': message_protocol.MESSAGE_CLIENT_VERSION,
+        'chatroom_id': str(int(chatroom_id)),
+    }
+    if last_msg_id:
+        payload['last_msg_id'] = str(int(last_msg_id))
+    if last_time:
+        payload['last_time'] = str(int(last_time))
+
+    return request_mgr.run_post_api(
+        '/c/f/chat/getChatRoomDetail',
+        params=request_mgr.calc_sign(payload),
+        bduss=bduss,
+        stoken=stoken,
+        use_mobile_header=True,
+        host_type=2,
+    )
+
+
+def get_chatroom_msgs(
+        bduss,
+        stoken,
+        cuid_galaxy2,
+        chatroom_id,
+        count=-60,
+        msgid_end=message_protocol.LONG_MAX,
+):
+    """
+    获取吧群最近 60 条云端消息
+    """
+    params = [
+        ('appid', message_protocol.CHAT_APPID),
+        ('mcast_id', int(chatroom_id)),
+        ('msgid_end', int(msgid_end)),
+        ('count', -abs(int(count))),
+        ('category', 4),
+        ('app_version', message_protocol.MESSAGE_CLIENT_VERSION),
+        ('sdk_version', message_protocol.CHAT_SDK_VERSION),
+        ('device_id', cuid_galaxy2),
+        ('timestamp', int(time.time())),
+    ]
+    payload = dict(message_protocol.sign_params(params, salt=b''))
+
+    return request_mgr.run_post_api(
+        '/rest/3.0/im/fetch_mcast_msg_client',
+        payloads=None,
+        json_payload=payload,
+        bduss=bduss,
+        stoken=stoken,
+        use_mobile_header=True,
+        host_name='pim.baidu.com',
+    )
+
+
+def get_lcm_token(cuid_galaxy2):
+    """
+    获取吧群 BLCP 长连接登录所需的 LCM token
+    """
+    timestamp = int(time.time() * 1000)
+    data = {
+        'app_id': str(message_protocol.CHAT_APPID),
+        'app_version': message_protocol.MESSAGE_CLIENT_VERSION,
+        'cuid': cuid_galaxy2,
+        'device_type': 'android',
+        'manufacture': '',
+        'model_type': '',
+        'request_id': str(timestamp),
+        'sdk_version': str(message_protocol.BLCP_SDK_VERSION),
+        'sign': hashlib.md5(
+            f'{message_protocol.CHAT_APPID}{cuid_galaxy2}'
+            f'android{timestamp}'.encode()
+        ).hexdigest(),
+        'ts': timestamp,
+        'user_key': '',
+    }
+
+    return request_mgr.run_post_api(
+        '/rest/5.0/generate_lcm_token',
+        payloads=None,
+        json_payload=data,
+        use_mobile_header=True,
+        host_name='pim.baidu.com',
+    )

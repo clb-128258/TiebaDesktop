@@ -1,4 +1,5 @@
-"""贴吧私信与吧群消息的底层协议编解码。
+"""
+贴吧私信与吧群消息的底层协议编解码
 
 该模块参照 aiotieba 4.8.x 的消息实现，但不依赖其 Python 3.10+ 类型语法。
 仅处理消息链路所需的 protobuf wire 格式、WebSocket 加密和 BLCP 报文，
@@ -18,8 +19,9 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 import aiotieba
 
+import consts
 
-MESSAGE_CLIENT_VERSION = '22.13.1.0'
+MESSAGE_CLIENT_VERSION = consts.TIEBA_CLIENT_VERSION
 CHAT_APPID = 10773430
 CHAT_SDK_VERSION = 11250036
 BLCP_SDK_VERSION = '3460016'
@@ -44,6 +46,12 @@ BLCP_METHOD_HEARTBEAT = 3
 BLCP_METHOD_LOGIN_BY_TOKEN = 50
 BLCP_METHOD_SEND_MCAST_MSG = 185
 BLCP_METHOD_JOIN_CAST = 201
+BLCP_METHOD_JOIN_CHATROOM_GROUP = 212
+BLCP_METHOD_EXIT_CHATROOM_GROUP = 213
+
+TIEBA_CHATROOM_ROOM_TYPE = 9
+TIEBA_CHATROOM_BATCH_TYPE = 2
+TIEBA_CHATROOM_GROUP_ID = 0
 
 GROUP_TYPE_PRIVATE_MSG = 6
 MSG_TYPE_PRIVATE_MSG = 1
@@ -51,7 +59,7 @@ MSG_TYPE_READED = 22
 
 
 class MessageProtocolError(RuntimeError):
-    """消息协议数据无法解析。"""
+    """消息协议数据无法解析"""
 
 
 def _encode_varint(value):
@@ -231,6 +239,10 @@ def compute_msg_key(bduk):
 
 def new_correlation_id():
     return random.randint(0, LONG_MAX)
+
+
+def new_cast_msg_key():
+    return f'k{int(time.time() * 1_000_000)}'
 
 
 def _create_ws_cipher(ws_sec_key):

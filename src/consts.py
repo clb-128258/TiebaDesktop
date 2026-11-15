@@ -1,4 +1,6 @@
-"""程序内的全局常量"""
+"""
+程序内的全局常量
+"""
 import os
 
 
@@ -27,12 +29,16 @@ HTTP_TIMEOUT = 12
 SCHEME_HTTP = 'http://'
 SCHEME_HTTPS = 'https://'
 
-TIEBA_APP_HOST = 'tiebac.baidu.com'
-TIEBA_WEB_HOST = 'tieba.baidu.com'
+# 贴吧客户端版本
 TIEBA_CLIENT_VERSION = '22.10.1.0'
 
+# 服务器域名信息
+TIEBA_APP_HOST = 'tiebac.baidu.com'
+TIEBA_WEB_HOST = 'tieba.baidu.com'
+TIEBA_WS_MSG_HOST = 'im.tieba.baidu.com:8000'
 BAIDU_PASSPORT_HOST = 'passport.baidu.com'
 BAIDU_SOFIRE_HOST = "sofire.baidu.com"
+BAIDU_LCP_HOST = "common.lcs.baidu.com"
 
 http_header = {
     'User-Agent': f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 '

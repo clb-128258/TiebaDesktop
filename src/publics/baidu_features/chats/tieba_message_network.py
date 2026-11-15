@@ -1,18 +1,21 @@
-"""私信 WebSocket 与吧群 BLCP 的连接管理。"""
+"""
+私信 WebSocket 与吧群 BLCP 连接的底层实现
+"""
 import asyncio
 import contextlib
 import gzip
 import socket
 import ssl
 import time
+import consts
 
 import aiohttp
 
-from . import tieba_message_protocol as protocol
+from publics.baidu_features.chats import tieba_message_protocol as protocol
 
 
 class MessageConnectionError(RuntimeError):
-    """消息长连接不可用。"""
+    """消息长连接不可用"""
 
 
 def _resolve_proxy(proxy):
@@ -27,7 +30,7 @@ def _resolve_proxy(proxy):
 
 
 class PrivateMessageConnection:
-    """贴吧私信 WebSocket 连接。"""
+    """贴吧私信 WebSocket 连接"""
 
     def __init__(self, ws_sec_key, proxy=True, read_timeout=8):
         self._ws_sec_key = ws_sec_key
@@ -44,10 +47,10 @@ class PrivateMessageConnection:
     @property
     def is_open(self):
         return (
-            self._websocket is not None
-            and not self._websocket.closed
-            and self._dispatcher is not None
-            and not self._dispatcher.done()
+                self._websocket is not None
+                and not self._websocket.closed
+                and self._dispatcher is not None
+                and not self._dispatcher.done()
         )
 
     async def connect(self):
@@ -72,11 +75,11 @@ class PrivateMessageConnection:
 
         try:
             self._websocket = await self._session.ws_connect(
-                'ws://im.tieba.baidu.com:8000',
+                f'ws://{consts.TIEBA_WS_MSG_HOST}',
                 headers={
                     aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: 'im_version=2.3',
                     aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
-                    aiohttp.hdrs.USER_AGENT: 'aiotieba/4.8.4',
+                    aiohttp.hdrs.USER_AGENT: f'TiebaDesktop/{consts.APP_VERSION_STR}',
                 },
                 timeout=10,
                 autoclose=True,
@@ -178,7 +181,7 @@ class PrivateMessageConnection:
 
 
 class BlcpNotification:
-    """BLCP 服务端推送。"""
+    """BLCP 服务端推送"""
 
     def __init__(self, service_id, method_id, payload):
         self.service_id = service_id
@@ -190,7 +193,7 @@ class BlcpNotification:
 
 
 class BlcpResponse:
-    """BLCP 请求响应。"""
+    """BLCP 请求响应"""
 
     def __init__(self, service_id, method_id, correlation_id, error_code, error_text, payload):
         self.service_id = service_id
@@ -206,7 +209,7 @@ class BlcpResponse:
 
 
 class BlcpConnection:
-    """贴吧群聊使用的 BLCP TCP/TLS 长连接。"""
+    """贴吧群聊使用的 BLCP TCP/TLS 长连接"""
 
     def __init__(self, read_timeout=10, heartbeat_interval=60, message_queue=None):
         self._read_timeout = read_timeout
@@ -216,28 +219,31 @@ class BlcpConnection:
         self._dispatcher = None
         self._heartbeater = None
         self._pending = {}
+        self._heartbeat_failed = False
         self.message_queue = message_queue or asyncio.Queue(maxsize=100)
 
     @property
     def is_open(self):
         return (
-            self._reader is not None
-            and self._writer is not None
-            and not self._writer.is_closing()
-            and self._dispatcher is not None
-            and not self._dispatcher.done()
+                self._reader is not None
+                and self._writer is not None
+                and not self._writer.is_closing()
+                and self._dispatcher is not None
+                and not self._dispatcher.done()
+                and not self._heartbeat_failed
         )
 
     async def connect(self):
         if self.is_open:
             return
         await self.close()
+        self._heartbeat_failed = False
 
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         self._reader, self._writer = await asyncio.wait_for(
             asyncio.open_connection(
-                'common.lcs.baidu.com',
+                consts.BAIDU_LCP_HOST,
                 443,
                 ssl=ssl_context,
                 family=socket.AF_INET,
@@ -251,6 +257,7 @@ class BlcpConnection:
         writer, self._writer = self._writer, None
         dispatcher, self._dispatcher = self._dispatcher, None
         heartbeater, self._heartbeater = self._heartbeater, None
+        self._heartbeat_failed = False
 
         for task in (heartbeater, dispatcher):
             if task is not None and not task.done():
@@ -289,8 +296,8 @@ class BlcpConnection:
 
                 if meta['meta_type'] == 2:
                     if (
-                        meta['service_id'] == protocol.BLCP_SERVICE_LCM
-                        and meta['method_id'] == protocol.BLCP_METHOD_HEARTBEAT
+                            meta['service_id'] == protocol.BLCP_SERVICE_LCM
+                            and meta['method_id'] == protocol.BLCP_METHOD_HEARTBEAT
                     ):
                         payload = protocol.parse_lcm_response(body)
                         if payload['next_interval_ms'] > 0:
@@ -333,6 +340,7 @@ class BlcpConnection:
         except asyncio.CancelledError:
             raise
         except Exception:
+            self._heartbeat_failed = True
             return
 
     def start_heartbeat(self, interval_ms=0):

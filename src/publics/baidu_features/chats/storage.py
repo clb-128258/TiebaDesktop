@@ -1,4 +1,6 @@
-"""聊天记录 SQLite 与吧群订阅 JSON 存储。"""
+"""
+按账号隔离的私信聊天记录 SQLite 存储
+"""
 import json
 import os
 import sqlite3
@@ -262,7 +264,6 @@ class ChatStore:
                 sender_id=row['sender_id'],
                 sender_name=row['sender_name'],
                 sender_portrait=row['sender_portrait'],
-                direction=row['direction'],
                 msg_type=row['msg_type'],
                 text=row['text'],
                 timestamp=row['create_time'],
@@ -288,72 +289,3 @@ class ChatStore:
                 WHERE direction = 'in' AND is_read = 0
             """).fetchone()
         return int(row['count'] if row else 0)
-
-
-class ChatRoomSubscriptionStore:
-    """当前账号订阅的吧群列表。"""
-
-    def __init__(self, uid):
-        self.uid = int(uid or 0)
-        self.path = os.path.join(_chat_data_dir(), f'chatrooms_{self.uid}.json')
-        self._lock = threading.RLock()
-        self._rooms = {}
-        self._load()
-
-    def _load(self):
-        with self._lock:
-            if not os.path.isfile(self.path):
-                self._rooms = {}
-                return
-            try:
-                with open(self.path, 'rt', encoding='utf-8') as file:
-                    data = json.load(file)
-            except (OSError, ValueError):
-                data = {}
-            self._rooms = {
-                str(item.get('room_id')): item
-                for item in data.get('rooms', [])
-                if item.get('room_id')
-            }
-
-    def _save(self):
-        with open(self.path, 'wt', encoding='utf-8') as file:
-            json.dump(
-                {'rooms': list(self._rooms.values())},
-                file,
-                ensure_ascii=False,
-                indent=2,
-            )
-
-    def list_rooms(self):
-        with self._lock:
-            rooms = [dict(item) for item in self._rooms.values()]
-        rooms.sort(key=lambda item: int(item.get('last_time', 0) or 0), reverse=True)
-        return rooms
-
-    def add_room(self, room):
-        room_id = int(room.get('room_id') or room.get('id') or 0)
-        if not room_id:
-            return None
-        with self._lock:
-            old = self._rooms.get(str(room_id), {})
-            item = dict(old)
-            item.update(room)
-            item['room_id'] = room_id
-            self._rooms[str(room_id)] = item
-            self._save()
-            return dict(item)
-
-    def update_room(self, room_id, **changes):
-        with self._lock:
-            item = self._rooms.get(str(int(room_id)))
-            if item is None:
-                return None
-            item.update(changes)
-            self._save()
-            return dict(item)
-
-    def remove_room(self, room_id):
-        with self._lock:
-            self._rooms.pop(str(int(room_id)), None)
-            self._save()

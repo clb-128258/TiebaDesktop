@@ -1,25 +1,12 @@
-"""贴吧私信与吧群消息 API。
-
-公开接口尽量对齐 aiotieba 4.8.x：
-
-- ``send_msg`` / ``get_group_msg`` / ``set_msg_readed``：私信
-- ``get_roomlist_by_fid`` / ``get_chatroom_detail`` / ``get_chatroom_msgs``：吧群
-- ``join_chatroom`` / ``send_chatroom_msg``：吧群长连接操作
-
-频繁收发消息时应复用 :class:`TiebaMessageClient`；模块底部的同名函数是一次性
-便捷入口，每次调用都会创建并关闭连接。
-"""
+"""贴吧私信与吧群消息 API"""
 import asyncio
 import binascii
-import hashlib
 import json
 import secrets
 import time
 from dataclasses import dataclass, field
 from typing import List
-from urllib.parse import urlencode
 
-import aiohttp
 import aiotieba
 from aiotieba.config import ProxyConfig
 from aiotieba.helper.crypto import enuid
@@ -27,13 +14,12 @@ from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
 from publics import request_mgr
-from . import tieba_message_protocol as protocol
+from publics.baidu_features import tieba_apis as chat_http
+from publics.baidu_features.chats import http_parsers as chat_http_parsers, tieba_message_protocol as protocol
 from .tieba_message_network import (
-    BlcpNotification,
     MessageConnectionError,
     PrivateMessageConnection,
     BlcpConnection,
-    _resolve_proxy,
 )
 
 _WS_PUBLIC_KEY = binascii.a2b_base64(
@@ -59,6 +45,11 @@ def _json_value(value, default):
         return json.loads(value)
     except (TypeError, ValueError):
         return default
+
+
+async def _run_sync_http(func, *args):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, lambda: func(*args))
 
 
 def _parse_image_size(value):
@@ -205,6 +196,152 @@ class ChatroomDetail:
 
 
 @dataclass
+class ChatroomReplyContent:
+    """吧群消息引用的被回复内容。"""
+
+    user_id: int = 0
+    user_name: str = ''
+    portrait: str = ''
+    text: str = ''
+
+    def to_dict(self):
+        return {
+            'user_id': self.user_id,
+            'user_name': self.user_name,
+            'portrait': self.portrait,
+            'text': self.text,
+        }
+
+
+@dataclass
+class ChatroomAtUser:
+    """吧群消息中的 @ 用户。"""
+
+    user_id: int = 0
+    user_name: str = ''
+    portrait: str = ''
+    position: int = 0
+
+    def to_dict(self):
+        return {
+            'user_id': self.user_id,
+            'user_name': self.user_name,
+            'portrait': self.portrait,
+            'position': self.position,
+        }
+
+
+def _bduk_to_user_id(value):
+    bduk = str(value or '')
+    if not bduk:
+        return 0
+    try:
+        return protocol.bduk2user_id(bduk)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _message_text(value):
+    """从消息 body 或嵌套 JSON 中提取纯文本。"""
+    value = _json_value(value, value)
+    if isinstance(value, str):
+        parsed = _json_value(value, None)
+        if isinstance(parsed, (dict, list)):
+            return _message_text(parsed)
+        return value
+    if isinstance(value, dict):
+        body = value.get('content_body')
+        if body is not None:
+            return _message_text(body)
+        text = value.get('text')
+        if isinstance(text, (dict, list)):
+            return _message_text(text)
+        return str(text or '')
+    return ''
+
+
+def _parse_reply_content(value):
+    value = _json_value(value, value)
+    if isinstance(value, str):
+        return ChatroomReplyContent(text=value)
+    if not isinstance(value, dict):
+        return None
+
+    user = value.get('user')
+    if not isinstance(user, dict):
+        user = {}
+    bduk = (
+            value.get('baidu_uk')
+            or user.get('baidu_uk')
+            or user.get('uk')
+            or ''
+    )
+    text = _message_text(value)
+    user_name = str(
+        value.get('name')
+        or value.get('user_name')
+        or user.get('name')
+        or user.get('user_name')
+        or ''
+    )
+    portrait = str(
+        value.get('portrait')
+        or user.get('portrait')
+        or ''
+    ).split('?', 1)[0]
+    if not (text or user_name or bduk or portrait):
+        return None
+    return ChatroomReplyContent(
+        _bduk_to_user_id(bduk),
+        user_name,
+        portrait,
+        text,
+    )
+
+
+def _parse_at_data(value):
+    value = _json_value(value, [])
+    if isinstance(value, dict):
+        value = value.get('at_data') or value.get('list') or [value]
+    if not isinstance(value, list):
+        return []
+
+    result = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        bduk = (
+                item.get('at_baidu_uk')
+                or item.get('baidu_uk')
+                or item.get('uk')
+                or ''
+        )
+        user_name = str(
+            item.get('at_name')
+            or item.get('user_name')
+            or item.get('name')
+            or ''
+        )
+        portrait = str(
+            item.get('at_portrait')
+            or item.get('portrait')
+            or ''
+        ).split('?', 1)[0]
+        try:
+            position = int(item.get('position', 0) or 0)
+        except (TypeError, ValueError):
+            position = 0
+        result.append(ChatroomAtUser(
+            _bduk_to_user_id(bduk),
+            user_name,
+            portrait,
+            position,
+        ))
+    result.sort(key=lambda item: item.position)
+    return result
+
+
+@dataclass
 class ChatroomMsg:
     """
     聊天群消息
@@ -222,6 +359,10 @@ class ChatroomMsg:
         image_width (int): 图片宽度
         image_height (int): 图片高度
         create_time (int): 消息发送时间戳
+        is_sys_msg (bool): 是否为系统消息
+        content_type (int): 内层 text_data.type 消息内容类型
+        reply_content (ChatroomReplyContent | None): 引用的回复内容
+        at_users (list[ChatroomAtUser]): 消息艾特的用户
     """
     msg_id: int = 0
     msg_key: str = ''
@@ -234,6 +375,10 @@ class ChatroomMsg:
     image_width: int = 0
     image_height: int = 0
     create_time: int = 0
+    is_sys_msg: bool = False
+    content_type: int = 0
+    reply_content: ChatroomReplyContent = None
+    at_users: List[ChatroomAtUser] = field(default_factory=list)
 
     @classmethod
     def from_json(cls, data):
@@ -242,6 +387,12 @@ class ChatroomMsg:
         image_thumbnail_url = ''
         image_width = 0
         image_height = 0
+        user_id = int(data.get('from_user', 0) or 0)
+        is_sys_msg = False
+        content_type = 0
+        system_text = ''
+        reply_content = None
+        at_users = []
 
         content = _json_value(data.get('content'), {})
         content_map = content if isinstance(content, dict) else {}
@@ -251,7 +402,58 @@ class ChatroomMsg:
 
         if isinstance(text_data, dict):
             body = _json_value(text_data.get('content_body'), text_data)
-            ext_data=_json_value(text_data.get('ext'), text_data)
+            ext_data = _json_value(text_data.get('ext'), text_data)
+            try:
+                content_type = int(text_data.get('type', 0) or 0)
+            except (TypeError, ValueError):
+                content_type = 0
+            if content_type == 109:
+                is_sys_msg = True
+                system_data = _json_value(text_data.get('data'), {})
+                service_info = (
+                    system_data.get('service_info', {})
+                    if isinstance(system_data, dict)
+                    else {}
+                )
+                if not isinstance(service_info, dict):
+                    service_info = {}
+                system_text = str(
+                    service_info.get('msg_content')
+                    or service_info.get('text')
+                    or service_info.get('content')
+                    or ''
+                )
+            baidu_uk = (
+                    text_data.get('baidu_uk')
+                    or ext_data.get('baidu_uk')
+                    or ''
+            )
+            converted_user_id = _bduk_to_user_id(baidu_uk)
+            if converted_user_id:
+                user_id = converted_user_id
+            sys_value = (
+                    ext_data.get('is_sys_msg')
+                    or text_data.get('is_sys_msg')
+                    or content_map.get('is_sys_msg')
+                    or 0
+            )
+            if content_type == 109:
+                is_sys_msg = True
+            else:
+                try:
+                    is_sys_msg = bool(int(sys_value))
+                except (TypeError, ValueError):
+                    is_sys_msg = bool(sys_value)
+            reply_content = _parse_reply_content(
+                text_data.get('re_content_body')
+                or ext_data.get('re_content_body')
+                or content_map.get('re_content_body')
+            )
+            at_users = _parse_at_data(
+                text_data.get('at_data')
+                or ext_data.get('at_data')
+                or content_map.get('at_data')
+            )
             if isinstance(body, dict):
                 text = str(body.get('text', '') or '')
                 image_url = str(
@@ -276,13 +478,20 @@ class ChatroomMsg:
             elif text_data.get('text'):
                 text = str(text_data['text'])
 
+            if content_type == 109:
+                text = system_text or '[系统消息]'
             if not text:
-                content_type = str(text_data.get('content_type', '') or '')
-                if content_type == '1':
+                content_type_value = str(
+                    text_data.get('content_type', '') or ''
+                )
+                if content_type == 101:
+                    pass
+                elif content_type == 109:
+                    text = '[系统消息]'
+                elif content_type_value == '1' or content_type == 1:
                     text = '[图片]'
                 else:
                     text = '[暂不支持的消息类型，请用手机贴吧查看]'
-                    print(data)
 
         if not image_url:
             image_url = str(
@@ -296,8 +505,8 @@ class ChatroomMsg:
                     or content_map.get('thumb')
                     or image_url
                 )
-            if not text:
-                text = '[图片]'
+                if not text:
+                    text = '[图片]'
         if not image_width:
             image_width, image_height = _parse_image_size(
                 content_map.get('bsize')
@@ -313,17 +522,21 @@ class ChatroomMsg:
             text = raw_text
 
         return cls(
-            int(data.get('msgid', 0)),
-            str(data.get('msg_key', '') or ''),
-            int(data.get('type', 0)),
-            int(data.get('from_user', 0) or 0),
-            content,
-            text,
-            image_url,
-            image_thumbnail_url,
-            image_width,
-            image_height,
-            int(data.get('create_time', 0)),
+            msg_id=int(data.get('msgid', 0)),
+            msg_key=str(data.get('msg_key', '') or ''),
+            msg_type=int(data.get('type', 0)),
+            user_id=user_id,
+            content=content,
+            text=text,
+            image_url=image_url,
+            image_thumbnail_url=image_thumbnail_url,
+            image_width=image_width,
+            image_height=image_height,
+            create_time=int(data.get('create_time', 0)),
+            is_sys_msg=is_sys_msg,
+            content_type=content_type,
+            reply_content=reply_content,
+            at_users=at_users,
         )
 
 
@@ -478,7 +691,7 @@ class _MessageAccount:
 
 
 class TiebaMessageClient:
-    """可复用的贴吧私信与吧群消息客户端。"""
+    """可复用的贴吧私信与吧群消息客户端"""
 
     def __init__(self, account, proxy=True):
         if isinstance(account, str):
@@ -488,7 +701,6 @@ class TiebaMessageClient:
 
         self._account = _MessageAccount(account)
         self._proxy = proxy
-        self._session = None
         self._private = None
         self._blcp = None
         self._chat_message_queue = asyncio.Queue(maxsize=100)
@@ -524,9 +736,6 @@ class TiebaMessageClient:
             await self._blcp.close()
             self._blcp = None
         await self._stop_private_forwarder()
-        if self._session is not None:
-            await self._session.close()
-            self._session = None
 
     async def _stop_private_forwarder(self):
         if self._private_forwarder is None:
@@ -538,35 +747,10 @@ class TiebaMessageClient:
             pass
         self._private_forwarder = None
 
-    async def _get_session(self):
-        if self._session is None:
-            self._session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=12),
-                trust_env=self._proxy is True,
-            )
-        return self._session
-
-    def _proxy_kwargs(self):
-        proxy_url, proxy_auth = _resolve_proxy(self._proxy)
-        kwargs = {}
-        if proxy_url:
-            kwargs['proxy'] = proxy_url
-        if proxy_auth is not None:
-            kwargs['proxy_auth'] = proxy_auth
-        return kwargs
-
     def _legacy_proxy(self):
         if isinstance(self._proxy, str):
             return ProxyConfig(self._proxy)
         return self._proxy
-
-    async def _request(self, method, url, **kwargs):
-        session = await self._get_session()
-        kwargs.setdefault('ssl', request_mgr.is_ssl_required())
-        kwargs.update(self._proxy_kwargs())
-        async with session.request(method, url, **kwargs) as response:
-            response.raise_for_status()
-            return await response.read(), response
 
     async def _ensure_profile(self):
         if self._account.user_id and self._account.nick_name:
@@ -703,45 +887,11 @@ class TiebaMessageClient:
                     self._message_ids.update_read_msg_id(user_id, int(read_msg_id))
 
     async def _get_lcm_token(self):
-        cuid = self._account.cuid_galaxy2
-        timestamp = int(time.time() * 1000)
-        data = [
-            ('app_id', str(protocol.CHAT_APPID)),
-            ('app_version', protocol.MESSAGE_CLIENT_VERSION),
-            ('cuid', cuid),
-            ('device_type', 'android'),
-            ('manufacture', ''),
-            ('model_type', ''),
-            ('request_id', str(timestamp)),
-            ('sdk_version', protocol.BLCP_SDK_VERSION),
-            (
-                'sign',
-                hashlib.md5(
-                    f'{protocol.CHAT_APPID}{cuid}android{timestamp}'.encode()
-                ).hexdigest(),
-            ),
-            ('ts', timestamp),
-            ('user_key', ''),
-        ]
-        body, _ = await self._request(
-            'POST',
-            'https://pim.baidu.com/rest/5.0/generate_lcm_token',
-            headers={
-                'Accept-Encoding': 'gzip',
-                'User-Agent': 'aiotieba/4.8.4',
-            },
-            json=dict(data),
+        content = await _run_sync_http(
+            chat_http.get_lcm_token,
+            self._account.cuid_galaxy2,
         )
-        result = json.loads(body.decode('utf-8'))
-        if int(result.get('err_code', 0) or 0):
-            raise aiotieba.exception.TiebaServerError(
-                int(result['err_code']),
-                str(result.get('err_msg', '')),
-            )
-        token = result.get('token') or result.get('data', {}).get('token')
-        if not token:
-            raise aiotieba.exception.TiebaValueError('Missing LCM token')
-        return token
+        return chat_http_parsers.parse_lcm_token(content)
 
     async def _ensure_chatroom(self):
         if self._blcp is not None and self._blcp.is_open:
@@ -994,147 +1144,78 @@ class TiebaMessageClient:
 
     async def get_roomlist_by_fid(self, fid):
         """获取某个吧的所有吧群。"""
-        params = protocol.sign_params([
-            ('BDUSS', self._account.bduss),
-            ('_client_version', protocol.MESSAGE_CLIENT_VERSION),
-            ('fid', int(fid)),
-        ])
-        body, _ = await self._request(
-            'POST',
-            'https://tiebac.baidu.com/c/f/chat/getRoomListByFid',
-            headers={
-                'User-Agent': 'aiotieba/4.8.4',
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            cookies={'BDUSS': self._account.bduss},
-            data=urlencode(params).encode(),
+        content = await _run_sync_http(
+            chat_http.get_roomlist_by_fid,
+            self._account.bduss,
+            self._account.stoken,
+            int(fid),
         )
-        result = json.loads(body.decode('utf-8'))
-        if int(result.get('error_code', 0)):
-            raise aiotieba.exception.TiebaServerError(
-                int(result['error_code']),
-                str(result.get('error_msg', '')),
-            )
-
-        room_list = []
-        for item in (result.get('data') or {}).get('list', []):
-            room_list.extend(item.get('room_list', []))
-        return RoomList(room_list)
+        return chat_http_parsers.parse_roomlist_by_fid(content, default_fid=fid)
 
     async def get_chatroom_detail(self, chatroom_id, last_msg_id=0, last_time=0):
-        """获取吧群详情。"""
-        params = [
-            ('_client_version', protocol.MESSAGE_CLIENT_VERSION),
-            ('chatroom_id', str(int(chatroom_id))),
-        ]
-        if last_msg_id:
-            params.append(('last_msg_id', str(int(last_msg_id))))
-        if last_time:
-            params.append(('last_time', str(int(last_time))))
-        params = protocol.sign_params(params)
-
-        body, _ = await self._request(
-            'GET',
-            'https://tiebac.baidu.com/c/f/chat/getChatRoomDetail',
-            headers={
-                'User-Agent': 'aiotieba/4.8.4',
-                'Accept-Encoding': 'gzip',
-            },
-            cookies={
-                'BDUSS': self._account.bduss,
-                'STOKEN': self._account.stoken,
-            },
-            params=params,
+        """获取吧群详情"""
+        content = await _run_sync_http(
+            chat_http.get_chatroom_detail,
+            self._account.bduss,
+            self._account.stoken,
+            int(chatroom_id),
+            last_msg_id,
+            last_time,
         )
-        result = json.loads(body.decode('utf-8'))
-        if int(result.get('error_code', 0)):
+        return chat_http_parsers.parse_chatroom_detail(content)
+
+    async def get_chatroom_msgs(
+            self,
+            chatroom_id,
+            count=-60,
+            msgid_end=protocol.LONG_MAX,
+    ):
+        """获取吧群最近 60 条消息"""
+        content = await _run_sync_http(
+            chat_http.get_chatroom_msgs,
+            self._account.bduss,
+            self._account.stoken,
+            self._account.cuid_galaxy2,
+            int(chatroom_id),
+            count,
+            msgid_end,
+        )
+        return chat_http_parsers.parse_chatroom_msgs(content)
+
+    @staticmethod
+    def _check_mcast_response(response, action):
+        err_code = int(response.payload.get('err_code', 0) or 0)
+        if not response.ok or err_code:
             raise aiotieba.exception.TiebaServerError(
-                int(result['error_code']),
-                str(result.get('error_msg', '')),
+                response.error_code or err_code,
+                response.error_text or f'failed to {action}',
             )
+        return response.payload
 
-        data = result.get('data') or {}
-        basic = data.get('basic_info') or {}
-        extra = data.get('extra_info') or {}
-        bots = (data.get('bots') or {}).get('bot_list', [])
-        robots = []
-        for bot in bots:
-            user = bot.get('user') or {}
-            bduk = str(user.get('uk', '') or '')
-            try:
-                user_id = protocol.bduk2user_id(bduk)
-            except (ValueError, TypeError):
-                user_id = 0
-            skills = [
-                RobotSkill(
-                    int(skill.get('type', 0)),
-                    str(skill.get('name', '') or ''),
-                    str(skill.get('alias', '') or ''),
-                    str(skill.get('desc', '') or ''),
-                    bool(int(skill.get('is_show', 0))),
-                    skill.get('items', []),
-                )
-                for skill in bot.get('skill', [])
-            ]
-            robots.append(Robot(
-                user_id,
-                str(user.get('portrait', '') or ''),
-                str(user.get('name', '') or ''),
-                str(user.get('name_show', '') or ''),
-                bduk,
-                int(user.get('robot_role', 0) or 0),
-                skills,
-            ))
-
-        return ChatroomDetail(
-            int(basic.get('forum_id', 0)),
-            str(basic.get('forum_name', '') or ''),
-            int(basic.get('id', 0)),
-            str(basic.get('name', '') or ''),
-            str(basic.get('avatar', '') or ''),
-            str(extra.get('announce', '') or ''),
-            int(basic.get('discuss_num', 0)),
-            int(extra.get('talk_threshold_level', 0)),
-            robots,
-        )
-
-    async def get_chatroom_msgs(self, chatroom_id):
-        """获取吧群最近 60 条消息。"""
-        params = protocol.sign_params([
-            ('appid', str(protocol.CHAT_APPID)),
-            ('mcast_id', int(chatroom_id)),
-            ('msgid_end', protocol.LONG_MAX),
-            ('count', -60),
-            ('category', 4),
-            ('app_version', protocol.MESSAGE_CLIENT_VERSION),
-            ('sdk_version', protocol.CHAT_SDK_VERSION),
-            ('device_id', self._account.cuid_galaxy2),
-            ('timestamp', int(time.time())),
-        ], salt=b'')
-        body, _ = await self._request(
-            'POST',
-            'https://pim.baidu.com/rest/3.0/im/fetch_mcast_msg_client',
-            headers={
-                'Accept-Encoding': 'gzip',
-                'User-Agent': 'aiotieba/4.8.4',
+    async def join_chatroom_group(self, chatroom_id):
+        """加入贴吧吧群分组，与官方客户端保持一致。"""
+        await self._ensure_chatroom()
+        response = await self._blcp.request(
+            protocol.BLCP_SERVICE_MCAST,
+            protocol.BLCP_METHOD_JOIN_CHATROOM_GROUP,
+            {
+                'method': protocol.BLCP_METHOD_JOIN_CHATROOM_GROUP,
+                'appid': protocol.CHAT_APPID,
+                'app_version': protocol.MESSAGE_CLIENT_VERSION,
+                'sdk_version': protocol.CHAT_SDK_VERSION,
+                'device_id': self._account.cuid_galaxy2,
+                'uk': self._account.uk,
+                'room_type': protocol.TIEBA_CHATROOM_ROOM_TYPE,
+                'batch_type': protocol.TIEBA_CHATROOM_BATCH_TYPE,
+                'chatroom_group_id': protocol.TIEBA_CHATROOM_GROUP_ID,
             },
-            cookies={'BDUSS': self._account.bduss},
-            json=dict(params),
         )
-        result = json.loads(body.decode('utf-8'))
-        if int(result.get('err_code', 0)):
-            raise aiotieba.exception.TiebaServerError(
-                int(result['err_code']),
-                str(result.get('err_msg', '')),
-            )
-        return ChatroomMsgs([
-            ChatroomMsg.from_json(item)
-            for item in result.get('messages', [])
-        ])
+        return self._check_mcast_response(response, 'join chatroom group')
 
     async def join_chatroom(self, chatroom_id):
-        """加入吧群消息通道并预取最近消息。"""
+        """加入吧群分组和具体消息通道。"""
         await self._ensure_chatroom()
+        await self.join_chatroom_group(chatroom_id)
         response = await self._blcp.request(
             protocol.BLCP_SERVICE_MCAST,
             protocol.BLCP_METHOD_JOIN_CAST,
@@ -1143,16 +1224,13 @@ class TiebaMessageClient:
                 'mcast_id': int(chatroom_id),
                 'appid': protocol.CHAT_APPID,
                 'uk': self._account.uk,
+                'origin_id': self._account.trigger_id,
+                'msg_key': protocol.new_cast_msg_key(),
+                'sdk_version': protocol.CHAT_SDK_VERSION,
+                'is_reliable': False,
             },
         )
-        err_code = int(response.payload.get('err_code', 0) or 0)
-        if not response.ok or err_code:
-            raise aiotieba.exception.TiebaServerError(
-                response.error_code or err_code,
-                response.error_text or 'failed to join chatroom',
-            )
-        await self.get_chatroom_msgs(chatroom_id)
-        return True
+        return self._check_mcast_response(response, 'join chatroom')
 
     async def send_chatroom_msg(
             self,
@@ -1341,6 +1419,10 @@ class TiebaMessageClient:
     def portrait(self):
         return self._account.portrait
 
+    @property
+    def is_chatroom_connected(self):
+        return self._blcp is not None and self._blcp.is_open
+
     def get_chat_message_queue(self):
         """返回吧群推送队列，元素类型为 :class:`BlcpNotification`。"""
         return self._chat_message_queue
@@ -1355,85 +1437,3 @@ def _coerce_account(account):
 def get_message_client(account, proxy=True):
     """从 TiebaAccount、aiotieba.Account 或 BDUSS 创建消息客户端。"""
     return TiebaMessageClient(_coerce_account(account), proxy=proxy)
-
-
-async def send_msg(account, id_, content, proxy=True):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.send_msg(id_, content)
-    finally:
-        await client.close()
-
-
-async def get_group_msg(account, group_ids, get_type=1, proxy=True):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.get_group_msg(group_ids, get_type=get_type)
-    finally:
-        await client.close()
-
-
-async def set_msg_readed(account, message, proxy=True):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.set_msg_readed(message)
-    finally:
-        await client.close()
-
-
-async def get_roomlist_by_fid(account, fid, proxy=True):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.get_roomlist_by_fid(fid)
-    finally:
-        await client.close()
-
-
-async def get_chatroom_detail(account, chatroom_id, last_msg_id=0, last_time=0, proxy=True):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.get_chatroom_detail(
-            chatroom_id,
-            last_msg_id=last_msg_id,
-            last_time=last_time,
-        )
-    finally:
-        await client.close()
-
-
-async def get_chatroom_msgs(account, chatroom_id, proxy=True):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.get_chatroom_msgs(chatroom_id)
-    finally:
-        await client.close()
-
-
-async def join_chatroom(account, chatroom_id, proxy=True):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.join_chatroom(chatroom_id)
-    finally:
-        await client.close()
-
-
-async def send_chatroom_msg(
-        account,
-        chatroom_id,
-        fid,
-        text,
-        at_user_ids=None,
-        robot=-1,
-        proxy=True,
-):
-    client = get_message_client(account, proxy=proxy)
-    try:
-        return await client.send_chatroom_msg(
-            chatroom_id,
-            fid,
-            text,
-            at_user_ids=at_user_ids,
-            robot=robot,
-        )
-    finally:
-        await client.close()

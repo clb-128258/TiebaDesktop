@@ -38,14 +38,14 @@ class Ui_Form(object):
         self.label_2.setObjectName("label_2")
         self.horizontalLayout.addWidget(self.label_2)
         self.label_4 = QtWidgets.QLabel(Form)
-        self.label_4.setMinimumSize(QtCore.QSize(0, 20))
+        self.label_4.setMinimumSize(QtCore.QSize(21, 20))
         self.label_4.setMaximumSize(QtCore.QSize(16777215, 20))
         font = QtGui.QFont()
         font.setFamily("微软雅黑")
         font.setPointSize(9)
         self.label_4.setFont(font)
         self.label_4.setStyleSheet("QLabel{\n"
-"    background-color: red;\n"
+"    background-color: rgb(239, 65, 22);\n"
 "    color: white;\n"
 "    border-radius: 10px;\n"
 "    padding-left: 5px;\n"

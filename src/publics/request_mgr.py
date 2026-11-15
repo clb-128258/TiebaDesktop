@@ -1,8 +1,13 @@
-"""百度贴吧同步请求模块"""
+"""
+HTTP 同步请求模块，主要用于贴吧 API
+"""
 import requests
 import consts
 import hashlib
 import enum
+import json
+import time
+import datetime
 
 from publics import profile_mgr, funcs
 
@@ -22,6 +27,9 @@ class TiebaClientType(enum.IntEnum):
     """贴吧客户端类型"""
     IPHONE = 1  # ios版客户端
     ANDROID = 2  # 安卓客户端
+
+    def __str__(self):
+        return str(self.value)
 
 
 def is_ssl_required():
@@ -50,6 +58,42 @@ def calc_sign(str_dict: dict):
     return str_dict
 
 
+def get_chat_common_params(account):
+    """
+    构造手机客户端公共请求字段
+
+    Args:
+        account (account_mgr.TiebaAccount): 账号实例
+    """
+    aiotieba_account = account.aiotieba_account
+    timestamp = int(time.time() * 1000)
+    event_day = datetime.datetime.now().strftime('%Y%m%d')
+
+    return {
+        '_client_id': str(aiotieba_account.client_id or ''),
+        'subapp_type': 'hybrid',
+        'from': '1008550l',
+        'net_type': '1',
+        'cuid': str(aiotieba_account.cuid or ''),
+        'cuid_galaxy2': str(aiotieba_account.cuid_galaxy2 or ''),
+        'c3_aid': str(aiotieba_account.c3_aid or ''),
+        'cuid_gid': '',
+        'timestamp': str(timestamp),
+        'z_id': str(aiotieba_account.z_id or ''),
+        'sample_id': str(aiotieba_account.sample_id or ''),
+        'android_id': str(aiotieba_account.android_id or ''),
+        'cmode': '1',
+        'is_teenager': '0',
+        'start_type': '1',
+        'start_scheme': '',
+        'scr_w': '900',
+        'scr_h': '1600',
+        'scr_dip': '1.5',
+        'q_type': '0',
+        'event_day': event_day,
+    }
+
+
 def run_get_api(api: str,
                 bduss='',
                 encoding='',
@@ -59,7 +103,8 @@ def run_get_api(api: str,
                 params: dict = None,
                 use_mobile_header=False,
                 host_type: int = 1,
-                use_https: bool = True):
+                use_https: bool = True,
+                host_name: str = ''):
     """
     执行GET请求
 
@@ -74,9 +119,10 @@ def run_get_api(api: str,
         use_mobile_header (bool): 是否使用手机版header进行请求
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
         use_https (bool): 是否使用https请求
+        host_name (str): 可选的请求域名，留空时按 host_type 选择
     """
     scheme = SCHEME_HTTPS if use_https else SCHEME_HTTP
-    host_name = TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST
+    host_name = host_name or (TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST)
     final_header = header_android if use_mobile_header else header
     if cookies:
         cookie = cookies
@@ -98,17 +144,19 @@ def run_get_api(api: str,
     if encoding:
         response.encoding = encoding
     response.raise_for_status()
+    content = response.content
+    text = response.text
     response.close()
     session.close()
 
     if return_json:
-        return response.json()
+        return json.loads(content)
     else:
-        return response.text
+        return text
 
 
 def run_post_api(api: str,
-                 payloads: dict,
+                 payloads: dict = None,
                  bduss='',
                  encoding='',
                  stoken: str = '',
@@ -117,7 +165,9 @@ def run_post_api(api: str,
                  params: dict = None,
                  use_mobile_header=False,
                  host_type: int = 1,
-                 use_https: bool = True):
+                 use_https: bool = True,
+                 host_name: str = '',
+                 json_payload: dict = None):
     """
     执行POST请求
 
@@ -133,9 +183,75 @@ def run_post_api(api: str,
         use_mobile_header (bool): 是否使用手机版header进行请求
         host_type (int): 欲请求的接口类型 1为web端，2为手机端
         use_https (bool): 是否使用https请求
+        host_name (str): 可选的请求域名，留空时按 host_type 选择
+        json_payload (dict): 需要发送JSON请求体时传入，此时忽略payloads
     """
     scheme = SCHEME_HTTPS if use_https else SCHEME_HTTP
-    host_name = TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST
+    host_name = host_name or (TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST)
+    final_header = header_android if use_mobile_header else header
+    if cookies:
+        cookie = cookies
+    elif bduss:
+        cookie = {'BDUSS': bduss, 'STOKEN': stoken}
+    else:
+        cookie = {}
+
+    session = requests.Session()
+    session.trust_env = True
+    session.verify = is_ssl_required()
+
+    if json_payload is not None:
+        request_data = json.dumps(
+            json_payload,
+            ensure_ascii=False,
+            separators=(',', ':'),
+        ).encode('utf-8')
+        final_header = dict(final_header)
+        final_header['Content-Type'] = 'application/json'
+    else:
+        request_data = payloads
+    response = session.post(f'{scheme}{host_name}{api}',
+                            headers=final_header,
+                            cookies=cookie,
+                            params=params,
+                            data=request_data,
+                            timeout=consts.HTTP_TIMEOUT)
+
+    if encoding:
+        response.encoding = encoding
+    response.raise_for_status()
+    content = response.content
+    text = response.text
+    response.close()
+    session.close()
+
+    if return_json:
+        return json.loads(content)
+    else:
+        return text
+
+
+def run_post_api_capture_cookies(api: str,
+                                 payloads: dict,
+                                 bduss='',
+                                 encoding='',
+                                 stoken: str = '',
+                                 cookies: dict = None,
+                                 return_json=True,
+                                 params: dict = None,
+                                 use_mobile_header=False,
+                                 host_type: int = 1,
+                                 use_https: bool = True,
+                                 host_name: str = ''):
+    """
+    执行POST请求\n
+    并同时返回响应 Cookie
+
+    Notes:
+        用法同 run_post_api()
+    """
+    scheme = SCHEME_HTTPS if use_https else SCHEME_HTTP
+    host_name = host_name or (TIEBA_WEB_HOST if host_type == 1 else TIEBA_APP_HOST)
     final_header = header_android if use_mobile_header else header
     if cookies:
         cookie = cookies
@@ -158,13 +274,16 @@ def run_post_api(api: str,
     if encoding:
         response.encoding = encoding
     response.raise_for_status()
+    content = response.content
+    response_cookies = session.cookies.get_dict()
+    response_cookies.update(response.cookies.get_dict())
     response.close()
     session.close()
 
-    if return_json:
-        return response.json()
-    else:
-        return response.text
+    result = json.loads(content) if return_json else content.decode(
+        encoding or 'utf-8'
+    )
+    return result, response_cookies
 
 
 def run_protobuf_api(api: str,

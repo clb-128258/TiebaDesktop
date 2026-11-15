@@ -1,5 +1,5 @@
 """
-互动消息会话适配器。
+互动消息数据获取与管理
 """
 import aiotieba
 import asyncio

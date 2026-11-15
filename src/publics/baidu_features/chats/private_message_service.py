@@ -1,11 +1,13 @@
-"""当前激活账号的私信长连接服务。"""
+"""
+单个账号的私信长连接服务
+"""
 import asyncio
 import concurrent.futures
 import threading
 import time
 
 from publics import app_logger
-from publics.baidu_features.tieba_message_apis import TiebaMessageClient
+from publics.baidu_features.chats.tieba_message_apis import TiebaMessageClient
 
 from .models import ChatMessage
 
@@ -79,7 +81,6 @@ class PrivateMessageService:
                 sender_id=self._client.user_id,
                 sender_name=self._client.user_name,
                 sender_portrait=self._client.portrait,
-                direction='out',
                 msg_type=1,
                 text=str(content),
                 timestamp=timestamp,
@@ -270,7 +271,6 @@ class PrivateMessageService:
                     sender_id=sender_id,
                     sender_name=sender_name,
                     sender_portrait=sender_portrait,
-                    direction=direction,
                     msg_type=int(message.msg_type),
                     text=message.text,
                     timestamp=int(message.create_time or time.time()),

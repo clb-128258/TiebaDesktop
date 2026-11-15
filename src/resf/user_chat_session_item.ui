@@ -53,7 +53,7 @@
       <widget class="QLabel" name="label_4">
        <property name="minimumSize">
         <size>
-         <width>0</width>
+         <width>21</width>
          <height>20</height>
         </size>
        </property>
@@ -71,7 +71,7 @@
        </property>
        <property name="styleSheet">
         <string notr="true">QLabel{
-	background-color: red;
+	background-color: rgb(239, 65, 22);
 	color: white;
 	border-radius: 10px;
 	padding-left: 5px;

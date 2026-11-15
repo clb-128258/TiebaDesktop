@@ -1,6 +1,5 @@
-"""左侧聊天会话条目。"""
+"""左侧聊天会话条目"""
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
 
 from publics import profile_mgr, qt_image
 from publics.base_ui_elements import base_ui
@@ -8,7 +7,7 @@ from publics.funcs import cut_string, show_label_pixmap_with_animation
 
 from ui import user_chat_session_item
 
-from .models import ChatSessionType
+from publics.baidu_features.chats.models import ChatSessionType
 
 
 class UserChatSessionItem(base_ui.InsideWidgetBaseQWidget, user_chat_session_item.Ui_Form):
@@ -21,11 +20,11 @@ class UserChatSessionItem(base_ui.InsideWidgetBaseQWidget, user_chat_session_ite
         super().__init__()
         self.setupUi(self)
         self.session = session
+        self._avatar_key = None
         self.portrait_image = qt_image.MultipleImage()
         self.portrait_image.currentPixmapChanged.connect(
             lambda pixmap: show_label_pixmap_with_animation(self.label, pixmap)
         )
-        self.destroyed.connect(self.portrait_image.destroyImage)
         self.destroyed.connect(self.portrait_image.destroyImage)
         self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.set_session(session)
@@ -45,7 +44,7 @@ class UserChatSessionItem(base_ui.InsideWidgetBaseQWidget, user_chat_session_ite
             self.label_3.show()
 
         if session.unread_count > 0:
-            self.label_4.setText('999+' if session.unread_count > 999 else str(session.unread_count))
+            self.label_4.setText('99+' if session.unread_count > 99 else str(session.unread_count))
             self.label_4.show()
         else:
             self.label_4.hide()
@@ -53,40 +52,40 @@ class UserChatSessionItem(base_ui.InsideWidgetBaseQWidget, user_chat_session_ite
         self._set_avatar(session)
 
     def _set_avatar(self, session):
+        if session.is_interaction:
+            avatar_key = ('interaction', session.extra.get('category', ''))
+        elif session.is_private:
+            avatar_key = (
+                'private',
+                str(session.avatar or '').split('?', 1)[0],
+            )
+        elif session.is_chatroom:
+            avatar_key = ('chatroom', str(session.avatar or ''))
+        else:
+            avatar_key = ('unknown', '')
+        if avatar_key == self._avatar_key:
+            return
+        self._avatar_key = avatar_key
+
         self.portrait_image.destroyImage()
-        if session.session_type == ChatSessionType.PRIVATE and session.avatar:
+        self.label.clear()
+        if session.is_private and avatar_key[1]:
             self.portrait_image.setImageInfo(
                 qt_image.ImageLoadSource.TiebaPortrait,
-                session.avatar.split('?', 1)[0],
+                avatar_key[1],
                 qt_image.ImageCoverType.RoundCover,
                 (42, 42),
             )
             self.portrait_image.loadImage()
-        elif session.session_type == ChatSessionType.CHATROOM and session.avatar:
+        elif session.is_chatroom and avatar_key[1]:
             self.portrait_image.setImageInfo(
                 qt_image.ImageLoadSource.HttpLink,
-                session.avatar,
+                avatar_key[1],
                 qt_image.ImageCoverType.RoundCover,
                 (42, 42),
             )
             self.portrait_image.loadImage()
-        else:
-            icon_policy = profile_mgr.get_theme_policy_string()[1]
-            icon = QPixmap(f'ui/icon_{icon_policy}/comment.png')
-            icon.setDevicePixelRatio(qt_image.get_screen_ratio())
-            self.label.setPixmap(icon.scaled(
-                30,
-                30,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation,
-            ))
-
-    def reset_theme(self):
-        super().reset_theme()
-        color = profile_mgr.get_theme_font_color_string()
-        self.label_2.setStyleSheet(f'QLabel{{color:{color};}}')
-        self.label_3.setStyleSheet('QLabel{color:grey;}')
-        self.label_4.setStyleSheet(
-            'QLabel{background-color:#e5484d;color:white;'
-            'border-radius:9px;padding-left:5px;padding-right:5px;}'
-        )
+        elif session.is_interaction:
+            category = session.extra.get('category', '')
+            pixmap = qt_image.get_pixmap_icon_from_file(f'ui/{category}me.png', 42)
+            self.label.setPixmap(pixmap)
