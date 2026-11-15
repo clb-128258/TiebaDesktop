@@ -217,6 +217,15 @@ python make.py
 - 修改 UI、protobuf 或构建配置后，在最终回复中明确说明是否重新生成、是否运行验证命令。
 - 如果终端中文显示乱码，不要据此改写源码注释或文档编码；优先使用编辑器或 UTF-8 方式确认原文。
 
+## Android APK 对比技能
+
+- 仓库级技能位于 `.agents/skills/`，入口与来源见 `.agents/skills/README.md`
+- 对比贴吧官方客户端逻辑时，先读取 `.agents/skills/tieba-apk-comparison/SKILL.md`
+- 高层 Java/Kotlin 分析使用 `.agents/skills/android-reverse-engineering/SKILL.md`
+- Manifest、资源和 smali 对照使用 `.agents/skills/apk-reverse/SKILL.md`
+- 默认只做静态分析；动态 Hook、抓包绕过和重打包安装仅在明确授权时执行
+- APK、反编译输出和抓包文件放在 `apk-analysis/`，不要提交真实用户数据或官方客户端完整反编译源码
+
 ## 参考文档
 
 - `README.md`：项目介绍、功能列表和目录概览。

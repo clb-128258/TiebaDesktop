@@ -23,3 +23,5 @@
 /build-tools/work_linux_temp
 /src/debug.log
 /build-tools/__pycache__
+
+/apk-analysis/
