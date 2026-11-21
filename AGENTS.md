@@ -1,12 +1,12 @@
 # AGENTS.md
 
-本文件面向参与 TiebaDesktop 开发的开发者与 Agent 工具，提供项目概览、常用命令、目录职责和修改注意事项。修改代码前请先阅读本文件，并优先遵循仓库已有模式。
+本文件面向参与贴吧桌面开发的开发者与 Agent 工具，提供项目概览、常用命令、目录职责和修改注意事项。修改代码前请先阅读本文件，并优先遵循仓库已有模式。
 
 ## 项目概览
 
-TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客户端，支持 Windows 与 Linux（均为 x86_64）。功能包括贴吧内容浏览、登录与多账号管理、签到、互动消息、用户主页、收藏/点赞/浏览历史、通知、内置浏览器与视频播放等，其中部分能力依赖 Windows 原生组件（WebView2、WinRT 分享、系统通知）。
+TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客户端，支持 Windows 与 Linux。功能包括贴吧内容浏览、登录与多账号管理、签到、互动消息、用户主页、收藏/点赞/浏览历史、通知、内置浏览器与视频播放等，其中部分能力依赖 Windows 原生组件（WebView2、WinRT 分享、系统通知）。
 
-核心入口是 `src/main.py`。应用启动时会初始化用户数据目录、日志、代理、命令行任务、Qt 高 DPI 配置、翻译文件、主题背景、主窗口和系统托盘。Windows 专属步骤（WinRT 分享库、WebView2 检查）会在非 Windows 平台自动跳过；Linux 下会设置 `QT_QPA_PLATFORM=wayland`。
+核心入口是 `src/main.py`。应用启动时会初始化用户数据目录、日志、代理、命令行任务、Qt 高 DPI 配置、翻译文件、主题背景、主窗口和系统托盘。Windows 专属步骤（WinRT 分享库、WebView2 检查）会在非 Windows 平台自动跳过。
 
 ## 技术栈与依赖
 
@@ -16,7 +16,7 @@ TiebaDesktop 是一个基于 Python 与 PyQt5 的第三方百度贴吧桌面客�
 - 网络与解析：`requests`、`beautifulsoup4`
 - 加密与音频：`pycryptodome`、`pyaudio`（Linux 需要系统提供 portaudio，如 Debian 系的 `portaudio19-dev`）
 - Windows 专用：`pywin32`、`pythonnet`、`windows_toasts`，以及 `src/binres/` 下的 `.exe`/`.dll`（WebView2、toast、ShareBridge 等）
-- CEF webview（可选）：内置浏览器、网页登录、贴内视频播放使用 CEF 作为跨平台内核（`src/publics/base_ui_elements/cef_features/`），Windows 下优先用系统自带的 WebView2，系统没有 WebView2 时自动回落到 CEF，Linux 下直接用 CEF。CEF 通过自带桥接库（`cef_bridge.cpp` + ctypes）接入，不使用 cefpython3（版本旧且音视频受限），因此可以跟随官方最新 CEF；CEF 运行时（`src/binres/cef/`）是可选的，缺失时相关功能自动降级，打包时用 `cef_cfg.bundle_cef` 控制是否集成以调整体积。Linux 下 CEF 以子窗口嵌入 Qt 需要 X11（Wayland 会话走 XWayland）。CEF 版本与 DevTools：桥接层兼容 CEF 109 及以后版本（已用 109.1.18 与 156.0.0 编译验证；109 兼容 Windows 7 并自带音视频编解码）；DevTools 由 Qt 顶层窗口承载，关闭窗口即销毁并让 CEF 完成清理，详见 `src/publics/base_ui_elements/cef_features/README.md`。内置浏览器能力：favicon、HTTP 请求 / 响应观察（HttpDataRewriter 的 onRequestCaught / onResponseCaught，登录取 token 与发贴验证码依赖它）、下载面板、任务管理器、另存为网页均由 CEF 桥接层实现，响应体最多保留 4MB，详见同目录 README 的「内置浏览器能力」一节。
+- CEF webview（可选）：内置浏览器、网页登录、贴内视频播放使用 CEF 作为跨平台内核（`src/publics/base_ui_elements/cef_features/`），Windows 下优先用系统自带的 WebView2，系统没有 WebView2 时自动回落到 CEF，Linux 下直接用 CEF。CEF 通过自带桥接库（`cef_bridge.cpp` + ctypes）接入，不使用 cefpython3（版本旧且音视频受限），因此可以跟随官方最新 CEF；CEF 运行时（`src/binres/cef/`）是可选的，缺失时相关功能自动降级，打包时用 `cef_cfg.bundle_cef` 控制是否集成以调整体积。Linux 下 CEF 以子窗口嵌入 Qt 需要 X11（Wayland 会话走 XWayland）。CEF 版本与 DevTools：桥接层兼容 CEF 109 及以后版本（已用 109.1.18 与 156.0.0 编译验证）
 - 打包：PyInstaller、7-Zip；Windows 可选 NSIS，Linux 可选 dpkg-deb 与 rpmbuild
 
 依赖清单按平台拆分：Windows 见 `src/requirements.txt`，Linux 见 `src/requirements-linux.txt`（不含 `pywin32`、`pythonnet`、`windows_toasts` 等 Windows 专用库）。跨平台代码依赖 `os.name`、`sys.platform`、`platform.system()` 做分支判断；Windows 专用库只能在对应分支内导入，否则会破坏 Linux 下的启动。
@@ -81,10 +81,10 @@ pip install -r src/requirements-linux.txt
 
 - 音频解码库（语音播放使用，两个平台都需要）：
   - 在 `src/publics/audio_decoder/` 中编译生成 `tieba_audiodec.dll`（Windows）或 `libtieba_audiodec.so`（Linux）到 `src/binres/`。
-  - 解码内核为内嵌的 minimp3（MP3，CC0）与 opencore-amr（AMR-NB，Apache-2.0），因此语音播放不再依赖 ffmpeg。
+  - 解码内核为内嵌的 minimp3（MP3，CC0）与 opencore-amr（AMR-NB，Apache-2.0）。
 - Windows：
   - 分享功能需要在 `src/publics/winrt_url_share/` 中编译生成 `ShareBridge.dll` 到 `src/binres/`。
-  - 登录/内置浏览器相关功能需要系统安装 WebView2 Runtime。
+  - 登录/内置浏览器相关功能需要系统安装 WebView2 Runtime（Win10/11 一般系统自带）。
 - Linux：
   - 无需 WebView2 与 `ShareBridge.dll`，可跳过上述步骤。
   - 内置浏览器/网页登录/贴内视频播放需要 CEF（可选）：见 `src/publics/base_ui_elements/cef_features/README.md`，
@@ -99,16 +99,10 @@ python main.py
 
 ### 平台差异（重要）
 
-- 内置浏览器、网页登录、贴内视频播放统一通过 `src/publics/base_ui_elements/common_webview.py` 调用：后端按可用性选择（Windows 优先 WebView2、否则 CEF；Linux 用 CEF），也可以用环境变量 `TIEBADESKTOP_WEBVIEW=webview2|cef|auto` 强制指定。CEF 运行时缺失时 `common_webview.isWebViewInstalled()` 返回 `False`，相关功能自动降级；改动相关代码时应统一调用 common_webview，不要直接 import 具体后端实现。
+- WebView 相关能力统一通过 `src/publics/base_ui_elements/common_webview.py` 调用：后端按可用性选择（Windows 优先 WebView2、否则 CEF；Linux 用 CEF），也可以用启动参数 `--force-webview=webview2|cef|auto` 强制指定。CEF 运行时缺失时 `common_webview.isWebViewInstalled()` 返回 `False`，相关功能自动降级；改动相关代码时应统一调用 common_webview，不要直接 import 具体后端实现。
 - WinRT 分享、`toast.exe`/`windows_toasts` 通知、Aero/Mica/Acrylic 窗口效果均为 Windows 专用，非 Windows 下应静默跳过。
 - 默认用户数据目录：Windows 为 `%USERPROFILE%/AppData/Local/TiebaDesktop`，Linux 为 `~/.local/share/TiebaDesktop`。
 - Linux 打包会清理 `work_temp/binres` 中的 `.exe`/`.dll`，只保留 Linux 需要的二进制文件（无后缀名的可执行文件与 `.so` 动态库）。
-- 语音播放器 `src/publics/audio_stream_player.py` 支持自由调整进度：`seek_to()` 会在解码器内跳过目标位置
-  之前的 PCM（`tieba_dec_skip_pcm`），因此 mp3 与 amr-nb 都适用；播放位置通过 `positionChanged` 上报，
-  界面进度条位于 `src/resf/thread_voice_item.ui`。
-- 语音数据有本地缓存：读写接口为 `cache_mgr.get_voice_cache` / `save_voice_cache`，缓存目录为
-  `<数据目录>/voice_caches`。播放时优先使用内存/本地缓存，完整下载后才落盘；由于贴吧服务器不支持
-  Range 请求，缓存是重复播放与定位不再请求服务器的关键，修改相关逻辑时请保留该行为。
 
 ## 常用命令
 
@@ -146,7 +140,9 @@ cd build-tools
 python build.py --makefile ./build_config.json
 ```
 
-构建前需要在 `build_config.json` 中把 `src_code_path`、`py_environ_path`、`sevenzip_path` 等路径改成本机实际值。Linux 下 `sevenzip_path` 通常为 `/usr/bin/7z`，应将 `installer_cfg.build_nsis` 设为 `false`，并按需设置 `build_deb`/`build_rpm`（需要系统已安装 `dpkg-deb`、`rpmbuild`）。构建脚本会创建 `build-tools/work_temp` 和 `build-tools/work_out`，Linux 打包时还会使用 `work_linux_temp`，这些目录已被 `.gitignore` 忽略。
+构建前需要在 `build_config.json` 中把 `src_code_path`、`py_environ_path`、`sevenzip_path` 等路径改成本机实际值。  
+Linux 下 `sevenzip_path` 通常为 `/usr/bin/7z`，应将 `installer_cfg.build_nsis` 设为 `false`，并按需设置 `build_deb`/`build_rpm`（需要系统已安装 `dpkg-deb`、`rpmbuild`）。  
+构建脚本会创建 `build-tools/work_temp` 和 `build-tools/work_out`，Linux 打包时还会使用 `work_linux_temp`，这些目录已被 `.gitignore` 忽略。
 
 ## UI 与 protobuf 生成
 
@@ -195,11 +191,15 @@ python make.py
 
 ## 代码修改指南
 
+- 编写和修改任何代码时，都需要注意**可维护性、简洁性**，避免编写维护性差、不利于后续开发的代码。
 - 优先沿用现有代码风格和目录职责，避免把业务逻辑放进生成的 UI 文件。
+- 所有非 UI 强相关的逻辑请放入 `publics` 管理，只有在承载具体 GUI 模块业务时才在 `subwindow` 下增加代码。
+- 需要封装类、函数或者方法时，请注重代码的简洁性与可维护性，避免一套业务重复封装。
 - 修改界面结构时优先改 `src/resf/*.ui`，再生成 `src/ui/*.py`；如果只修生成文件，后续重新生成可能覆盖改动。
 - `src/ui/` 内含大量资源文件和生成代码，改动前确认它是源文件还是生成产物。
 - 网络请求相关改动优先放在 `src/publics/baidu_features/` 或既有 API 封装附近。
 - 用户数据读写优先复用 `profile_mgr.py`、`account_mgr.py`、`cache_mgr.py` 等现有管理器。
+- 需要调用任何能力时请先寻找项目内已有的实现，避免重复造轮子。如需要调用各类通用函数请参阅 `funcs.py`，等等。
 - Windows 专有能力（WebView2、WinRT 分享、toast 通知、Aero/Mica/Acrylic 效果）必须保留平台判断，避免破坏 Linux 下的基本导入和运行；新增 Windows 专用依赖时只在 `os.name == 'nt'` 分支内导入。
 - 调整依赖时同步检查 `src/requirements.txt` 与 `src/requirements-linux.txt`，不要把 Windows 专用库写进 Linux 清单。
 - 修改 `build-tools/build.py` 的打包流程或 `binres` 清理规则时，确认 Windows 与 Linux 两条路径仍然可用。
@@ -223,7 +223,7 @@ python make.py
 - 对比贴吧官方客户端逻辑时，先读取 `.agents/skills/tieba-apk-comparison/SKILL.md`
 - 高层 Java/Kotlin 分析使用 `.agents/skills/android-reverse-engineering/SKILL.md`
 - Manifest、资源和 smali 对照使用 `.agents/skills/apk-reverse/SKILL.md`
-- 默认只做静态分析；动态 Hook、抓包绕过和重打包安装仅在明确授权时执行
+- 默认只做静态分析；动态 Hook、抓包绕过和重打包安装仅在明确说明时执行
 - APK、反编译输出和抓包文件放在 `apk-analysis/`，不要提交真实用户数据或官方客户端完整反编译源码
 
 ## 参考文档
