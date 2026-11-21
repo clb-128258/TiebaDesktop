@@ -194,23 +194,24 @@ def delete_listWidget_item(lw: QListWidget, item: QListWidgetItem):
 def cleanup_listWidget(lw: QListWidget):
     """清理 QListWidget 的所有条目，并释放内存"""
 
-    lw.verticalScrollBar().setValue(0)
-    lw.verticalScrollBar().blockSignals(True)
-
-    for i in range(lw.count()):
-        item = lw.item(i)
-        widget = lw.itemWidget(item)
-        if widget:
-            widget.destroy()
-            widget.deleteLater()
-            lw.takeItem(i)
-            del widget
-            del item
-
-    gc.collect()
-    lw.clear()
-
-    lw.verticalScrollBar().blockSignals(False)
+    scrollbar = lw.verticalScrollBar()
+    scrollbar.blockSignals(True)
+    lw.setUpdatesEnabled(False)
+    try:
+        for row in range(lw.count() - 1, -1, -1):
+            item = lw.item(row)
+            widget = lw.itemWidget(item)
+            if widget is not None:
+                widget.hide()
+                widget.deleteLater()
+            lw.takeItem(row)
+    finally:
+        scrollbar.setValue(0)
+        scrollbar.blockSignals(False)
+        lw.setUpdatesEnabled(True)
+        lw.doItemsLayout()
+        lw.updateGeometries()
+        lw.viewport().update()
 
 
 def large_num_to_string(num: int, prespace=False, endspace=False):

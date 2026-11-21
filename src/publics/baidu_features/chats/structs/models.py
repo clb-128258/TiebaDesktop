@@ -16,6 +16,30 @@ class ChatSessionType(str, enum.Enum):
     CHATROOM = 'chatroom'
 
 
+class ChatroomMessageType(enum.IntEnum):
+    """
+    聊天群消息类型
+
+    Attributes:
+        Text: 纯文本消息
+        Image: 图片消息
+        ThreadShare: 转发贴子
+        OnlineUsersCountUpdate: 群聊在线人数更新
+
+        Unknown: 未知类型
+    """
+    Text = 1
+    Image = 2
+    ThreadShare = 109
+    OnlineUsersCountUpdate=101
+
+    Unknown = 0
+
+    @classmethod
+    def _missing_(cls, value):
+        return cls.Unknown
+
+
 @dataclass
 class ChatMessage:
     """
@@ -44,7 +68,7 @@ class ChatMessage:
     @property
     def direction(self):
         """
-        当前消息的发送方向
+        消息的发送方向
         """
         current_uid = account_mgr.GlobalAccountContainer.get_current_account().uid
         current_portrait = account_mgr.GlobalAccountContainer.get_current_account().portrait
@@ -147,19 +171,12 @@ class ChatSession:
         )
 
 
-def _safe_int(value, default=0):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
 def normalize_chatroom_room(raw, default_fid=0):
-    """将群列表接口的多种返回结构归一化为会话列表使用的字段。"""
+    """将群列表接口的多种返回结构归一化为会话列表使用的字段"""
     if not isinstance(raw, dict):
         return {
             'room_id': 0,
-            'fid': _safe_int(default_fid),
+            'fid': int(default_fid),
             'forum_name': '',
             'name': '',
             'avatar': '',
@@ -176,12 +193,12 @@ def normalize_chatroom_room(raw, default_fid=0):
     if not isinstance(msg_info, dict):
         msg_info = {}
 
-    room_id = _safe_int(
+    room_id = int(
         raw.get('room_id')
         or room_info.get('room_id')
         or room_info.get('id')
     )
-    forum_id = _safe_int(
+    forum_id = int(
         room_info.get('forum_id')
         or raw.get('forum_id')
         or default_fid
@@ -209,10 +226,10 @@ def normalize_chatroom_room(raw, default_fid=0):
         'name': display_name,
         'avatar': str(room_info.get('avatar') or raw.get('avatar') or ''),
         'last_message': str(msg_info.get('content') or ''),
-        'last_time': _safe_int(msg_info.get('msg_time')),
-        'unread_count': _safe_int(room_info.get('unread_num')),
-        'member_num': _safe_int(
-            room_info.get('member_num')
-            or room_info.get('discuss_num')
+        'last_time': int(msg_info.get('msg_time')),
+        'unread_count': int(room_info.get('unread_num')),
+        'member_num': int(
+            room_info.get('member_num', 0)
+            or room_info.get('discuss_num', 0)
         ),
     }

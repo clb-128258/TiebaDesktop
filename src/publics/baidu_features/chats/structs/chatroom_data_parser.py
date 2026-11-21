@@ -1,12 +1,23 @@
 """
-贴吧群聊天 HTTP 原始响应的业务解析
+贴吧群聊天数据的业务解析
 """
 import json
-
 import aiotieba
 
-from publics.baidu_features.chats import tieba_message_protocol as protocol
-from publics.baidu_features.chats.models import normalize_chatroom_room
+from publics.baidu_features.chats.network import tieba_message_protocol as protocol
+from publics.baidu_features.chats.structs.models import normalize_chatroom_room
+
+CHATROOM_INVALID_MSG_TYPES = [101]
+
+
+def json_value(value, default):
+    if isinstance(value, (dict, list)):
+        return value
+
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _decode_response(content):
@@ -39,10 +50,10 @@ def _raise_response_error(result):
         code = 0
     if code:
         message = (
-            result.get('error_msg')
-            or result.get('err_msg')
-            or result.get('msg')
-            or ''
+                result.get('error_msg')
+                or result.get('err_msg')
+                or result.get('msg')
+                or ''
         )
         raise aiotieba.exception.TiebaServerError(code, str(message))
     return result
@@ -60,14 +71,14 @@ def _collect_room_items(value):
 
     room_info = value.get('room_info')
     room_id = (
-        value.get('room_id')
-        or (room_info or {}).get('room_id')
-        or (room_info or {}).get('id')
+            value.get('room_id')
+            or (room_info or {}).get('room_id')
+            or (room_info or {}).get('id')
     )
     if room_id and (
-        isinstance(room_info, dict)
-        or value.get('msg_info')
-        or value.get('name')
+            isinstance(room_info, dict)
+            or value.get('msg_info')
+            or value.get('name')
     ):
         return [value]
 
@@ -170,7 +181,7 @@ def parse_chatroom_detail(content):
 
 
 def parse_chatroom_msgs(content):
-    from publics.baidu_features.chats.tieba_message_apis import (
+    from publics.baidu_features.chats.structs.data_classes import (
         ChatroomMsg,
         ChatroomMsgs,
     )
@@ -188,3 +199,85 @@ def parse_lcm_token(content):
     if not token:
         raise aiotieba.exception.TiebaValueError('Missing LCM token')
     return token
+
+
+def parse_message_content(content):
+    if not isinstance(content, dict):
+        return {}, {}
+    text_data = content.get('text', {})
+    if isinstance(text_data, str):
+        try:
+            text_data = json.loads(text_data)
+        except ValueError:
+            text_data = {}
+    if not isinstance(text_data, dict):
+        return {}, {}
+    ext = text_data.get('ext', {})
+    if isinstance(ext, str):
+        try:
+            ext = json.loads(ext)
+        except ValueError:
+            ext = {}
+    return text_data, ext if isinstance(ext, dict) else {}
+
+
+def parse_image_size(value):
+    """
+    解析接口中的 `bsize` 尺寸字段
+
+    Return:
+        (width, height)
+    """
+    if isinstance(value, dict):
+        width = value.get('width') or value.get('w')
+        height = value.get('height') or value.get('h')
+        try:
+            return int(width), int(height)
+        except (TypeError, ValueError):
+            return 0, 0
+    if isinstance(value, (list, tuple)) and len(value) >= 2:
+        try:
+            return int(value[0]), int(value[1])
+        except (TypeError, ValueError):
+            return 0, 0
+    if value is None:
+        return 0, 0
+
+    text = str(value).strip().lower()
+    for separator in (',', 'x', '×', '*'):
+        if separator in text:
+            parts = text.split(separator, 1)
+            try:
+                return int(parts[0].strip()), int(parts[1].strip())
+            except (TypeError, ValueError):
+                return 0, 0
+    return 0, 0
+
+
+def bduk_to_user_id(value):
+    bduk = str(value or '')
+    if not bduk:
+        return 0
+    try:
+        return protocol.bduk2user_id(bduk)
+    except (TypeError, ValueError):
+        return 0
+
+
+def get_message_text(value):
+    """从消息 body 或嵌套 JSON 中提取纯文本"""
+    value = json_value(value, value)
+    if isinstance(value, str):
+        parsed = json_value(value, None)
+        if isinstance(parsed, (dict, list)):
+            return get_message_text(parsed)
+        return value
+    if isinstance(value, dict):
+        body = value.get('content_body') or value.get('re_content_body')
+        if body is not None:
+            return get_message_text(body)
+        text = value.get('text')
+        if isinstance(text, (dict, list)):
+            return get_message_text(text)
+        return str(text or '')
+    return ''

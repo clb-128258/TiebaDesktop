@@ -1,4 +1,4 @@
-"""私信与吧群消息气泡。"""
+"""私信与吧群消息气泡"""
 import html
 
 from PyQt5.QtCore import QRect, Qt, pyqtSignal, QEvent
@@ -58,8 +58,8 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
 
         return super(ChatMessageWidget, self).eventFilter(source, event)  # 照常处理事件
 
-    def show_text_content_menu(self):
-        menu = base_ui.create_thread_content_menu(self.bubble)
+    def show_text_content_menu(self, label):
+        menu = base_ui.create_thread_content_menu(label)
         menu.exec(QCursor.pos())
 
     def load_images(self):
@@ -77,7 +77,6 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
 
     def init_message_elements(self):
         # 昵称显示
-        self.label_4.setWordWrap(True)
         self.label_4.setTextFormat(Qt.PlainText)
         sender_visible = bool(
             self.show_sender
@@ -108,7 +107,7 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
                 self.message.text
                 or '[暂不支持的消息类型，请用手机贴吧查看]'
         )
-        self.bubble = QLabel()
+        self.bubble = QLabel(self.messageContentWidget)
         self.bubble.setWordWrap(True)
         self.bubble.setTextFormat(Qt.RichText)
         self.bubble.setTextInteractionFlags(
@@ -118,22 +117,24 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         self.bubble.setOpenExternalLinks(False)
         self.bubble.linkActivated.connect(open_url_in_browser)
         self.bubble.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.bubble.customContextMenuRequested.connect(self.show_text_content_menu)
+        self.bubble.customContextMenuRequested.connect(lambda: self.show_text_content_menu(self.bubble))
         self._set_bubble_text(self.message)
 
         # 回复消息标签
-        self.reply_label = QLabel()
+        self.reply_label = QLabel(self.messageContentWidget)
         self.reply_label.setWordWrap(True)
         self.reply_label.setTextFormat(Qt.PlainText)
         self.reply_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.reply_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.reply_label.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.reply_label.customContextMenuRequested.connect(lambda: self.show_text_content_menu(self.reply_label))
         self.reply_label.hide()
         self._set_auxiliary_content(self.message)
 
         # 图片内容
         image_urls = list(self.message.image_urls or [])
         if image_urls:
-            if self.message.text in ('[图片]', '[图片消息]', ''):
+            if self.message.text in ('[图片]', ''):
                 # 为图片消息时隐藏文本气泡
                 self.bubble.hide()
 
@@ -152,13 +153,14 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
                 image_urls[0],
                 preview_url,
             )
+            self.image_label.setParent(self.messageContentWidget)
             self.image_label.hide()
 
         # 内容布局管理器
-        self.content_container = QWidget()
+        self.content_container = QWidget(self.messageContentWidget)
         content_layout = QVBoxLayout(self.content_container)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(4)
+        content_layout.setSpacing(7)
         content_layout.addWidget(self.reply_label)
         if self.image_label is not None:
             content_layout.addWidget(self.image_label)
@@ -166,6 +168,7 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
 
         # 消息内容布局
         self.message_layout = QHBoxLayout(self.messageContentWidget)
+        self.message_layout.setSpacing(7)
         self.message_layout.setContentsMargins(0, 0, 0, 0)
         if self.message.is_system:
             self.message_layout.addStretch(1)
@@ -201,15 +204,13 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
 
     def _set_auxiliary_content(self, message):
         reply = message.reply_content or {}
-        reply_text = str(reply.get('text') or '')
-        reply_name = str(reply.get('user_name') or '')
+        reply_text = reply.get('text', '')
+        reply_name = reply.get('user_name', '')
         if message.is_system or not (reply_text or reply_name):
             self.reply_label.clear()
             self.reply_label.hide()
         else:
-            prefix = f'回复 {reply_name}：' if reply_name else '回复：'
-            self.reply_label.setText(prefix + (reply_text or '[消息内容不可用]'))
-            self.reply_label.setToolTip(self.reply_label.text())
+            self.reply_label.setText(reply_text)
             self.reply_label.show()
 
     def _set_bubble_text(self, message):
@@ -231,7 +232,6 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
             )
             rich_text = rich_text.replace(escaped_token, link)
         self.bubble.setText(rich_text)
-        self.bubble.setToolTip(self._bubble_plain_text)
 
     def update_layout_width(self, list_width):
         """使用 QFontMetrics 重新计算文字和图片区域尺寸"""
@@ -382,7 +382,7 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         elif source_height <= 0:
             source_height = max(1, int(source_width * 0.56))
 
-        scale = min(0.8, max_width / source_width)
+        scale = min(2, max_width / source_width)
         width = max(48, int(source_width * scale))
         height = max(48, int(source_height * scale))
         return width, height
@@ -429,7 +429,7 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         )
         self.reply_label.setStyleSheet(
             'QLabel{'
-            'background-color:rgba(127,127,127,24);'
+            'background-color:rgba(127,127,127,50);'
             'color:#777777;'
             'border-left:3px solid #7a9cc6;'
             'border-radius:4px;'

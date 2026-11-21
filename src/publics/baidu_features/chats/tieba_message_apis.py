@@ -1,30 +1,21 @@
 """贴吧私信与吧群消息 API"""
 import asyncio
-import binascii
-import json
-import secrets
 import time
-from dataclasses import dataclass, field
-from typing import List
 
-import aiotieba
 from aiotieba.config import ProxyConfig
 from aiotieba.helper.crypto import enuid
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
-from publics import request_mgr
 from publics.baidu_features import tieba_apis as chat_http
-from publics.baidu_features.chats import http_parsers as chat_http_parsers, tieba_message_protocol as protocol
-from .tieba_message_network import (
+from publics.baidu_features.chats.structs import chatroom_data_parser as chat_http_parsers
+from publics.baidu_features.chats.network.tieba_message_network import (
     MessageConnectionError,
     PrivateMessageConnection,
     BlcpConnection,
 )
-
-_WS_PUBLIC_KEY = binascii.a2b_base64(
-    b'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB'
-)
+from publics.baidu_features.chats.structs.data_classes import *
+from publics.baidu_features.chats.network.tieba_message_protocol import WS_PUBLIC_KEY
 
 
 def _check_response_error(result):
@@ -34,660 +25,9 @@ def _check_response_error(result):
     return result
 
 
-def _json_value(value, default):
-    if value is None:
-        return default
-    if isinstance(value, (dict, list)):
-        return value
-    if not value:
-        return default
-    try:
-        return json.loads(value)
-    except (TypeError, ValueError):
-        return default
-
-
 async def _run_sync_http(func, *args):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, lambda: func(*args))
-
-
-def _parse_image_size(value):
-    """
-    解析接口中的 `bsize` 尺寸字段
-
-    Return:
-        (width, height)
-    """
-    if isinstance(value, dict):
-        width = value.get('width') or value.get('w')
-        height = value.get('height') or value.get('h')
-        try:
-            return int(width), int(height)
-        except (TypeError, ValueError):
-            return 0, 0
-    if isinstance(value, (list, tuple)) and len(value) >= 2:
-        try:
-            return int(value[0]), int(value[1])
-        except (TypeError, ValueError):
-            return 0, 0
-    if value is None:
-        return 0, 0
-
-    text = str(value).strip().lower()
-    for separator in (',', 'x', '×', '*'):
-        if separator in text:
-            parts = text.split(separator, 1)
-            try:
-                return int(parts[0].strip()), int(parts[1].strip())
-            except (TypeError, ValueError):
-                return 0, 0
-    return 0, 0
-
-
-@dataclass
-class WsMessageUser:
-    user_id: int = 0
-    user_name: str = ''
-    portrait: str = ''
-
-
-@dataclass
-class WsMessage:
-    msg_id: int = 0
-    msg_type: int = 0
-    text: str = ''
-    user: WsMessageUser = field(default_factory=WsMessageUser)
-    create_time: int = 0
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            int(data.get('msg_id', 0)),
-            int(data.get('msg_type', 0)),
-            str(data.get('text', '') or ''),
-            WsMessageUser(
-                int(data.get('user', {}).get('user_id', 0)),
-                str(data.get('user', {}).get('user_name', '') or ''),
-                str(data.get('user', {}).get('portrait', '') or ''),
-            ),
-            int(data.get('create_time', 0)),
-        )
-
-
-@dataclass
-class WsMsgGroup:
-    group_id: int = 0
-    group_type: int = 0
-    messages: List[WsMessage] = field(default_factory=list)
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            int(data.get('group_id', 0)),
-            int(data.get('group_type', 0)),
-            [WsMessage.from_dict(item) for item in data.get('messages', [])],
-        )
-
-
-@dataclass
-class WsMsgGroups:
-    groups: List[WsMsgGroup] = field(default_factory=list)
-
-    def __iter__(self):
-        return iter(self.groups)
-
-    def __len__(self):
-        return len(self.groups)
-
-    def __getitem__(self, index):
-        return self.groups[index]
-
-
-@dataclass
-class SendMsgResult:
-    group_id: int = 0
-    local_msg_id: int = 0
-    to_user_id: int = 0
-    to_user_type: int = 0
-    msg_id: int = 0
-
-
-@dataclass
-class SetMsgReadedResult:
-    read_msg_id: int = 0
-    group_id: int = 0
-    to_user_id: int = 0
-    to_user_type: int = 0
-
-
-@dataclass
-class RobotSkill:
-    type: int = 0
-    name: str = ''
-    alias: str = ''
-    desc: str = ''
-    is_show: bool = False
-    items: List[dict] = field(default_factory=list)
-
-
-@dataclass
-class Robot:
-    user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    name_show: str = ''
-    bduk: str = ''
-    robot_role: int = 0
-    skills: List[RobotSkill] = field(default_factory=list)
-
-
-@dataclass
-class ChatroomDetail:
-    fid: int = 0
-    fname: str = ''
-    room_id: int = 0
-    name: str = ''
-    avatar: str = ''
-    announce: str = ''
-    member_num: int = 0
-    chat_threshold: int = 0
-    robots: List[Robot] = field(default_factory=list)
-
-
-@dataclass
-class ChatroomReplyContent:
-    """吧群消息引用的被回复内容。"""
-
-    user_id: int = 0
-    user_name: str = ''
-    portrait: str = ''
-    text: str = ''
-
-    def to_dict(self):
-        return {
-            'user_id': self.user_id,
-            'user_name': self.user_name,
-            'portrait': self.portrait,
-            'text': self.text,
-        }
-
-
-@dataclass
-class ChatroomAtUser:
-    """吧群消息中的 @ 用户。"""
-
-    user_id: int = 0
-    user_name: str = ''
-    portrait: str = ''
-    position: int = 0
-
-    def to_dict(self):
-        return {
-            'user_id': self.user_id,
-            'user_name': self.user_name,
-            'portrait': self.portrait,
-            'position': self.position,
-        }
-
-
-def _bduk_to_user_id(value):
-    bduk = str(value or '')
-    if not bduk:
-        return 0
-    try:
-        return protocol.bduk2user_id(bduk)
-    except (TypeError, ValueError):
-        return 0
-
-
-def _message_text(value):
-    """从消息 body 或嵌套 JSON 中提取纯文本。"""
-    value = _json_value(value, value)
-    if isinstance(value, str):
-        parsed = _json_value(value, None)
-        if isinstance(parsed, (dict, list)):
-            return _message_text(parsed)
-        return value
-    if isinstance(value, dict):
-        body = value.get('content_body')
-        if body is not None:
-            return _message_text(body)
-        text = value.get('text')
-        if isinstance(text, (dict, list)):
-            return _message_text(text)
-        return str(text or '')
-    return ''
-
-
-def _parse_reply_content(value):
-    value = _json_value(value, value)
-    if isinstance(value, str):
-        return ChatroomReplyContent(text=value)
-    if not isinstance(value, dict):
-        return None
-
-    user = value.get('user')
-    if not isinstance(user, dict):
-        user = {}
-    bduk = (
-            value.get('baidu_uk')
-            or user.get('baidu_uk')
-            or user.get('uk')
-            or ''
-    )
-    text = _message_text(value)
-    user_name = str(
-        value.get('name')
-        or value.get('user_name')
-        or user.get('name')
-        or user.get('user_name')
-        or ''
-    )
-    portrait = str(
-        value.get('portrait')
-        or user.get('portrait')
-        or ''
-    ).split('?', 1)[0]
-    if not (text or user_name or bduk or portrait):
-        return None
-    return ChatroomReplyContent(
-        _bduk_to_user_id(bduk),
-        user_name,
-        portrait,
-        text,
-    )
-
-
-def _parse_at_data(value):
-    value = _json_value(value, [])
-    if isinstance(value, dict):
-        value = value.get('at_data') or value.get('list') or [value]
-    if not isinstance(value, list):
-        return []
-
-    result = []
-    for item in value:
-        if not isinstance(item, dict):
-            continue
-        bduk = (
-                item.get('at_baidu_uk')
-                or item.get('baidu_uk')
-                or item.get('uk')
-                or ''
-        )
-        user_name = str(
-            item.get('at_name')
-            or item.get('user_name')
-            or item.get('name')
-            or ''
-        )
-        portrait = str(
-            item.get('at_portrait')
-            or item.get('portrait')
-            or ''
-        ).split('?', 1)[0]
-        try:
-            position = int(item.get('position', 0) or 0)
-        except (TypeError, ValueError):
-            position = 0
-        result.append(ChatroomAtUser(
-            _bduk_to_user_id(bduk),
-            user_name,
-            portrait,
-            position,
-        ))
-    result.sort(key=lambda item: item.position)
-    return result
-
-
-@dataclass
-class ChatroomMsg:
-    """
-    聊天群消息
-
-    Attributes:
-        msg_id (int): 消息id
-        msg_key (str): 消息key
-        msg_type (int): 消息类型
-        user_id (int): 发送者用户id
-
-        content (dict): 内容json信息
-        text (str): 文本内容
-        image_url (str): 图片内容链接
-        image_thumbnail_url (str): 预览小图链接
-        image_width (int): 图片宽度
-        image_height (int): 图片高度
-        create_time (int): 消息发送时间戳
-        is_sys_msg (bool): 是否为系统消息
-        content_type (int): 内层 text_data.type 消息内容类型
-        reply_content (ChatroomReplyContent | None): 引用的回复内容
-        at_users (list[ChatroomAtUser]): 消息艾特的用户
-    """
-    msg_id: int = 0
-    msg_key: str = ''
-    msg_type: int = 0
-    user_id: int = 0
-    content: dict = field(default_factory=dict)
-    text: str = ''
-    image_url: str = ''
-    image_thumbnail_url: str = ''
-    image_width: int = 0
-    image_height: int = 0
-    create_time: int = 0
-    is_sys_msg: bool = False
-    content_type: int = 0
-    reply_content: ChatroomReplyContent = None
-    at_users: List[ChatroomAtUser] = field(default_factory=list)
-
-    @classmethod
-    def from_json(cls, data):
-        text = ''
-        image_url = ''
-        image_thumbnail_url = ''
-        image_width = 0
-        image_height = 0
-        user_id = int(data.get('from_user', 0) or 0)
-        is_sys_msg = False
-        content_type = 0
-        system_text = ''
-        reply_content = None
-        at_users = []
-
-        content = _json_value(data.get('content'), {})
-        content_map = content if isinstance(content, dict) else {}
-        raw_text = content_map.get('text')
-        text_data = _json_value(raw_text, {})
-        parsed_raw_text = _json_value(raw_text, None)
-
-        if isinstance(text_data, dict):
-            body = _json_value(text_data.get('content_body'), text_data)
-            ext_data = _json_value(text_data.get('ext'), text_data)
-            try:
-                content_type = int(text_data.get('type', 0) or 0)
-            except (TypeError, ValueError):
-                content_type = 0
-            if content_type == 109:
-                is_sys_msg = True
-                system_data = _json_value(text_data.get('data'), {})
-                service_info = (
-                    system_data.get('service_info', {})
-                    if isinstance(system_data, dict)
-                    else {}
-                )
-                if not isinstance(service_info, dict):
-                    service_info = {}
-                system_text = str(
-                    service_info.get('msg_content')
-                    or service_info.get('text')
-                    or service_info.get('content')
-                    or ''
-                )
-            baidu_uk = (
-                    text_data.get('baidu_uk')
-                    or ext_data.get('baidu_uk')
-                    or ''
-            )
-            converted_user_id = _bduk_to_user_id(baidu_uk)
-            if converted_user_id:
-                user_id = converted_user_id
-            sys_value = (
-                    ext_data.get('is_sys_msg')
-                    or text_data.get('is_sys_msg')
-                    or content_map.get('is_sys_msg')
-                    or 0
-            )
-            if content_type == 109:
-                is_sys_msg = True
-            else:
-                try:
-                    is_sys_msg = bool(int(sys_value))
-                except (TypeError, ValueError):
-                    is_sys_msg = bool(sys_value)
-            reply_content = _parse_reply_content(
-                text_data.get('re_content_body')
-                or ext_data.get('re_content_body')
-                or content_map.get('re_content_body')
-            )
-            at_users = _parse_at_data(
-                text_data.get('at_data')
-                or ext_data.get('at_data')
-                or content_map.get('at_data')
-            )
-            if isinstance(body, dict):
-                text = str(body.get('text', '') or '')
-                image_url = str(
-                    body.get('url')
-                    or body.get('src')
-                    or body.get('thumbnail')
-                    or ''
-                )
-                image_thumbnail_url = str(
-                    body.get('thumbnail')
-                    or body.get('thumb')
-                    or image_url
-                )
-
-                image_content = ext_data.get('content', {})
-                image_width, image_height = _parse_image_size(
-                    image_content.get('bsize')
-                    or image_content.get('big_size')
-                )
-            elif isinstance(body, str):
-                text = body
-            elif text_data.get('text'):
-                text = str(text_data['text'])
-
-            if content_type == 109:
-                text = system_text or '[系统消息]'
-            if not text:
-                content_type_value = str(
-                    text_data.get('content_type', '') or ''
-                )
-                if content_type == 101:
-                    pass
-                elif content_type == 109:
-                    text = '[系统消息]'
-                elif content_type_value == '1' or content_type == 1:
-                    text = '[图片]'
-                else:
-                    text = '[暂不支持的消息类型，请用手机贴吧查看]'
-
-        if not image_url:
-            image_url = str(
-                content_map.get('url')
-                or content_map.get('src')
-                or ''
-            )
-            if image_url:
-                image_thumbnail_url = str(
-                    content_map.get('thumbnail')
-                    or content_map.get('thumb')
-                    or image_url
-                )
-                if not text:
-                    text = '[图片]'
-        if not image_width:
-            image_width, image_height = _parse_image_size(
-                content_map.get('bsize')
-                or content_map.get('big_size')
-                or text_data.get('bsize')
-                or text_data.get('big_size')
-            )
-        if (
-                not text
-                and isinstance(raw_text, str)
-                and not isinstance(parsed_raw_text, (dict, list))
-        ):
-            text = raw_text
-
-        return cls(
-            msg_id=int(data.get('msgid', 0)),
-            msg_key=str(data.get('msg_key', '') or ''),
-            msg_type=int(data.get('type', 0)),
-            user_id=user_id,
-            content=content,
-            text=text,
-            image_url=image_url,
-            image_thumbnail_url=image_thumbnail_url,
-            image_width=image_width,
-            image_height=image_height,
-            create_time=int(data.get('create_time', 0)),
-            is_sys_msg=is_sys_msg,
-            content_type=content_type,
-            reply_content=reply_content,
-            at_users=at_users,
-        )
-
-
-@dataclass
-class ChatroomMsgs:
-    messages: List[ChatroomMsg] = field(default_factory=list)
-
-    def __iter__(self):
-        return iter(self.messages)
-
-    def __len__(self):
-        return len(self.messages)
-
-    def __getitem__(self, index):
-        return self.messages[index]
-
-
-@dataclass
-class RoomList:
-    room_list: List[dict] = field(default_factory=list)
-
-
-class _MsgIDPair:
-    def __init__(self, msg_id=0):
-        self.last_id = msg_id
-        self.curr_id = msg_id
-
-    def update(self, msg_id):
-        self.last_id = self.curr_id
-        self.curr_id = msg_id
-
-
-class _PrivateCursors:
-    def __init__(self):
-        self.local_msg_id = 0
-        self.pulled_msg_id = 0
-        self.sent_msg_id = 0
-        self.read_msg_id = 0
-
-
-class _MsgIDManager:
-    def __init__(self):
-        self.priv_gid = 0
-        self._gid2mid = {0: _MsgIDPair()}
-        self._uid2cursors = {}
-
-    def update_msg_id(self, group_id, msg_id):
-        pair = self._gid2mid.get(group_id)
-        if pair is None:
-            self._gid2mid[group_id] = _MsgIDPair(msg_id)
-        else:
-            pair.update(msg_id)
-
-    def get_msg_id(self, group_id):
-        return self._gid2mid.get(group_id, _MsgIDPair()).last_id
-
-    def set_msg_id(self, group_id, msg_id):
-        self._gid2mid[group_id] = _MsgIDPair(msg_id)
-
-    def get_local_msg_id(self, user_id):
-        cursors = self._get_cursors(user_id)
-        return max(cursors.local_msg_id, cursors.pulled_msg_id * 100) + 1
-
-    def update_local_msg_id(self, user_id, msg_id):
-        cursors = self._get_cursors(user_id)
-        cursors.local_msg_id = max(cursors.local_msg_id, msg_id)
-
-    def update_pulled_msg_id(self, user_id, msg_id):
-        cursors = self._get_cursors(user_id)
-        cursors.pulled_msg_id = max(cursors.pulled_msg_id, msg_id)
-
-    def update_sent_msg_id(self, user_id, msg_id):
-        cursors = self._get_cursors(user_id)
-        cursors.sent_msg_id = max(cursors.sent_msg_id, msg_id)
-
-    def update_read_msg_id(self, user_id, msg_id):
-        cursors = self._get_cursors(user_id)
-        cursors.read_msg_id = max(cursors.read_msg_id, msg_id)
-
-    def _get_cursors(self, user_id):
-        cursors = self._uid2cursors.get(user_id)
-        if cursors is None:
-            cursors = _PrivateCursors()
-            self._uid2cursors[user_id] = cursors
-        return cursors
-
-
-class _MessageAccount:
-    def __init__(self, account):
-        self.source = account
-        self.ws_sec_key = secrets.token_bytes(31)
-        source_user = getattr(account, 'user', None)
-        self.user_id = int(getattr(source_user, 'user_id', 0) or 0)
-        self.user_name = ''
-        self.nick_name = ''
-        self.portrait = str(getattr(source_user, 'portrait', '') or '')
-        self.is_vip = bool(getattr(source_user, 'is_vip', False))
-        self.glevel = int(getattr(source_user, 'glevel', 0) or 0)
-        self.uk = int(getattr(source_user, 'uk', 0) or 0)
-        self.trigger_id = int(getattr(source_user, 'trigger_id', 0) or 0)
-        self.bduk = ''
-
-    @property
-    def bduss(self):
-        return self.source.BDUSS
-
-    @property
-    def stoken(self):
-        return self.source.STOKEN
-
-    @property
-    def cuid_galaxy2(self):
-        return self.source.cuid_galaxy2
-
-    @property
-    def c3_aid(self):
-        return self.source.c3_aid
-
-    @property
-    def zid(self):
-        return (
-                getattr(self.source, 'z_id', None)
-                or getattr(self.source, 'zid', None)
-                or ''
-        )
-
-    @property
-    def sample_id(self):
-        return self.source.sample_id or ''
-
-    @property
-    def client_id(self):
-        return self.source.client_id or ''
-
-    def set_user(self, user):
-        self.user_id = int(getattr(user, 'user_id', 0) or self.user_id)
-        self.user_name = str(getattr(user, 'user_name', '') or self.user_name)
-        self.nick_name = str(
-            getattr(user, 'nick_name', '')
-            or getattr(user, 'show_name', '')
-            or self.nick_name
-            or self.user_name
-        )
-        portrait = str(getattr(user, 'portrait', '') or self.portrait)
-        self.portrait = portrait.split('?', 1)[0]
-        self.is_vip = bool(getattr(user, 'is_vip', self.is_vip))
-        self.glevel = int(getattr(user, 'glevel', self.glevel) or self.glevel)
-        self.uk = int(getattr(user, 'uk', self.uk) or self.uk)
-        self.trigger_id = int(getattr(user, 'trigger_id', self.trigger_id) or self.trigger_id)
-        if self.user_id:
-            self.bduk = protocol.user_id2bduk(self.user_id)
 
 
 class TiebaMessageClient:
@@ -699,13 +39,13 @@ class TiebaMessageClient:
         if not isinstance(account, aiotieba.Account):
             raise TypeError('account 必须是 aiotieba.Account 或 BDUSS 字符串')
 
-        self._account = _MessageAccount(account)
+        self._account = PrivateMessageAccount(account)
         self._proxy = proxy
         self._private = None
         self._blcp = None
         self._chat_message_queue = asyncio.Queue(maxsize=100)
         self._private_forwarder = None
-        self._message_ids = _MsgIDManager()
+        self._message_ids = PrivateMsgIDManager()
         self._private_group_ids = set()
         self._is_closed = False
         self.private_message_queue = asyncio.Queue()
@@ -717,12 +57,18 @@ class TiebaMessageClient:
         await self.close()
 
     async def start(self, private=True, chatroom=True):
-        """提前初始化连接。未调用时各方法也会按需初始化。"""
+        """
+        初始化连接
+        未调用时各方法也会按需初始化
+
+        Args:
+            private (bool): 是否初始化私信连接
+            chatroom (bool): 是否初始化聊天室 BLCP 连接
+        """
         if private:
             await self._ensure_private()
         if chatroom:
             await self._ensure_chatroom()
-        return self
 
     async def close(self):
         if self._is_closed:
@@ -808,7 +154,7 @@ class TiebaMessageClient:
                 '_client_type': '2',
                 '_client_version': protocol.MESSAGE_CLIENT_VERSION,
             }
-            rsa_cipher = load_der_public_key(_WS_PUBLIC_KEY)
+            rsa_cipher = load_der_public_key(WS_PUBLIC_KEY)
             secret_key = rsa_cipher.encrypt(self._account.ws_sec_key, PKCS1v15())
             request_body = protocol.pack_update_client_info_req(
                 self._account.bduss,
@@ -879,7 +225,7 @@ class TiebaMessageClient:
                 self._message_ids.update_pulled_msg_id(user_id, int(message['msg_id']))
                 if int(message['msg_type']) != protocol.MSG_TYPE_READED:
                     continue
-                content = _json_value(message['text'], {})
+                content = json_value(message['text'], {})
                 if content.get('eventId') != 22001:
                     continue
                 read_msg_id = content.get('eventParam', {}).get('readMsgId', 0)
@@ -1170,7 +516,7 @@ class TiebaMessageClient:
             count=-60,
             msgid_end=protocol.LONG_MAX,
     ):
-        """获取吧群最近 60 条消息"""
+        """获取吧群消息"""
         content = await _run_sync_http(
             chat_http.get_chatroom_msgs,
             self._account.bduss,
@@ -1240,7 +586,7 @@ class TiebaMessageClient:
             at_user_ids=None,
             robot=-1,
     ):
-        """向吧群发送纯文本消息。"""
+        """向吧群发送消息"""
         await self._ensure_chatroom()
         level = await self._get_forum_level(fid)
         at_data = await self._build_at_data(at_user_ids)

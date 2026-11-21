@@ -9,11 +9,11 @@ import time
 from publics import app_logger
 from publics.baidu_features.chats.tieba_message_apis import TiebaMessageClient
 
-from .models import ChatMessage
+from publics.baidu_features.chats.structs.models import ChatMessage
 
 
 class PrivateMessageService:
-    """在独立事件循环线程中维护单个账号的私信 WebSocket。"""
+    """在独立事件循环线程中维护单个账号的私信 WebSocket"""
 
     def __init__(self, account, store, on_messages):
         self.account = account

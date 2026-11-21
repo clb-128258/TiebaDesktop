@@ -1,13 +1,13 @@
 """左侧聊天会话条目"""
 from PyQt5.QtCore import Qt
 
-from publics import profile_mgr, qt_image
+from publics import qt_image
 from publics.base_ui_elements import base_ui
 from publics.funcs import cut_string, show_label_pixmap_with_animation
 
 from ui import user_chat_session_item
 
-from publics.baidu_features.chats.models import ChatSessionType
+from publics.baidu_features.chats.structs.models import ChatSessionType
 
 
 class UserChatSessionItem(base_ui.InsideWidgetBaseQWidget, user_chat_session_item.Ui_Form):

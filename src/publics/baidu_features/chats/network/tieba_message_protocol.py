@@ -1,11 +1,8 @@
 """
 贴吧私信与吧群消息的底层协议编解码
-
-该模块参照 aiotieba 4.8.x 的消息实现，但不依赖其 Python 3.10+ 类型语法。
-仅处理消息链路所需的 protobuf wire 格式、WebSocket 加密和 BLCP 报文，
-业务入口见 ``tieba_message_apis``。
 """
 import base64
+import binascii
 import gzip
 import hashlib
 import json
@@ -29,6 +26,9 @@ BLCP_SDK_VERSION = '3460016'
 APP_SALT = b'tiebaclient!!!'
 WS_KDF_SALT = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
 BLCP_FRAME_PREFIX = b'lcp\x01'
+WS_PUBLIC_KEY = binascii.a2b_base64(
+    b'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB'
+)
 
 CMD_INIT_WS = 1001
 CMD_GET_GROUP_MSG = 202003

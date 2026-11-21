@@ -21,8 +21,8 @@ from publics.baidu_features.tieba_apis import (
 )
 from publics.funcs import get_exception_string, start_background_thread
 from publics.tb_syncer import UnreadMessageType
-from publics.baidu_features.chats import http_parsers as chat_http_parsers
-from publics.baidu_features.chats.models import ChatSession
+from publics.baidu_features.chats.structs import chatroom_data_parser as chat_http_parsers
+from publics.baidu_features.chats.structs.models import ChatSession
 from publics.baidu_features.chats.storage import ChatStore
 
 from ui import reply_at_me_page

@@ -5,36 +5,19 @@ import asyncio
 import concurrent.futures
 import json
 import threading
-import time
 
 from publics import app_logger
+
+from publics.baidu_features.chats.structs.chatroom_data_parser import (
+    parse_message_content,
+    CHATROOM_INVALID_MSG_TYPES
+)
 from publics.baidu_features.chats.tieba_message_apis import (
     ChatroomMsg,
-    TiebaMessageClient,
+    TiebaMessageClient
 )
-
-from . import tieba_message_protocol as protocol
-from .models import ChatMessage
-
-
-def _parse_content(content):
-    if not isinstance(content, dict):
-        return {}, {}
-    text_data = content.get('text', {})
-    if isinstance(text_data, str):
-        try:
-            text_data = json.loads(text_data)
-        except ValueError:
-            text_data = {}
-    if not isinstance(text_data, dict):
-        return {}, {}
-    ext = text_data.get('ext', {})
-    if isinstance(ext, str):
-        try:
-            ext = json.loads(ext)
-        except ValueError:
-            ext = {}
-    return text_data, ext if isinstance(ext, dict) else {}
+from publics.baidu_features.chats.network import tieba_message_protocol as protocol
+from publics.baidu_features.chats.structs.models import ChatMessage
 
 
 class ChatRoomSessionWorker:
@@ -99,7 +82,7 @@ class ChatRoomSessionWorker:
         future = concurrent.futures.Future()
         loop = self._loop
         if loop is None or not loop.is_running() or self._client is None:
-            future.set_exception(RuntimeError('吧群连接尚未建立'))
+            future.set_exception(RuntimeError('BLCP connection was not established'))
             return future
 
         async def send():
@@ -119,7 +102,7 @@ class ChatRoomSessionWorker:
         future = concurrent.futures.Future()
         loop = self._loop
         if loop is None or not loop.is_running() or self._client is None:
-            future.set_exception(RuntimeError('群聊连接尚未建立'))
+            future.set_exception(RuntimeError('BLCP connection was not established'))
             return future
 
         async def load():
@@ -131,7 +114,7 @@ class ChatRoomSessionWorker:
             valid_messages = [
                 message
                 for message in cloud_messages.messages
-                if int(message.content_type or 0) != 101
+                if int(message.msg_type or 0) not in CHATROOM_INVALID_MSG_TYPES
             ]
             if valid_messages:
                 self._merge_messages(valid_messages)
@@ -160,16 +143,19 @@ class ChatRoomSessionWorker:
                 if self.on_error is not None:
                     self.on_error(error)
         finally:
+            # 关闭会话
             if self._push_task is not None:
                 self._push_task.cancel()
                 try:
                     loop.run_until_complete(self._push_task)
-                except (asyncio.CancelledError, Exception):
+                except:
                     pass
                 self._push_task = None
+
             if self._client is not None:
                 loop.run_until_complete(self._client.close())
                 self._client = None
+
             self._main_task = None
             loop.close()
 
@@ -183,10 +169,6 @@ class ChatRoomSessionWorker:
             return
 
         self._client = TiebaMessageClient(self.account.aiotieba_account)
-        await self._client.start(private=False, chatroom=True)
-        self._push_task = asyncio.create_task(
-            self._consume_push_messages()
-        )
 
         try:
             detail = await self._client.get_chatroom_detail(self.chatroom_id)
@@ -195,6 +177,12 @@ class ChatRoomSessionWorker:
         else:
             if self.on_detail is not None:
                 self.on_detail(detail)
+
+        await self._client.start(private=False, chatroom=True)
+        self._push_task = asyncio.create_task(
+            self._consume_push_messages()
+        )
+
         await self._client.join_chatroom(self.chatroom_id)
         await self._load_messages()
 
@@ -233,13 +221,13 @@ class ChatRoomSessionWorker:
                 if mcast_id and mcast_id != self.chatroom_id:
                     continue
 
-                raw_messages = payload.get('messages') or []
+                raw_messages = payload.get('messages', [])
+                parsed_messages = []
+
                 if not isinstance(raw_messages, list):
                     continue
-                parsed_messages = []
+
                 for raw_message in raw_messages:
-                    if not isinstance(raw_message, dict):
-                        continue
                     try:
                         parsed_messages.append(
                             ChatroomMsg.from_json(raw_message)
@@ -258,9 +246,10 @@ class ChatRoomSessionWorker:
 
     def _merge_messages(self, cloud_messages):
         for item in cloud_messages:
-            if int(item.content_type or 0) == 101:
+            if int(item.msg_type) in CHATROOM_INVALID_MSG_TYPES:
                 continue
-            message = self._to_chat_message(item)
+
+            message = self.adapt_to_chat_message(item)
             key = (
                 message.message_id
                 if message.message_id
@@ -282,8 +271,9 @@ class ChatRoomSessionWorker:
         )
         self.on_messages(messages)
 
-    def _to_chat_message(self, item):
-        text_data, ext = _parse_content(item.content)
+    def adapt_to_chat_message(self, item):
+        text_data, ext = parse_message_content(item.content)
+
         sender_portrait = str(
             text_data.get('portrait')
             or ext.get('portrait')
@@ -294,6 +284,7 @@ class ChatRoomSessionWorker:
             or ext.get('user_name')
             or item.user_id
         )
+
         return ChatMessage(
             session_key=f'chatroom:{self.chatroom_id}',
             message_id=int(item.msg_id),
@@ -308,12 +299,11 @@ class ChatRoomSessionWorker:
                 if item.image_thumbnail_url
                 else []
             ),
-            image_width=int(item.image_width or 0),
-            image_height=int(item.image_height or 0),
-            timestamp=int(item.create_time or time.time()),
+            image_width=int(item.image_width),
+            image_height=int(item.image_height),
+            timestamp=int(item.create_time),
             payload=item.content,
             is_read=True,
-            is_system=bool(item.is_sys_msg),
             reply_content=(
                 item.reply_content.to_dict()
                 if item.reply_content is not None

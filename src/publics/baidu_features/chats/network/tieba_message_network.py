@@ -11,7 +11,7 @@ import consts
 
 import aiohttp
 
-from publics.baidu_features.chats import tieba_message_protocol as protocol
+from publics.baidu_features.chats.network import tieba_message_protocol as protocol
 
 
 class MessageConnectionError(RuntimeError):

@@ -17,7 +17,7 @@ from proto.GetUserBlackInfo import GetUserBlackInfoReqIdl_pb2, GetUserBlackInfoR
 from proto.AddThread import AddThreadReqIdl_pb2, AddThreadResIdl_pb2
 
 from publics import request_mgr, app_logger, profile_mgr, account_mgr
-from publics.baidu_features.chats import tieba_message_protocol as message_protocol
+from publics.baidu_features.chats.network import tieba_message_protocol as message_protocol
 from publics.funcs import get_dict_value_treely
 
 

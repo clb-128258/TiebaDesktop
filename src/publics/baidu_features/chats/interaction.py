@@ -7,7 +7,7 @@ import asyncio
 from publics import app_logger, request_mgr
 from publics.funcs import timestamp_to_string
 
-from .models import InteractionEntry
+from publics.baidu_features.chats.structs.models import InteractionEntry
 
 
 def _first_scalar(value, default=''):

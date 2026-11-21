@@ -9,7 +9,7 @@ import time
 
 import consts
 
-from .models import ChatMessage, ChatSession
+from publics.baidu_features.chats.structs.models import ChatMessage, ChatSession
 
 
 def _chat_data_dir():
@@ -55,7 +55,6 @@ class ChatStore:
                     sender_id INTEGER NOT NULL DEFAULT 0,
                     sender_name TEXT NOT NULL DEFAULT '',
                     sender_portrait TEXT NOT NULL DEFAULT '',
-                    direction TEXT NOT NULL DEFAULT 'in',
                     msg_type INTEGER NOT NULL DEFAULT 1,
                     text TEXT NOT NULL DEFAULT '',
                     create_time INTEGER NOT NULL DEFAULT 0,
@@ -114,8 +113,8 @@ class ChatStore:
             cursor = self._connection.execute("""
                 INSERT OR IGNORE INTO private_messages (
                     group_id, peer_user_id, msg_id, sender_id, sender_name, sender_portrait,
-                    direction, msg_type, text, create_time, is_read, payload, inserted_time
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     msg_type, text, create_time, is_read, payload, inserted_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 int(group_id or 0),
                 peer_user_id,
@@ -123,7 +122,6 @@ class ChatStore:
                 int(message.sender_id or 0),
                 message.sender_name or '',
                 message.sender_portrait or '',
-                message.direction or 'in',
                 int(message.msg_type or 0),
                 message.text or '',
                 timestamp,
