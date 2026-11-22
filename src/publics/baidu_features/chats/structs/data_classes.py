@@ -2,7 +2,7 @@
 各类数据体的封装
 """
 import secrets
-from dataclasses import dataclass, field,asdict
+from dataclasses import dataclass, field, asdict
 from typing import List
 
 from publics.baidu_features.chats.structs.chatroom_data_parser import *
@@ -18,6 +18,7 @@ class WsMessageUser:
 
 @dataclass
 class WsMessage:
+    """私信消息"""
     msg_id: int = 0
     msg_type: int = 0
     text: str = ''
@@ -117,6 +118,110 @@ class ChatroomDetail:
     member_num: int = 0
     chat_threshold: int = 0
     robots: List[Robot] = field(default_factory=list)
+
+
+@dataclass
+class ChatroomThreadShare:
+    """吧群消息中的转发贴子"""
+
+    thread_id: int = 0
+    title: str = ''
+    forum_id: int = 0
+    forum_name: str = ''
+    forum_avatar: str = ''
+    author_id: int = 0
+    author_name: str = ''
+    author_portrait: str = ''
+    abstract: str = ''
+    image_urls: List[str] = field(default_factory=list)
+    video_url: str = ''
+    video_duration: int = 0
+    video_play_count: int = 0
+    show_content: str = ''
+
+    def to_dict(self):
+        return asdict(self)
+
+    @classmethod
+    def parse_from_json(cls, service_info):
+        thread_info = service_info.get('thread_info')
+        if not isinstance(thread_info, dict):
+            return None
+
+        author = thread_info.get('author', {})
+        forum_info = thread_info.get('forumInfo', {})
+        rich_abstract = thread_info.get('richAbstract', [])
+        video_info = thread_info.get('videoInfo', {})
+        if not isinstance(rich_abstract, list):
+            rich_abstract = []
+        abstract_parts = []
+        image_urls = []
+        video_url = str(video_info.get('videoUrl', ''))
+        video_duration = int(video_info.get('videoDuration', 0))
+        video_play_count = int(video_info.get('playCount', 0))
+        video_thumbnail_url = video_info.get('thumbnailUrl')
+        if video_thumbnail_url:
+            image_urls.append(str(video_thumbnail_url))
+        for part in rich_abstract:
+            if not isinstance(part, dict):
+                continue
+            if int(part.get('type', 0)) == 0:
+                text = ' '.join(str(part.get('text', '')).split())
+                abstract_parts.append(text)
+            else:
+                part_type = int(part.get('type', 0))
+                if part_type == 5:
+                    video_url = video_url or str(part.get('link', ''))
+                    video_duration = (
+                            video_duration
+                            or int(part.get('during_time', 0))
+                    )
+                    if not video_thumbnail_url:
+                        image_url = part.get('src')
+                        if image_url:
+                            image_urls.append(str(image_url))
+                else:
+                    image_url = (
+                            part.get('src')
+                            or part.get('url')
+                            or part.get('small_pic')
+                            or ''
+                    )
+                    if image_url:
+                        image_urls.append(image_url)
+
+        media_list = thread_info.get('media', [])
+        if isinstance(media_list, dict):
+            media_list = [media_list]
+        for media in media_list:
+            if not isinstance(media, dict):
+                continue
+            image_url = media.get('url') or media.get('small_pic')
+            if image_url:
+                image_urls.append(str(image_url))
+
+        return cls(
+            thread_id=int(thread_info.get('id', 0)),
+            title=str(thread_info.get('title', '')),
+            forum_id=int(
+                forum_info.get('id')
+                or forum_info.get('fid')
+                or 0
+            ),
+            forum_name=str(forum_info.get('name', '')),
+            forum_avatar=str(forum_info.get('avatar', '')),
+            author_id=int(author.get('id', 0)),
+            author_name=str(author.get('nameShow') or author.get('name', '')),
+            author_portrait=str(author.get('portrait', '')).split('?', 1)[0],
+            abstract='\n'.join(abstract_parts),
+            image_urls=list(dict.fromkeys(image_urls))[:3],
+            video_url=video_url,
+            video_duration=video_duration,
+            video_play_count=video_play_count,
+            show_content=str(
+                service_info.get('msg_conf', {}).get('show_content', '')
+            ),
+        )
 
 
 @dataclass
@@ -233,6 +338,7 @@ class ChatroomMsg:
         user_id (int): 发送者用户id
 
         content (dict): 内容json信息
+        extra_info (dict): 额外的消息体json信息
         text (str): 文本内容
 
         image_url (str): 图片内容链接
@@ -240,63 +346,80 @@ class ChatroomMsg:
         image_width (int): 图片宽度
         image_height (int): 图片高度
 
+        voice_url (str): 语言url
+        voice_duration (int): 语音长度
+
         create_time (int): 消息发送时间戳
         is_sys_msg (bool): 是否为系统消息
+        from_client (models.ChatroomMessageFromType): 发送来源客户端
 
         reply_content (ChatroomReplyContent | None): 引用的回复内容
         at_users (list[ChatroomAtUser]): 消息艾特的用户
+        thread_share (ChatroomThreadShare | None): 转发贴子信息
     """
     msg_id: int = 0
     msg_key: str = ''
     msg_type: models.ChatroomMessageType = 0
     user_id: int = 0
+
     content: dict = field(default_factory=dict)
+    extra_info: dict = field(default_factory=dict)
     text: str = ''
+
     image_url: str = ''
     image_thumbnail_url: str = ''
     image_width: int = 0
     image_height: int = 0
+
+    voice_url: str = ''
+    voice_duration: int = 0
+
     create_time: int = 0
     is_sys_msg: bool = False
+    from_client: models.ChatroomMessageFromType = ''
+
     reply_content: ChatroomReplyContent = None
     at_users: List[ChatroomAtUser] = field(default_factory=list)
+    thread_share: ChatroomThreadShare = None
 
     @classmethod
     def from_json(cls, data):
         text = ''
+        thread_share = None
+
         image_url = ''
         image_thumbnail_url = ''
         image_width = 0
         image_height = 0
 
-        # 各种解析数据
-        content = json_value(data.get('content'), {})
-        content_map = content if isinstance(content, dict) else {}
-        raw_text = content_map.get('text')
-        text_data = json_value(raw_text, {})
+        voice_url = ''
+        voice_duration = 0
 
-        # 还是解析数据，百度的数据体封装好乱，，，
-        body = json_value(text_data.get('content_body'), text_data)
-        ext_data = json_value(text_data.get('ext'), text_data)
+        # 各种解析数据，百度的数据体封装好乱，，，
+        content = json_value(data.get('content'), {})
+        text_data = json_value(content.get('text'), {})
+        body = json_value(text_data.get('content_body'), {})
+        ext_data = json_value(text_data.get('ext'), text_data.get('data', {}))
 
         # 消息类型
-        content_type = int(ext_data.get('type') or text_data.get('content_type') or 0)
+        content_type = int(
+            ext_data.get('type') or
+            ext_data.get('service_info', {}).get('msg_type') or
+            text_data.get('content_type') or
+            text_data.get('type') or
+            0
+        )
+
+        # 来自哪个客户端
+        from_client = ext_data.get('from')
 
         # 把百度uk转换成用户id
-        baidu_uk = (
-                text_data.get('baidu_uk')
-                or ext_data.get('baidu_uk')
-                or '')
+        baidu_uk = text_data.get('baidu_uk', '')
         user_id = bduk_to_user_id(baidu_uk)
 
         # 是否为系统消息
-        sys_value = (
-                ext_data.get('is_sys_msg')
-                or text_data.get('is_sys_msg')
-                or content_map.get('is_sys_msg')
-                or 0
-        )
-        is_sys_msg = bool(int(sys_value))
+        sys_value = ext_data.get('is_sys_msg', 0)
+        is_sys_msg = bool(int(sys_value)) or models.ChatroomMessageType(content_type).is_sys_msg()
 
         # 回复的消息内容
         reply_content = ChatroomReplyContent.parse_from_json(text_data.get('re_data'))
@@ -304,81 +427,117 @@ class ChatroomMsg:
         # at数据
         at_users = ChatroomAtUser.parse_from_json(text_data.get('at_data'))
 
-        # 图片链接提取
-        if isinstance(body, dict):
-            text = str(body.get('text', ''))
-            image_url = str(
-                body.get('url')
-                or body.get('src')
-                or body.get('thumbnail')
-                or ''
-            )
-            image_thumbnail_url = str(
-                body.get('thumbnail')
-                or body.get('thumb')
-                or image_url
-            )
+        # 富媒体内容获取
+        if content_type == models.ChatroomMessageType.Text:
+            # 纯文本消息
+            text = body.get('text', '')
+        elif content_type in (models.ChatroomMessageType.Image, models.ChatroomMessageType.MemeImage):
+            # 图片链接提取
+            image_url = body.get('url', '')
+            image_thumbnail_url = body.get('thumbnail', '')
 
             image_content = ext_data.get('content', {})
             image_width, image_height = parse_image_size(
                 image_content.get('bsize')
                 or image_content.get('big_size')
             )
-        elif isinstance(body, str):
-            text = body
-        elif text_data.get('text'):
-            text = str(text_data['text'])
-
-        if not text:
+        elif content_type == models.ChatroomMessageType.Voice:
+            # 语音数据
+            voice_url = body.get('url', '')
+            voice_duration = int(body.get('duration', 0))
+        elif content_type == models.ChatroomMessageType.ThreadShare:
+            service_info = ext_data.get('service_info', {})
+            thread_share = ChatroomThreadShare.parse_from_json(service_info)
+            if thread_share is not None:
+                text = thread_share.title or thread_share.show_content
+            else:
+                text = '[分享贴子]'
+        elif service_info := ext_data.get('service_info'):
+            # service_info 类信息获取
+            text = service_info['msg_conf']['show_content']
+        else:
             if content_type in CHATROOM_INVALID_MSG_TYPES:
                 pass
-            elif content_type == models.ChatroomMessageType.ThreadShare:
-                text = '[分享贴子]'
-            elif content_type == models.ChatroomMessageType.Image:
-                text = '[图片]'
+            elif content_type_string := models.ChatroomMsgTypeStringMap.get(content_type):
+                text = content_type_string
             else:
                 text = '[暂不支持的消息类型]'
-
-        if not image_url:
-            image_url = str(
-                content_map.get('url')
-                or content_map.get('src')
-                or ''
-            )
-            if image_url:
-                image_thumbnail_url = str(
-                    content_map.get('thumbnail')
-                    or content_map.get('thumb')
-                    or image_url
-                )
-                if not text:
-                    text = '[图片]'
-        if not image_width:
-            image_width, image_height = parse_image_size(
-                content_map.get('bsize')
-                or content_map.get('big_size')
-                or text_data.get('bsize')
-                or text_data.get('big_size')
-            )
-
-        if not text and isinstance(raw_text, str):
-            text = raw_text
 
         return cls(
             msg_id=int(data.get('msgid', 0)),
             msg_key=str(data.get('msg_key', '') or ''),
             msg_type=models.ChatroomMessageType(content_type),
             user_id=user_id,
-            content=content,
+            content=text_data,
+            extra_info=ext_data,
             text=text,
             image_url=image_url,
             image_thumbnail_url=image_thumbnail_url,
             image_width=image_width,
             image_height=image_height,
+            voice_url=voice_url,
+            voice_duration=voice_duration,
             create_time=int(data.get('create_time', 0)),
             is_sys_msg=is_sys_msg,
+            from_client=models.ChatroomMessageFromType(from_client),
             reply_content=reply_content,
             at_users=at_users,
+            thread_share=thread_share,
+        )
+
+    def to_json(self):
+        return asdict(self)
+
+    def to_normal_msg(self):
+        chatroom_id = int(self.extra_info.get('session_id') or self.content.get('room_id') or 0)
+        service_info = self.extra_info.get('service_info')
+        if not isinstance(service_info, dict):
+            service_info = self.extra_info
+        user_from = service_info.get('user_from', {})
+        user_name = (
+                user_from.get('username')
+                or self.extra_info.get('user_name', '')
+        )
+        portrait = (
+                user_from.get('avatar')
+                or self.extra_info.get('portrait', '')
+        ).split('?', 1)[0]
+
+        return models.ChatMessage(
+            session_key=f'chatroom:{chatroom_id}',
+            message_id=self.msg_id,
+            sender_id=self.user_id,
+            sender_name=user_name,
+            sender_portrait=portrait,
+            msg_type=self.msg_type,
+            text=self.text,
+            image_urls=[self.image_url] if self.image_url else [],
+            image_thumbnail_urls=(
+                [self.image_thumbnail_url]
+                if self.image_thumbnail_url
+                else []
+            ),
+            image_width=int(self.image_width),
+            image_height=int(self.image_height),
+            timestamp=int(self.create_time),
+            payload=self.content,
+            is_read=True,
+            reply_content=(
+                self.reply_content.to_dict()
+                if self.reply_content is not None
+                else {}
+            ),
+            at_users=[
+                user.to_dict()
+                for user in self.at_users
+            ],
+            thread_share=(
+                self.thread_share.to_dict()
+                if self.thread_share is not None
+                else {}
+            ),
+            is_system=self.is_sys_msg,
+            origin_msg=self
         )
 
 

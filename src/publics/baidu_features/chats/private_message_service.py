@@ -88,11 +88,11 @@ class PrivateMessageService:
                 notify=False,
             )
             if self.store.save_message(
-                peer_user_id,
-                '',
-                '',
-                message,
-                group_id=result.group_id,
+                    peer_user_id,
+                    '',
+                    '',
+                    message,
+                    group_id=result.group_id,
             ):
                 if result.group_id:
                     self._peer_to_group[int(peer_user_id)] = result.group_id
@@ -113,10 +113,10 @@ class PrivateMessageService:
         loop = self._loop
         message = self._latest_incoming.get(int(peer_user_id))
         if (
-            loop is None
-            or not loop.is_running()
-            or self._client is None
-            or message is None
+                loop is None
+                or not loop.is_running()
+                or self._client is None
+                or message is None
         ):
             return
 
@@ -208,8 +208,8 @@ class PrivateMessageService:
         peer_unknown_groups = [
             group_id for group_id in group_ids
             if (
-                self.store.get_group_peer(group_id) is None
-                and group_id not in self._start_synced_groups
+                    self.store.get_group_peer(group_id) is None
+                    and group_id not in self._start_synced_groups
             )
         ]
         if peer_unknown_groups:
@@ -277,6 +277,7 @@ class PrivateMessageService:
                     is_read=direction == 'out',
                     payload={'raw': message.text},
                     notify=notify,
+                    origin_msg=message
                 )
                 inserted = self.store.save_message(
                     peer_user_id,

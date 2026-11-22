@@ -5,9 +5,8 @@ import json
 import aiotieba
 
 from publics.baidu_features.chats.network import tieba_message_protocol as protocol
-from publics.baidu_features.chats.structs.models import normalize_chatroom_room
 
-CHATROOM_INVALID_MSG_TYPES = [101]
+CHATROOM_INVALID_MSG_TYPES = [101, 106]
 
 
 def json_value(value, default):
@@ -99,6 +98,68 @@ def _collect_room_items(value):
             result.extend(_collect_room_items(item))
     return result
 
+def normalize_chatroom_room(raw, default_fid=0):
+    """将群列表接口的多种返回结构归一化为会话列表使用的字段"""
+    if not isinstance(raw, dict):
+        return {
+            'room_id': 0,
+            'fid': int(default_fid),
+            'forum_name': '',
+            'name': '',
+            'avatar': '',
+            'last_message': '',
+            'last_time': 0,
+            'unread_count': 0,
+            'member_num': 0,
+        }
+
+    room_info = raw.get('room_info')
+    if not isinstance(room_info, dict):
+        room_info = raw
+    msg_info = raw.get('msg_info')
+    if not isinstance(msg_info, dict):
+        msg_info = {}
+
+    room_id = int(
+        raw.get('room_id')
+        or room_info.get('room_id')
+        or room_info.get('id')
+    )
+    forum_id = int(
+        room_info.get('forum_id')
+        or raw.get('forum_id')
+        or default_fid
+    )
+    forum_name = str(
+        room_info.get('forum_name')
+        or raw.get('forum_name')
+        or ''
+    )
+    room_name = str(
+        room_info.get('name')
+        or raw.get('name')
+        or room_info.get('room_name')
+        or (f'吧群 {room_id}' if room_id else '')
+    )
+    if forum_name and forum_name not in room_name:
+        display_name = f'{room_name}（{forum_name}吧）'
+    else:
+        display_name = room_name
+
+    return {
+        'room_id': room_id,
+        'fid': forum_id,
+        'forum_name': forum_name,
+        'name': display_name,
+        'avatar': str(room_info.get('avatar') or raw.get('avatar') or ''),
+        'last_message': str(msg_info.get('content') or ''),
+        'last_time': int(msg_info.get('msg_time')),
+        'unread_count': int(room_info.get('unread_num')),
+        'member_num': int(
+            room_info.get('member_num', 0)
+            or room_info.get('discuss_num', 0)
+        ),
+    }
 
 def parse_chat_subscription_list(content):
     from publics.baidu_features.chats.tieba_message_apis import RoomList

@@ -249,7 +249,7 @@ class ChatRoomSessionWorker:
             if int(item.msg_type) in CHATROOM_INVALID_MSG_TYPES:
                 continue
 
-            message = self.adapt_to_chat_message(item)
+            message = item.to_normal_msg()
             key = (
                 message.message_id
                 if message.message_id
@@ -270,51 +270,6 @@ class ChatRoomSessionWorker:
             ),
         )
         self.on_messages(messages)
-
-    def adapt_to_chat_message(self, item):
-        text_data, ext = parse_message_content(item.content)
-
-        sender_portrait = str(
-            text_data.get('portrait')
-            or ext.get('portrait')
-            or ''
-        ).split('?', 1)[0]
-        sender_name = str(
-            text_data.get('name')
-            or ext.get('user_name')
-            or item.user_id
-        )
-
-        return ChatMessage(
-            session_key=f'chatroom:{self.chatroom_id}',
-            message_id=int(item.msg_id),
-            sender_id=int(item.user_id),
-            sender_name=sender_name,
-            sender_portrait=sender_portrait,
-            msg_type=int(item.msg_type),
-            text=item.text,
-            image_urls=[item.image_url] if item.image_url else [],
-            image_thumbnail_urls=(
-                [item.image_thumbnail_url]
-                if item.image_thumbnail_url
-                else []
-            ),
-            image_width=int(item.image_width),
-            image_height=int(item.image_height),
-            timestamp=int(item.create_time),
-            payload=item.content,
-            is_read=True,
-            reply_content=(
-                item.reply_content.to_dict()
-                if item.reply_content is not None
-                else {}
-            ),
-            at_users=[
-                user.to_dict()
-                for user in item.at_users
-            ],
-        )
-
 
 def _forward_future(source_future, target_future):
     try:

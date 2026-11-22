@@ -3,11 +3,26 @@ import html
 
 from PyQt5.QtCore import QRect, Qt, pyqtSignal, QEvent
 from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLayout,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
-from publics import profile_mgr, qt_image
+from publics import account_mgr, profile_mgr, qt_image
+from publics.baidu_features.chats.structs.models import ChatroomMessageType
 from publics.base_ui_elements import base_ui
-from publics.funcs import show_label_pixmap_with_animation, timestamp_to_string, open_url_in_browser
+from publics.funcs import (
+    large_num_to_string,
+    open_url_in_browser,
+    show_label_pixmap_with_animation,
+    timestamp_to_string,
+    format_second
+)
 from subwindow.thread_picture_label import ThreadPictureLabel
 
 from ui import message_item
@@ -41,6 +56,8 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
 
         self.portrait_image = qt_image.MultipleImage()
         self.image_label = None
+        self.thread_share_container = None
+        self.thread_share_view = None
         self.init_message_elements()
 
         # 重写事件过滤器
@@ -72,6 +89,8 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         if self.image_label:
             self.image_label.show()
             self.image_label.load_picture_async()
+        if self.thread_share_view is not None:
+            self.thread_share_view.load_all_AsyncImage()
 
         self._image_requested = True
 
@@ -91,7 +110,8 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         )
 
         # 消息时间
-        self.label_3.setText(timestamp_to_string(self.message.timestamp or 0))
+        message_time_text = f'{timestamp_to_string(self.message.timestamp)}'
+        self.label_3.setText(message_time_text)
         self.label_3.setAlignment(
             Qt.AlignCenter
             if self.message.is_system
@@ -103,10 +123,7 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         )
 
         # 文字气泡
-        self._bubble_plain_text = (
-                self.message.text
-                or '[暂不支持的消息类型，请用手机贴吧查看]'
-        )
+        self._bubble_plain_text = self.message.text or '[该消息没有文字内容]'
         self.bubble = QLabel(self.messageContentWidget)
         self.bubble.setWordWrap(True)
         self.bubble.setTextFormat(Qt.RichText)
@@ -134,9 +151,7 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         # 图片内容
         image_urls = list(self.message.image_urls or [])
         if image_urls:
-            if self.message.text in ('[图片]', ''):
-                # 为图片消息时隐藏文本气泡
-                self.bubble.hide()
+            self.bubble.hide()
 
             preview_url = (
                 self.message.image_thumbnail_urls[0]
@@ -147,14 +162,24 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
                 self.message,
                 600,
             )
+
             self.image_label = ThreadPictureLabel(
                 image_width,
                 image_height,
                 image_urls[0],
                 preview_url,
             )
+
             self.image_label.setParent(self.messageContentWidget)
             self.image_label.hide()
+
+        if (
+                self.message.msg_type == ChatroomMessageType.ThreadShare
+                and self.message.thread_share
+        ):
+            # 转发贴子
+            self._init_thread_share(self.message.thread_share)
+            self.bubble.hide()
 
         # 内容布局管理器
         self.content_container = QWidget(self.messageContentWidget)
@@ -162,6 +187,8 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(7)
         content_layout.addWidget(self.reply_label)
+        if self.thread_share_container is not None:
+            content_layout.addWidget(self.thread_share_container)
         if self.image_label is not None:
             content_layout.addWidget(self.image_label)
         content_layout.addWidget(self.bubble)
@@ -201,6 +228,61 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
                 qt_image.ImageCoverType.RoundCover,
                 (38, 38),
             )
+
+    def _init_thread_share(self, thread_share):
+        from subwindow.thread_preview_item import AsyncLoadImage, ThreadView
+
+        account = account_mgr.GlobalAccountContainer.get_current_account()
+        thread_id = int(thread_share.get('thread_id', 0))
+        forum_id = int(thread_share.get('forum_id', 0))
+        author_portrait = thread_share.get('author_portrait', '')
+
+        self.thread_share_view = ThreadView(
+            account.bduss,
+            thread_id,
+            forum_id,
+            account.stoken,
+            author_portrait,
+        )
+        self.thread_share_view.load_by_callback = True
+        self.thread_share_view.allow_open_home_page = bool(author_portrait)
+        abstract = thread_share.get('abstract', '')
+        video_text = self._thread_share_video_text(thread_share)
+        if video_text:
+            abstract = '\n'.join(filter(None, (abstract, video_text)))
+        self.thread_share_view.set_infos(
+            author_portrait or None,
+            thread_share.get('author_name', ''),
+            thread_share.get('title', ''),
+            abstract,
+            thread_share.get('forum_avatar') or None,
+            thread_share.get('forum_name', ''),
+        )
+        pictures = [
+            AsyncLoadImage(url)
+            for url in thread_share.get('image_urls', [])
+        ]
+        self.thread_share_view.set_picture(pictures)
+        self.thread_share_view.toolButton.hide()
+        self.thread_share_view.pushButton_2.setVisible(bool(thread_id))
+        self.thread_share_view.pushButton_3.setVisible(bool(forum_id))
+
+        self.thread_share_container = QFrame(self.messageContentWidget)
+        self.thread_share_container.setObjectName('threadShareCard')
+        card_layout = QVBoxLayout(self.thread_share_container)
+        card_layout.setContentsMargins(10, 8, 10, 8)
+        card_layout.setSpacing(5)
+        card_title = QLabel('分享贴子', self.thread_share_container)
+        card_title.setStyleSheet('QLabel{color:#888888;font-size:8pt;}')
+        card_layout.addWidget(card_title)
+        card_layout.addWidget(self.thread_share_view)
+
+    @staticmethod
+    def _thread_share_video_text(thread_share):
+        duration = int(thread_share.get('video_duration', 0))
+        play_count = int(thread_share.get('video_play_count', 0))
+        text = f'[视频] 时长 {format_second(duration)} | {large_num_to_string(play_count, endspace=True)}次浏览'
+        return text if duration and play_count else ''
 
     def _set_auxiliary_content(self, message):
         reply = message.reply_content or {}
@@ -263,6 +345,10 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
             )
             self.bubble.setFixedSize(bubble_width, bubble_height)
 
+        thread_share_width, thread_share_height = (
+            self._update_thread_share_size(max_width)
+        )
+
         image_width, image_height = self._image_size(max_width)
         if self.image_label is not None:
             self.image_label.setFixedSize(image_width, image_height)
@@ -270,12 +356,15 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
 
         content_width = max(
             bubble_width,
+            thread_share_width,
             image_width if self.image_label is not None else 0,
             max((size[0] for size in auxiliary_sizes), default=0),
         )
         visible_sizes = list(auxiliary_sizes)
         if bubble_width:
             visible_sizes.append((bubble_width, bubble_height))
+        if thread_share_height:
+            visible_sizes.append((thread_share_width, thread_share_height))
         if image_width:
             visible_sizes.append((image_width, image_height))
         content_height = sum(size[1] for size in visible_sizes)
@@ -337,6 +426,38 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
                 - spacing * 2
         )
         return max(80, available)
+
+    def _update_thread_share_size(self, max_width):
+        if self.thread_share_container is None:
+            return 0, 0
+
+        card_width = max(160, int(max_width))
+        card_layout = self.thread_share_container.layout()
+        margins = card_layout.contentsMargins()
+        inner_width = max(
+            120,
+            card_width - margins.left() - margins.right(),
+        )
+        self.thread_share_container.setFixedWidth(card_width)
+        self.thread_share_view.setFixedWidth(inner_width)
+
+        layouts = self.thread_share_view.findChildren(QLayout)
+        for _ in range(2):
+            for layout in layouts:
+                layout.invalidate()
+            for layout in reversed(layouts):
+                layout.activate()
+            self.thread_share_view.adjustSize()
+
+        card_layout.invalidate()
+        card_layout.activate()
+        height = max(
+            self.thread_share_container.sizeHint().height(),
+            card_layout.heightForWidth(card_width),
+        )
+        height = max(50, height)
+        self.thread_share_container.setFixedHeight(height)
+        return card_width, height
 
     def _update_auxiliary_sizes(self, max_width):
         sizes = []
@@ -436,3 +557,20 @@ class ChatMessageWidget(base_ui.InsideWidgetBaseQWidget, message_item.Ui_Form):
             'padding:4px 6px;'
             'font-size:9pt;}'
         )
+        if self.thread_share_container is not None:
+            if profile_mgr.get_theme_policy() == 1:
+                card_bg = 'rgba(0,0,0,10)'
+                card_border = 'rgba(0,0,0,30)'
+            else:
+                card_bg = 'rgba(255,255,255,12)'
+                card_border = 'rgba(255,255,255,35)'
+            self.thread_share_container.setStyleSheet(
+                'QFrame#threadShareCard{'
+                f'background-color:{card_bg};'
+                f'border:1px solid {card_border};'
+                'border-radius:8px;}'
+            )
+            self.thread_share_view.setStyleSheet(
+                self.thread_share_view.styleSheet()
+                + '\nQWidget#Form{background-color:transparent;}'
+            )

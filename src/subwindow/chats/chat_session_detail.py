@@ -904,6 +904,7 @@ class ChatSessionDetail(base_ui.InsideWidgetBaseQWidget, chat_session_detail.Ui_
     @staticmethod
     def _message_signature(message):
         reply = message.reply_content or {}
+        thread_share = message.thread_share or {}
         at_users = tuple(
             (
                 user.get('user_id', 0),
@@ -930,6 +931,20 @@ class ChatSessionDetail(base_ui.InsideWidgetBaseQWidget, chat_session_detail.Ui_
                 reply.get('text', ''),
             ),
             at_users,
+            (
+                thread_share.get('thread_id', 0),
+                thread_share.get('title', ''),
+                thread_share.get('forum_id', 0),
+                thread_share.get('forum_name', ''),
+                thread_share.get('forum_avatar', ''),
+                thread_share.get('author_portrait', ''),
+                thread_share.get('author_name', ''),
+                thread_share.get('abstract', ''),
+                tuple(thread_share.get('image_urls', [])),
+                thread_share.get('video_url', ''),
+                thread_share.get('video_duration', 0),
+                thread_share.get('video_play_count', 0),
+            ),
         )
 
     def _render_chat_messages(self, messages, show_sender):

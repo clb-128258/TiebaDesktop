@@ -31,7 +31,7 @@ def add_cover_radius_angle(image: QImage,
                            high_dpi_support: bool = True) -> QImage:
     screen_rate = get_screen_ratio() if high_dpi_support else 1.0
 
-    if width == height == -1:
+    if max(width, height) <= 0:
         resize_rate = 1.0
     else:
         resize_rate = round((width / image.width() + height / image.height()) / 2, 2)
